@@ -58,3 +58,4 @@ admin/node_modules/
 admin/node_modules/*
 pdf/pdf-gen/*.html
 pdf/pdf-gen/*.pdf
+*.orig

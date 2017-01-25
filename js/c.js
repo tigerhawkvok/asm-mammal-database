@@ -1420,7 +1420,7 @@ formatSearchResults = function(result, container) {
    * Take a result object from the server's lookup, and format it to
    * display search results.
    * See
-   * http://ssarherps.org/cndb/commonnames_api.php?q=batrachoseps+attenuatus&loose=true
+   * http://mammaldiversity.org/cndb/commonnames_api.php?q=batrachoseps+attenuatus&loose=true
    * for a sample search result return.
    */
   data = result.result;
@@ -2300,7 +2300,7 @@ downloadCSVList = function() {
               colData = colData.toTitleCase();
             }
             if (col === "image" && !isNull(colData)) {
-              colData = "http://ssarherps.org/cndb/" + colData;
+              colData = "http://mammaldiversity.org/cndb/" + colData;
             }
             csvRow.push("\"" + colData + "\"");
           }
@@ -2337,7 +2337,7 @@ downloadHTMLList = function() {
    * Download a HTML file list
    *
    * We want to set this up to look similar to the published list
-   * http://ssarherps.org/wp-content/uploads/2014/07/HC_39_7thEd.pdf
+   * http://mammaldiversity.org/wp-content/uploads/2014/07/HC_39_7thEd.pdf
    * Starting with page 11
    *
    * Configured Bootstrap:

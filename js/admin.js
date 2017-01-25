@@ -10,7 +10,7 @@ adminParams = new Object();
 
 adminParams.apiTarget = "admin_api.php";
 
-adminParams.adminPageUrl = "https://ssarherps.org/cndb/admin-page.html";
+adminParams.adminPageUrl = "https://mammaldiversity.org/cndb/admin-page.html";
 
 adminParams.loginDir = "admin/";
 
@@ -895,7 +895,7 @@ $(function() {
       return openTab(adminParams.adminPageUrl);
     });
   }
-  return loadJS("https://ssarherps.org/cndb/bower_components/bootstrap/dist/js/bootstrap.min.js", function() {
+  return loadJS("https://mammaldiversity.org/cndb/bower_components/bootstrap/dist/js/bootstrap.min.js", function() {
     return $("[data-toggle='tooltip']").tooltip();
   });
 });

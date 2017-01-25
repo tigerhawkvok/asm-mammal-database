@@ -4,7 +4,7 @@
 ###
 adminParams = new Object()
 adminParams.apiTarget = "admin_api.php"
-adminParams.adminPageUrl = "https://ssarherps.org/cndb/admin-page.html"
+adminParams.adminPageUrl = "https://mammaldiversity.org/cndb/admin-page.html"
 adminParams.loginDir = "admin/"
 adminParams.loginApiTarget = "#{adminParams.loginDir}async_login_handler.php"
 
@@ -956,6 +956,6 @@ $ ->
     .unbind()
     .click ->
       openTab(adminParams.adminPageUrl)
-  loadJS "https://ssarherps.org/cndb/bower_components/bootstrap/dist/js/bootstrap.min.js", ->
+  loadJS "https://mammaldiversity.org/cndb/bower_components/bootstrap/dist/js/bootstrap.min.js", ->
     $("[data-toggle='tooltip']").tooltip()
   # The rest of the onload for the admin has been moved to the core.coffee file.

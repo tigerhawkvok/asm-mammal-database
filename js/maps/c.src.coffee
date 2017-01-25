@@ -1144,7 +1144,7 @@ formatSearchResults = (result,container = searchParams.targetContainer) ->
   # Take a result object from the server's lookup, and format it to
   # display search results.
   # See
-  # http://ssarherps.org/cndb/commonnames_api.php?q=batrachoseps+attenuatus&loose=true
+  # http://mammaldiversity.org/cndb/commonnames_api.php?q=batrachoseps+attenuatus&loose=true
   # for a sample search result return.
   ###
   data = result.result
@@ -2058,7 +2058,7 @@ downloadCSVList = ->
             if col in makeTitleCase
               colData = colData.toTitleCase()
             if col is "image" and not isNull(colData)
-              colData = "http://ssarherps.org/cndb/#{colData}"
+              colData = "http://mammaldiversity.org/cndb/#{colData}"
             # Done with formatting, push it
             csvRow.push "\"#{colData}\""
         # Increment the row counter
@@ -2114,7 +2114,7 @@ downloadHTMLList = ->
   # Download a HTML file list
   #
   # We want to set this up to look similar to the published list
-  # http://ssarherps.org/wp-content/uploads/2014/07/HC_39_7thEd.pdf
+  # http://mammaldiversity.org/wp-content/uploads/2014/07/HC_39_7thEd.pdf
   # Starting with page 11
   #
   # Configured Bootstrap:

@@ -1,13 +1,15 @@
 <!DOCTYPE html>
 <html>
   <head>
-    <title>SSAR CNDB Admin</title>
+    <title>Project Administration</title>
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
     <meta charset="UTF-8"/>
-    <meta name="theme-color" content="#445e14"/>
+    <meta name="theme-color" content="#5677fc"/>
     <meta name="viewport" content="width=device-width, initial-scale=1" />
 
     <link rel="stylesheet" type="text/css" media="screen" href="css/main.css"/>
+    <link rel="stylesheet" type="text/css" href="bower_components/json-human/css/json.human.css" />
+    <link rel="prerender" href="https://amphibiandisease.org/project.php" />
     <link href="https://fonts.googleapis.com/css?family=Droid+Sans:400,700|Droid+Sans+Mono|Roboto:400,100,300,500,700,100italic,300italic,400italic,500italic,700italic" rel='stylesheet' type='text/css'/>
 
     <link rel="icon" type="image/png" sizes="16x16" href="assets/favicon16.png" />
@@ -24,17 +26,27 @@
 
 
     <link rel="import" href="bower_components/paper-toggle-button/paper-toggle-button.html"/>
+    <link rel="import" href="bower_components/paper-checkbox/paper-checkbox.html"/>
     <link rel="import" href="bower_components/paper-toast/paper-toast.html"/>
     <link rel="import" href="bower_components/paper-input/paper-input.html"/>
     <link rel="import" href="bower_components/paper-spinner/paper-spinner.html"/>
-    <link rel="import" href="bower_components/paper-spinner/paper-spinner.html"/>
+    <link rel="import" href="bower_components/paper-slider/paper-slider.html"/>
     <link rel="import" href="bower_components/paper-menu/paper-menu.html"/>
+    <link rel="import" href="bower_components/paper-menu-button/paper-menu-button.html"/>
+    <link rel="import" href="bower_components/paper-card/paper-card.html"/>
     <link rel="import" href="bower_components/paper-dialog/paper-dialog.html"/>
     <link rel="import" href="bower_components/paper-dialog-scrollable/paper-dialog-scrollable.html"/>
     <link rel="import" href="bower_components/paper-button/paper-button.html"/>
     <link rel="import" href="bower_components/paper-icon-button/paper-icon-button.html"/>
     <link rel="import" href="bower_components/paper-fab/paper-fab.html"/>
     <link rel="import" href="bower_components/paper-item/paper-item.html"/>
+    <link rel="import" href="bower_components/paper-material/paper-material.html"/>
+    <link rel="import" href="bower_components/paper-progress/paper-progress.html"/>
+    <link rel="import" href="bower_components/paper-badge/paper-badge.html"/>
+
+    <link rel="import" href="bower_components/gold-email-input/gold-email-input.html"/>
+    <link rel="import" href="bower_components/gold-phone-input/gold-phone-input.html"/>
+
     <link rel="import" href="bower_components/iron-form/iron-form.html"/>
     <link rel="import" href="bower_components/iron-autogrow-textarea/iron-autogrow-textarea.html"/>
 
@@ -42,10 +54,20 @@
     <link rel="import" href="bower_components/iron-icons/iron-icons.html"/>
     <link rel="import" href="bower_components/iron-icons/image-icons.html"/>
     <link rel="import" href="bower_components/iron-icons/social-icons.html"/>
+    <link rel="import" href="bower_components/iron-icons/editor-icons.html"/>
+    <link rel="import" href="bower_components/iron-icons/av-icons.html"/>
+    <link rel="import" href="bower_components/iron-icons/maps-icons.html"/>
 
     <link rel="import" href="bower_components/neon-animation/neon-animation.html"/>
 
+    <link rel="import" href="bower_components/marked-element/marked-element.html"/>
+
+    <link rel="import" href="bower_components/google-map/google-map.html"/>
+    <link rel="import" href="bower_components/google-map/google-map-marker.html"/>
+    <link rel="import" href="bower_components/google-map/google-map-poly.html"/>
+
     <link rel="import" href="polymer-elements/copyright-statement.html"/>
+    <link rel="import" href="polymer-elements/glyphicon-social-icons.html"/>
 
 
     <script type="text/javascript">
@@ -54,7 +76,7 @@
       e|=(e&16&&({}.toString).toString().indexOf("\n")===-1)?32:0;p.push('e='+e);f|='sandbox' in d.createElement('iframe')?1:0;f|='WebSocket' in w?2:0;
       f|=w.Worker?4:0;f|=w.applicationCache?8:0;f|=w.history && history.pushState?16:0;f|=d.documentElement.webkitRequestFullScreen?32:0;f|='FileReader' in w?64:0;
       p.push('f='+f);p.push('r='+Math.random().toString(36).substring(7));p.push('w='+screen.width);p.push('h='+screen.height);var s=d.createElement('script');
-      s.src='//ssarherps.org/cndb/bower_components/whichbrowser/detect.php?' + p.join('&');d.getElementsByTagName('head')[0].appendChild(s);})();
+      s.src='bower_components/whichbrowser/detect.php?' + p.join('&');d.getElementsByTagName('head')[0].appendChild(s);})();
       /*window.onerror = function(e) {
       console.warn("Error thrown: "+e);
       return true;
@@ -65,38 +87,104 @@
     <script type="text/javascript" src="bower_components/bootstrap/dist/js/bootstrap.min.js"></script>
     <script type="text/javascript" src="js/purl.min.js"></script>
     <script type="text/javascript" src="js/xmlToJSON.min.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/underscore.js/1.8.3/underscore-min.js"></script>
     <script type="text/javascript" src="js/jquery.cookie.min.js"></script>
     <script type="text/javascript" src="bower_components/js-base64/base64.min.js"></script>
     <script type="text/javascript" src="bower_components/picturefill/dist/picturefill.min.js"></script>
-    <script src="bower_components/touch-imagelightbox/dist/touch-imagelightbox.min.js"></script>
-    <script type="text/javascript" src="js/c.min.js"></script>
-    <script type="text/javascript" src="js/admin.min.js"></script>
+    <script type="text/javascript" src="bower_components/imagelightbox/dist/imagelightbox.min.js"></script>
+    <script type="text/javascript" src="bower_components/JavaScript-MD5/js/md5.min.js"></script>
+    <script type="text/javascript" src="bower_components/json-human/src/json.human.js"></script>
+    <script type="text/javascript" src="js/c.js"></script>
     <script type="text/javascript">
       var checkAdmin = function() {
+      //console.info("Admin status checked");
       adminParams.loadAdminUi = true;
       };
+      // Generated by CoffeeScript 1.10.0
+      (function() {
+      var delay;
+
+      delay = function(ms, f) {
+      return setTimeout(f, ms);
+      };
+
+      delay(1000, function() {
+      var html;
+      if (typeof foo !== "function") {
+      return html = "<div class=\"alert alert-warning alert-dismissable\" role=\"alert\" id=\"bad-connection-alert\">\n  <button type=\"button\" class=\"close\" data-dismiss=\"alert\" aria-label=\"Close\"><span aria-hidden=\"true\">&times;</span></button>\n  <div class=\"alert-message\">\n    <strong>We're having problems connecting to the server</strong> If this problem persists, you may need to <a href=\"#\" onclick=\"\" class=\"alert-link\">refresh the page</a> or try again later.\n  </div>\n</div>";
+      }
+      });
+
+      }).call(this);
     </script>
+    <style is="custom-style">
+      paper-toggle-button.red {
+      --paper-toggle-button-checked-bar-color:  var(--paper-red-500);
+      --paper-toggle-button-checked-button-color:  var(--paper-red-500);
+      --paper-toggle-button-checked-ink-color: var(--paper-red-500);
+      }
+      paper-progress.blue {
+      --paper-progress-active-color: var(--paper-light-blue-500);
+      --paper-progress-secondary-color: var(--paper-light-blue-100);
+      }
+      paper-progress.cyan {
+      --paper-progress-active-color: var(--paper-cyan-500);
+      --paper-progress-secondary-color: var(--paper-cyan-100);
+      }
+      paper-progress.teal {
+      --paper-progress-active-color: var(--paper-teal-500);
+      --paper-progress-secondary-color: var(--paper-teal-100);
+      }
+      paper-progress.error-progress {
+      --paper-progress-active-color: var(--paper-red-500) !important;
+      --paper-progress-secondary-color: var(--paper-red-100) !important;
+      }
+      paper-input[disabled], paper-input[readonly] {
+      --paper-input-container-focus-color: var(--paper-orange-500);
+      --paper-input-container-underline: var(--paper-grey-300);
+      --paper-input-container-underline-disabled: var(--paper-grey-300);
+      }
+    </style>
   </head>
   <body class="container-fluid">
-    <article>
-      <h1 id="title">SSAR CNDB Administration</h1>
-      <section id="main-body">
-        <h2>Please wait ...</h2>
+    <header id="header-bar" class="fixed-bar clearfix row">
+      <div class="logo-container">
+        <div class="square-object">
+          <div class="square tile">
+            <img src="assets/aw_logo512-trans.png" alt="AmphibiaWeb logo" class="content click" data-href="http://amphibiaweb.org/" data-newtab="true"/>
+          </div>
+        </div>
+      </div>
+     <p class="col-xs-12 text-right">
+       Logged in as <span class="fill-user-fullname header-bar-user-name"></span>
+       <paper-icon-button icon="icons:dashboard" class="click" data-href="https://amphibiandisease.org/admin-page.html" data-toggle="tooltip" title="Administration Dashboard" data-placement="bottom"> </paper-icon-button>
+       <paper-icon-button icon='icons:settings-applications' class='click' data-href="https://amphibiandisease.org/admin" data-toggle="tooltip" title="Account Settings" data-placement="bottom"></paper-icon-button>
+       <paper-icon-button icon="icons:language" class="click" data-toggle="tooltip" title="Project Browser" data-href="https://amphibiandisease.org/project.php" data-placement="bottom"> </paper-icon-button>
+       <paper-icon-button icon="icons:account-box" class="click" data-toggle="tooltip" title="Profiles" data-href="https://amphibiandisease.org/profile.php" data-placement="bottom"> </paper-icon-button>
+       <paper-icon-button icon="icons:home" class="click" data-href="https://amphibiandisease.org" data-toggle="tooltip" title="Home" data-placement="bottom"></paper-icon-button>
+     </p>
+    </header>
+    <main>
+      <h1 id="title">Account and Project Administration</h1>
+      <section id="main-body" class="row">
+        <h2 class="col-xs-12" id='please-wait-prefill'>Please wait ...</h2>
       </section>
-    </article>
-    <footer class="row hidden-xs">
-      <div class="col-md-8 col-xs-12">
-        <copyright-statement copyrightStart="2015">Society for the Study of Amphibians and Reptiles</copyright-statement>
+    </main>
+    <footer class="row">
+      <div class="col-md-7 col-xs-12">
+        <copyright-statement copyrightStart="2015">AmphibiaWeb &amp; AmphibianDisease.org</copyright-statement>
       </div>
-      <div class="col-md-1 col-xs-3">
-        <!-- <span class="octicon octicon-mark-github click med-octicon" data-url="https://github.com/tigerhawkvok/SSAR-species-database"></span> -->
-        <paper-icon-button icon="social:post-github" class="click" data-url="https://github.com/SSARHERPS/SSAR-species-database"></paper-icon-button>
+      <div class="col-md-1 col-xs-4">
+        <paper-icon-button icon="icons:chrome-reader-mode" class="click" data-href="https://amphibian-disease-tracker.readthedocs.org" data-toggle="tooltip" title="Documentation" data-newtab="true"></paper-icon-button>
       </div>
-      <div class="col-md-1 col-xs-3">
-        <paper-icon-button icon="bug-report" class="click" data-url="https://github.com/SSARHERPS/SSAR-species-database/issues/new"></paper-icon-button>
+      <div class="col-md-1 col-xs-4">
+        <paper-icon-button icon="glyphicon-social:github" class="click" data-href="https://github.com/AmphibiaWeb/amphibian-disease-tracker" data-toggle="tooltip" title="Visit us on GitHub" data-newtab="true"></paper-icon-button>
       </div>
-      <div class="col-md-2 col-xs-6">
-        Written with <paper-icon-button icon="polymer" class="click" data-url="https://www.polymer-project.org"></paper-icon-button>
+      <div class="col-md-1 col-xs-4">
+        <paper-icon-button icon="icons:bug-report" class="click" data-href="https://github.com/AmphibiaWeb/amphibian-disease-tracker/issues/new" data-toggle="tooltip" title="Report an issue" data-newtab="true"></paper-icon-button>
+      </div>
+      <div class="col-md-2 col-xs-6 hidden-xs">
+        Written with <paper-icon-button icon="icons:polymer" class="click" data-href="https://www.polymer-project.org" data-newtab="true"></paper-icon-button>
       </div>
     </footer>
   </body>

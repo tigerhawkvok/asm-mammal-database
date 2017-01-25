@@ -1,6 +1,0 @@
-[submodule "stronghash"]
-	path = stronghash
-	url = https://github.com/tigerhawkvok/php-stronghash.git
-[submodule "oauth"]
-	path = oauth
-	url = https://github.com/tigerhawkvok/php-multioauth.git

@@ -6,7 +6,7 @@
 # Why are we here? Because this gives us some nice bonuses on mobile!
 ###
 
-cacheName = "ssar_cndb_cache"
+cacheName = "asm_cndb_cache"
 
 urlsToCache = [
   "js/c.min.js"

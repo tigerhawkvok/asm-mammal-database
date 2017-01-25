@@ -19,7 +19,7 @@ loadAdminUi = ->
       # Post verification
       articleHtml = """
       <h3>
-        Welcome, #{$.cookie("ssarherps_name")}
+        Welcome, #{$.cookie("asmherps_name")}
         <span id="pib-wrapper-settings" class="pib-wrapper" data-toggle="tooltip" title="User Settings" data-placement="bottom">
           <paper-icon-button icon='settings-applications' class='click' data-url='#{data.login_url}'></paper-icon-button>
         </span>
@@ -75,9 +75,9 @@ verifyLoginCredentials = (callback) ->
   # could force the local JS check to succeed.
   # SECURE AUTHENTICATION MUST BE WHOLLY SERVER SIDE.
   ###
-  hash = $.cookie("ssarherps_auth")
-  secret = $.cookie("ssarherps_secret")
-  link = $.cookie("ssarherps_link")
+  hash = $.cookie("asmherps_auth")
+  secret = $.cookie("asmherps_secret")
+  link = $.cookie("asmherps_link")
   args = "hash=#{hash}&secret=#{secret}&dblink=#{link}"
   $.post(adminParams.loginApiTarget,args,"json")
   .done (result) ->
@@ -289,7 +289,7 @@ createNewTaxon = ->
   # Remove the dupliate button
   d$("#duplicate-taxon").remove()
   # Append the editor value
-  whoEdited = if isNull($.cookie("ssarherps_fullname")) then $.cookie("ssarherps_user") else $.cookie("ssarherps_fullname")
+  whoEdited = if isNull($.cookie("asmherps_fullname")) then $.cookie("asmherps_user") else $.cookie("asmherps_fullname")
   d$("#edit-taxon-author").attr("value",whoEdited)
   # Bind the save button
   d$("#save-editor")
@@ -482,7 +482,7 @@ lookupEditorSpecies = (taxon = undefined) ->
             console.warn("Removed #last-edited-by! Didn't have an author provided for column '#{col}', giving '#{d}'. It's probably the first edit to this taxon.")
           else
             d$("#taxon-author-last").text(d)
-          whoEdited = if isNull($.cookie("ssarherps_fullname")) then $.cookie("ssarherps_user") else $.cookie("ssarherps_fullname")
+          whoEdited = if isNull($.cookie("asmherps_fullname")) then $.cookie("asmherps_user") else $.cookie("asmherps_fullname")
           d$("#edit-taxon-author").attr("value",whoEdited)
         else
           fieldSelector = "#edit-#{col.replace(/_/g,"-")}"
@@ -794,9 +794,9 @@ saveEditorEntry = (performMode = "save") ->
     console.warn("Got the output string",saveSring)
     console.warn("Sending b64 string",s64)
     return true
-  hash = $.cookie("ssarherps_auth")
-  secret = $.cookie("ssarherps_secret")
-  link = $.cookie("ssarherps_link")
+  hash = $.cookie("asmherps_auth")
+  secret = $.cookie("asmherps_secret")
+  link = $.cookie("asmherps_link")
   userVerification = "hash=#{hash}&secret=#{secret}&dblink=#{link}"
   args = "perform=#{performMode}&#{userVerification}&data=#{s64}"
   console.log("Going to save",saveObject)
@@ -879,7 +879,7 @@ handleDragDropImage = (uploadTargetSelector = "#upload-image", callback) ->
       try
         fileName = file.name
         # Disable the selector
-        ssar.dropzone.disable()
+        asm.dropzone.disable()
         # Now, process the rename and insert it into the file area
         # Get the MD5 of the original filename
         ext = fileName.split(".").pop()
@@ -946,7 +946,7 @@ handleDragDropImage = (uploadTargetSelector = "#upload-image", callback) ->
     unless d$(uploadTargetSelector).hasClass("dropzone")
       d$(uploadTargetSelector).addClass("dropzone")
     fileUploadDropzone = new Dropzone(d$(uploadTargetSelector).get(0), dropzoneConfig)
-    ssar.dropzone = fileUploadDropzone
+    asm.dropzone = fileUploadDropzone
   false
 
 

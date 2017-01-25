@@ -918,9 +918,9 @@ checkFileVersion = (forceNow = false) ->
         console.log("Forced version check:",result)
       unless isNumber result.last_mod
         return false
-      unless ssar.lastMod?
-        ssar.lastMod = result.last_mod
-      if result.last_mod > ssar.lastMod
+      unless asm.lastMod?
+        asm.lastMod = result.last_mod
+      if result.last_mod > asm.lastMod
         # File has updated
         html = """
         <div id="outdated-warning" class="alert alert-warning alert-dismissible fade in" role="alert">
@@ -934,14 +934,14 @@ checkFileVersion = (forceNow = false) ->
             document.location.reload(true)
         console.warn("Your current version is out of date! Please refresh the page.")
       else if forceNow
-        console.info("Your version is up to date: have #{ssar.lastMod}, got #{result.last_mod}")
+        console.info("Your version is up to date: have #{asm.lastMod}, got #{result.last_mod}")
     .fail ->
       console.warn("Couldn't check file version!!")
     .always ->
       delay 5*60*1000, ->
         # Delay 5 minutes
         checkVersion()
-  if forceNow or not ssar.lastMod?
+  if forceNow or not asm.lastMod?
     checkVersion()
     return true
   false
@@ -986,7 +986,7 @@ $ ->
     # However, we can lazy-load to see if the user is an admin
     loadJS "js/jquery.cookie.min.js", ->
       # Now see if the user is an admin
-      if $.cookie("ssarherps_user")?
+      if $.cookie("asmherps_user")?
         # Someone has logged in to this device before, offer the admin
         # link.
         html = """
@@ -1000,13 +1000,13 @@ $ ->
   checkFileVersion()
 
 searchParams = new Object()
-searchParams.targetApi = "commonnames_api.php"
+searchParams.targetApi = "api.php"
 searchParams.targetContainer = "#result_container"
 searchParams.apiPath = uri.urlString + searchParams.targetApi
 
-ssar = new Object()
+asm = new Object()
 # Base query URLs for out-of-site linkouts
-ssar.affiliateQueryUrl =
+asm.affiliateQueryUrl =
   # As of 2015.05.24, no SSL connection
   amphibiaWeb: "http://amphibiaweb.org/cgi/amphib_query"
   # As of 2015.05.24, no SSL connection
@@ -1253,7 +1253,7 @@ formatSearchResults = (result,container = searchParams.targetContainer) ->
             if isNull(col)
               # Get a CalPhotos link as
               # http://calphotos.berkeley.edu/cgi/img_query?rel-taxon=contains&where-taxon=batrachoseps+attenuatus
-              col = "<paper-icon-button icon='launch' data-href='#{ssar.affiliateQueryUrl.calPhotos}?rel-taxon=contains&where-taxon=#{taxonQuery}' class='newwindow calphoto click' data-taxon=\"#{taxonQuery}\"></paper-icon-button>"
+              col = "<paper-icon-button icon='launch' data-href='#{asm.affiliateQueryUrl.calPhotos}?rel-taxon=contains&where-taxon=#{taxonQuery}' class='newwindow calphoto click' data-taxon=\"#{taxonQuery}\"></paper-icon-button>"
             else
               col = "<paper-icon-button icon='image:image' data-lightbox='#{uri.urlString}#{col}' class='lightboximage'></paper-icon-button>"
           # What should be centered, and what should be left-aligned?
@@ -1435,7 +1435,7 @@ checkTaxonNear = (taxonQuery = undefined, callback = undefined, selector = "#nea
 
 
 
-insertModalImage = (imageObject = ssar.taxonImage, taxon = ssar.activeTaxon, callback = undefined) ->
+insertModalImage = (imageObject = asm.taxonImage, taxon = asm.activeTaxon, callback = undefined) ->
   ###
   # Insert into the taxon modal a lightboxable photo. If none exists,
   # load from CalPhotos
@@ -1452,8 +1452,8 @@ insertModalImage = (imageObject = ssar.taxonImage, taxon = ssar.activeTaxon, cal
     warnArgs =
       taxon: taxon
       imageUrl: imageUrl
-      defaultTaxon: ssar.activeTaxon
-      defaultImage: ssar.taxonImage
+      defaultTaxon: asm.activeTaxon
+      defaultImage: asm.taxonImage
     console.warn(warnArgs)
     return false
   # Image insertion helper
@@ -1531,7 +1531,7 @@ insertModalImage = (imageObject = ssar.taxonImage, taxon = ssar.activeTaxon, cal
     imageObject.thumbUri = "#{uri.urlString}#{imgPath}-thumb.#{extension}"
     imageObject.imageUri = "#{uri.urlString}#{imgPath}.#{extension}"
     # And finally, call our helper function
-    insertImage(imageObject, taxonString, "ssarimg")
+    insertImage(imageObject, taxonString, "asmimg")
     return false
 
   ###
@@ -1546,7 +1546,7 @@ insertModalImage = (imageObject = ssar.taxonImage, taxon = ssar.activeTaxon, cal
   ###
 
   args = "getthumbinfo=1&num=all&cconly=1&taxon=#{taxonString}&format=xml"
-  # console.log("Looking at","#{ssar.affiliateQueryUrl.calPhotos}?#{args}")
+  # console.log("Looking at","#{asm.affiliateQueryUrl.calPhotos}?#{args}")
   ## CalPhotos doesn't have good headers set up. Try a CORS request.
   # CORS success callback
   doneCORS = (resultXml) ->
@@ -1570,7 +1570,7 @@ insertModalImage = (imageObject = ssar.taxonImage, taxon = ssar.activeTaxon, cal
       imageObject.imageLicense = data.license[0]["_text"]
       imageObject.imageCredit = "#{data.copyright[0]["_text"]} (via CalPhotos)"
     catch e
-      console.warn("CalPhotos didn't return any valid images for this search!","#{ssar.affiliateQueryUrl.calPhotos}?#{args}")
+      console.warn("CalPhotos didn't return any valid images for this search!","#{asm.affiliateQueryUrl.calPhotos}?#{args}")
       return false
     # Do the image insertion via our helper function
     insertImage(imageObject,taxonString)
@@ -1582,7 +1582,7 @@ insertModalImage = (imageObject = ssar.taxonImage, taxon = ssar.activeTaxon, cal
     false
   # The actual call attempts.
   try
-    doCORSget(ssar.affiliateQueryUrl.calPhotos, args, doneCORS, failCORS)
+    doCORSget(asm.affiliateQueryUrl.calPhotos, args, doneCORS, failCORS)
   catch e
     console.error(e.message)
   false
@@ -1595,7 +1595,7 @@ smartReptileDatabaseLink = ->
   # https://github.com/SSARHERPS/SSAR-species-database/issues/77
   ###
   url = "http://reptile-database.reptarium.cz/interfaces/services/check-taxon"
-  taxon = ssar.activeTaxon
+  taxon = asm.activeTaxon
   taxonArray = [taxon.genus,taxon.species]
   if taxon.subspecies?
     taxonArray.push(taxon.subspecies)
@@ -1621,7 +1621,7 @@ smartReptileDatabaseLink = ->
       button = """
       <paper-button id='modal-alt-linkout' class="hidden-xs">#{buttonText}</paper-button>
       """
-      outboundLink = "#{ssar.affiliateQueryUrl.reptileDatabase}?genus=#{data.genus}&species=#{data.species}"
+      outboundLink = "#{asm.affiliateQueryUrl.reptileDatabase}?genus=#{data.genus}&species=#{data.species}"
       if outboundLink?
         # First, un-hide it in case it was hidden
         $("#modal-alt-linkout")
@@ -1653,7 +1653,7 @@ smartCalPhotosLink = (overrideTaxon) ->
   calPhotosTaxon =
     genus: overrideTaxon.genus
     species: overrideTaxon.species
-    subspecies: ssar.activeTaxon.species
+    subspecies: asm.activeTaxon.species
   taxonArray = [
     calPhotosTaxon.genus
     calPhotosTaxon.species
@@ -1672,9 +1672,9 @@ smartCalPhotosLink = (overrideTaxon) ->
     $("#modal-calphotos-linkout")
     .unbind()
     .click ->
-      openTab("#{ssar.affiliateQueryUrl.calPhotos}?rel-taxon=contains&where-taxon=#{taxonArray.join("+")}")
+      openTab("#{asm.affiliateQueryUrl.calPhotos}?rel-taxon=contains&where-taxon=#{taxonArray.join("+")}")
     false
-  insertModalImage(ssar.taxonImage, calPhotosTaxon, postImageInsertion)
+  insertModalImage(asm.taxonImage, calPhotosTaxon, postImageInsertion)
   false
 
 
@@ -1801,19 +1801,19 @@ modalTaxon = (taxon = undefined) ->
     $("#modal-inat-linkout")
     .unbind()
     .click ->
-      openTab("#{ssar.affiliateQueryUrl.iNaturalist}?q=#{taxon}")
+      openTab("#{asm.affiliateQueryUrl.iNaturalist}?q=#{taxon}")
     # CalPhotos
     $("#modal-calphotos-linkout")
     .unbind()
     .click ->
-      openTab("#{ssar.affiliateQueryUrl.calPhotos}?rel-taxon=contains&where-taxon=#{taxon}")
+      openTab("#{asm.affiliateQueryUrl.calPhotos}?rel-taxon=contains&where-taxon=#{taxon}")
     # AmphibiaWeb or Reptile Database
     # See
     # https://github.com/tigerhawkvok/SSAR-species-database/issues/35
     outboundLink = null
     buttonText = null
     taxonArray = taxon.split("+")
-    ssar.activeTaxon =
+    asm.activeTaxon =
       genus: taxonArray[0]
       species: taxonArray[1]
       subspecies: taxonArray[2]
@@ -1823,14 +1823,14 @@ modalTaxon = (taxon = undefined) ->
       # https://www.youtube.com/watch?v=xxsUQtfQ5Ew
       # Anyway, here we want a link to AmphibiaWeb
       buttonText = "AmphibiaWeb"
-      outboundLink = "#{ssar.affiliateQueryUrl.amphibiaWeb}?where-genus=#{data.genus}&where-species=#{data.species}"
+      outboundLink = "#{asm.affiliateQueryUrl.amphibiaWeb}?where-genus=#{data.genus}&where-species=#{data.species}"
     else unless isNull(data.linnean_order)
       # It's not an amphibian -- so we want a link to Reptile Database
       buttonText = "Reptile Database"
       button = """
       <paper-button id='modal-alt-linkout' class="hidden-xs">#{buttonText}</paper-button>
       """
-      outboundLink = "#{ssar.affiliateQueryUrl.reptileDatabase}?genus=#{data.genus}&species=#{data.species}"
+      outboundLink = "#{asm.affiliateQueryUrl.reptileDatabase}?genus=#{data.genus}&species=#{data.species}"
       # Now, lazily check this against the Reptile Database taxon API
       smartReptileDatabaseLink()
     if outboundLink?
@@ -1855,7 +1855,7 @@ modalTaxon = (taxon = undefined) ->
     d$("#modal-heading").text(humanTaxon)
     # Open it
     if isNull(data.image) then data.image = undefined
-    ssar.taxonImage =
+    asm.taxonImage =
       imageUri: data.image
       imageCredit: data.image_credit
       imageLicense: data.image_license
@@ -2084,7 +2084,7 @@ downloadCSVList = ->
             Please note that some special characters in names may be decoded incorrectly by Microsoft Excel. If this is a problem, following the steps in <a href="https://github.com/SSARHERPS/SSAR-species-database/blob/master/meta/excel_unicode_readme.md"  onclick='window.open(this.href); return false;' onkeypress='window.open(this.href); return false;'>this README <iron-icon icon="launch"></iron-icon></a> to force Excel to format it correctly.
           </p>
           <p class="text-center">
-            <a href="#{downloadable}" download="ssar-common-names-#{dateString}.csv" class="btn btn-default"><iron-icon icon="file-download"></iron-icon> Download Now</a>
+            <a href="#{downloadable}" download="asm-common-names-#{dateString}.csv" class="btn btn-default"><iron-icon icon="file-download"></iron-icon> Download Now</a>
           </p>
         </paper-dialog-scrollable>
         <div class="buttons">
@@ -2142,7 +2142,7 @@ downloadHTMLList = ->
           <meta name="theme-color" content="#445e14"/>
           <meta name="viewport" content="width=device-width, initial-scale=1" />
           <link href='http://fonts.googleapis.com/css?family=Droid+Serif:400,700,700italic,400italic|Roboto+Slab:400,700' rel='stylesheet' type='text/css' />
-          <style type="text/css" id="ssar-checklist-inline-stylesheet">
+          <style type="text/css" id="asm-checklist-inline-stylesheet">
 /*!
  * Bootstrap v3.3.5 (http://getbootstrap.com)
  * Copyright 2011-2015 Twitter, Inc.
@@ -2315,7 +2315,7 @@ downloadHTMLList = ->
         <h2>Your file is ready</h2>
         <paper-dialog-scrollable class="dialog-content">
           <p class="text-center">
-            <a href="#{downloadable}" download="ssar-common-names-#{dateString}.html" class="btn btn-default"><iron-icon icon="file-download"></iron-icon> Download Now</a>
+            <a href="#{downloadable}" download="asm-common-names-#{dateString}.html" class="btn btn-default"><iron-icon icon="file-download"></iron-icon> Download Now</a>
           </p>
         </paper-dialog-scrollable>
         <div class="buttons">
@@ -2431,9 +2431,9 @@ safariSearchArgHelper = (value, didLateRecheck = false) ->
 
 
 insertCORSWorkaround = ->
-  unless ssar.hasShownWorkaround?
-    ssar.hasShownWorkaround = false
-  if ssar.hasShownWorkaround
+  unless asm.hasShownWorkaround?
+    asm.hasShownWorkaround = false
+  if asm.hasShownWorkaround
     return false
   try
     browsers = new WhichBrowser()
@@ -2442,7 +2442,7 @@ insertCORSWorkaround = ->
     return false
   if browsers.isType("mobile")
     # We don't need to show this at all -- no extensions!
-    ssar.hasShownWorkaround = true
+    asm.hasShownWorkaround = true
     return false
   browserExtensionLink = switch browsers.browser.name
     when "Chrome"
@@ -2467,7 +2467,7 @@ insertCORSWorkaround = ->
   """
   $("#result_container").before(html)
   $(".alert").alert()
-  ssar.hasShownWorkaround = true
+  asm.hasShownWorkaround = true
   false
 
 
@@ -2596,10 +2596,10 @@ $ ->
               if fuzzyState
                 d$("#fuzzy").attr("checked", "checked")
             return false
-        unless ssar.stateIter?
-          ssar.stateIter = 0
-        ++ssar.stateIter
-        if ssar.stateIter > 30
+        unless asm.stateIter?
+          asm.stateIter = 0
+        ++asm.stateIter
+        if asm.stateIter > 30
           console.warn("Couldn't attach Polymer.Base.ready")
           return false
         try
@@ -2684,10 +2684,10 @@ $ ->
           delay 250, ->
             d$("#loose").attr("checked", "checked")
           return false
-      unless ssar.stateIter?
-        ssar.stateIter = 0
-      ++ssar.stateIter
-      if ssar.stateIter > 30
+      unless asm.stateIter?
+        asm.stateIter = 0
+      ++asm.stateIter
+      if asm.stateIter > 30
         console.warn("Couldn't attach Polymer.Base.ready")
         return false
       try

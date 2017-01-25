@@ -8,7 +8,7 @@
  */
 var cacheName, urlsToCache;
 
-cacheName = "ssar_cndb_cache";
+cacheName = "asm_cndb_cache";
 
 urlsToCache = ["js/c.min.js", "css/main.min.css"];
 

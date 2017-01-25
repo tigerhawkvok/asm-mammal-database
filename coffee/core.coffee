@@ -918,9 +918,9 @@ checkFileVersion = (forceNow = false) ->
         console.log("Forced version check:",result)
       unless isNumber result.last_mod
         return false
-      unless ssar.lastMod?
-        ssar.lastMod = result.last_mod
-      if result.last_mod > ssar.lastMod
+      unless asm.lastMod?
+        asm.lastMod = result.last_mod
+      if result.last_mod > asm.lastMod
         # File has updated
         html = """
         <div id="outdated-warning" class="alert alert-warning alert-dismissible fade in" role="alert">
@@ -934,14 +934,14 @@ checkFileVersion = (forceNow = false) ->
             document.location.reload(true)
         console.warn("Your current version is out of date! Please refresh the page.")
       else if forceNow
-        console.info("Your version is up to date: have #{ssar.lastMod}, got #{result.last_mod}")
+        console.info("Your version is up to date: have #{asm.lastMod}, got #{result.last_mod}")
     .fail ->
       console.warn("Couldn't check file version!!")
     .always ->
       delay 5*60*1000, ->
         # Delay 5 minutes
         checkVersion()
-  if forceNow or not ssar.lastMod?
+  if forceNow or not asm.lastMod?
     checkVersion()
     return true
   false
@@ -986,7 +986,7 @@ $ ->
     # However, we can lazy-load to see if the user is an admin
     loadJS "js/jquery.cookie.min.js", ->
       # Now see if the user is an admin
-      if $.cookie("ssarherps_user")?
+      if $.cookie("asmherps_user")?
         # Someone has logged in to this device before, offer the admin
         # link.
         html = """

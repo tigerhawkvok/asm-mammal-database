@@ -1,0 +1,10 @@
+{
+  "version": 3,
+  "file": "serviceWorker.js",
+  "sourceRoot": "../coffee/",
+  "sources": [
+    "serviceWorker.coffee"
+  ],
+  "names": [],
+  "mappings": ";AAAA;;;;;;;AAAA,IAAA;;AAQA,SAAA,GAAY;;AAEZ,WAAA,GAAc,CACZ,aADY,EAEZ,kBAFY;;AAKd,IAAI,CAAC,gBAAL,CAAsB,SAAtB,EAAiC,SAAC,KAAD;AAE/B,MAAA;EAAA,YAAA,GAAe,SAAC,KAAD;IACb,OAAO,CAAC,GAAR,CAAY,cAAZ;WACA,KAAK,CAAC,MAAN,CAAa,WAAb;EAFa;EAGf,KAAK,CAAC,SAAN,CAAgB,MAAM,CAAC,IAAP,CAAY,SAAZ,CAAsB,CAAC,IAAvB,CAA4B,YAAA,CAAa,KAAb,CAA5B,CAAhB;SACA;AAN+B,CAAjC"
+}

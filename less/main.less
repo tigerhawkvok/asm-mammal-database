@@ -1,0 +1,1149 @@
+@import "../bower_components/bootstrap/less/bootstrap.less";
+
+// Here we can re-define the variables that Bootstrap uses to customize stuff
+// See http://stackoverflow.com/a/19514889/1877527
+// See here for the variable names and declarations:
+// http://getbootstrap.com/customize/#less-variables
+
+@import "lightbox.less";
+
+
+
+// Main content
+@font-family-sans-serif: Roboto, "Droid Sans", "Helvetica Neue", Helvetica, Arial, sans-serif;
+@font-family-serif: "Roboto Slab", Droid, Cambria, Georgia, "Times New Roman", Times, serif;
+@font-family-monospace: "Droid Sans Mono", Menlo, Monaco, Consolas, "Courier New", monospace;
+
+body {
+    padding:1rem;
+}
+
+
+@material-blue: #5677fc;
+@material-green: #4CAF50;
+@material-indigo: #3f51b5;
+@material-cyan: #00bcd4;
+@material-teal: #009688;
+@material-blue-grey: #607d8b;
+@material-red: #F44336;
+
+@bs-info: #5bc0de;
+@bs-danger: #d9534f;
+@bs-warning: #f0ad4e;
+
+@combinator: ~">>>";
+@hc: ~"html >>>";
+
+.sample-change-also {
+    text: @material-red;
+}
+
+.materialblue {
+    background: @material-blue;
+    color:#fff;
+}
+
+paper-fab.materialblue.paper-fab-0 {
+    .materialblue();
+}
+
+/*
+ * LESS is failing at these for now:
+ * https://github.com/less/less.js/issues/2623
+ *
+ * So until it's fixed, these need escaping.
+ * http://lesscss.org/features/#features-overview-feature-escaping
+ */
+
+@{hc} .materialblue {
+    .materialblue();
+}
+
+.materialgreen, .materialblue:hover, paper-fab.materialblue.paper-fab-0:hover {
+    background: @material-green;
+    color: #fff;
+}
+
+.materialindigo {
+    background: @material-indigo;
+    color:#fff;
+}
+
+.extreme-danger {
+    box-shadow: 0 0 2em 0.25em #f00;
+    background:#f00;
+    color: #fff;
+}
+
+.fadebg {
+    transition:all .2s ease-out;
+    -webkit-transition:all .2s ease-out;
+    -moz-transition:all .2s ease-out;
+    -o-transition:all .2s ease-out;
+}
+
+.materialcyan {
+    background: #00bcd4;
+    color:#fff;
+}
+
+.materialteal {
+    background: #009688;
+    color:#fff;
+}
+
+.materialbluegrey {
+    background: #607d8b;
+    color:#fff;
+}
+
+.materialbluetext, paper-button[affirmative] {
+    color:@material-blue!important;
+
+}
+
+@{hc} [affirmative] {
+    color:@material-blue!important;
+
+}
+
+.materialindigotext {
+    color: @material-indigo;
+
+}
+
+.materialcyantext {
+    color: @material-cyan;
+
+}
+
+.materialtealtext {
+    color: @material-teal;
+
+}
+
+.materialbluegreytext {
+    color: @material-blue-grey;
+
+}
+
+paper-dialog-scrollable {
+    padding: 1rem !important;
+    //min-height: 15rem;
+    //height: 40vh;
+}
+
+@{hc} paper-dialog-scrollable {
+    padding: 1rem !important;
+}
+
+@media (max-width: 767px) {
+    paper-dialog-scrollable {
+        //height: 50vh;
+    }
+}
+
+#modal-taxon, #modal-taxon-edit {
+    position:fixed !important;
+    max-height:75vh; // For mobile
+    top: 12.5vh;
+    @media(max-width: @screen-sm-max) {
+        top: 6.5vh;
+    }
+    paper-dialog-scrollable#modal-taxon-editor {
+        max-height: 66vh;
+        overflow-y: scroll;
+    }
+}
+
+paper-dialog#modal-taxon .buttons, paper-dialog#modal-taxon-edit .buttons {
+    background: #fff;
+}
+
+#modal-taxon-content {
+    // Why this? This fixes a bug where paper-dialog.fit()
+    // shrinks the max-width of this to something small, like
+    // 48px.
+    // See
+    // https://github.com/SSARHERPS/SSAR-species-database/issues/79
+    min-width: 95% !important;
+    @media(max-width: @screen-sm-max) {
+        position: relative;
+        overflow-y: scroll;
+        max-height: 62vh!important;
+    }
+}
+
+@{hc} .good-location {
+    color: @material-green;
+}
+.good-location {
+    color: @material-green;
+}
+
+@{hc} .bad-location {
+    color: @material-red;
+}
+.bad-location {
+    color: @material-red;
+}
+
+.tooltip-container {
+    float:left;
+    display:inline-block;
+}
+@{hc} .tooltip-container {
+    .tooltip-container();
+}
+.italic {
+    font-style:italic;
+}
+.click {
+    cursor:pointer;
+}
+.med-octicon {
+    font-size:24px !important;
+}
+#result_container {
+    padding:1em;
+}
+
+footer {
+    position: fixed;
+    bottom: 0px;
+    width: 100%;
+    background: #fff;
+    box-shadow: 5px 5px 8px 5px rgba(0,0,0,.5);
+}
+
+#title-logo {
+    height: 1.5em;
+}
+
+.force-lower {
+    text-transform: lowercase !important;
+}
+
+@{hc} .force-lower {
+    text-transform: lowercase !important;
+}
+
+.no-cap {
+    text-transform: none !important;
+}
+
+.capitalize,
+@{hc} .capitalize,
+@{hc} .genus,
+@{hc} .genus @{combinator} input,
+@{hc} .genus_authority,
+@{hc} .genus_authority @{combinator} input,
+@{hc} .species_authority,
+@{hc} .species_authority @{combinator} input,
+@{hc} .common_name,
+@{hc} .common_name @{combinator} input,
+@{hc} .major_subtype,
+@{hc} .major_subtype @{combinator} input,
+@{hc} .major_type,
+@{hc} .major_type @{combinator} input,
+@{hc} .linnean_order,
+@{hc} .linnean_order @{combinator} input {
+    text-transform:capitalize;
+}
+
+.capitalize,
+.cndb-row-headers th,
+.genus,
+.genus_authority,
+.species_authority,
+.common_name,
+.major_subtype,
+.major_type,
+.linnean_order,
+.cndb-row-headers th {
+    text-transform:capitalize;
+}
+
+
+@{hc} .genus,
+@{hc} .genus @{combinator} input,
+@{hc} .species,
+@{hc} .species @{combinator} input,
+@{hc} .subspecies,
+@{hc} .subspecies @{combinator} input {
+    font-style:italic;
+}
+
+
+
+@{hc} .text-right {
+  text-align: right;
+}
+@{hc} .text-muted {
+  color: #777;
+}
+@{hc} small,
+@{hc} .small {
+  font-size: 85%;
+}
+
+
+
+@{hc} .center-block {
+  display: block;
+  margin-right: auto;
+  margin-left: auto;
+}
+@{hc} .text-center {
+  text-align: center;
+}
+
+.modal-img-container {
+    float: right;
+    margin-top: -1em;
+    width: 256px;
+    overflow:hidden;
+}
+
+
+@{hc} .modal-img-container {
+    .modal-img-container();
+}
+
+@media (min-width: 768px) {
+    #modal-taxon {
+        min-width:50em;
+    }
+    @{hc} #modal-taxon {
+        #modal-taxon();
+    }
+
+    html /deep/ #modal-taxon {
+        #modal-taxon();
+    }
+}
+
+
+@media (max-width: 767px) {
+    #modal-taxon {
+        min-width: 85vw;
+        left: -3.25vw;
+    }
+
+  @{hc} .hidden-xs {
+    display: none !important;
+  }
+    html /deep/ .hidden-xs {
+    display: none !important;
+  }
+
+}
+.genus, .species, .subspecies{
+    font-style:italic;
+}
+#cndb-result-list {
+    margin-bottom: 5em;
+    border-bottom: 2px solid #ddd;
+}
+
+.cndb-result-entry:hover {
+    background: rgba(0,0,0,.2)!important;
+    transition: all .2s ease-out;
+}
+.cndb-result-entry td {
+    padding-left:.5rem;
+    padding-right:.5rem;
+}
+.cndb-result-entry {
+    cursor: pointer;
+}
+.cndb-result-entry paper-icon-button {
+    margin-top: -0.75em;
+}
+#search {
+    position:relative;
+    font-size: 120%;
+    top: -1rem;
+}
+#search_form {
+    position:relative;
+}
+#loader {
+    position:fixed;
+    top:50%;
+    left:50%;
+}
+#loader.good @{combinator} .circle {
+    border-color: @material-green;
+}
+#loader.bad @{combinator} .circle {
+    border-color: @material-red;
+}
+paper-dropdown.dropdown {
+/* Override Bootstrap */
+    position:absolute;
+}
+paper-toggle-button {
+    margin-left:1rem;
+}
+paper-icon-button {
+    vertical-align:middle;
+}
+.fullwidth {
+    width:100%;
+}
+#collapse-advanced {
+    margin-top:1rem;
+}
+.bs-callout {
+  padding: 20px;
+  margin: 20px 0;
+  border: 1px solid #eee;
+  border-left-width: 5px;
+  border-radius: 3px;
+  width:80%;
+}
+.bs-callout-info {
+  border-left-color: @bs-info;
+}
+.bs-callout-info h4 {
+  color: @bs-info;
+}
+.bs-callout-danger {
+  border-left-color: @bs-danger;
+}
+.bs-callout-danger h4 {
+  color: @bs-danger;
+}
+.bs-callout-warning {
+  border-left-color: @bs-warning;
+}
+.bs-callout-warning h4 {
+  color: @bs-warning;
+}
+.bs-callout p:last-child {
+  margin-bottom: 0;
+}
+#result_container .bs-callout {
+    float:none;
+}
+form {
+    /* margin-left:2rem; */
+}
+
+copyright-statement {
+    position: relative;
+    top: 1rem;
+}
+
+@{hc} .code {
+    font-family: monospace;
+}
+
+
+@{hc} #modal-taxon-editor paper-input {
+    display:block;
+}
+.help-block {
+  display: block;
+  margin-top: 1.25rem;
+  margin-bottom: 10px;
+  color: #737373;
+}
+@{hc} .help-block {
+  .help-block();
+}
+
+@{hc} paper-autogrow-textarea textarea {
+    width:90%;
+}
+
+#modal-taxon-editor paper-input {
+    display:block;
+}
+
+paper-toast, paper-spinner {
+    z-index:1000;
+}
+
+#login {
+    // Override otp
+    width: inherit !important;
+}
+#login .form-group {
+    clear: both;
+}
+@media(max-width: 767px) {
+    #login {
+        margin-left:0!important;
+    }
+}
+.advanced-account-options li {
+    margin: 1rem;
+    list-style-type: none;
+}
+.change-password-form {
+    position: relative;
+}
+.change-password-form .password-reqs {
+    width: inherit !important;
+    position: absolute;
+    top: 1em;
+    right: 0;
+    background: #fff;
+}
+#password_security + #login {
+    float:left;
+    min-width:60%;
+}
+
+#login .form-inline .form-group {
+    margin-bottom:15px;
+}
+
+.form-inline .has-feedback div {
+    margin-left:0;
+}
+
+#outdated-warning {
+    position:fixed;
+    top:0;
+    width:50%;
+    margin:0;
+    left:25%;
+}
+
+@media (max-width: 767px) {
+    #outdated-warning {
+        width: 80%;
+        left: 10%;
+    }
+}
+
+iron-label {
+    margin-top: .5rem;
+    display: block;
+}
+
+iron-label + paper-icon-button, label + paper-icon-button {
+    padding-left: 0; // Fixes iPhone 5/s display glitch
+}
+
+#edit-notes {
+    // width: 100%;
+}
+
+paper-radio-button #radioContainer, paper-radio-button #radioContainer div {
+    box-sizing: content-box !important;
+}
+
+/***
+ * Force the scollbar to show on the #modal-taxon-editor
+ ***/
+
+
+@{hc} #modal-taxon-editor::-webkit-scrollbar, .showScroll::-webkit-scrollbar {
+    -webkit-appearance: none;
+    width: 7px;
+}
+
+@{hc} #modal-taxon-editor::-webkit-scrollbar-thumb, .showScroll::-webkit-scrollbar-thumb {
+    background-color: rgba(0,0,0,.5);
+    box-shadow: 0 0 1px rgba(255,255,255,.5);
+}
+
+
+@{hc} .hidden {
+  display: none !important;
+}
+
+
+/* Tooltips in modal dialog */
+
+
+@{hc} .tooltip {
+  position: absolute;
+  z-index: 1070;
+  display: block;
+  font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+  font-size: 12px;
+  font-weight: normal;
+  line-height: 1.4;
+  filter: alpha(opacity=0);
+  opacity: 0;
+}
+@{hc} .tooltip.in {
+  filter: alpha(opacity=90);
+  opacity: .9;
+}
+@{hc} .tooltip.top {
+  padding: 5px 0;
+  margin-top: -3px;
+}
+@{hc} .tooltip.right {
+  padding: 0 5px;
+  margin-left: 3px;
+}
+@{hc} .tooltip.bottom {
+  padding: 5px 0;
+  margin-top: 3px;
+}
+@{hc} .tooltip.left {
+  padding: 0 5px;
+  margin-left: -3px;
+}
+@{hc} .tooltip-inner {
+  max-width: 200px;
+  padding: 3px 8px;
+  color: #fff;
+  text-align: center;
+  text-decoration: none;
+  background-color: #000;
+  border-radius: 4px;
+}
+@{hc} .tooltip-arrow {
+  position: absolute;
+  width: 0;
+  height: 0;
+  border-color: transparent;
+  border-style: solid;
+}
+@{hc} .tooltip.top .tooltip-arrow {
+  bottom: 0;
+  left: 50%;
+  margin-left: -5px;
+  border-width: 5px 5px 0;
+  border-top-color: #000;
+}
+@{hc} .tooltip.top-left .tooltip-arrow {
+  right: 5px;
+  bottom: 0;
+  margin-bottom: -5px;
+  border-width: 5px 5px 0;
+  border-top-color: #000;
+}
+@{hc} .tooltip.top-right .tooltip-arrow {
+  bottom: 0;
+  left: 5px;
+  margin-bottom: -5px;
+  border-width: 5px 5px 0;
+  border-top-color: #000;
+}
+@{hc} .tooltip.right .tooltip-arrow {
+  top: 50%;
+  left: 0;
+  margin-top: -5px;
+  border-width: 5px 5px 5px 0;
+  border-right-color: #000;
+}
+@{hc} .tooltip.left .tooltip-arrow {
+  top: 50%;
+  right: 0;
+  margin-top: -5px;
+  border-width: 5px 0 5px 5px;
+  border-left-color: #000;
+}
+@{hc} .tooltip.bottom .tooltip-arrow {
+  top: 0;
+  left: 50%;
+  margin-left: -5px;
+  border-width: 0 5px 5px;
+  border-bottom-color: #000;
+}
+@{hc} .tooltip.bottom-left .tooltip-arrow {
+  top: 0;
+  right: 5px;
+  margin-top: -5px;
+  border-width: 0 5px 5px;
+  border-bottom-color: #000;
+}
+@{hc} .tooltip.bottom-right .tooltip-arrow {
+  top: 0;
+  left: 5px;
+  margin-top: -5px;
+  border-width: 0 5px 5px;
+  border-bottom-color: #000;
+}
+
+
+
+
+
+@{hc} .btn {
+  display: inline-block;
+  padding: 6px 12px;
+  margin-bottom: 0;
+  font-size: 14px;
+  font-weight: normal;
+  line-height: 1.42857143;
+  text-align: center;
+  white-space: nowrap;
+  vertical-align: middle;
+  touch-action: manipulation;
+  cursor: pointer;
+  -webkit-user-select: none;
+     -moz-user-select: none;
+      -ms-user-select: none;
+          user-select: none;
+  background-image: none;
+  border: 1px solid transparent;
+  border-radius: 4px;
+}
+@{hc} .btn:focus,
+@{hc} .btn:active:focus,
+@{hc} .btn.active:focus,
+@{hc} .btn.focus,
+@{hc} .btn:active.focus,
+@{hc} .btn.active.focus {
+  outline: thin dotted;
+  outline: 5px auto -webkit-focus-ring-color;
+  outline-offset: -2px;
+}
+@{hc} .btn:hover,
+@{hc} .btn:focus,
+@{hc} .btn.focus {
+  color: #333;
+  text-decoration: none;
+}
+@{hc} .btn:active,
+@{hc} .btn.active {
+  background-image: none;
+  outline: 0;
+  box-shadow: inset 0 3px 5px rgba(0, 0, 0, .125);
+}
+@{hc} .btn.disabled,
+@{hc} .btn[disabled],
+fieldset[disabled] .btn {
+  pointer-events: none;
+  cursor: not-allowed;
+  filter: alpha(opacity=65);
+  box-shadow: none;
+  opacity: .65;
+}
+@{hc} .btn-default {
+  color: #333;
+  background-color: #fff;
+  border-color: #ccc;
+}
+@{hc} .btn-default:hover,
+@{hc} .btn-default:focus,
+@{hc} .btn-default.focus,
+@{hc} .btn-default:active,
+@{hc} .btn-default.active,
+.open > .dropdown-toggle.btn-default {
+  color: #333;
+  background-color: #e6e6e6;
+  border-color: #adadad;
+}
+@{hc} .btn-default:active,
+@{hc} .btn-default.active,
+.open > .dropdown-toggle.btn-default {
+  background-image: none;
+}
+@{hc} .btn-default.disabled,
+@{hc} .btn-default[disabled],
+fieldset[disabled] .btn-default,
+@{hc} .btn-default.disabled:hover,
+@{hc} .btn-default[disabled]:hover,
+fieldset[disabled] .btn-default:hover,
+@{hc} .btn-default.disabled:focus,
+@{hc} .btn-default[disabled]:focus,
+fieldset[disabled] .btn-default:focus,
+@{hc} .btn-default.disabled.focus,
+@{hc} .btn-default[disabled].focus,
+fieldset[disabled] .btn-default.focus,
+@{hc} .btn-default.disabled:active,
+@{hc} .btn-default[disabled]:active,
+fieldset[disabled] .btn-default:active,
+@{hc} .btn-default.disabled.active,
+@{hc} .btn-default[disabled].active,
+fieldset[disabled] .btn-default.active {
+  background-color: #fff;
+  border-color: #ccc;
+}
+@{hc} .btn-default .badge {
+  color: #fff;
+  background-color: #333;
+}
+
+
+@{hc} a.btn {
+    text-decoration: none;
+}
+
+
+
+@{hc} a {
+  color: #337ab7;
+  text-decoration: none;
+}
+@{hc} a:hover,
+@{hc} a:focus {
+  color: #23527c;
+  text-decoration: underline;
+}
+@{hc} a:focus {
+  outline: thin dotted;
+  outline: 5px auto -webkit-focus-ring-color;
+  outline-offset: -2px;
+}
+
+
+
+
+
+/***********************************************
+* Bundled as pending deprecation
+*
+* See
+* https://www.chromestatus.com/features/6750456638341120
+* and
+* https://github.com/SSARHERPS/SSAR-species-database/issues/56
+***********************************************/
+
+
+html /deep/ .materialblue {
+    /* We need this seperate for Firefox */
+    background: @material-blue;
+    color:#fff;
+}
+
+html /deep/ [affirmative] {
+    /* We need this seperate for Firefox */
+    color:@material-blue!important;
+
+}
+
+html /deep/ .good-location {
+    /* We need this seperate for Firefox */
+    color: @material-green;
+}
+
+html /deep/ .bad-location {
+    /* We need this seperate for Firefox */
+    color: @material-red;
+}
+
+html /deep/ .tooltip-container {
+    float:left;
+    display:inline-block;
+}
+
+html /deep/ .force-lower {
+    text-transform: lowercase !important;
+}
+
+.capitalize,
+html /deep/ .capitalize,
+html /deep/ .genus,
+html /deep/ .genus /deep/ input,
+html /deep/ .genus_authority,
+html /deep/ .genus_authority /deep/ input,
+html /deep/ .species_authority,
+html /deep/ .species_authority /deep/ input,
+html /deep/ .common_name,
+html /deep/ .common_name /deep/ input,
+html /deep/ .major_subtype,
+html /deep/ .major_subtype /deep/ input,
+html /deep/ .major_type,
+html /deep/ .major_type /deep/ input,
+html /deep/ .linnean_order,
+html /deep/ .linnean_order /deep/ input {
+    /* We need this seperate for Firefox */
+    text-transform:capitalize;
+}
+
+html /deep/ .genus,
+html /deep/ .genus /deep/ input,
+html /deep/ .species,
+html /deep/ .species /deep/ input,
+html /deep/ .subspecies,
+html /deep/ .subspecies /deep/ input {
+    /* We need this seperate for Firefox */
+    font-style:italic;
+}
+
+
+html /deep/ .text-right {
+  text-align: right;
+}
+html /deep/ .text-muted {
+  color: #777;
+}
+html /deep/ small,
+html /deep/ .small {
+  font-size: 85%;
+}
+
+
+html /deep/ .center-block {
+  display: block;
+  margin-right: auto;
+  margin-left: auto;
+}
+html /deep/ .text-center {
+  text-align: center;
+}
+
+html /deep/ .modal-img-container {
+    .modal-img-container();
+}
+
+html /deep/ .code {
+    font-family: monospace;
+}
+
+
+html /deep/ #modal-taxon-editor paper-input {
+    display:block;
+}
+
+html /deep/ .help-block {
+    .help-block()
+}
+
+html /deep/ paper-autogrow-textarea textarea {
+    width:90%;
+}
+
+html /deep/ #modal-taxon-editor::-webkit-scrollbar, .showScroll::-webkit-scrollbar {
+    -webkit-appearance: none;
+    width: 7px;
+}
+
+html /deep/ #modal-taxon-editor::-webkit-scrollbar-thumb, .showScroll::-webkit-scrollbar-thumb {
+    background-color: rgba(0,0,0,.5);
+    box-shadow: 0 0 1px rgba(255,255,255,.5);
+}
+
+html /deep/ .hidden {
+  display: none !important;
+}
+
+
+html /deep/ .tooltip {
+  position: absolute;
+  z-index: 1070;
+  display: block;
+  font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+  font-size: 12px;
+  font-weight: normal;
+  line-height: 1.4;
+  filter: alpha(opacity=0);
+  opacity: 0;
+}
+html /deep/ .tooltip.in {
+  filter: alpha(opacity=90);
+  opacity: .9;
+}
+html /deep/ .tooltip.top {
+  padding: 5px 0;
+  margin-top: -3px;
+}
+html /deep/ .tooltip.right {
+  padding: 0 5px;
+  margin-left: 3px;
+}
+html /deep/ .tooltip.bottom {
+  padding: 5px 0;
+  margin-top: 3px;
+}
+html /deep/ .tooltip.left {
+  padding: 0 5px;
+  margin-left: -3px;
+}
+html /deep/ .tooltip-inner {
+  max-width: 200px;
+  padding: 3px 8px;
+  color: #fff;
+  text-align: center;
+  text-decoration: none;
+  background-color: #000;
+  border-radius: 4px;
+}
+html /deep/ .tooltip-arrow {
+  position: absolute;
+  width: 0;
+  height: 0;
+  border-color: transparent;
+  border-style: solid;
+}
+html /deep/ .tooltip.top .tooltip-arrow {
+  bottom: 0;
+  left: 50%;
+  margin-left: -5px;
+  border-width: 5px 5px 0;
+  border-top-color: #000;
+}
+html /deep/ .tooltip.top-left .tooltip-arrow {
+  right: 5px;
+  bottom: 0;
+  margin-bottom: -5px;
+  border-width: 5px 5px 0;
+  border-top-color: #000;
+}
+html /deep/ .tooltip.top-right .tooltip-arrow {
+  bottom: 0;
+  left: 5px;
+  margin-bottom: -5px;
+  border-width: 5px 5px 0;
+  border-top-color: #000;
+}
+html /deep/ .tooltip.right .tooltip-arrow {
+  top: 50%;
+  left: 0;
+  margin-top: -5px;
+  border-width: 5px 5px 5px 0;
+  border-right-color: #000;
+}
+html /deep/ .tooltip.left .tooltip-arrow {
+  top: 50%;
+  right: 0;
+  margin-top: -5px;
+  border-width: 5px 0 5px 5px;
+  border-left-color: #000;
+}
+html /deep/ .tooltip.bottom .tooltip-arrow {
+  top: 0;
+  left: 50%;
+  margin-left: -5px;
+  border-width: 0 5px 5px;
+  border-bottom-color: #000;
+}
+html /deep/ .tooltip.bottom-left .tooltip-arrow {
+  top: 0;
+  right: 5px;
+  margin-top: -5px;
+  border-width: 0 5px 5px;
+  border-bottom-color: #000;
+}
+html /deep/ .tooltip.bottom-right .tooltip-arrow {
+  top: 0;
+  left: 5px;
+  margin-top: -5px;
+  border-width: 0 5px 5px;
+  border-bottom-color: #000;
+}
+
+html /deep/ .btn {
+  display: inline-block;
+  padding: 6px 12px;
+  margin-bottom: 0;
+  font-size: 14px;
+  font-weight: normal;
+  line-height: 1.42857143;
+  text-align: center;
+  white-space: nowrap;
+  vertical-align: middle;
+  touch-action: manipulation;
+  cursor: pointer;
+  -webkit-user-select: none;
+     -moz-user-select: none;
+      -ms-user-select: none;
+          user-select: none;
+  background-image: none;
+  border: 1px solid transparent;
+  border-radius: 4px;
+}
+html /deep/ .btn:focus,
+html /deep/ .btn:active:focus,
+html /deep/ .btn.active:focus,
+html /deep/ .btn.focus,
+html /deep/ .btn:active.focus,
+html /deep/ .btn.active.focus {
+  outline: thin dotted;
+  outline: 5px auto -webkit-focus-ring-color;
+  outline-offset: -2px;
+}
+html /deep/ .btn:hover,
+html /deep/ .btn:focus,
+html /deep/ .btn.focus {
+  color: #333;
+  text-decoration: none;
+}
+html /deep/ .btn:active,
+html /deep/ .btn.active {
+  background-image: none;
+  outline: 0;
+  box-shadow: inset 0 3px 5px rgba(0, 0, 0, .125);
+}
+html /deep/ .btn.disabled,
+html /deep/ .btn[disabled],
+fieldset[disabled] .btn {
+  pointer-events: none;
+  cursor: not-allowed;
+  filter: alpha(opacity=65);
+  box-shadow: none;
+  opacity: .65;
+}
+html /deep/ .btn-default {
+  color: #333;
+  background-color: #fff;
+  border-color: #ccc;
+}
+html /deep/ .btn-default:hover,
+html /deep/ .btn-default:focus,
+html /deep/ .btn-default.focus,
+html /deep/ .btn-default:active,
+html /deep/ .btn-default.active,
+.open > .dropdown-toggle.btn-default {
+  color: #333;
+  background-color: #e6e6e6;
+  border-color: #adadad;
+}
+html /deep/ .btn-default:active,
+html /deep/ .btn-default.active,
+.open > .dropdown-toggle.btn-default {
+  background-image: none;
+}
+html /deep/ .btn-default.disabled,
+html /deep/ .btn-default[disabled],
+fieldset[disabled] .btn-default,
+html /deep/ .btn-default.disabled:hover,
+html /deep/ .btn-default[disabled]:hover,
+fieldset[disabled] .btn-default:hover,
+html /deep/ .btn-default.disabled:focus,
+html /deep/ .btn-default[disabled]:focus,
+fieldset[disabled] .btn-default:focus,
+html /deep/ .btn-default.disabled.focus,
+html /deep/ .btn-default[disabled].focus,
+fieldset[disabled] .btn-default.focus,
+html /deep/ .btn-default.disabled:active,
+html /deep/ .btn-default[disabled]:active,
+fieldset[disabled] .btn-default:active,
+html /deep/ .btn-default.disabled.active,
+html /deep/ .btn-default[disabled].active,
+fieldset[disabled] .btn-default.active {
+  background-color: #fff;
+  border-color: #ccc;
+}
+html /deep/ .btn-default .badge {
+  color: #fff;
+  background-color: #333;
+}
+
+
+html /deep/ a.btn {
+    text-decoration: none;
+}
+
+html /deep/ a {
+  color: #337ab7;
+  text-decoration: none;
+}
+html /deep/ a:hover,
+html /deep/ a:focus {
+  color: #23527c;
+  text-decoration: underline;
+}
+html /deep/ a:focus {
+  outline: thin dotted;
+  outline: 5px auto -webkit-focus-ring-color;
+  outline-offset: -2px;
+}
+#loader.good /deep/ .circle {
+  border-color: @material-green;
+}
+#loader.bad /deep/ .circle {
+  border-color: @material-red;
+}

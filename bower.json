@@ -1,11 +1,11 @@
 {
-  "name": "SSAR Common Names Database for North America",
-  "version": "1.2.1",
-  "homepage": "https://github.com/tigerhawkvok/SSAR-species-database",
+  "name": "ASM Mammal Database",
+  "version": "0.0.1",
+  "homepage": "https://github.com/tigerhawkvok/asm-mammal-database",
   "authors": [
     "Philip Kahn <tigerhawkvok@gmail.com>"
   ],
-  "main": "commonnames_api.php",
+  "main": "api.php",
   "license": "GPL-3.0",
   "private": true,
   "ignore": [

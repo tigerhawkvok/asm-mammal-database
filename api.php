@@ -1,11 +1,11 @@
 <?php
 
 /***********************************************************
- * SSAR Common names database API target
+ * ASM Species database  database API target
  *
  * Find the full API description here:
  *
- * https://github.com/tigerhawkvok/SSAR-species-database/blob/master/README.md
+ * https://github.com/tigerhawkvok/asm-mammal-database/blob/master/README.md
  *
  * @param boolean fuzzy
  * @param boolean loose
@@ -18,7 +18,7 @@
  *
  * Initial version by Philip Kahn
  * Started July 2014
- * https://github.com/SSARHERPS/SSAR-species-database
+ * https://github.com/tigerhawkvok/asm-mammal-database
  **********************************************************/
 
 /*****************

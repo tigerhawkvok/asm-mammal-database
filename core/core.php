@@ -1,5 +1,9 @@
 <?php
 
+if(isset($_SERVER['QUERY_STRING'])) parse_str($_SERVER['QUERY_STRING'],$_REQUEST);
+
+$start_script_timer = microtime_float();
+
 if (!class_exists('DBHelper')) {
     require_once dirname(__FILE__).'/db/DBHelper.php';
 }

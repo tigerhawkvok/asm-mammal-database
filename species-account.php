@@ -6,7 +6,11 @@
  * This page accounts for all the individual species listing
  *************/
 
+require_once("CONFIG.php");
 require_once dirname(__FILE__) . "/core/core.php";
+
+$db = new DBHelper($default_database,$default_sql_user,$default_sql_password,$default_sql_url,$default_table,$db_cols);
+
 
 # Check the species being looked up
 
@@ -50,17 +54,56 @@ function getBody($content) {
 
 switch($lookupRef) {
   case "genus":
+      if(empty($_REQUEST['species'])) {
+          $output = buildHeader("Species Not Found");
+          $content = "<h1 class='col-xs-12'>Species Not Found</h1>
+<p class='col-xs-12'>
+Sorry, you tried to do an invalid species search. The system said:
+</p>
+<div class='col-xs-hidden col-md-offset-2 col-lg-offset-3'></div>
+<code class='col-xs-12 col-md-8 col-lg-6'>
+SCIENTIFIC_SEARCH_NO_SPECIES
+</code>
+<div class='col-xs-hidden col-md-offset-2 col-lg-offset-3'></div>
+<p class='col-xs-12'>Please try searching above for a new species.</p>";
+          $output .= getBody($content);
+          echo $output;
+          exit();
+      }
+      $lookup = array(
+          "genus" => $_REQUEST['genus'],
+          "species" => $_REQUEST['species'],
+      );
+      if(!empty($_REQUEST["ssp"])) {
+          $lookup["ssp"] = $_REQUEST["ssp"];
+      }
       break;
   case "common":
+      # Ensu
       break;
   case null:
       # The request was invalid
       $output = buildHeader("Species Not Found");
-      
+      $content = "<h1 class='col-xs-12'>Species Not Found</h1>
+<p class='col-xs-12'>
+Sorry, you tried to do an invalid species search. The system said:
+</p>
+<div class='col-xs-hidden col-md-offset-2 col-lg-offset-3'></div>
+<code class='col-xs-12 col-md-8 col-lg-6'>
+INVALID_LOOKUP_REFERENCE
+</code>
+<div class='col-xs-hidden col-md-offset-2 col-lg-offset-3'></div>
+<p class='col-xs-12'>Please try searching above for a new species.</p>";
+      $output .= getBody($content);
+      echo $output;
+      exit();
       break;
   default:
       # The lookup isn't picky
+      $lookup = array($lookupRef => $_REQUEST[$lookupRef]);
 }
+
+$rows = $db->getQueryResults($lookup);
 
 
 ?>

@@ -21,7 +21,7 @@ $validIdKeys = array(
 );
 
 foreach($validIdKeys as $tentativeRef) {
-    if(isset($_REQUEST[$tentativeRef]) && !empty$($_REQUEST[$tentativeRef])) {
+    if(isset($_REQUEST[$tentativeRef]) && !empty($_REQUEST[$tentativeRef])) {
         $lookupRef = $tentativeRef;
         break;
     }

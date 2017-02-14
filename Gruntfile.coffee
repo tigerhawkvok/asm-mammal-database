@@ -20,12 +20,6 @@ module.exports = (grunt) ->
   grunt.loadNpmTasks("grunt-phplint")
   # https://github.com/Polymer/grunt-vulcanize
   grunt.loadNpmTasks('grunt-vulcanize')
-  srcBower =
-    pattern: /src=\"\/bower_components/ig,
-    replacement: "src=\"/cndb/bower_components"
-  hrefBower =
-    pattern: /href=\"\/bower_components/ig,
-    replacement: "href=\"/cndb/bower_components"
   grunt.initConfig
     pkg: grunt.file.readJSON('package.json')
     shell:
@@ -37,15 +31,6 @@ module.exports = (grunt) ->
         command: ["npm update"].join("&&")
       movesrc:
         command: ["mv js/c.src.coffee js/maps/c.src.coffee"].join("&&")
-    'string-replace':
-      vulcanize:
-        options:
-          replacements: [
-            srcBower
-            hrefBower
-            ]
-        files:
-          "app.html":"build.html"
     postcss:
       options:
         processors: [
@@ -199,6 +184,9 @@ module.exports = (grunt) ->
   grunt.registerTask "update","Update dependencies", ->
     grunt.task.run("updateNPM","updateBower","minify")
   ## Deploy
+  grunt.registerTask "qbuild","CoffeeScript and CSS", ->
+    # ,"vulcanize"
+    grunt.task.run("phplint","compile","css")
   grunt.registerTask "build","Compile and update, then watch", ->
     # ,"vulcanize"
     grunt.task.run("updateNPM","updateBower","compile","minify")

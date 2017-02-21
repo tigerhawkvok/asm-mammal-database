@@ -6869,29 +6869,8 @@ footer {
 .force-lower {
   text-transform: lowercase !important;
 }
-html >>> .force-lower {
-  text-transform: lowercase !important;
-}
 .no-cap {
   text-transform: none !important;
-}
-.capitalize,
-html >>> .capitalize,
-html >>> .genus,
-html >>> .genus >>> input,
-html >>> .genus_authority,
-html >>> .genus_authority >>> input,
-html >>> .species_authority,
-html >>> .species_authority >>> input,
-html >>> .common_name,
-html >>> .common_name >>> input,
-html >>> .major_subtype,
-html >>> .major_subtype >>> input,
-html >>> .major_type,
-html >>> .major_type >>> input,
-html >>> .linnean_order,
-html >>> .linnean_order >>> input {
-  text-transform: capitalize;
 }
 .capitalize,
 .cndb-row-headers th,
@@ -6905,39 +6884,7 @@ html >>> .linnean_order >>> input {
 .cndb-row-headers th {
   text-transform: capitalize;
 }
-html >>> .genus,
-html >>> .genus >>> input,
-html >>> .species,
-html >>> .species >>> input,
-html >>> .subspecies,
-html >>> .subspecies >>> input {
-  font-style: italic;
-}
-html >>> .text-right {
-  text-align: right;
-}
-html >>> .text-muted {
-  color: #777;
-}
-html >>> small,
-html >>> .small {
-  font-size: 85%;
-}
-html >>> .center-block {
-  display: block;
-  margin-right: auto;
-  margin-left: auto;
-}
-html >>> .text-center {
-  text-align: center;
-}
 .modal-img-container {
-  float: right;
-  margin-top: -1em;
-  width: 256px;
-  overflow: hidden;
-}
-html >>> .modal-img-container {
   float: right;
   margin-top: -1em;
   width: 256px;
@@ -7063,27 +7010,11 @@ copyright-statement {
   position: relative;
   top: 1rem;
 }
-html >>> .code {
-  font-family: monospace;
-}
-html >>> #modal-taxon-editor paper-input {
-  display: block;
-}
 .help-block {
   display: block;
   margin-top: 1.25rem;
   margin-bottom: 10px;
   color: #737373;
-}
-html >>> .help-block {
-  margin-top: 5px;
-  display: block;
-  margin-top: 1.25rem;
-  margin-bottom: 10px;
-  color: #737373;
-}
-html >>> paper-autogrow-textarea textarea {
-  width: 90%;
 }
 #modal-taxon-editor paper-input {
   display: block;
@@ -7151,6 +7082,75 @@ label + paper-icon-button {
 paper-radio-button #radioContainer,
 paper-radio-button #radioContainer div {
   box-sizing: content-box !important;
+}
+html >>> .force-lower {
+  text-transform: lowercase !important;
+}
+.capitalize,
+html >>> .capitalize,
+html >>> .genus,
+html >>> .genus >>> input,
+html >>> .genus_authority,
+html >>> .genus_authority >>> input,
+html >>> .species_authority,
+html >>> .species_authority >>> input,
+html >>> .common_name,
+html >>> .common_name >>> input,
+html >>> .major_subtype,
+html >>> .major_subtype >>> input,
+html >>> .major_type,
+html >>> .major_type >>> input,
+html >>> .linnean_order,
+html >>> .linnean_order >>> input {
+  text-transform: capitalize;
+}
+html >>> .genus,
+html >>> .genus >>> input,
+html >>> .species,
+html >>> .species >>> input,
+html >>> .subspecies,
+html >>> .subspecies >>> input {
+  font-style: italic;
+}
+html >>> .text-right {
+  text-align: right;
+}
+html >>> .text-muted {
+  color: #777;
+}
+html >>> small,
+html >>> .small {
+  font-size: 85%;
+}
+html >>> .center-block {
+  display: block;
+  margin-right: auto;
+  margin-left: auto;
+}
+html >>> .text-center {
+  text-align: center;
+}
+html >>> .modal-img-container {
+  float: right;
+  margin-top: -1em;
+  width: 256px;
+  overflow: hidden;
+}
+html >>> .code {
+  font-family: monospace;
+}
+html >>> #modal-taxon-editor paper-input {
+  display: block;
+}
+html >>> .help-block {
+  margin-top: 5px;
+  display: block;
+  margin-top: 1.25rem;
+  margin-bottom: 10px;
+  color: #737373;
+}
+html >>> paper-autogrow-textarea textarea {
+  width: 90%;
 }
 /***
  * Force the scollbar to show on the #modal-taxon-editor

@@ -1,0 +1,690 @@
+
+@{hc} .force-lower {
+    text-transform: lowercase !important;
+}
+
+.capitalize,
+@{hc} .capitalize,
+@{hc} .genus,
+@{hc} .genus @{combinator} input,
+@{hc} .genus_authority,
+@{hc} .genus_authority @{combinator} input,
+@{hc} .species_authority,
+@{hc} .species_authority @{combinator} input,
+@{hc} .common_name,
+@{hc} .common_name @{combinator} input,
+@{hc} .major_subtype,
+@{hc} .major_subtype @{combinator} input,
+@{hc} .major_type,
+@{hc} .major_type @{combinator} input,
+@{hc} .linnean_order,
+@{hc} .linnean_order @{combinator} input {
+    text-transform:capitalize;
+}
+
+@{hc} .genus,
+@{hc} .genus @{combinator} input,
+@{hc} .species,
+@{hc} .species @{combinator} input,
+@{hc} .subspecies,
+@{hc} .subspecies @{combinator} input {
+    font-style:italic;
+}
+
+
+
+@{hc} .text-right {
+  text-align: right;
+}
+@{hc} .text-muted {
+  color: #777;
+}
+@{hc} small,
+@{hc} .small {
+  font-size: 85%;
+}
+
+
+
+@{hc} .center-block {
+  display: block;
+  margin-right: auto;
+  margin-left: auto;
+}
+@{hc} .text-center {
+  text-align: center;
+}
+
+
+@{hc} .modal-img-container {
+    .modal-img-container();
+}
+
+@{hc} .code {
+    font-family: monospace;
+}
+
+
+@{hc} #modal-taxon-editor paper-input {
+    display:block;
+}
+
+@{hc} .help-block {
+  .help-block();
+}
+
+@{hc} paper-autogrow-textarea textarea {
+    width:90%;
+}
+
+
+/***
+ * Force the scollbar to show on the #modal-taxon-editor
+ ***/
+
+
+@{hc} #modal-taxon-editor::-webkit-scrollbar, .showScroll::-webkit-scrollbar {
+    -webkit-appearance: none;
+    width: 7px;
+}
+
+@{hc} #modal-taxon-editor::-webkit-scrollbar-thumb, .showScroll::-webkit-scrollbar-thumb {
+    background-color: rgba(0,0,0,.5);
+    box-shadow: 0 0 1px rgba(255,255,255,.5);
+}
+
+
+@{hc} .hidden {
+  display: none !important;
+}
+
+
+/* Tooltips in modal dialog */
+
+
+@{hc} .tooltip {
+  position: absolute;
+  z-index: 1070;
+  display: block;
+  font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+  font-size: 12px;
+  font-weight: normal;
+  line-height: 1.4;
+  filter: alpha(opacity=0);
+  opacity: 0;
+}
+@{hc} .tooltip.in {
+  filter: alpha(opacity=90);
+  opacity: .9;
+}
+@{hc} .tooltip.top {
+  padding: 5px 0;
+  margin-top: -3px;
+}
+@{hc} .tooltip.right {
+  padding: 0 5px;
+  margin-left: 3px;
+}
+@{hc} .tooltip.bottom {
+  padding: 5px 0;
+  margin-top: 3px;
+}
+@{hc} .tooltip.left {
+  padding: 0 5px;
+  margin-left: -3px;
+}
+@{hc} .tooltip-inner {
+  max-width: 200px;
+  padding: 3px 8px;
+  color: #fff;
+  text-align: center;
+  text-decoration: none;
+  background-color: #000;
+  border-radius: 4px;
+}
+@{hc} .tooltip-arrow {
+  position: absolute;
+  width: 0;
+  height: 0;
+  border-color: transparent;
+  border-style: solid;
+}
+@{hc} .tooltip.top .tooltip-arrow {
+  bottom: 0;
+  left: 50%;
+  margin-left: -5px;
+  border-width: 5px 5px 0;
+  border-top-color: #000;
+}
+@{hc} .tooltip.top-left .tooltip-arrow {
+  right: 5px;
+  bottom: 0;
+  margin-bottom: -5px;
+  border-width: 5px 5px 0;
+  border-top-color: #000;
+}
+@{hc} .tooltip.top-right .tooltip-arrow {
+  bottom: 0;
+  left: 5px;
+  margin-bottom: -5px;
+  border-width: 5px 5px 0;
+  border-top-color: #000;
+}
+@{hc} .tooltip.right .tooltip-arrow {
+  top: 50%;
+  left: 0;
+  margin-top: -5px;
+  border-width: 5px 5px 5px 0;
+  border-right-color: #000;
+}
+@{hc} .tooltip.left .tooltip-arrow {
+  top: 50%;
+  right: 0;
+  margin-top: -5px;
+  border-width: 5px 0 5px 5px;
+  border-left-color: #000;
+}
+@{hc} .tooltip.bottom .tooltip-arrow {
+  top: 0;
+  left: 50%;
+  margin-left: -5px;
+  border-width: 0 5px 5px;
+  border-bottom-color: #000;
+}
+@{hc} .tooltip.bottom-left .tooltip-arrow {
+  top: 0;
+  right: 5px;
+  margin-top: -5px;
+  border-width: 0 5px 5px;
+  border-bottom-color: #000;
+}
+@{hc} .tooltip.bottom-right .tooltip-arrow {
+  top: 0;
+  left: 5px;
+  margin-top: -5px;
+  border-width: 0 5px 5px;
+  border-bottom-color: #000;
+}
+
+
+
+
+
+@{hc} .btn {
+  display: inline-block;
+  padding: 6px 12px;
+  margin-bottom: 0;
+  font-size: 14px;
+  font-weight: normal;
+  line-height: 1.42857143;
+  text-align: center;
+  white-space: nowrap;
+  vertical-align: middle;
+  touch-action: manipulation;
+  cursor: pointer;
+  -webkit-user-select: none;
+     -moz-user-select: none;
+      -ms-user-select: none;
+          user-select: none;
+  background-image: none;
+  border: 1px solid transparent;
+  border-radius: 4px;
+}
+@{hc} .btn:focus,
+@{hc} .btn:active:focus,
+@{hc} .btn.active:focus,
+@{hc} .btn.focus,
+@{hc} .btn:active.focus,
+@{hc} .btn.active.focus {
+  outline: thin dotted;
+  outline: 5px auto -webkit-focus-ring-color;
+  outline-offset: -2px;
+}
+@{hc} .btn:hover,
+@{hc} .btn:focus,
+@{hc} .btn.focus {
+  color: #333;
+  text-decoration: none;
+}
+@{hc} .btn:active,
+@{hc} .btn.active {
+  background-image: none;
+  outline: 0;
+  box-shadow: inset 0 3px 5px rgba(0, 0, 0, .125);
+}
+@{hc} .btn.disabled,
+@{hc} .btn[disabled],
+fieldset[disabled] .btn {
+  pointer-events: none;
+  cursor: not-allowed;
+  filter: alpha(opacity=65);
+  box-shadow: none;
+  opacity: .65;
+}
+@{hc} .btn-default {
+  color: #333;
+  background-color: #fff;
+  border-color: #ccc;
+}
+@{hc} .btn-default:hover,
+@{hc} .btn-default:focus,
+@{hc} .btn-default.focus,
+@{hc} .btn-default:active,
+@{hc} .btn-default.active,
+.open > .dropdown-toggle.btn-default {
+  color: #333;
+  background-color: #e6e6e6;
+  border-color: #adadad;
+}
+@{hc} .btn-default:active,
+@{hc} .btn-default.active,
+.open > .dropdown-toggle.btn-default {
+  background-image: none;
+}
+@{hc} .btn-default.disabled,
+@{hc} .btn-default[disabled],
+fieldset[disabled] .btn-default,
+@{hc} .btn-default.disabled:hover,
+@{hc} .btn-default[disabled]:hover,
+fieldset[disabled] .btn-default:hover,
+@{hc} .btn-default.disabled:focus,
+@{hc} .btn-default[disabled]:focus,
+fieldset[disabled] .btn-default:focus,
+@{hc} .btn-default.disabled.focus,
+@{hc} .btn-default[disabled].focus,
+fieldset[disabled] .btn-default.focus,
+@{hc} .btn-default.disabled:active,
+@{hc} .btn-default[disabled]:active,
+fieldset[disabled] .btn-default:active,
+@{hc} .btn-default.disabled.active,
+@{hc} .btn-default[disabled].active,
+fieldset[disabled] .btn-default.active {
+  background-color: #fff;
+  border-color: #ccc;
+}
+@{hc} .btn-default .badge {
+  color: #fff;
+  background-color: #333;
+}
+
+
+@{hc} a.btn {
+    text-decoration: none;
+}
+
+
+
+@{hc} a {
+  color: #337ab7;
+  text-decoration: none;
+}
+@{hc} a:hover,
+@{hc} a:focus {
+  color: #23527c;
+  text-decoration: underline;
+}
+@{hc} a:focus {
+  outline: thin dotted;
+  outline: 5px auto -webkit-focus-ring-color;
+  outline-offset: -2px;
+}
+
+
+
+
+
+/***********************************************
+* Bundled as pending deprecation
+*
+* See
+* https://www.chromestatus.com/features/6750456638341120
+* and
+* https://github.com/SSARHERPS/SSAR-species-database/issues/56
+***********************************************/
+
+
+html /deep/ .materialblue {
+    /* We need this seperate for Firefox */
+    background: @material-blue;
+    color:#fff;
+}
+
+html /deep/ [affirmative] {
+    /* We need this seperate for Firefox */
+    color:@material-blue!important;
+
+}
+
+html /deep/ .good-location {
+    /* We need this seperate for Firefox */
+    color: @material-green;
+}
+
+html /deep/ .bad-location {
+    /* We need this seperate for Firefox */
+    color: @material-red;
+}
+
+html /deep/ .tooltip-container {
+    float:left;
+    display:inline-block;
+}
+
+html /deep/ .force-lower {
+    text-transform: lowercase !important;
+}
+
+.capitalize,
+html /deep/ .capitalize,
+html /deep/ .genus,
+html /deep/ .genus /deep/ input,
+html /deep/ .genus_authority,
+html /deep/ .genus_authority /deep/ input,
+html /deep/ .species_authority,
+html /deep/ .species_authority /deep/ input,
+html /deep/ .common_name,
+html /deep/ .common_name /deep/ input,
+html /deep/ .major_subtype,
+html /deep/ .major_subtype /deep/ input,
+html /deep/ .major_type,
+html /deep/ .major_type /deep/ input,
+html /deep/ .linnean_order,
+html /deep/ .linnean_order /deep/ input {
+    /* We need this seperate for Firefox */
+    text-transform:capitalize;
+}
+
+html /deep/ .genus,
+html /deep/ .genus /deep/ input,
+html /deep/ .species,
+html /deep/ .species /deep/ input,
+html /deep/ .subspecies,
+html /deep/ .subspecies /deep/ input {
+    /* We need this seperate for Firefox */
+    font-style:italic;
+}
+
+
+html /deep/ .text-right {
+  text-align: right;
+}
+html /deep/ .text-muted {
+  color: #777;
+}
+html /deep/ small,
+html /deep/ .small {
+  font-size: 85%;
+}
+
+
+html /deep/ .center-block {
+  display: block;
+  margin-right: auto;
+  margin-left: auto;
+}
+html /deep/ .text-center {
+  text-align: center;
+}
+
+html /deep/ .modal-img-container {
+    .modal-img-container();
+}
+
+html /deep/ .code {
+    font-family: monospace;
+}
+
+
+html /deep/ #modal-taxon-editor paper-input {
+    display:block;
+}
+
+html /deep/ .help-block {
+    .help-block()
+}
+
+html /deep/ paper-autogrow-textarea textarea {
+    width:90%;
+}
+
+html /deep/ #modal-taxon-editor::-webkit-scrollbar, .showScroll::-webkit-scrollbar {
+    -webkit-appearance: none;
+    width: 7px;
+}
+
+html /deep/ #modal-taxon-editor::-webkit-scrollbar-thumb, .showScroll::-webkit-scrollbar-thumb {
+    background-color: rgba(0,0,0,.5);
+    box-shadow: 0 0 1px rgba(255,255,255,.5);
+}
+
+html /deep/ .hidden {
+  display: none !important;
+}
+
+
+html /deep/ .tooltip {
+  position: absolute;
+  z-index: 1070;
+  display: block;
+  font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+  font-size: 12px;
+  font-weight: normal;
+  line-height: 1.4;
+  filter: alpha(opacity=0);
+  opacity: 0;
+}
+html /deep/ .tooltip.in {
+  filter: alpha(opacity=90);
+  opacity: .9;
+}
+html /deep/ .tooltip.top {
+  padding: 5px 0;
+  margin-top: -3px;
+}
+html /deep/ .tooltip.right {
+  padding: 0 5px;
+  margin-left: 3px;
+}
+html /deep/ .tooltip.bottom {
+  padding: 5px 0;
+  margin-top: 3px;
+}
+html /deep/ .tooltip.left {
+  padding: 0 5px;
+  margin-left: -3px;
+}
+html /deep/ .tooltip-inner {
+  max-width: 200px;
+  padding: 3px 8px;
+  color: #fff;
+  text-align: center;
+  text-decoration: none;
+  background-color: #000;
+  border-radius: 4px;
+}
+html /deep/ .tooltip-arrow {
+  position: absolute;
+  width: 0;
+  height: 0;
+  border-color: transparent;
+  border-style: solid;
+}
+html /deep/ .tooltip.top .tooltip-arrow {
+  bottom: 0;
+  left: 50%;
+  margin-left: -5px;
+  border-width: 5px 5px 0;
+  border-top-color: #000;
+}
+html /deep/ .tooltip.top-left .tooltip-arrow {
+  right: 5px;
+  bottom: 0;
+  margin-bottom: -5px;
+  border-width: 5px 5px 0;
+  border-top-color: #000;
+}
+html /deep/ .tooltip.top-right .tooltip-arrow {
+  bottom: 0;
+  left: 5px;
+  margin-bottom: -5px;
+  border-width: 5px 5px 0;
+  border-top-color: #000;
+}
+html /deep/ .tooltip.right .tooltip-arrow {
+  top: 50%;
+  left: 0;
+  margin-top: -5px;
+  border-width: 5px 5px 5px 0;
+  border-right-color: #000;
+}
+html /deep/ .tooltip.left .tooltip-arrow {
+  top: 50%;
+  right: 0;
+  margin-top: -5px;
+  border-width: 5px 0 5px 5px;
+  border-left-color: #000;
+}
+html /deep/ .tooltip.bottom .tooltip-arrow {
+  top: 0;
+  left: 50%;
+  margin-left: -5px;
+  border-width: 0 5px 5px;
+  border-bottom-color: #000;
+}
+html /deep/ .tooltip.bottom-left .tooltip-arrow {
+  top: 0;
+  right: 5px;
+  margin-top: -5px;
+  border-width: 0 5px 5px;
+  border-bottom-color: #000;
+}
+html /deep/ .tooltip.bottom-right .tooltip-arrow {
+  top: 0;
+  left: 5px;
+  margin-top: -5px;
+  border-width: 0 5px 5px;
+  border-bottom-color: #000;
+}
+
+html /deep/ .btn {
+  display: inline-block;
+  padding: 6px 12px;
+  margin-bottom: 0;
+  font-size: 14px;
+  font-weight: normal;
+  line-height: 1.42857143;
+  text-align: center;
+  white-space: nowrap;
+  vertical-align: middle;
+  touch-action: manipulation;
+  cursor: pointer;
+  -webkit-user-select: none;
+     -moz-user-select: none;
+      -ms-user-select: none;
+          user-select: none;
+  background-image: none;
+  border: 1px solid transparent;
+  border-radius: 4px;
+}
+html /deep/ .btn:focus,
+html /deep/ .btn:active:focus,
+html /deep/ .btn.active:focus,
+html /deep/ .btn.focus,
+html /deep/ .btn:active.focus,
+html /deep/ .btn.active.focus {
+  outline: thin dotted;
+  outline: 5px auto -webkit-focus-ring-color;
+  outline-offset: -2px;
+}
+html /deep/ .btn:hover,
+html /deep/ .btn:focus,
+html /deep/ .btn.focus {
+  color: #333;
+  text-decoration: none;
+}
+html /deep/ .btn:active,
+html /deep/ .btn.active {
+  background-image: none;
+  outline: 0;
+  box-shadow: inset 0 3px 5px rgba(0, 0, 0, .125);
+}
+html /deep/ .btn.disabled,
+html /deep/ .btn[disabled],
+fieldset[disabled] .btn {
+  pointer-events: none;
+  cursor: not-allowed;
+  filter: alpha(opacity=65);
+  box-shadow: none;
+  opacity: .65;
+}
+html /deep/ .btn-default {
+  color: #333;
+  background-color: #fff;
+  border-color: #ccc;
+}
+html /deep/ .btn-default:hover,
+html /deep/ .btn-default:focus,
+html /deep/ .btn-default.focus,
+html /deep/ .btn-default:active,
+html /deep/ .btn-default.active,
+.open > .dropdown-toggle.btn-default {
+  color: #333;
+  background-color: #e6e6e6;
+  border-color: #adadad;
+}
+html /deep/ .btn-default:active,
+html /deep/ .btn-default.active,
+.open > .dropdown-toggle.btn-default {
+  background-image: none;
+}
+html /deep/ .btn-default.disabled,
+html /deep/ .btn-default[disabled],
+fieldset[disabled] .btn-default,
+html /deep/ .btn-default.disabled:hover,
+html /deep/ .btn-default[disabled]:hover,
+fieldset[disabled] .btn-default:hover,
+html /deep/ .btn-default.disabled:focus,
+html /deep/ .btn-default[disabled]:focus,
+fieldset[disabled] .btn-default:focus,
+html /deep/ .btn-default.disabled.focus,
+html /deep/ .btn-default[disabled].focus,
+fieldset[disabled] .btn-default.focus,
+html /deep/ .btn-default.disabled:active,
+html /deep/ .btn-default[disabled]:active,
+fieldset[disabled] .btn-default:active,
+html /deep/ .btn-default.disabled.active,
+html /deep/ .btn-default[disabled].active,
+fieldset[disabled] .btn-default.active {
+  background-color: #fff;
+  border-color: #ccc;
+}
+html /deep/ .btn-default .badge {
+  color: #fff;
+  background-color: #333;
+}
+
+
+html /deep/ a.btn {
+    text-decoration: none;
+}
+
+html /deep/ a {
+  color: #337ab7;
+  text-decoration: none;
+}
+html /deep/ a:hover,
+html /deep/ a:focus {
+  color: #23527c;
+  text-decoration: underline;
+}
+html /deep/ a:focus {
+  outline: thin dotted;
+  outline: 5px auto -webkit-focus-ring-color;
+  outline-offset: -2px;
+}
+#loader.good /deep/ .circle {
+  border-color: @material-green;
+}
+#loader.bad /deep/ .circle {
+  border-color: @material-red;
+}

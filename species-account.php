@@ -205,7 +205,15 @@ $images = "";
 
 # The main entry.
 $primaryEntry = "<div class='col-xs-hidden col-md-offset-2 col-lg-offset-3'></div><section id='species-account' class='col-xs-12 col-md-10 col-lg-6'><marked-element><div class='markdown-html'></div><script type='text/markdown'>".$speciesRow["entry"]."</script></marked-element></section><div class='col-xs-hidden col-md-offset-2 col-lg-offset-3'></div>";
-$entryCredits = "";
+
+# Credits
+$creditTime = intval($speciesRow["taxon_credit_date"]);
+if(!is_numeric($creditTime) || $creditTime == 0) {
+    $creditTime = time();
+}
+$creditAuthor = empty($speciesRow["taxon_author"]) ? "your local ASM server" : $speciesRow["taxon_author"];
+$credit = empty($speciesRow["taxon_credit"]) ? "Entry by ".$creditAuthor." on ".stftime("%d %B %Y", $creditTime) : $speciesRow["taxon_credit"];
+$entryCredits = "<section id='entry-credits' class='col-xs-12 small'><p>".$credit."</p></section>";
 
 $content = $entryTitle . $images . $taxonomyNotes. $entryNote . $primaryEntry . $entryCredits;
 

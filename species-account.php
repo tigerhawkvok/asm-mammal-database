@@ -51,6 +51,19 @@ function getBody($content) {
     return $html;
 }
 
+function getCanonicalSpecies($speciesRow, $short = false) {
+    $output = ucwords($speciesRow["genus"]);
+    $short = substr(ucwords($speciesRow["genus"], 0, 1)) . ". ";
+    $output.= " ".$speciesRow["species"];
+    if(!empty($speciesRow["subspecies"])) {
+        $output .= " " . $speciesRow["subspecies"];
+        $short .= substr($speciesRow["species"], 0, 1) . ". " . $speciesRow["subspecies"];
+    } else {
+        $short .= $speciesRow["species"];
+    }
+}
+
+$loose = false;
 
 switch($lookupRef) {
   case "genus":
@@ -75,11 +88,14 @@ SCIENTIFIC_SEARCH_NO_SPECIES
           "species" => $_REQUEST['species'],
       );
       if(!empty($_REQUEST["ssp"])) {
-          $lookup["ssp"] = $_REQUEST["ssp"];
+          $lookup["subspecies"] = $_REQUEST["ssp"];
       }
       break;
   case "common":
-      # Ensu
+      $lookup = array(
+          "common_name" => $_REQUEST["common-name"],
+      );
+      $loose = true;
       break;
   case null:
       # The request was invalid
@@ -103,7 +119,92 @@ INVALID_LOOKUP_REFERENCE
       $lookup = array($lookupRef => $_REQUEST[$lookupRef]);
 }
 
-$rows = $db->getQueryResults($lookup);
+# Attempt the search
+try {
+    $rows = $db->getQueryResults($lookup, null, null, $loose);
+} catch (Exception $e) {
+    $output = buildHeader("Database Error");
+    $content = "<h1 class='col-xs-12'>Database Error</h1>
+<p class='col-xs-12'>
+Sorry, you tried to do an invalid species search. The system said:
+</p>
+<div class='col-xs-hidden col-md-offset-2 col-lg-offset-3'></div>
+<code class='col-xs-12 col-md-8 col-lg-6'>
+".$e->getMessage()."
+</code>
+<div class='col-xs-hidden col-md-offset-2 col-lg-offset-3'></div>
+<p class='col-xs-12'>Please try searching above for a new species.</p>";
+    $output .= getBody($content);
+    echo $output;
+    exit();
+}
 
+if ( sizeof($rows) < 1 ) {
+    $bad = true;
+    if($lookupRef == "genus") {
+        # Search is good, no results? Maybe it's an old name.
+        $tentativeDeprecated = strtolower(getCanonicalSpecies($_REQUEST));
+        $rows = $db->getQueryResults( array( "deprecated_scientific", $db->sanitize($tentativeDeprecated) ), null, null, true, true );
+        if( sizeof($rows) > 0 ) {
+            $bad = false;
+        }        
+    }
+    if($bad) {
+        $output = buildHeader("Invalid Species");
+        $content = "<h1 class='col-xs-12'>Species Not Found</h1>
+<p class='col-xs-12'>
+Sorry, you tried to do an invalid species search. The system said:
+</p>
+<div class='col-xs-hidden col-md-offset-2 col-lg-offset-3'></div>
+<code class='col-xs-12 col-md-8 col-lg-6'>
+NO_ROWS_RETURNED
+</code>
+<div class='col-xs-hidden col-md-offset-2 col-lg-offset-3'></div>
+<p class='col-xs-12'>Please try searching above for a new species.</p>";
+        $output .= getBody($content);
+        echo $output;
+        exit();
+    }
+}
+
+if ( sizeof($rows) >1 ) {
+    $output = buildHeader("Ambiguous Species");
+    $content = "<h1 class='col-xs-12'>Species Not Found</h1>
+<p class='col-xs-12'>
+Sorry, the search you tried to execute returned ".sizeof($rows)." results and couldn't be implicitly refined.
+</p>
+<p class='col-xs-12'>
+Please refine your search and try again.
+</p>";
+    $output .= getBody($content);
+    echo $output;
+    exit();
+}
+
+# We have a valid species lookup and no errors occured
+
+$speciesRow = $rows[0];
+
+$output = buildHeader(getCanonicalSpecies($speciesRow));
+
+
+$entryTitle = "<h1 class='species-title'>".getCanonicalSpecies($speciesRow)."</h1><h2 class='species-common'>".$speciesRow["common_name"]."</h2>";
+
+# Taxonomy notes
+$taxanomyNotes = "";
+
+# Any aside / note for this species.
+$entryNote = empty($speciesRow["entry"]) ? "" : "<section id='species-note' class='col-xs-12'><marked-element><div class='markdown-html'></div><script type='text/markdown'>".$speciesRow["notes"]."</script></marked-element></section></section>";
+
+# The main entry.
+$primaryEntry = "<div class='col-xs-hidden col-md-offset-2 col-lg-offset-3'></div><section id='species-account' class='col-xs-12 col-md-10 col-lg-6'><marked-element><div class='markdown-html'></div><script type='text/markdown'>".$speciesRow["entry"]."</script></marked-element></section><div class='col-xs-hidden col-md-offset-2 col-lg-offset-3'></div>";
+$entryCredits = "";
+
+$content = $entryTitle . $taxonomyNotes. $entryNote . $primaryEntry . $entryCredits;
+
+$output .= getBody($content);
+
+echo $output;
 
 ?>
+

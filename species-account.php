@@ -196,11 +196,18 @@ $taxanomyNotes = "";
 # Any aside / note for this species.
 $entryNote = empty($speciesRow["entry"]) ? "" : "<section id='species-note' class='col-xs-12'><marked-element><div class='markdown-html'></div><script type='text/markdown'>".$speciesRow["notes"]."</script></marked-element></section></section>";
 
+## Build an image carousel
+# The initial large image should be the one under 'image'
+# Others should be linked ones from 'image_resources'
+
+$images = "";
+
+
 # The main entry.
 $primaryEntry = "<div class='col-xs-hidden col-md-offset-2 col-lg-offset-3'></div><section id='species-account' class='col-xs-12 col-md-10 col-lg-6'><marked-element><div class='markdown-html'></div><script type='text/markdown'>".$speciesRow["entry"]."</script></marked-element></section><div class='col-xs-hidden col-md-offset-2 col-lg-offset-3'></div>";
 $entryCredits = "";
 
-$content = $entryTitle . $taxonomyNotes. $entryNote . $primaryEntry . $entryCredits;
+$content = $entryTitle . $images . $taxonomyNotes. $entryNote . $primaryEntry . $entryCredits;
 
 $output .= getBody($content);
 

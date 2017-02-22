@@ -73,11 +73,9 @@ switch($lookupRef) {
 <p class='col-xs-12'>
 Sorry, you tried to do an invalid species search. The system said:
 </p>
-<div class='col-xs-hidden col-md-offset-2 col-lg-offset-3'></div>
-<code class='col-xs-12 col-md-8 col-lg-6'>
+<code class='col-xs-12 col-md-8 col-lg-6 col-md-offset-2 col-lg-offset-3'>
 SCIENTIFIC_SEARCH_NO_SPECIES
 </code>
-<div class='col-xs-hidden col-md-offset-2 col-lg-offset-3'></div>
 <p class='col-xs-12'>Please try searching above for a new species.</p>";
           $output .= getBody($content);
           echo $output;
@@ -104,11 +102,9 @@ SCIENTIFIC_SEARCH_NO_SPECIES
 <p class='col-xs-12'>
 Sorry, you tried to do an invalid species search. The system said:
 </p>
-<div class='col-xs-hidden col-md-offset-2 col-lg-offset-3'></div>
-<code class='col-xs-12 col-md-8 col-lg-6'>
+<code class='col-xs-12 col-md-8 col-lg-6 col-md-offset-2 col-lg-offset-3'>
 INVALID_LOOKUP_REFERENCE
 </code>
-<div class='col-xs-hidden col-md-offset-2 col-lg-offset-3'></div>
 <p class='col-xs-12'>Please try searching above for a new species.</p>";
       $output .= getBody($content);
       echo $output;
@@ -128,11 +124,10 @@ try {
 <p class='col-xs-12'>
 Sorry, you tried to do an invalid species search. The system said:
 </p>
-<div class='col-xs-hidden col-md-offset-2 col-lg-offset-3'></div>
-<code class='col-xs-12 col-md-8 col-lg-6'>
+<div class='col-xs-hidden'></div>
+<code class='col-xs-12 col-md-8 col-lg-6 col-md-offset-2 col-lg-offset-3'>
 ".$e->getMessage()."
 </code>
-<div class='col-xs-hidden col-md-offset-2 col-lg-offset-3'></div>
 <p class='col-xs-12'>Please try searching above for a new species.</p>";
     $output .= getBody($content);
     echo $output;
@@ -155,11 +150,9 @@ if ( sizeof($rows) < 1 ) {
 <p class='col-xs-12'>
 Sorry, you tried to do an invalid species search. The system said:
 </p>
-<div class='col-xs-hidden col-md-offset-2 col-lg-offset-3'></div>
-<code class='col-xs-12 col-md-8 col-lg-6'>
+<code class='col-xs-12 col-md-8 col-lg-6 col-md-offset-2 col-lg-offset-3'>
 NO_ROWS_RETURNED
 </code>
-<div class='col-xs-hidden col-md-offset-2 col-lg-offset-3'></div>
 <p class='col-xs-12'>Please try searching above for a new species.</p>";
         $output .= getBody($content);
         echo $output;
@@ -204,7 +197,7 @@ $images = "";
 
 
 # The main entry.
-$primaryEntry = "<div class='col-xs-hidden col-md-offset-2 col-lg-offset-3'></div><section id='species-account' class='col-xs-12 col-md-10 col-lg-6'><marked-element><div class='markdown-html'></div><script type='text/markdown'>".$speciesRow["entry"]."</script></marked-element></section><div class='col-xs-hidden col-md-offset-2 col-lg-offset-3'></div>";
+$primaryEntry = "<section id='species-account' class='col-xs-12 col-md-10 col-lg-6 col-md-offset-2 col-lg-offset-3'><marked-element><div class='markdown-html'></div><script type='text/markdown'>".$speciesRow["entry"]."</script></marked-element></section>";
 
 # Credits
 $creditTime = intval($speciesRow["taxon_credit_date"]);

@@ -50,5 +50,47 @@
 <link href="css/glyphicons.css" rel='stylesheet' type='text/css'/>
 <link href='https://fonts.googleapis.com/css?family=Roboto:regular,bold,italic,thin,light,bolditalic,black,medium&amp;lang=en' rel='stylesheet' type='text/css'>
 
-<script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.3/jquery.min.js"></script>
+<script  type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/2.2.4/jquery.min.js"></script>
+
 <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/js/bootstrap.min.js" integrity="sha384-0mSbJDEHialfmuBBQP6A4Qrprq5OVfW37PRR3j5ELqxss1yVqOtnepnHVP9aJ7xS" crossorigin="anonymous"></script>
+
+<script src="bower_components/webcomponentsjs/webcomponents-lite.min.js"></script>
+
+<link rel="import" href="bower_components/polymer/polymer.html"/>
+<link rel="import" href="bower_components/font-roboto/roboto.html"/>
+<link rel="import" href="bower_components/iron-icons/iron-icons.html"/>
+<link rel="import" href="bower_components/iron-icons/image-icons.html"/>
+<link rel="import" href="bower_components/iron-icons/social-icons.html"/>
+<link rel="import" href="bower_components/iron-icons/communication-icons.html"/>
+<link rel="import" href="bower_components/iron-icons/maps-icons.html"/>
+
+<link rel="import" href="bower_components/paper-toggle-button/paper-toggle-button.html"/>
+<link rel="import" href="bower_components/paper-toast/paper-toast.html"/>
+<link rel="import" href="bower_components/paper-input/paper-input.html"/>
+<link rel="import" href="bower_components/paper-spinner/paper-spinner.html"/>
+<link rel="import" href="bower_components/paper-menu/paper-menu.html"/>
+<link rel="import" href="bower_components/paper-menu-button/paper-menu-button.html"/>
+<link rel="import" href="bower_components/paper-dialog/paper-dialog.html"/>
+<link rel="import" href="bower_components/paper-dialog-scrollable/paper-dialog-scrollable.html"/>
+<link rel="import" href="bower_components/paper-button/paper-button.html"/>
+<link rel="import" href="bower_components/paper-radio-button/paper-radio-button.html"/>
+<link rel="import" href="bower_components/paper-radio-group/paper-radio-group.html"/>
+<link rel="import" href="bower_components/paper-icon-button/paper-icon-button.html"/>
+<link rel="import" href="bower_components/paper-fab/paper-fab.html"/>
+<link rel="import" href="bower_components/paper-item/paper-item.html"/>
+
+<link rel="import" href="bower_components/neon-animation/neon-animation.html"/>
+
+<link rel="import" href="polymer-elements/copyright-statement.html"/>
+<link rel="import" href="polymer-elements/glyphicon-social-icons.html"/>
+
+
+<script type="text/javascript" src="js/purl.min.js"></script>
+<script type="text/javascript" src="js/xmlToJSON.min.js"></script>
+<script type="text/javascript" src="bower_components/js-base64/base64.min.js"></script>
+<script type="text/javascript" src="bower_components/picturefill/dist/picturefill.min.js"></script>
+<script src="bower_components/imagelightbox/dist/imagelightbox.min.js"></script>
+<script src="bower_components/markdown/lib/markdown.js"></script>
+<script type="text/javascript" src="js/c.min.js"></script>
+
+<?php include_once dirname(__FILE__) ."/social.php"; ?>

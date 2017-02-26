@@ -51,6 +51,65 @@ function getBody($content) {
     return $html;
 }
 
+
+
+try {
+    $r = mysqli_query($db->getLink(), "SELECT id FROM `".$db->getTable()."` LIMIT 1");
+    if($r === false) {
+        $badDBAccess = true;
+
+        $output = buildHeader("Problem Connecting to Database");
+        $error = mysqli_error($db->getLink());
+        if($error == "Table '".$db->getDB().".".$db->getTable()."' doesn't exist") {
+            # Try to create it
+            $result = $db->testSettings(null, true);
+            if($result["status"]) {
+                # Should be OK, but let's check again
+                $r = mysqli_query($db->getLink(), "SELECT id FROM `".$db->getTable()."` LIMIT 1");
+                if($r !== false) $bdDBAccess = false;
+                else {
+                    $error .= " We tried to create it, but couldn't verify access.";
+                }
+            } else {
+                $error .= " We tried to create it, but failed.";
+            }
+            # Next line is unsafe. Enable only for debugging, never in production.
+            # $error .= "\n\n".print_r($result, true);
+        }
+        if($badDBAccess) {
+            $content = "<h1 class='col-xs-12'>Problem connecting to database</h1>
+<p class='col-xs-12'>
+Oops! The system had a problem. The system said:
+</p>
+<code class='col-xs-12 col-md-8 col-lg-6 col-md-offset-2 col-lg-offset-3'>
+".$error."
+</code>
+<p class='col-xs-12'>Please try again in a few minutes. If the problem persists, contact support.</p>";
+            $output .= getBody($content);
+            echo $output;
+            exit();
+        }
+
+    }
+
+} catch (Exception $e) {
+    $output = buildHeader("Problem Connecting to Database");
+    $content = "<h1 class='col-xs-12'>Problem connecting to database</h1>
+<p class='col-xs-12'>
+Oops! The system had a problem. The system said:
+</p>
+<code class='col-xs-12 col-md-8 col-lg-6 col-md-offset-2 col-lg-offset-3'>
+ERROR: ".$e->getMessage()."
+</code>
+<p class='col-xs-12'>Please try again in a few minutes. If the problem persists, contact support.</p>";
+             $output .= getBody($content);
+             echo $output;
+             exit();
+
+}
+
+
+
 function getCanonicalSpecies($speciesRow, $short = false) {
     $output = ucwords($speciesRow["genus"]);
     $short = substr(ucwords($speciesRow["genus"], 0, 1)) . ". ";
@@ -115,6 +174,9 @@ INVALID_LOOKUP_REFERENCE
       $lookup = array($lookupRef => $_REQUEST[$lookupRef]);
 }
 
+
+
+
 # Attempt the search
 try {
     $rows = $db->getQueryResults($lookup, null, null, $loose);
@@ -142,7 +204,7 @@ if ( sizeof($rows) < 1 ) {
         $rows = $db->getQueryResults( array( "deprecated_scientific", $db->sanitize($tentativeDeprecated) ), null, null, true, true );
         if( sizeof($rows) > 0 ) {
             $bad = false;
-        }        
+        }
     }
     if($bad) {
         $output = buildHeader("Invalid Species");
@@ -215,4 +277,3 @@ $output .= getBody($content);
 echo $output;
 
 ?>
-

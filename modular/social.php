@@ -1,8 +1,8 @@
 <!-- Meta descriptors -->
 <!-- Twitter cards -->
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:site" content="@ssarherps">
-<meta name="twitter:creator" content="@ssarherps">
+<meta name="twitter:site" content="@mammalogists">
+<meta name="twitter:creator" content="@mammalogists">
 <meta name="twitter:title" content="<?php echo $title; ?>">
 <meta name="twitter:description" content="<?php echo $pageDescription; ?>">
 <meta property="twitter:image" content="https://mammaldiversity.org/assets/favicon1024.png" />
@@ -18,6 +18,10 @@
 <meta property="og:image:width" content="1024"/>
 <meta property="og:image:height" content="1024"/>
 <meta property="og:description" content="<?php echo $pageDescription; ?>"/>
+<!-- <meta property="fb:page" content="970367112996034" /> -->
+<!-- <meta property="fb:app_id" content="974878739261435" /> -->
+
+<link href="https://plus.google.com/107225054672743265667" rel="publisher" />
 
 <!-- Schema.org -->
 <script type="application/ld+json">

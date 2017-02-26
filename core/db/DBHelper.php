@@ -10,15 +10,15 @@ class DBHelper
     public function __construct($database, $user, $pw, $url = 'localhost', $table = null, $cols = null)
     {
         /***
-     * @param string $database the database to connect to
-     * @param string $user the username for the SQL database
-     * @param string $pw the password for $user in $database
-     * @param string $url the URL of the SQL server
-     * @param string $table the default table
-     * @param array $cols the column information. Note that it must be
-     * specified here in the constructor!!
-     ***/
-    $this->db = $database;
+         * @param string $database the database to connect to
+         * @param string $user the username for the SQL database
+         * @param string $pw the password for $user in $database
+         * @param string $url the URL of the SQL server
+         * @param string $table the default table
+         * @param array $cols the column information. Note that it must be
+         * specified here in the constructor!!
+         ***/
+        $this->db = $database;
         $this->SQLuser = $user;
         $this->pw = $pw;
         $this->url = $url;
@@ -155,7 +155,7 @@ class DBHelper
         return $this->cols;
     }
 
-    protected function testSettings($table = null, $detail = false)
+    public function testSettings($table = null, $detail = false)
     {
 
         if (!empty($table)) {

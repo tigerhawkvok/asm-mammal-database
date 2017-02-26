@@ -2,6 +2,19 @@
 
 if(isset($_SERVER['QUERY_STRING'])) parse_str($_SERVER['QUERY_STRING'],$_REQUEST);
 
+if (!function_exists('microtime_float')) {
+    function microtime_float()
+    {
+        if (version_compare(phpversion(), '5.0.0', '<')) {
+            list($usec, $sec) = explode(' ', microtime());
+
+            return ((float) $usec + (float) $sec);
+        } else {
+            return microtime(true);
+        }
+    }
+}
+
 $start_script_timer = microtime_float();
 
 if (!class_exists('DBHelper')) {
@@ -63,19 +76,6 @@ if(!function_exists('elapsed'))
     }
   }
 
-
-if (!function_exists('microtime_float')) {
-    function microtime_float()
-    {
-        if (version_compare(phpversion(), '5.0.0', '<')) {
-            list($usec, $sec) = explode(' ', microtime());
-
-            return ((float) $usec + (float) $sec);
-        } else {
-            return microtime(true);
-        }
-    }
-}
 
 if (!function_exists('dirListPHP')) {
     function dirListPHP($directory, $filter = null, $extension = false, $debug = false)

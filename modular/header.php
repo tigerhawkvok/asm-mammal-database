@@ -44,10 +44,17 @@
 <link rel="icon" type="image/png" sizes="512x512" href="assets/favicon512.png" />
 <link rel="icon" type="image/png" sizes="1024x1024" href="assets/favicon1024.png" />
 <link rel="icon" type="image/png" sizes="2048x2048" href="assets/favicon2048.png" />
+<link rel="icon" type="image/svg+xml" href="assets/logo.svg" />
+<link rel="manifest" href="/manifest.json" />
 
 <link href="css/main.min.css" rel='stylesheet' type='text/css'/>
+
+
+<!-- Icons -->
 <link href="css/glyphicons-bootstrap.css" rel='stylesheet' type='text/css'/>
 <link href="css/glyphicons.css" rel='stylesheet' type='text/css'/>
+<link rel="stylesheet" type="text/css" href="bower_components/octicons/octicons/octicons.css"/>
+
 <link href='https://fonts.googleapis.com/css?family=Roboto:regular,bold,italic,thin,light,bolditalic,black,medium&amp;lang=en' rel='stylesheet' type='text/css'>
 
 <script  type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/2.2.4/jquery.min.js"></script>

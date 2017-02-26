@@ -1,7 +1,14 @@
-RewriteEngine On
-RewriteCond %{HTTPS} off
-RewriteRule (.*) https://%{HTTP_HOST}%{REQUEST_URI} [R,L]
+# log PHP errors to a file
+# php_flag log_errors on
+# php_value error_reporting 32767
+# php_value error_log "./logs/error.log"
 
-Header set Strict-Transport-Security "max-age=31536000"
-Header append Strict-Transport-Security includeSubDomains
-Header append Strict-Transport-Security preload
+
+## Secure domain block -- only enable with SSL available
+#RewriteEngine On
+#RewriteCond %{HTTPS} off
+#RewriteRule (.*) https://%{HTTP_HOST}%{REQUEST_URI} [R,L]
+
+#Header set Strict-Transport-Security "max-age=31536000"
+#Header append Strict-Transport-Security includeSubDomains
+#Header append Strict-Transport-Security preload

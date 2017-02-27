@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
   <head>
-    <title>Amphibian Disease Portal Admin</title>
+    <title>ASM SADB Admin</title>
     <meta http-equiv="Content-Type" content="application/xhtml+xml;charset=utf-8" />
     <meta http-equiv="X-UA-Compatible" content="chrome=1" />
     <meta name="theme-color" content="#5677fc"/>
@@ -38,7 +38,7 @@
        $debug = false;
        if ($debug) {
            echo "<div class='alert alert-danger'><strong>Warning:</strong> Debugging is enabled on admin-login.php</div>";
-           ini_set('error_log', '/usr/local/web/amphibian_disease/error-admin.log');
+           // ini_set('error_log', '/usr/local/web/amphibian_disease/error-admin.log');
            ini_set('display_errors', 1);
            ini_set('log_errors', 1);
            error_reporting(E_ALL);
@@ -50,7 +50,7 @@
            // $encrypt_test = "<pre>OpenSSL Encrypt Test: \n\n $methods \n\n $encrypted \n\n $decrypted</pre>";
            // echo $encrypt_test;
        }
-       require_once 'DB_CONFIG.php';
+       require_once 'CONFIG.php';
        require_once 'admin/login.php';
        echo $login_output;
        ?>

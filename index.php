@@ -105,7 +105,7 @@
     <p>Click on an entry for more information.</p>
     <div id="result_container" class="table-responsive row">
       <div class="bs-callout bs-callout-info center-block col-xs-12 col-sm-8 col-md-5">
-          Search for a common or scientific name above to begin, eg, "California slender salamander" or "<span class="sciname">Batrachoseps attenuatus</span>"
+          Search for a common or scientific name above to begin, eg, "Brown Bear" or "<span class="sciname">Ursus arctos</span>"
       </div>
     </div>
     <footer class="row  hidden-xs">

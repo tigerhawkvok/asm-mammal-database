@@ -696,9 +696,20 @@ deepJQuery = (selector) ->
       return $(selector)
 
 
+p$ = (selector) ->
+  # Try to get an object the Polymer way, then if it fails,
+  # do jQuery
+  try
+    $$(selector)[0]
+  catch
+    try
+      $(selector).get(0)
+    catch
+      d$(selector).get(0)
 
-d$ = (selector) ->
+window.d$ = (selector) ->
   deepJQuery(selector)
+
 
 
 lightboxImages = (selector = ".lightboximage", lookDeeply = false) ->
@@ -1021,8 +1032,10 @@ asm.affiliateQueryUrl =
 eutheriaFilterHelper = ->
   $("#linnean")
   .on "iron-select", ->
-    if p$("#linnean").selectedItem = "eutheria"
-      mammalGroups = [
+    if $(p$("#linnean").selectedItem).attr("data-type") is "eutheria"
+      # Entries in this array will be pre-sorted and auto-formatted
+      # for the dropdown
+      mammalGroupsBase = [
         "rodents"
         "lagomorphs"
         "primates"
@@ -1035,7 +1048,7 @@ eutheriaFilterHelper = ->
         "pinnipeds"
         "true bears"
         "canids"
-        "Mongooses &amp; meerkats"
+        "Mongooses / meerkats"
         "hyenas"
         "civets"
         "true cats"
@@ -1055,11 +1068,15 @@ eutheriaFilterHelper = ->
         "sloths"
         "anteaters"
         ]
+      # Clean it up for the code
+      mammalGroups = new Array()
+      for humanGroup in mammalGroupsBase
+        mammalGroups.push humanGroup.toLowerCase()
       mammalGroups.sort()
       mammalItems = ""
       for group in mammalGroups
         html = """
-        <paper-item data-type="#{group.toLowerCase()}">
+        <paper-item data-type="#{group}">
           #{group.toTitleCase()}
         </paper-item>
         """
@@ -2023,7 +2040,7 @@ clearSearch = (partialReset = false) ->
   $(".cndb-filter").attr("value","")
   $("#collapse-advanced").collapse('hide')
   $("#search").attr("value","")
-  $("#linnean-order").polymerSelected("any")
+  $("#linnean").polymerSelected("any")
   formatScientificNames()
   false
 
@@ -2628,10 +2645,11 @@ $ ->
     performSearch()
   $("#do-search-all").click ->
     performSearch(true)
-  $("#linnean-order").on "iron-select", ->
+  $("#linnean").on "iron-select", ->
     # We do want to auto-trigger this when there's a search value,
     # but not when it's empty (even though this is valid)
     if not isNull($("#search").val()) then performSearch()
+  eutheriaFilterHelper()
   bindPaperMenuButton()
   # Do a fill of the result container
   if isNull uri.query
@@ -2705,7 +2723,7 @@ $ ->
                 # work. Let's be sure.
                 $("#alien-filter").get(0).selected = selectedState
           else
-            $("#linnean-order").polymerSelected(val)
+            $("#linnean").polymerSelected(val)
         if openFilters
           # Open up #collapse-advanced
           $("#collapse-advanced").collapse("show")
@@ -2751,6 +2769,7 @@ $ ->
         unless isNull Polymer.Base.$$("#loose")
           delay 250, ->
             d$("#loose").attr("checked", "checked")
+            eutheriaFilterHelper()
           return false
       unless asm.stateIter?
         asm.stateIter = 0
@@ -2764,6 +2783,7 @@ $ ->
           # without this "real" delay
           delay 250, ->
             d$("#loose").attr("checked", "checked")
+            eutheriaFilterHelper()
       catch
         delay 250, ->
           fixState()

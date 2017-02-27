@@ -1,4 +1,4 @@
-var _metaStatus, activityIndicatorOff, activityIndicatorOn, animateLoad, asm, bindClickTargets, bindClicks, bindDismissalRemoval, bindPaperMenuButton, browserBeware, byteCount, checkFileVersion, checkTaxonNear, clearSearch, d$, deepJQuery, delay, doCORSget, doFontExceptions, downloadCSVList, downloadHTMLList, eutheriaFilterHelper, foo, formatAlien, formatScientificNames, formatSearchResults, getFilters, getLocation, getMaxZ, goTo, insertCORSWorkaround, insertModalImage, isBlank, isBool, isEmpty, isJson, isNull, isNumber, isNumeric, lightboxImages, loadJS, mapNewWindows, modalTaxon, openLink, openTab, overlayOff, overlayOn, parseTaxonYear, performSearch, prepURI, randomInt, roundNumber, safariDialogHelper, safariSearchArgHelper, searchParams, setHistory, setupServiceWorker, showBadSearchErrorMessage, showDownloadChooser, smartCalPhotosLink, smartReptileDatabaseLink, smartUpperCasing, sortResults, stopLoad, stopLoadError, toFloat, toInt, toObject, toastStatusMessage, uri,
+var _metaStatus, activityIndicatorOff, activityIndicatorOn, animateLoad, asm, bindClickTargets, bindClicks, bindDismissalRemoval, bindPaperMenuButton, browserBeware, byteCount, checkFileVersion, checkTaxonNear, clearSearch, deepJQuery, delay, doCORSget, doFontExceptions, downloadCSVList, downloadHTMLList, eutheriaFilterHelper, foo, formatAlien, formatScientificNames, formatSearchResults, getFilters, getLocation, getMaxZ, goTo, insertCORSWorkaround, insertModalImage, isBlank, isBool, isEmpty, isJson, isNull, isNumber, isNumeric, lightboxImages, loadJS, mapNewWindows, modalTaxon, openLink, openTab, overlayOff, overlayOn, p$, parseTaxonYear, performSearch, prepURI, randomInt, roundNumber, safariDialogHelper, safariSearchArgHelper, searchParams, setHistory, setupServiceWorker, showBadSearchErrorMessage, showDownloadChooser, smartCalPhotosLink, smartReptileDatabaseLink, smartUpperCasing, sortResults, stopLoad, stopLoadError, toFloat, toInt, toObject, toastStatusMessage, uri,
   slice = [].slice,
   indexOf = [].indexOf || function(item) { for (var i = 0, l = this.length; i < l; i++) { if (i in this && this[i] === item) return i; } return -1; };
 
@@ -880,7 +880,20 @@ deepJQuery = function(selector) {
   }
 };
 
-d$ = function(selector) {
+p$ = function(selector) {
+  var error1, error2;
+  try {
+    return $$(selector)[0];
+  } catch (error1) {
+    try {
+      return $(selector).get(0);
+    } catch (error2) {
+      return d$(selector).get(0);
+    }
+  }
+};
+
+window.d$ = function(selector) {
   return deepJQuery(selector);
 };
 
@@ -1284,14 +1297,19 @@ asm.affiliateQueryUrl = {
 
 eutheriaFilterHelper = function() {
   $("#linnean").on("iron-select", function() {
-    var group, html, len, m, mammalGroups, mammalItems;
-    if (p$("#linnean").selectedItem = "eutheria") {
-      mammalGroups = ["rodents", "lagomorphs", "primates", "solenodons", "soricomorphs", "bats", "perissodactyls", "pangolins", "musteloids", "pinnipeds", "true bears", "canids", "Mongooses &amp; meerkats", "hyenas", "civets", "true cats", "palm civet", "Whales", "hippos", "cervoids", "non-cervoid ruminants", "camelidae", "suinae", "tethytheria", "elephants", "afroscoricida", "aardvarks", "elephant shrews", "armadillos", "sloths", "anteaters"];
+    var group, html, humanGroup, len, len1, m, mammalGroups, mammalGroupsBase, mammalItems, o;
+    if ($(p$("#linnean").selectedItem).attr("data-type") === "eutheria") {
+      mammalGroupsBase = ["rodents", "lagomorphs", "primates", "solenodons", "soricomorphs", "bats", "perissodactyls", "pangolins", "musteloids", "pinnipeds", "true bears", "canids", "Mongooses / meerkats", "hyenas", "civets", "true cats", "palm civet", "Whales", "hippos", "cervoids", "non-cervoid ruminants", "camelidae", "suinae", "tethytheria", "elephants", "afroscoricida", "aardvarks", "elephant shrews", "armadillos", "sloths", "anteaters"];
+      mammalGroups = new Array();
+      for (m = 0, len = mammalGroupsBase.length; m < len; m++) {
+        humanGroup = mammalGroupsBase[m];
+        mammalGroups.push(humanGroup.toLowerCase());
+      }
       mammalGroups.sort();
       mammalItems = "";
-      for (m = 0, len = mammalGroups.length; m < len; m++) {
-        group = mammalGroups[m];
-        html = "<paper-item data-type=\"" + (group.toLowerCase()) + "\">\n  " + (group.toTitleCase()) + "\n</paper-item>";
+      for (o = 0, len1 = mammalGroups.length; o < len1; o++) {
+        group = mammalGroups[o];
+        html = "<paper-item data-type=\"" + group + "\">\n  " + (group.toTitleCase()) + "\n</paper-item>";
         mammalItems += html;
       }
       html = "<div class=\"eutheria-extra\">\n    <label for=\"type\" class=\"sr-only\">Eutheria Filter</label>\n    <paper-menu-button>\n      <paper-button class=\"dropdown-trigger\"><iron-icon icon=\"icons:filter-list\"></iron-icon><span id=\"filter-what\" class=\"dropdown-label\"></span></paper-button>\n      <paper-menu label=\"Group\" data-column=\"simple_linnean_subgroup\" class=\"cndb-filter dropdown-content\" id=\"linnean-eutheria\" name=\"type\" attrForSelected=\"data-type\" selected=\"0\">\n        <paper-item data-type=\"any\">All</paper-item>\n        " + mammalItems + "\n        <!-- As per flag 4 in readme -->\n      </paper-menu>\n    </paper-menu-button>\n  </div>";
@@ -2243,7 +2261,7 @@ clearSearch = function(partialReset) {
   $(".cndb-filter").attr("value", "");
   $("#collapse-advanced").collapse('hide');
   $("#search").attr("value", "");
-  $("#linnean-order").polymerSelected("any");
+  $("#linnean").polymerSelected("any");
   formatScientificNames();
   return false;
 };
@@ -2725,11 +2743,12 @@ $(function() {
   $("#do-search-all").click(function() {
     return performSearch(true);
   });
-  $("#linnean-order").on("iron-select", function() {
+  $("#linnean").on("iron-select", function() {
     if (!isNull($("#search").val())) {
       return performSearch();
     }
   });
+  eutheriaFilterHelper();
   bindPaperMenuButton();
   if (isNull(uri.query)) {
     loadArgs = "";
@@ -2815,7 +2834,7 @@ $(function() {
               });
             }
           } else {
-            $("#linnean-order").polymerSelected(val);
+            $("#linnean").polymerSelected(val);
           }
         }
         if (openFilters) {
@@ -2860,7 +2879,8 @@ $(function() {
       if ((typeof Polymer !== "undefined" && Polymer !== null ? (ref = Polymer.Base) != null ? ref.$$ : void 0 : void 0) != null) {
         if (!isNull(Polymer.Base.$$("#loose"))) {
           delay(250, function() {
-            return d$("#loose").attr("checked", "checked");
+            d$("#loose").attr("checked", "checked");
+            return eutheriaFilterHelper();
           });
           return false;
         }
@@ -2876,7 +2896,8 @@ $(function() {
       try {
         return Polymer.Base.ready(function() {
           return delay(250, function() {
-            return d$("#loose").attr("checked", "checked");
+            d$("#loose").attr("checked", "checked");
+            return eutheriaFilterHelper();
           });
         });
       } catch (error5) {

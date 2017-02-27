@@ -696,9 +696,20 @@ deepJQuery = (selector) ->
       return $(selector)
 
 
+p$ = (selector) ->
+  # Try to get an object the Polymer way, then if it fails,
+  # do jQuery
+  try
+    $$(selector)[0]
+  catch
+    try
+      $(selector).get(0)
+    catch
+      d$(selector).get(0)
 
-d$ = (selector) ->
+window.d$ = (selector) ->
   deepJQuery(selector)
+
 
 
 lightboxImages = (selector = ".lightboximage", lookDeeply = false) ->

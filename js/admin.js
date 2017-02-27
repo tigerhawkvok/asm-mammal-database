@@ -23,7 +23,7 @@ loadAdminUi = function() {
    * fetches/draws the page contents if it's OK. Otherwise, boots the
    * user back to the login page.
    */
-  var e;
+  var e, error1;
   try {
     verifyLoginCredentials(function(data) {
       var articleHtml, searchForm;
@@ -55,8 +55,8 @@ loadAdminUi = function() {
       bindClickTargets();
       return false;
     });
-  } catch (_error) {
-    e = _error;
+  } catch (error1) {
+    e = error1;
     $("article #main-body").html("<div class='bs-callout bs-callout-danger'><h4>Application Error</h4><p>There was an error in the application. Please refresh and try again. If this persists, please contact administration.</p></div>");
   }
   return false;
@@ -262,7 +262,7 @@ createDuplicateTaxon = function() {
    * Remove the edited notes, remove the duplicate button, and change
    * the bidings so a new entry is created.
    */
-  var e, newButton;
+  var e, error1, newButton;
   animateLoad();
   try {
     d$("#taxon-id").remove();
@@ -277,8 +277,8 @@ createDuplicateTaxon = function() {
     delay(250, function() {
       return stopLoad();
     });
-  } catch (_error) {
-    e = _error;
+  } catch (error1) {
+    e = error1;
     stopLoadError("Unable to duplicate taxon");
     console.error("Couldn't duplicate taxon! " + e.message);
     d$("#modal-taxon-edit").get(0).close();
@@ -378,7 +378,7 @@ lookupEditorSpecies = function(taxon) {
     console.warn("Pinging with", "" + uri.urlString + searchParams.targetApi + "?q=" + taxon);
   }
   $.get(searchParams.targetApi, args, "json").done(function(result) {
-    var category, col, colSplit, d, data, e, fieldSelector, modalElement, speciesString, tempSelector, textarea, toggleColumns, whoEdited, width, year;
+    var category, col, colSplit, d, data, e, error1, error2, error3, error4, fieldSelector, modalElement, speciesString, tempSelector, textarea, toggleColumns, whoEdited, width, year;
     try {
       data = result.result[0];
       if (data == null) {
@@ -388,8 +388,8 @@ lookupEditorSpecies = function(taxon) {
       }
       try {
         data.deprecated_scientific = JSON.parse(data.deprecated_scientific);
-      } catch (_error) {
-        e = _error;
+      } catch (error1) {
+        e = error1;
       }
       if (originalNames != null) {
         toastStatusMessage("Bad information found. Please review and resave.");
@@ -412,8 +412,8 @@ lookupEditorSpecies = function(taxon) {
           if (typeof d === "string") {
             d = d.trim();
           }
-        } catch (_error) {
-          e = _error;
+        } catch (error2) {
+          e = error2;
         }
         if (col === "id") {
           $("#taxon-id").attr("value", d);
@@ -459,8 +459,8 @@ lookupEditorSpecies = function(taxon) {
             $(textarea).text(d);
             try {
               d$(fieldSelector).get(0)._update();
-            } catch (_error) {
-              e = _error;
+            } catch (error3) {
+              e = error3;
               console.warn("Couldn't update the textarea! See", "https://github.com/PolymerElements/iron-autogrow-textarea/issues/24");
             }
           }
@@ -480,8 +480,8 @@ lookupEditorSpecies = function(taxon) {
       modalElement.sizingTarget = d$("#modal-taxon-editor")[0];
       safariDialogHelper("#modal-taxon-edit");
       return stopLoad();
-    } catch (_error) {
-      e = _error;
+    } catch (error4) {
+      e = error4;
       return stopLoadError("Unable to populate the editor for this taxon - " + e.message);
     }
   }).fail(function(result, status) {
@@ -491,7 +491,7 @@ lookupEditorSpecies = function(taxon) {
 };
 
 saveEditorEntry = function(performMode) {
-  var args, auth, authYearString, authority, authorityA, col, completionErrorMessage, consoleError, dep, depA, depS, depString, e, error, escapeCompletion, examineIds, gYear, hash, id, item, k, keepCase, len, link, m, nullTest, requiredNotEmpty, s64, sYear, saveObject, saveString, secret, selectorSample, spilloverError, taxon, testAuthorityYear, trimmedYearString, userVerification, val, year;
+  var args, auth, authYearString, authority, authorityA, col, completionErrorMessage, consoleError, dep, depA, depS, depString, e, error, error1, error2, error3, escapeCompletion, examineIds, gYear, hash, id, item, k, keepCase, len, link, m, nullTest, requiredNotEmpty, s64, sYear, saveObject, saveString, secret, selectorSample, spilloverError, taxon, testAuthorityYear, trimmedYearString, userVerification, val, year;
   if (performMode == null) {
     performMode = "save";
   }
@@ -567,16 +567,16 @@ saveEditorEntry = function(performMode) {
       gYear = testAuthorityYear("#edit-gauthyear");
       sYear = testAuthorityYear("#edit-sauthyear");
       console.log("Escape Completion State:", escapeCompletion);
-    } catch (_error) {
-      e = _error;
+    } catch (error1) {
+      e = error1;
       console.error("Unable to parse authority year! " + e.message);
       authYearString = "";
     }
     auth = new Object();
     auth[gYear] = sYear;
     authYearString = JSON.stringify(auth);
-  } catch (_error) {
-    e = _error;
+  } catch (error2) {
+    e = error2;
     console.error("Failed to JSON parse the authority year - " + e.message);
     authYearString = "";
   }
@@ -614,8 +614,8 @@ saveEditorEntry = function(performMode) {
     } else {
       depString = "";
     }
-  } catch (_error) {
-    e = _error;
+  } catch (error3) {
+    e = error3;
     console.error("Failed to parse the deprecated scientifics - " + e.message + ". They may be empty.");
     depString = "";
     error = e.message + ". Check your formatting!";
@@ -804,7 +804,7 @@ handleDragDropImage = function(uploadTargetSelector, callback) {
    */
   if (typeof callback !== "function") {
     callback = function(file, result) {
-      var e, ext, fileName, fullFile, fullPath;
+      var e, error1, ext, fileName, fullFile, fullPath;
       if (result.status !== true) {
         if (result.human_error == null) {
           result.human_error = "There was a problem uploading your image.";
@@ -821,8 +821,8 @@ handleDragDropImage = function(uploadTargetSelector, callback) {
         fullPath = "species_photos/" + fullFile;
         d$("#edit-image").attr("disabled", "disabled").attr("value", fullPath);
         toastStatusMessage("Upload complete");
-      } catch (_error) {
-        e = _error;
+      } catch (error1) {
+        e = error1;
         console.error("There was a problem with upload post-processing - " + e.message);
         console.warn("Using", fileName, result);
         toastStatusMessage("Your upload completed, but we couldn't post-process it.");

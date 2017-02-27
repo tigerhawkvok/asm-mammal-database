@@ -39,7 +39,7 @@ isNull = function(str) {
         return true;
       }
     }
-  } catch (_error) {}
+  } catch (undefined) {}
   return false;
 };
 
@@ -50,7 +50,7 @@ isJson = function(str) {
   try {
     JSON.parse(str);
     return true;
-  } catch (_error) {}
+  } catch (undefined) {}
   return false;
 };
 
@@ -141,7 +141,7 @@ jQuery.fn.exists = function() {
 };
 
 jQuery.fn.polymerSelected = function(setSelected, attrLookup) {
-  var attr, e, itemSelector, val;
+  var attr, e, error1, error2, itemSelector, val;
   if (setSelected == null) {
     setSelected = void 0;
   }
@@ -166,8 +166,8 @@ jQuery.fn.polymerSelected = function(setSelected, attrLookup) {
     if (!isBool(setSelected)) {
       try {
         return $(this).get(0).select(setSelected);
-      } catch (_error) {
-        e = _error;
+      } catch (error1) {
+        e = error1;
         return false;
       }
     } else {
@@ -193,8 +193,8 @@ jQuery.fn.polymerSelected = function(setSelected, attrLookup) {
           val = $(itemSelector).text();
         }
       }
-    } catch (_error) {
-      e = _error;
+    } catch (error2) {
+      e = error2;
       return false;
     }
     if (val === "null" || (val == null)) {
@@ -287,7 +287,7 @@ window.debounce_timer = null;
 });
 
 Function.prototype.debounce = function() {
-  var args, delayed, e, execAsap, func, threshold, timeout;
+  var args, delayed, e, error1, execAsap, func, threshold, timeout;
   threshold = arguments[0], execAsap = arguments[1], timeout = arguments[2], args = 4 <= arguments.length ? slice.call(arguments, 3) : [];
   if (threshold == null) {
     threshold = 300;
@@ -307,8 +307,8 @@ Function.prototype.debounce = function() {
   if (timeout != null) {
     try {
       clearTimeout(timeout);
-    } catch (_error) {
-      e = _error;
+    } catch (error1) {
+      e = error1;
     }
   } else if (execAsap) {
     func.apply(obj, args);
@@ -317,7 +317,7 @@ Function.prototype.debounce = function() {
 };
 
 loadJS = function(src, callback, doCallbackOnError) {
-  var e, errorFunction, onLoadFunction, s;
+  var e, error1, errorFunction, onLoadFunction, s;
   if (callback == null) {
     callback = new Object();
   }
@@ -340,8 +340,8 @@ loadJS = function(src, callback, doCallbackOnError) {
     if (typeof callback === "function") {
       try {
         callback();
-      } catch (_error) {
-        e = _error;
+      } catch (error1) {
+        e = error1;
         console.error("Script is already loaded, but there was an error executing the callback function - " + e.message);
       }
     }
@@ -354,7 +354,7 @@ loadJS = function(src, callback, doCallbackOnError) {
   s.src = src;
   s.async = true;
   onLoadFunction = function() {
-    var state;
+    var error2, error3, state;
     state = s.readyState;
     try {
       if (!callback.done && (!state || /loaded|complete/.test(state))) {
@@ -362,18 +362,19 @@ loadJS = function(src, callback, doCallbackOnError) {
         if (typeof callback === "function") {
           try {
             return callback();
-          } catch (_error) {
-            e = _error;
+          } catch (error2) {
+            e = error2;
             return console.error("Postload callback error - " + e.message);
           }
         }
       }
-    } catch (_error) {
-      e = _error;
+    } catch (error3) {
+      e = error3;
       return console.error("Onload error - " + e.message);
     }
   };
   errorFunction = function() {
+    var error2, error3;
     console.warn("There may have been a problem loading " + src);
     try {
       if (!callback.done) {
@@ -381,14 +382,14 @@ loadJS = function(src, callback, doCallbackOnError) {
         if (typeof callback === "function" && doCallbackOnError) {
           try {
             return callback();
-          } catch (_error) {
-            e = _error;
+          } catch (error2) {
+            e = error2;
             return console.error("Post error callback error - " + e.message);
           }
         }
       }
-    } catch (_error) {
-      e = _error;
+    } catch (error3) {
+      e = error3;
       return console.error("There was an error in the error handler! " + e.message);
     }
   };
@@ -438,7 +439,7 @@ smartUpperCasing = function(text) {
       r = new RegExp(" " + searchUpper + " ", "g");
       smartCased = smartCased.replace(r, " " + replaceLower + " ");
     }
-  } catch (_error) {}
+  } catch (undefined) {}
   try {
 
     /*
@@ -454,7 +455,7 @@ smartUpperCasing = function(text) {
       secondWordCased = secondWord.toTitleCase();
       smartCased = smartCased.replace(secondWord, secondWordCased);
     }
-  } catch (_error) {}
+  } catch (undefined) {}
   return smartCased;
 };
 
@@ -564,7 +565,7 @@ if ((_metaStatus != null ? _metaStatus.isLoading : void 0) == null) {
 }
 
 animateLoad = function(elId, iteration) {
-  var e, selector;
+  var e, error1, selector;
   if (elId == null) {
     elId = "loader";
   }
@@ -630,14 +631,14 @@ animateLoad = function(elId, iteration) {
     }
     _metaStatus.isLoading = true;
     return false;
-  } catch (_error) {
-    e = _error;
+  } catch (error1) {
+    e = error1;
     return console.warn('Could not animate loader', e.message);
   }
 };
 
 stopLoad = function(elId, fadeOut, iteration) {
-  var e, endLoad, selector;
+  var e, endLoad, error1, selector;
   if (elId == null) {
     elId = "loader";
   }
@@ -702,14 +703,14 @@ stopLoad = function(elId, fadeOut, iteration) {
       })();
     }
     return false;
-  } catch (_error) {
-    e = _error;
+  } catch (error1) {
+    e = error1;
     return console.warn('Could not stop load animation', e.message);
   }
 };
 
 stopLoadError = function(message, elId, fadeOut, iteration) {
-  var e, endLoad, selector;
+  var e, endLoad, error1, selector;
   if (elId == null) {
     elId = "loader";
   }
@@ -774,14 +775,14 @@ stopLoadError = function(message, elId, fadeOut, iteration) {
       })();
     }
     return false;
-  } catch (_error) {
-    e = _error;
+  } catch (error1) {
+    e = error1;
     return console.warn('Could not stop load error animation', e.message);
   }
 };
 
 doCORSget = function(url, args, callback, callbackFail) {
-  var corsFail, createCORSRequest, e, settings, xhr;
+  var corsFail, createCORSRequest, e, error1, settings, xhr;
   if (callback == null) {
     callback = void 0;
   }
@@ -810,8 +811,8 @@ doCORSget = function(url, args, callback, callbackFail) {
     }).fail(function(result, status) {
       return console.warn("Couldn't perform jQuery AJAX CORS. Attempting manually.");
     });
-  } catch (_error) {
-    e = _error;
+  } catch (error1) {
+    e = error1;
     console.warn("There was an error using jQuery to perform the CORS request. Attemping manually.");
   }
   url = url + "?" + args;
@@ -859,21 +860,21 @@ deepJQuery = function(selector) {
    * Cross-browser, works with Chrome, Firefox, Opera, Safari, and IE
    * Falls back to standard jQuery selector when everything fails.
    */
-  var e;
+  var e, error1, error2;
   try {
     if (!$("html /deep/ " + selector).exists()) {
       throw "Bad /deep/ selector";
     }
     return $("html /deep/ " + selector);
-  } catch (_error) {
-    e = _error;
+  } catch (error1) {
+    e = error1;
     try {
       if (!$("html >>> " + selector).exists()) {
         throw "Bad >>> selector";
       }
       return $("html >>> " + selector);
-    } catch (_error) {
-      e = _error;
+    } catch (error2) {
+      e = error2;
       return $(selector);
     }
   }
@@ -921,17 +922,18 @@ lightboxImages = function(selector, lookDeeply) {
   };
   jqo = lookDeeply ? d$(selector) : $(selector);
   return jqo.click(function(e) {
+    var error1;
     try {
       $(this).imageLightbox(options).startImageLightbox();
       e.preventDefault();
       e.stopPropagation();
       return console.warn("Event propagation was stopped when clicking on this.");
-    } catch (_error) {
-      e = _error;
+    } catch (error1) {
+      e = error1;
       return console.error("Unable to lightbox this image!");
     }
   }).each(function() {
-    var e, imgUrl, tagHtml;
+    var e, error1, imgUrl, tagHtml;
     try {
       if ($(this).prop("tagName").toLowerCase() === "img" && $(this).parent().prop("tagName").toLowerCase() !== "a") {
         tagHtml = $(this).removeClass("lightboximage").prop("outerHTML");
@@ -947,8 +949,8 @@ lightboxImages = function(selector, lookDeeply) {
         }).call(this);
         return $(this).replaceWith("<a href='" + imgUrl + "' class='lightboximage'>" + tagHtml + "</a>");
       }
-    } catch (_error) {
-      e = _error;
+    } catch (error1) {
+      e = error1;
       return console.warn("Couldn't parse through the elements");
     }
   });
@@ -1050,7 +1052,7 @@ bindClicks = function(selector) {
    * URL data-href.
    */
   $(selector).each(function() {
-    var callable, e, url;
+    var callable, e, error1, error2, url;
     try {
       url = $(this).attr("data-href");
       if (isNull(url)) {
@@ -1065,8 +1067,8 @@ bindClicks = function(selector) {
           if (url === uri.o.attr("path") && $(this).prop("tagName").toLowerCase() === "paper-tab") {
             $(this).parent().prop("selected", $(this).index());
           }
-        } catch (_error) {
-          e = _error;
+        } catch (error1) {
+          e = error1;
           console.warn("tagname lower case error");
         }
         $(this).click(function() {
@@ -1087,17 +1089,18 @@ bindClicks = function(selector) {
         if (callable != null) {
           $(this).unbind();
           return $(this).click(function() {
+            var error2;
             try {
               return window[callable]();
-            } catch (_error) {
-              e = _error;
+            } catch (error2) {
+              e = error2;
               return console.error("'" + callable + "()' is a bad function - " + e.message);
             }
           });
         }
       }
-    } catch (_error) {
-      e = _error;
+    } catch (error2) {
+      e = error2;
       return console.error("There was a problem binding to #" + ($(this).attr("id")) + " - " + e.message);
     }
   });
@@ -1117,7 +1120,7 @@ getMaxZ = function() {
 };
 
 browserBeware = function() {
-  var browsers, e, warnBrowserHtml;
+  var browsers, e, error1, warnBrowserHtml;
   if ((typeof Browsers !== "undefined" && Browsers !== null ? Browsers.hasCheckedBrowser : void 0) == null) {
     if (typeof Browsers === "undefined" || Browsers === null) {
       window.Browsers = new Object();
@@ -1139,8 +1142,8 @@ browserBeware = function() {
         return $(".collapse").collapse("toggle");
       });
     }
-  } catch (_error) {
-    e = _error;
+  } catch (error1) {
+    e = error1;
     if (Browsers.hasCheckedBrowser === 100) {
       console.warn("We can't check your browser!");
       console.warn("Known issues:");
@@ -1226,7 +1229,7 @@ foo = function() {
 };
 
 $(function() {
-  var e;
+  var e, error1, error2;
   formatScientificNames();
   bindClicks();
   mapNewWindows();
@@ -1234,8 +1237,8 @@ $(function() {
     $("body").tooltip({
       selector: "[data-toggle='tooltip']"
     });
-  } catch (_error) {
-    e = _error;
+  } catch (error1) {
+    e = error1;
     console.warn("Tooltips were attempted to be set up, but do not exist");
   }
   try {
@@ -1245,8 +1248,8 @@ $(function() {
         return loadAdminUi();
       });
     }
-  } catch (_error) {
-    e = _error;
+  } catch (error2) {
+    e = error2;
     getLocation();
     loadJS("js/jquery.cookie.min.js", function() {
       var html;
@@ -1358,7 +1361,7 @@ performSearch = function(stateArgs) {
 };
 
 getFilters = function(selector, booleanType) {
-  var alien, e, encodedFilter, filterList, jsonString;
+  var alien, e, encodedFilter, error1, filterList, jsonString;
   if (selector == null) {
     selector = ".cndb-filter";
   }
@@ -1404,14 +1407,14 @@ getFilters = function(selector, booleanType) {
     jsonString = JSON.stringify(filterList);
     encodedFilter = Base64.encodeURI(jsonString);
     return encodedFilter;
-  } catch (_error) {
-    e = _error;
+  } catch (error1) {
+    e = error1;
     return false;
   }
 };
 
 formatSearchResults = function(result, container) {
-  var alt, bootstrapColCount, bootstrapColSize, col, colClass, d, data, dontShowColumns, e, externalCounter, genus, headers, html, htmlClose, htmlHead, htmlRow, i, j, k, kClass, l, niceKey, noticeHtml, renderTimeout, row, species, split, targetCount, taxonQuery, v, year;
+  var alt, bootstrapColCount, bootstrapColSize, col, colClass, d, data, dontShowColumns, e, error1, error2, externalCounter, genus, headers, html, htmlClose, htmlHead, htmlRow, i, j, k, kClass, l, niceKey, noticeHtml, renderTimeout, row, species, split, targetCount, taxonQuery, v, year;
   if (container == null) {
     container = searchParams.targetContainer;
   }
@@ -1492,8 +1495,8 @@ formatSearchResults = function(result, container) {
           try {
             try {
               d = JSON.parse(col);
-            } catch (_error) {
-              e = _error;
+            } catch (error1) {
+              e = error1;
               console.warn("There was an error parsing '" + col + "', attempting to fix - ", e.message);
               split = col.split(":");
               year = split[1].slice(split[1].search("\"") + 1, -2);
@@ -1511,8 +1514,8 @@ formatSearchResults = function(result, container) {
               species = "(" + species + ")";
             }
             col = "G: " + genus + "<br/>S: " + species;
-          } catch (_error) {
-            e = _error;
+          } catch (error2) {
+            e = error2;
             console.error("There was an error parsing '" + col + "'", e.message);
             d = col;
           }
@@ -1581,7 +1584,7 @@ formatSearchResults = function(result, container) {
 };
 
 parseTaxonYear = function(taxonYearString, strict) {
-  var d, e, genus, species, split, year;
+  var d, e, error1, error2, genus, species, split, year;
   if (strict == null) {
     strict = true;
   }
@@ -1592,8 +1595,8 @@ parseTaxonYear = function(taxonYearString, strict) {
    */
   try {
     d = JSON.parse(taxonYearString);
-  } catch (_error) {
-    e = _error;
+  } catch (error1) {
+    e = error1;
     console.warn("There was an error parsing '" + taxonYearString + "', attempting to fix - ", e.message);
     split = taxonYearString.split(":");
     year = split[1].slice(split[1].search('"') + 1, -2);
@@ -1602,8 +1605,8 @@ parseTaxonYear = function(taxonYearString, strict) {
     taxonYearString = split.join(":");
     try {
       d = JSON.parse(taxonYearString);
-    } catch (_error) {
-      e = _error;
+    } catch (error2) {
+      e = error2;
       if (strict) {
         return false;
       } else {
@@ -1724,7 +1727,7 @@ checkTaxonNear = function(taxonQuery, callback, selector) {
 };
 
 insertModalImage = function(imageObject, taxon, callback) {
-  var args, doneCORS, e, extension, failCORS, imageUrl, imgArray, imgPath, insertImage, taxonArray, taxonString, warnArgs;
+  var args, doneCORS, e, error1, extension, failCORS, imageUrl, imgArray, imgPath, insertImage, taxonArray, taxonString, warnArgs;
   if (imageObject == null) {
     imageObject = asm.taxonImage;
   }
@@ -1758,7 +1761,7 @@ insertModalImage = function(imageObject, taxon, callback) {
     return false;
   }
   insertImage = function(image, taxonQueryString, classPrefix) {
-    var e, html, imgCredit, imgLicense, largeImg, largeImgLink, smartFit, thumbnail;
+    var e, error1, html, imgCredit, imgLicense, largeImg, largeImgLink, smartFit, thumbnail;
     if (classPrefix == null) {
       classPrefix = "calphoto";
     }
@@ -1779,7 +1782,7 @@ insertModalImage = function(imageObject, taxon, callback) {
     html = "<div class=\"modal-img-container\">\n  <a href=\"" + largeImg + "\" class=\"" + classPrefix + "-img-anchor center-block text-center\">\n    <img src=\"" + thumbnail + "\"\n      data-href=\"" + largeImgLink + "\"\n      class=\"" + classPrefix + "-img-thumb\"\n      data-taxon=\"" + taxonQueryString + "\" />\n  </a>\n  <p class=\"small text-muted text-center\">\n    Image by " + imgCredit + " under " + imgLicense + "\n  </p>\n</div>";
     d$("#meta-taxon-info").before(html);
     (smartFit = function(iteration) {
-      var e;
+      var e, error1;
       try {
         d$("#modal-taxon").get(0).fit();
         return delay(250, function() {
@@ -1788,8 +1791,8 @@ insertModalImage = function(imageObject, taxon, callback) {
             return d$("#modal-taxon").get(0).fit();
           });
         });
-      } catch (_error) {
-        e = _error;
+      } catch (error1) {
+        e = error1;
         if (iteration < 10) {
           iteration++;
           return delay(100, function() {
@@ -1802,8 +1805,8 @@ insertModalImage = function(imageObject, taxon, callback) {
     })(0);
     try {
       lightboxImages("." + classPrefix + "-img-anchor", true);
-    } catch (_error) {
-      e = _error;
+    } catch (error1) {
+      e = error1;
       console.error("Error lightboxing images");
     }
     if (typeof callback === "function") {
@@ -1843,13 +1846,13 @@ insertModalImage = function(imageObject, taxon, callback) {
    */
   args = "getthumbinfo=1&num=all&cconly=1&taxon=" + taxonString + "&format=xml";
   doneCORS = function(resultXml) {
-    var data, e, result;
+    var data, e, error1, error2, result;
     result = xmlToJSON.parseString(resultXml);
     window.testData = result;
     try {
       data = result.calphotos[0];
-    } catch (_error) {
-      e = _error;
+    } catch (error1) {
+      e = error1;
       data = void 0;
     }
     if (data == null) {
@@ -1866,8 +1869,8 @@ insertModalImage = function(imageObject, taxon, callback) {
       imageObject.imageLinkUri = data.enlarge_url[0]["_text"];
       imageObject.imageLicense = data.license[0]["_text"];
       imageObject.imageCredit = data.copyright[0]["_text"] + " (via CalPhotos)";
-    } catch (_error) {
-      e = _error;
+    } catch (error2) {
+      e = error2;
       console.warn("CalPhotos didn't return any valid images for this search!", asm.affiliateQueryUrl.calPhotos + "?" + args);
       return false;
     }
@@ -1881,8 +1884,8 @@ insertModalImage = function(imageObject, taxon, callback) {
   };
   try {
     doCORSget(asm.affiliateQueryUrl.calPhotos, args, doneCORS, failCORS);
-  } catch (_error) {
-    e = _error;
+  } catch (error1) {
+    e = error1;
     console.error(e.message);
   }
   return false;
@@ -1999,7 +2002,7 @@ modalTaxon = function(taxon) {
     $("body").append(html);
   }
   $.get(searchParams.targetApi, "q=" + taxon, "json").done(function(result) {
-    var button, buttonText, commonType, data, deprecatedHtml, e, genusAuthBlock, humanTaxon, i, minorTypeHtml, notes, outboundLink, ref, sn, speciesAuthBlock, taxonArray, taxonCreditDate, year, yearHtml;
+    var button, buttonText, commonType, data, deprecatedHtml, e, error1, error2, error3, genusAuthBlock, humanTaxon, i, minorTypeHtml, notes, outboundLink, ref, sn, speciesAuthBlock, taxonArray, taxonCreditDate, year, yearHtml;
     data = result.result[0];
     if (data == null) {
       toastStatusMessage("There was an error fetching the entry details. Please try again later.");
@@ -2035,8 +2038,8 @@ modalTaxon = function(taxon) {
             return deprecatedHtml += "</p>";
           }
         });
-      } catch (_error) {
-        e = _error;
+      } catch (error1) {
+        e = error1;
         deprecatedHtml = "";
         console.error("There were deprecated scientific names, but the JSON was malformed.");
       }
@@ -2058,8 +2061,8 @@ modalTaxon = function(taxon) {
     }
     try {
       notes = markdown.toHTML(data.notes);
-    } catch (_error) {
-      e = _error;
+    } catch (error2) {
+      e = error2;
       notes = data.notes;
       console.warn("Couldn't parse markdown!! " + e.message);
     }
@@ -2113,8 +2116,8 @@ modalTaxon = function(taxon) {
     };
     try {
       insertModalImage();
-    } catch (_error) {
-      e = _error;
+    } catch (error3) {
+      e = error3;
       console.info("Unable to insert modal image! ");
     }
     checkTaxonNear(taxon, function() {
@@ -2241,7 +2244,7 @@ downloadCSVList = function() {
   day = d.getDate().toString().length === 1 ? "0" + (d.getDate().toString()) : d.getDate();
   dateString = (d.getUTCFullYear()) + "-" + month + "-" + day;
   $.get("" + searchParams.apiPath, args, "json").done(function(result) {
-    var authorityYears, col, colData, csv, csvBody, csvHeader, csvLiteralRow, csvRow, dirtyCol, dirtyColData, downloadable, e, genusYear, html, i, k, makeTitleCase, ref, row, showColumn, speciesYear, tempCol, v;
+    var authorityYears, col, colData, csv, csvBody, csvHeader, csvLiteralRow, csvRow, dirtyCol, dirtyColData, downloadable, e, error1, error2, genusYear, html, i, k, makeTitleCase, ref, row, showColumn, speciesYear, tempCol, v;
     try {
       if (result.status !== true) {
         throw Error("Invalid Result");
@@ -2292,8 +2295,8 @@ downloadCSVList = function() {
                     }
                 }
                 colData = tempCol;
-              } catch (_error) {
-                e = _error;
+              } catch (error1) {
+                e = error1;
               }
             }
             if (indexOf.call(makeTitleCase, col) >= 0) {
@@ -2319,8 +2322,8 @@ downloadCSVList = function() {
       }
       $("#download-chooser").get(0).close();
       return safariDialogHelper("#download-csv-file");
-    } catch (_error) {
-      e = _error;
+    } catch (error2) {
+      e = error2;
       stopLoadError("There was a problem creating the CSV file. Please try again later.");
       console.error("Exception in downloadCSVList() - " + e.message);
       return console.warn("Got", result, "from", searchParams.apiPath + "?" + args, result.status);
@@ -2359,7 +2362,7 @@ downloadHTMLList = function() {
   htmlBody = "     <!doctype html>\n     <html lang=\"en\">\n       <head>\n         <title>SSAR Common Names Checklist ver. " + dateString + "</title>\n         <meta http-equiv=\"X-UA-Compatible\" content=\"IE=edge\">\n         <meta charset=\"UTF-8\"/>\n         <meta name=\"theme-color\" content=\"#445e14\"/>\n         <meta name=\"viewport\" content=\"width=device-width, initial-scale=1\" />\n         <link href='http://fonts.googleapis.com/css?family=Droid+Serif:400,700,700italic,400italic|Roboto+Slab:400,700' rel='stylesheet' type='text/css' />\n         <style type=\"text/css\" id=\"asm-checklist-inline-stylesheet\">\n/*!\n* Bootstrap v3.3.5 (http://getbootstrap.com)\n* Copyright 2011-2015 Twitter, Inc.\n* Licensed under MIT (https://github.com/twbs/bootstrap/blob/master/LICENSE)\n*/\n\n/*!\n* Generated using the Bootstrap Customizer (http://getbootstrap.com/customize/?id=e14c62a4d4eee8f40b6b)\n* Config saved to config.json and https://gist.github.com/e14c62a4d4eee8f40b6b\n*//*!\n* Bootstrap v3.3.5 (http://getbootstrap.com)\n* Copyright 2011-2015 Twitter, Inc.\n* Licensed under MIT (https://github.com/twbs/bootstrap/blob/master/LICENSE)\n*//*! normalize.css v3.0.3 | MIT License | github.com/necolas/normalize.css */html{font-family:sans-serif;-ms-text-size-adjust:100%;-webkit-text-size-adjust:100%}body{margin:0}article,aside,details,figcaption,figure,footer,header,hgroup,main,menu,nav,section,summary{display:block}audio,canvas,progress,video{display:inline-block;vertical-align:baseline}audio:not([controls]){display:none;height:0}[hidden],template{display:none}a{background-color:transparent}a:active,a:hover{outline:0}abbr[title]{border-bottom:1px dotted}b,strong{font-weight:bold}dfn{font-style:italic}h1{font-size:2em;margin:0.67em 0}mark{background:#ff0;color:#000}small{font-size:80%}sub,sup{font-size:75%;line-height:0;position:relative;vertical-align:baseline}sup{top:-0.5em}sub{bottom:-0.25em}img{border:0}svg:not(:root){overflow:hidden}figure{margin:1em 40px}hr{-webkit-box-sizing:content-box;-moz-box-sizing:content-box;box-sizing:content-box;height:0}pre{overflow:auto}code,kbd,pre,samp{font-family:monospace, monospace;font-size:1em}button,input,optgroup,select,textarea{color:inherit;font:inherit;margin:0}button{overflow:visible}button,select{text-transform:none}button,html input[type=\"button\"],input[type=\"reset\"],input[type=\"submit\"]{-webkit-appearance:button;cursor:pointer}button[disabled],html input[disabled]{cursor:default}button::-moz-focus-inner,input::-moz-focus-inner{border:0;padding:0}input{line-height:normal}input[type=\"checkbox\"],input[type=\"radio\"]{-webkit-box-sizing:border-box;-moz-box-sizing:border-box;box-sizing:border-box;padding:0}input[type=\"number\"]::-webkit-inner-spin-button,input[type=\"number\"]::-webkit-outer-spin-button{height:auto}input[type=\"search\"]{-webkit-appearance:textfield;-webkit-box-sizing:content-box;-moz-box-sizing:content-box;box-sizing:content-box}input[type=\"search\"]::-webkit-search-cancel-button,input[type=\"search\"]::-webkit-search-decoration{-webkit-appearance:none}fieldset{border:1px solid #c0c0c0;margin:0 2px;padding:0.35em 0.625em 0.75em}legend{border:0;padding:0}textarea{overflow:auto}optgroup{font-weight:bold}table{border-collapse:collapse;border-spacing:0}td,th{padding:0}/*! Source: https://github.com/h5bp/html5-boilerplate/blob/master/src/css/main.css */@media print{*,*:before,*:after{background:transparent !important;color:#000 !important;-webkit-box-shadow:none !important;box-shadow:none !important;text-shadow:none !important}a,a:visited{text-decoration:underline}a[href]:after{content:\" (\" attr(href) \")\"}abbr[title]:after{content:\" (\" attr(title) \")\"}a[href^=\"#\"]:after,a[href^=\"javascript:\"]:after{content:\"\"}pre,blockquote{border:1px solid #999;page-break-inside:avoid}thead{display:table-header-group}tr,img{page-break-inside:avoid}img{max-width:100% !important}p,h2,h3{orphans:3;widows:3}h2,h3{page-break-after:avoid}.navbar{display:none}.btn>.caret,.dropup>.btn>.caret{border-top-color:#000 !important}.label{border:1px solid #000}.table{border-collapse:collapse !important}.table td,.table th{background-color:#fff !important}.table-bordered th,.table-bordered td{border:1px solid #ddd !important}}*{-webkit-box-sizing:border-box;-moz-box-sizing:border-box;box-sizing:border-box}*:before,*:after{-webkit-box-sizing:border-box;-moz-box-sizing:border-box;box-sizing:border-box}html{font-size:10px;-webkit-tap-highlight-color:rgba(0,0,0,0)}body{font-family:\"Roboto Slab\",\"Droid Serif\",Cambria,Georgia,\"Times New Roman\",Times,serif;font-size:14px;line-height:1.42857143;color:#333;background-color:#fff}input,button,select,textarea{font-family:inherit;font-size:inherit;line-height:inherit}a{color:#337ab7;text-decoration:none}a:hover,a:focus{color:#23527c;text-decoration:underline}a:focus{outline:thin dotted;outline:5px auto -webkit-focus-ring-color;outline-offset:-2px}figure{margin:0}img{vertical-align:middle}.img-responsive{display:block;max-width:100%;height:auto}.img-rounded{border-radius:6px}.img-thumbnail{padding:4px;line-height:1.42857143;background-color:#fff;border:1px solid #ddd;border-radius:4px;-webkit-transition:all .2s ease-in-out;-o-transition:all .2s ease-in-out;transition:all .2s ease-in-out;display:inline-block;max-width:100%;height:auto}.img-circle{border-radius:50%}hr{margin-top:20px;margin-bottom:20px;border:0;border-top:1px solid #eee}.sr-only{position:absolute;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;clip:rect(0, 0, 0, 0);border:0}.sr-only-focusable:active,.sr-only-focusable:focus{position:static;width:auto;height:auto;margin:0;overflow:visible;clip:auto}[role=\"button\"]{cursor:pointer}h1,h2,h3,h4,h5,h6,.h1,.h2,.h3,.h4,.h5,.h6{font-family:inherit;font-weight:500;line-height:1.1;color:inherit}h1 small,h2 small,h3 small,h4 small,h5 small,h6 small,.h1 small,.h2 small,.h3 small,.h4 small,.h5 small,.h6 small,h1 .small,h2 .small,h3 .small,h4 .small,h5 .small,h6 .small,.h1 .small,.h2 .small,.h3 .small,.h4 .small,.h5 .small,.h6 .small{font-weight:normal;line-height:1;color:#777}h1,.h1,h2,.h2,h3,.h3{margin-top:20px;margin-bottom:10px}h1 small,.h1 small,h2 small,.h2 small,h3 small,.h3 small,h1 .small,.h1 .small,h2 .small,.h2 .small,h3 .small,.h3 .small{font-size:65%}h4,.h4,h5,.h5,h6,.h6{margin-top:10px;margin-bottom:10px}h4 small,.h4 small,h5 small,.h5 small,h6 small,.h6 small,h4 .small,.h4 .small,h5 .small,.h5 .small,h6 .small,.h6 .small{font-size:75%}h1,.h1{font-size:36px}h2,.h2{font-size:30px}h3,.h3{font-size:24px}h4,.h4{font-size:18px}h5,.h5{font-size:14px}h6,.h6{font-size:12px}p{margin:0 0 10px}.lead{margin-bottom:20px;font-size:16px;font-weight:300;line-height:1.4}@media (min-width:768px){.lead{font-size:21px}}small,.small{font-size:85%}mark,.mark{background-color:#fcf8e3;padding:.2em}.text-left{text-align:left}.text-right{text-align:right}.text-center{text-align:center}.text-justify{text-align:justify}.text-nowrap{white-space:nowrap}.text-lowercase{text-transform:lowercase}.text-uppercase{text-transform:uppercase}.text-capitalize{text-transform:capitalize}.text-muted{color:#777}.text-primary{color:#337ab7}a.text-primary:hover,a.text-primary:focus{color:#286090}.text-success{color:#3c763d}a.text-success:hover,a.text-success:focus{color:#2b542c}.text-info{color:#31708f}a.text-info:hover,a.text-info:focus{color:#245269}.text-warning{color:#8a6d3b}a.text-warning:hover,a.text-warning:focus{color:#66512c}.text-danger{color:#a94442}a.text-danger:hover,a.text-danger:focus{color:#843534}.bg-primary{color:#fff;background-color:#337ab7}a.bg-primary:hover,a.bg-primary:focus{background-color:#286090}.bg-success{background-color:#dff0d8}a.bg-success:hover,a.bg-success:focus{background-color:#c1e2b3}.bg-info{background-color:#d9edf7}a.bg-info:hover,a.bg-info:focus{background-color:#afd9ee}.bg-warning{background-color:#fcf8e3}a.bg-warning:hover,a.bg-warning:focus{background-color:#f7ecb5}.bg-danger{background-color:#f2dede}a.bg-danger:hover,a.bg-danger:focus{background-color:#e4b9b9}.page-header{padding-bottom:9px;margin:40px 0 20px;border-bottom:1px solid #eee}ul,ol{margin-top:0;margin-bottom:10px}ul ul,ol ul,ul ol,ol ol{margin-bottom:0}.list-unstyled{padding-left:0;list-style:none}.list-inline{padding-left:0;list-style:none;margin-left:-5px}.list-inline>li{display:inline-block;padding-left:5px;padding-right:5px}dl{margin-top:0;margin-bottom:20px}dt,dd{line-height:1.42857143}dt{font-weight:bold}dd{margin-left:0}@media (min-width:768px){.dl-horizontal dt{float:left;width:160px;clear:left;text-align:right;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.dl-horizontal dd{margin-left:180px}}abbr[title],abbr[data-original-title]{cursor:help;border-bottom:1px dotted #777}.initialism{font-size:90%;text-transform:uppercase}blockquote{padding:10px 20px;margin:0 0 20px;font-size:17.5px;border-left:5px solid #eee}blockquote p:last-child,blockquote ul:last-child,blockquote ol:last-child{margin-bottom:0}blockquote footer,blockquote small,blockquote .small{display:block;font-size:80%;line-height:1.42857143;color:#777}blockquote footer:before,blockquote small:before,blockquote .small:before{content:'\x2014 \x00A0'}.blockquote-reverse,blockquote.pull-right{padding-right:15px;padding-left:0;border-right:5px solid #eee;border-left:0;text-align:right}.blockquote-reverse footer:before,blockquote.pull-right footer:before,.blockquote-reverse small:before,blockquote.pull-right small:before,.blockquote-reverse .small:before,blockquote.pull-right .small:before{content:''}.blockquote-reverse footer:after,blockquote.pull-right footer:after,.blockquote-reverse small:after,blockquote.pull-right small:after,.blockquote-reverse .small:after,blockquote.pull-right .small:after{content:'\x00A0 \x2014'}address{margin-bottom:20px;font-style:normal;line-height:1.42857143}.clearfix:before,.clearfix:after,.dl-horizontal dd:before,.dl-horizontal dd:after{content:\" \";display:table}.clearfix:after,.dl-horizontal dd:after{clear:both}.center-block{display:block;margin-left:auto;margin-right:auto}.pull-right{float:right !important}.pull-left{float:left !important}.hide{display:none !important}.show{display:block !important}.invisible{visibility:hidden}.text-hide{font:0/0 a;color:transparent;text-shadow:none;background-color:transparent;border:0}.hidden{display:none !important}.affix{position:fixed}\n          /* Manual Overrides */\n          .sciname {\n            font-style: italic;\n            }\n          .entry-sciname {\n            font-style: italic;\n            font-weight: bold;\n            }\n           body { padding: 1rem; }\n           .species-entry aside:first-child {\n             margin-top: 5rem;\n             }\n           section .entry-header {\n             text-indent: 2em;\n             }\n           .clade-declaration {\n             font-variant: small-caps;\n             border-top: 1px solid #000;\n             border-bottom: 1px solid #000;\n             page-break-before: always;\n             break-before: always;\n             }\n           .species-entry {\n             page-break-inside: avoid;\n             break-inside: avoid;\n             }\n           @media print {\n             body {\n               font-size:12px;\n               }\n             .h4 {\n               font-size: 13px;\n               }\n             @page {\n               counter-increment: page;\n               /*counter-reset: page 1;*/\n                @bottom-right {\n                 content: counter(page);\n                }\n                /* margin: 0px auto; */\n               }\n           }\n         </style>\n       </head>\n       <body>\n         <div class=\"container-fluid\">\n           <article>\n             <h1 class=\"text-center\">SSAR Common Names Checklist ver. " + dateString + "</h1>";
   args = "q=*&order=linnean_order,genus,species,subspecies";
   $.get("" + searchParams.apiPath, args, "json").done(function(result) {
-    var authorityYears, c, dialogHtml, downloadable, e, entryHtml, genusAuth, genusYear, hasReadClade, hasReadGenus, htmlCredit, htmlNotes, k, oneOffHtml, ref, ref1, ref2, row, shortGenus, speciesAuth, speciesYear, taxonCreditDate, v;
+    var authorityYears, c, dialogHtml, downloadable, e, entryHtml, error1, error2, error3, genusAuth, genusYear, hasReadClade, hasReadGenus, htmlCredit, htmlNotes, k, oneOffHtml, ref, ref1, ref2, row, shortGenus, speciesAuth, speciesYear, taxonCreditDate, v;
     try {
       if (result.status !== true) {
         throw Error("Invalid Result");
@@ -2396,16 +2399,16 @@ downloadHTMLList = function() {
           if (toInt(row.parens_auth_species).toBool()) {
             speciesAuth = "(" + speciesAuth + ")";
           }
-        } catch (_error) {
-          e = _error;
+        } catch (error1) {
+          e = error1;
           console.warn("There was a problem parsing the authority information for _" + row.genus + " " + row.species + " " + row.subspecies + "_ - " + e.message);
           console.warn(e.stack);
           console.warn("We were working with", authorityYears, genusYear, genusAuth, speciesYear, speciesAuth);
         }
         try {
           htmlNotes = markdown.toHTML(row.notes);
-        } catch (_error) {
-          e = _error;
+        } catch (error2) {
+          e = error2;
           console.warn("Unable to parse Markdown for _" + row.genus + " " + row.species + " " + row.subspecies + "_");
           htmlNotes = row.notes;
         }
@@ -2453,8 +2456,8 @@ downloadHTMLList = function() {
       }).error(function(result, status) {
         return console.error("Wasn't able to fetch PDF");
       });
-    } catch (_error) {
-      e = _error;
+    } catch (error3) {
+      e = error3;
       stopLoadError("There was a problem creating your file. Please try again later.");
       console.error("Exception in downloadHTMLList() - " + e.message);
       console.warn("Got", result, "from", searchParams.apiPath + "?" + args, result.status);
@@ -2483,7 +2486,7 @@ showDownloadChooser = function() {
 };
 
 safariDialogHelper = function(selector, counter, callback) {
-  var delayTimer, e, newCount;
+  var delayTimer, e, error1, newCount;
   if (selector == null) {
     selector = "#download-chooser";
   }
@@ -2506,8 +2509,8 @@ safariDialogHelper = function(selector, counter, callback) {
         callback();
       }
       return stopLoad();
-    } catch (_error) {
-      e = _error;
+    } catch (error1) {
+      e = error1;
       newCount = counter + 1;
       delayTimer = 250;
       return delay(delayTimer, function() {
@@ -2557,7 +2560,7 @@ safariSearchArgHelper = function(value, didLateRecheck) {
 };
 
 insertCORSWorkaround = function() {
-  var browserExtensionLink, browsers, e, html;
+  var browserExtensionLink, browsers, e, error1, html;
   if (asm.hasShownWorkaround == null) {
     asm.hasShownWorkaround = false;
   }
@@ -2566,8 +2569,8 @@ insertCORSWorkaround = function() {
   }
   try {
     browsers = new WhichBrowser();
-  } catch (_error) {
-    e = _error;
+  } catch (error1) {
+    e = error1;
     return false;
   }
   if (browsers.isType("mobile")) {
@@ -2660,17 +2663,17 @@ bindPaperMenuButton = function(selector, unbindTargets) {
 };
 
 $(function() {
-  var col, devHello, e, f64, filterObj, fixState, fuzzyState, loadArgs, looseState, openFilters, queryUrl, selectedState, selector, temp, val;
+  var col, devHello, e, error1, error2, error3, error4, f64, filterObj, fixState, fuzzyState, loadArgs, looseState, openFilters, queryUrl, selectedState, selector, temp, val;
   devHello = "****************************************************************************\nHello developer!\nIf you're looking for hints on our API information, this site is open-source\nand released under the GPL. Just click on the GitHub link on the bottom of\nthe page, or check out https://github.com/SSARHERPS\n****************************************************************************";
   console.log(devHello);
   animateLoad();
   window.addEventListener("popstate", function(e) {
-    var loadArgs, temp;
+    var error1, loadArgs, temp;
     uri.query = $.url().attr("fragment");
     try {
       loadArgs = Base64.decode(uri.query);
-    } catch (_error) {
-      e = _error;
+    } catch (error1) {
+      e = error1;
       loadArgs = "";
     }
     performSearch(loadArgs);
@@ -2715,20 +2718,20 @@ $(function() {
       queryUrl = $.url(searchParams.apiPath + "?q=" + loadArgs);
       try {
         looseState = queryUrl.param("loose").toBool();
-      } catch (_error) {
-        e = _error;
+      } catch (error1) {
+        e = error1;
         looseState = false;
       }
       try {
         fuzzyState = queryUrl.param("fuzzy").toBool();
-      } catch (_error) {
-        e = _error;
+      } catch (error2) {
+        e = error2;
         fuzzyState = false;
       }
       temp = loadArgs.split("&")[0];
       safariSearchArgHelper(temp);
       (fixState = function() {
-        var ref;
+        var error3, ref;
         if ((typeof Polymer !== "undefined" && Polymer !== null ? (ref = Polymer.Base) != null ? ref.$$ : void 0 : void 0) != null) {
           if (!isNull(Polymer.Base.$$("#loose"))) {
             delay(250, function() {
@@ -2763,7 +2766,7 @@ $(function() {
               return safariSearchArgHelper();
             });
           });
-        } catch (_error) {
+        } catch (error3) {
           return delay(250, function() {
             return fixState();
           });
@@ -2796,12 +2799,12 @@ $(function() {
         if (openFilters) {
           $("#collapse-advanced").collapse("show");
         }
-      } catch (_error) {
-        e = _error;
+      } catch (error3) {
+        e = error3;
         f64 = false;
       }
-    } catch (_error) {
-      e = _error;
+    } catch (error4) {
+      e = error4;
       console.error("Bad argument " + uri.query + " => " + loadArgs + ", looseState, fuzzyState", looseState, fuzzyState, searchParams.apiPath + "?q=" + loadArgs);
       console.warn(e.message);
       loadArgs = "";
@@ -2831,7 +2834,7 @@ $(function() {
     stopLoad();
     $("#search").attr("disabled", false);
     return (fixState = function() {
-      var ref;
+      var error5, ref;
       if ((typeof Polymer !== "undefined" && Polymer !== null ? (ref = Polymer.Base) != null ? ref.$$ : void 0 : void 0) != null) {
         if (!isNull(Polymer.Base.$$("#loose"))) {
           delay(250, function() {
@@ -2854,7 +2857,7 @@ $(function() {
             return d$("#loose").attr("checked", "checked");
           });
         });
-      } catch (_error) {
+      } catch (error5) {
         return delay(250, function() {
           return fixState();
         });

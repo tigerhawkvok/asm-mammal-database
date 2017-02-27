@@ -189,4 +189,4 @@ module.exports = (grunt) ->
     grunt.task.run("phplint","compile","css")
   grunt.registerTask "build","Compile and update, then watch", ->
     # ,"vulcanize"
-    grunt.task.run("updateNPM","updateBower","compile","minify")
+    grunt.task.run("qbuild","minify")

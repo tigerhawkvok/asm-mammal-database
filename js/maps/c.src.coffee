@@ -1020,8 +1020,7 @@ asm.affiliateQueryUrl =
 
 eutheriaFilterHelper = ->
   $("#linnean")
-  .unbind "iron-change"
-  .on "iron-change", ->
+  .on "iron-select", ->
     if p$("#linnean").selectedItem = "eutheria"
       mammalGroups = [
         "rodents"

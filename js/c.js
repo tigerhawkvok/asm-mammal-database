@@ -1283,7 +1283,7 @@ asm.affiliateQueryUrl = {
 };
 
 eutheriaFilterHelper = function() {
-  $("#linnean").unbind("iron-change").on("iron-change", function() {
+  $("#linnean").on("iron-select", function() {
     var group, html, len, m, mammalGroups, mammalItems;
     if (p$("#linnean").selectedItem = "eutheria") {
       mammalGroups = ["rodents", "lagomorphs", "primates", "solenodons", "soricomorphs", "bats", "perissodactyls", "pangolins", "musteloids", "pinnipeds", "true bears", "canids", "Mongooses &amp; meerkats", "hyenas", "civets", "true cats", "palm civet", "Whales", "hippos", "cervoids", "non-cervoid ruminants", "camelidae", "suinae", "tethytheria", "elephants", "afroscoricida", "aardvarks", "elephant shrews", "armadillos", "sloths", "anteaters"];

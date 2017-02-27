@@ -1017,6 +1017,74 @@ asm.affiliateQueryUrl =
   iNaturalist: "https://www.inaturalist.org/taxa/search"
 
 
+
+eutheriaFilterHelper = ->
+  $("#linnean")
+  .unbind "iron-change"
+  .on "iron-change", ->
+    if p$("#linnean").selectedItem = "eutheria"
+      mammalGroups = [
+        "rodents"
+        "lagomorphs"
+        "primates"
+        "solenodons"
+        "soricomorphs"
+        "bats"
+        "perissodactyls"
+        "pangolins"
+        "musteloids"
+        "pinnipeds"
+        "true bears"
+        "canids"
+        "Mongooses &amp; meerkats"
+        "hyenas"
+        "civets"
+        "true cats"
+        "palm civet"
+        "Whales"
+        "hippos"
+        "cervoids"
+        "non-cervoid ruminants"
+        "camelidae"
+        "suinae"
+        "tethytheria"
+        "elephants"
+        "afroscoricida"
+        "aardvarks"
+        "elephant shrews"
+        "armadillos"
+        "sloths"
+        "anteaters"
+        ]
+      mammalGroups.sort()
+      mammalItems = ""
+      for group in mammalGroups
+        html = """
+        <paper-item data-type="#{group.toLowerCase()}">
+          #{group.toTitleCase()}
+        </paper-item>
+        """
+        mammalItems += html
+      html = """
+        <div class="eutheria-extra">
+            <label for="type" class="sr-only">Eutheria Filter</label>
+            <paper-menu-button>
+              <paper-button class="dropdown-trigger"><iron-icon icon="icons:filter-list"></iron-icon><span id="filter-what" class="dropdown-label"></span></paper-button>
+              <paper-menu label="Group" data-column="simple_linnean_subgroup" class="cndb-filter dropdown-content" id="linnean-eutheria" name="type" attrForSelected="data-type" selected="0">
+                <paper-item data-type="any">All</paper-item>
+                #{mammalItems}
+                <!-- As per flag 4 in readme -->
+              </paper-menu>
+            </paper-menu-button>
+          </div>
+      """
+      $("#simple-linnean-groups").after html
+    else
+      $("#eutheria-extra").remove()
+  false
+
+
+
 performSearch = (stateArgs = undefined) ->
   ###
   # Check the fields and filters and do the async search
@@ -2613,6 +2681,7 @@ $ ->
               if fuzzyState
                 d$("#fuzzy").attr("checked", "checked")
               safariSearchArgHelper()
+              eutheriaFilterHelper()
         catch
           delay 250, ->
             fixState()

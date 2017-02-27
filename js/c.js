@@ -1,4 +1,4 @@
-var _metaStatus, activityIndicatorOff, activityIndicatorOn, animateLoad, asm, bindClickTargets, bindClicks, bindDismissalRemoval, bindPaperMenuButton, browserBeware, byteCount, checkFileVersion, checkTaxonNear, clearSearch, d$, deepJQuery, delay, doCORSget, doFontExceptions, downloadCSVList, downloadHTMLList, foo, formatAlien, formatScientificNames, formatSearchResults, getFilters, getLocation, getMaxZ, goTo, insertCORSWorkaround, insertModalImage, isBlank, isBool, isEmpty, isJson, isNull, isNumber, isNumeric, lightboxImages, loadJS, mapNewWindows, modalTaxon, openLink, openTab, overlayOff, overlayOn, parseTaxonYear, performSearch, prepURI, randomInt, roundNumber, safariDialogHelper, safariSearchArgHelper, searchParams, setHistory, setupServiceWorker, showBadSearchErrorMessage, showDownloadChooser, smartCalPhotosLink, smartReptileDatabaseLink, smartUpperCasing, sortResults, stopLoad, stopLoadError, toFloat, toInt, toObject, toastStatusMessage, uri,
+var _metaStatus, activityIndicatorOff, activityIndicatorOn, animateLoad, asm, bindClickTargets, bindClicks, bindDismissalRemoval, bindPaperMenuButton, browserBeware, byteCount, checkFileVersion, checkTaxonNear, clearSearch, d$, deepJQuery, delay, doCORSget, doFontExceptions, downloadCSVList, downloadHTMLList, eutheriaFilterHelper, foo, formatAlien, formatScientificNames, formatSearchResults, getFilters, getLocation, getMaxZ, goTo, insertCORSWorkaround, insertModalImage, isBlank, isBool, isEmpty, isJson, isNull, isNumber, isNumeric, lightboxImages, loadJS, mapNewWindows, modalTaxon, openLink, openTab, overlayOff, overlayOn, parseTaxonYear, performSearch, prepURI, randomInt, roundNumber, safariDialogHelper, safariSearchArgHelper, searchParams, setHistory, setupServiceWorker, showBadSearchErrorMessage, showDownloadChooser, smartCalPhotosLink, smartReptileDatabaseLink, smartUpperCasing, sortResults, stopLoad, stopLoadError, toFloat, toInt, toObject, toastStatusMessage, uri,
   slice = [].slice,
   indexOf = [].indexOf || function(item) { for (var i = 0, l = this.length; i < l; i++) { if (i in this && this[i] === item) return i; } return -1; };
 
@@ -1280,6 +1280,27 @@ asm.affiliateQueryUrl = {
   reptileDatabase: "http://reptile-database.reptarium.cz/species",
   calPhotos: "http://calphotos.berkeley.edu/cgi/img_query",
   iNaturalist: "https://www.inaturalist.org/taxa/search"
+};
+
+eutheriaFilterHelper = function() {
+  $("#linnean").unbind("iron-change").on("iron-change", function() {
+    var group, html, len, m, mammalGroups, mammalItems;
+    if (p$("#linnean").selectedItem = "eutheria") {
+      mammalGroups = ["rodents", "lagomorphs", "primates", "solenodons", "soricomorphs", "bats", "perissodactyls", "pangolins", "musteloids", "pinnipeds", "true bears", "canids", "Mongooses &amp; meerkats", "hyenas", "civets", "true cats", "palm civet", "Whales", "hippos", "cervoids", "non-cervoid ruminants", "camelidae", "suinae", "tethytheria", "elephants", "afroscoricida", "aardvarks", "elephant shrews", "armadillos", "sloths", "anteaters"];
+      mammalGroups.sort();
+      mammalItems = "";
+      for (m = 0, len = mammalGroups.length; m < len; m++) {
+        group = mammalGroups[m];
+        html = "<paper-item data-type=\"" + (group.toLowerCase()) + "\">\n  " + (group.toTitleCase()) + "\n</paper-item>";
+        mammalItems += html;
+      }
+      html = "<div class=\"eutheria-extra\">\n    <label for=\"type\" class=\"sr-only\">Eutheria Filter</label>\n    <paper-menu-button>\n      <paper-button class=\"dropdown-trigger\"><iron-icon icon=\"icons:filter-list\"></iron-icon><span id=\"filter-what\" class=\"dropdown-label\"></span></paper-button>\n      <paper-menu label=\"Group\" data-column=\"simple_linnean_subgroup\" class=\"cndb-filter dropdown-content\" id=\"linnean-eutheria\" name=\"type\" attrForSelected=\"data-type\" selected=\"0\">\n        <paper-item data-type=\"any\">All</paper-item>\n        " + mammalItems + "\n        <!-- As per flag 4 in readme -->\n      </paper-menu>\n    </paper-menu-button>\n  </div>";
+      return $("#simple-linnean-groups").after(html);
+    } else {
+      return $("#eutheria-extra").remove();
+    }
+  });
+  return false;
 };
 
 performSearch = function(stateArgs) {
@@ -2763,7 +2784,8 @@ $(function() {
               if (fuzzyState) {
                 d$("#fuzzy").attr("checked", "checked");
               }
-              return safariSearchArgHelper();
+              safariSearchArgHelper();
+              return eutheriaFilterHelper();
             });
           });
         } catch (error3) {

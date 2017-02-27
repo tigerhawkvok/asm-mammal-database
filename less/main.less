@@ -19,6 +19,11 @@ body {
 }
 
 
+@asm-blue-light: #446f74;
+@asm-blue-header: #134446;
+@asm-blue-dark: #013434;
+
+
 @material-blue: #5677fc;
 @material-green: #4CAF50;
 @material-indigo: #3f51b5;
@@ -42,6 +47,32 @@ body {
     background: @material-blue;
     color:#fff;
 }
+
+
+.asm-blue-light-text {
+    color: @asm-blue-light;
+}
+.asm-blue-light {
+    color: #ccc;
+    background: @asm-blue-light;
+}
+
+.asm-blue {
+    color: @asm-blue-header;
+}
+.asm-blue {
+    color: white;
+    background: @asm-blue-header;
+}
+
+.asm-blue-dark-text {
+    color: white;
+    color: @asm-blue-dark;
+}
+.asm-blue-dark {
+    background: @asm-blue-dark;
+}
+
 
 paper-fab.materialblue.paper-fab-0 {
     .materialblue();

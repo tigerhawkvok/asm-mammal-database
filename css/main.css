@@ -6720,6 +6720,27 @@ body {
   background: #5677fc;
   color: #fff;
 }
+.asm-blue-light-text {
+  color: #446f74;
+}
+.asm-blue-light {
+  color: #ccc;
+  background: #446f74;
+}
+.asm-blue {
+  color: #134446;
+}
+.asm-blue {
+  color: white;
+  background: #134446;
+}
+.asm-blue-dark-text {
+  color: white;
+  color: #013434;
+}
+.asm-blue-dark {
+  background: #013434;
+}
 paper-fab.materialblue.paper-fab-0 {
   background: #5677fc;
   color: #fff;

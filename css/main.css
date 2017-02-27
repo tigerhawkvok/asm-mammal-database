@@ -2976,7 +2976,8 @@ select[multiple].input-lg {
   font-weight: normal;
   text-align: center;
   vertical-align: middle;
-  touch-action: manipulation;
+  -ms-touch-action: manipulation;
+      touch-action: manipulation;
   cursor: pointer;
   background-image: none;
   border: 1px solid transparent;
@@ -6644,7 +6645,8 @@ button.close {
   cursor: pointer;
   position: fixed;
   z-index: 10000;
-  touch-action: none;
+  -ms-touch-action: none;
+      touch-action: none;
   /* 50 */
   box-shadow: 0 0 3.125em rgba(0, 0, 0, 0.75);
   /* 50 */

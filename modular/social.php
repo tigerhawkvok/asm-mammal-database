@@ -1,13 +1,27 @@
+<?php 
+  require_once dirname(__FILE__) . "/../core/core.php";
+  $defaultImage = "species_photos/Tragelaphus_eurycerus.jpg";
+  $pageImage = empty($pageImage) ? $defaultImage : $pageImage;  
+  $image = new ImageFunctions($pageImage);
+  if(!$image->imageExists()) {
+      $pageImage = $defaultImage;
+      $image->setImage($defaultImage);
+  }
+  $width = $image->getWidth();
+  $height = $image->getHeight();
+  ?>
+
 <!-- Meta descriptors -->
+
 <!-- Twitter cards -->
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:site" content="@mammalogists">
 <meta name="twitter:creator" content="@mammalogists">
 <meta name="twitter:title" content="<?php echo $title; ?>">
 <meta name="twitter:description" content="<?php echo $pageDescription; ?>">
-<meta property="twitter:image" content="https://mammaldiversity.org/assets/favicon1024.png" />
-<meta property="twitter:image:width" content="1024"/>
-<meta property="twitter:image:height" content="1024"/>
+<meta property="twitter:image" content="https://mammaldiversity.org/<?php echo $pageImage; ?>" />
+<meta property="twitter:image:width" content="<?php echo $width; ?>"/>
+<meta property="twitter:image:height" content="<?php echo $height; ?>"/>
 <!-- Facebook OG tags -->
 <meta property="og:title"
       content="<?php echo $title; ?>" />
@@ -29,8 +43,8 @@
   "@type" : "Organization",
   "name" : "ASM Species Account Database",
   "url" : "https://mammaldiversity.org/",
-  "logo" : "https://mammaldiversity.org/assets/favicon1024.png",
-  "image" : "https://mammaldiversity.org/wp-content/uploads/2015/03/Pseudacris_crucifer-1425x460.jpg",
+  "logo" : "https://mammaldiversity.org/assets/favicon2048.png",
+  "image" : "https://mammaldiversity.org/<?php echo $pageImage; ?>",
   "description" : "<?php echo $pageDescription; ?>"
   }
 </script>

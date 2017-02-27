@@ -35,9 +35,9 @@
       <div class="row">
         <paper-input label="Search" id="search" name="search" required autofocus floatingLabel class="col-xs-7 col-sm-9"></paper-input>
         <div class="col-xs-5 col-sm-3">
-          <paper-fab id="do-search" icon="search" raisedButton class="materialblue"></paper-fab>
-          <paper-fab id="do-search-all" icon="list" raisedButton class="materialblue hidden-xs" data-toggle="tooltip" title="Show all results" data-placement="bottom"></paper-fab>
-          <paper-fab id="do-reset-search" icon="cancel" raisedButton class="materialblue" data-toggle="tooltip" title="Reset search" data-placement="right"></paper-fab>
+          <paper-fab id="do-search" icon="search" raisedButton class="asm-blue"></paper-fab>
+          <paper-fab id="do-search-all" icon="list" raisedButton class="asm-blue hidden-xs" data-toggle="tooltip" title="Show all results" data-placement="bottom"></paper-fab>
+          <paper-fab id="do-reset-search" icon="cancel" raisedButton class="asm-blue" data-toggle="tooltip" title="Reset search" data-placement="right"></paper-fab>
         </div>
       </div>
       <fieldset class="fullwidth">
@@ -73,7 +73,7 @@
         </div>
         <div>
           <!-- Now, elements that are hidden by default -->
-          <paper-button data-toggle="collapse" data-target="#collapse-advanced" aria-expanded="false" aria-controls="collapse-advanced" class="materialbluegrey" id="collapse-button" raised>Advanced Options <iron-icon icon="icons:unfold-more" id="collapse-icon"></iron-icon></paper-button>
+          <paper-button data-toggle="collapse" data-target="#collapse-advanced" aria-expanded="false" aria-controls="collapse-advanced" class="asm-blue-light" id="collapse-button" raised>Advanced Options <iron-icon icon="icons:unfold-more" id="collapse-icon"></iron-icon></paper-button>
           <div class="collapse form-group" id="collapse-advanced">
             <!-- Clade -->
             <paper-input label="Clade" id="major-type-filter" name="major-type-filter" class="cndb-filter col-md-4 col-xs-6" data-column="major_type"></paper-input>

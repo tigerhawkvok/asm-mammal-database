@@ -1,7 +1,7 @@
 <?php ?>
 <meta http-equiv="X-UA-Compatible" content="IE=edge"/>
 <meta charset="utf-8"/>
-<meta name="theme-color" content="#455A64"/>
+<meta name="theme-color" content="#446f74"/>
 <meta name="viewport" content="width=device-width, minimum-scale=1,initial-scale=1" />
 <meta http-equiv="Content-Type" content="text/html;charset=utf-8" />
 

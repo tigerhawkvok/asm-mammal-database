@@ -421,7 +421,7 @@ if(!function_exists("get_include_contents")) {
     }
 }
 
-
+if(!class_exists("ImageFunctions")) {
 class ImageFunctions
 {
     /***
@@ -808,4 +808,5 @@ class ImageFunctions
 
         return array('status' => $status, 'output' => $output, 'output_size' => "$tn_width X $tn_height");
     }
+}
 }

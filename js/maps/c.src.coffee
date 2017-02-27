@@ -1082,7 +1082,7 @@ eutheriaFilterHelper = ->
         """
         mammalItems += html
       html = """
-        <div class="eutheria-extra">
+        <div id="eutheria-extra">
             <label for="type" class="sr-only">Eutheria Filter</label>
             <paper-menu-button>
               <paper-button class="dropdown-trigger"><iron-icon icon="icons:filter-list"></iron-icon><span id="filter-what" class="dropdown-label"></span></paper-button>

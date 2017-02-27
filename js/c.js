@@ -1312,7 +1312,7 @@ eutheriaFilterHelper = function() {
         html = "<paper-item data-type=\"" + group + "\">\n  " + (group.toTitleCase()) + "\n</paper-item>";
         mammalItems += html;
       }
-      html = "<div class=\"eutheria-extra\">\n    <label for=\"type\" class=\"sr-only\">Eutheria Filter</label>\n    <paper-menu-button>\n      <paper-button class=\"dropdown-trigger\"><iron-icon icon=\"icons:filter-list\"></iron-icon><span id=\"filter-what\" class=\"dropdown-label\"></span></paper-button>\n      <paper-menu label=\"Group\" data-column=\"simple_linnean_subgroup\" class=\"cndb-filter dropdown-content\" id=\"linnean-eutheria\" name=\"type\" attrForSelected=\"data-type\" selected=\"0\">\n        <paper-item data-type=\"any\">All</paper-item>\n        " + mammalItems + "\n        <!-- As per flag 4 in readme -->\n      </paper-menu>\n    </paper-menu-button>\n  </div>";
+      html = "<div id=\"eutheria-extra\">\n    <label for=\"type\" class=\"sr-only\">Eutheria Filter</label>\n    <paper-menu-button>\n      <paper-button class=\"dropdown-trigger\"><iron-icon icon=\"icons:filter-list\"></iron-icon><span id=\"filter-what\" class=\"dropdown-label\"></span></paper-button>\n      <paper-menu label=\"Group\" data-column=\"simple_linnean_subgroup\" class=\"cndb-filter dropdown-content\" id=\"linnean-eutheria\" name=\"type\" attrForSelected=\"data-type\" selected=\"0\">\n        <paper-item data-type=\"any\">All</paper-item>\n        " + mammalItems + "\n        <!-- As per flag 4 in readme -->\n      </paper-menu>\n    </paper-menu-button>\n  </div>";
       return $("#simple-linnean-groups").after(html);
     } else {
       return $("#eutheria-extra").remove();

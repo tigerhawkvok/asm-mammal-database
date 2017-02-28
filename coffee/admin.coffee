@@ -4,7 +4,7 @@
 ###
 adminParams = new Object()
 adminParams.apiTarget = "admin_api.php"
-adminParams.adminPageUrl = "https://mammaldiversity.org/cndb/admin-page.html"
+adminParams.adminPageUrl = "https://mammaldiversity.org/admin-page.html"
 adminParams.loginDir = "admin/"
 adminParams.loginApiTarget = "#{adminParams.loginDir}async_login_handler.php"
 
@@ -24,7 +24,7 @@ loadAdminUi = ->
         <span id="pib-wrapper-settings" class="pib-wrapper" data-toggle="tooltip" title="User Settings" data-placement="bottom">
           <paper-icon-button icon='settings-applications' class='click' data-url='#{data.login_url}'></paper-icon-button>
         </span>
-        <span id="pib-wrapper-exit-to-app" class="pib-wrapper" data-toggle="tooltip" title="Go to CNDB app" data-placement="bottom">
+        <span id="pib-wrapper-exit-to-app" class="pib-wrapper" data-toggle="tooltip" title="Go to SADB app" data-placement="bottom">
           <paper-icon-button icon='exit-to-app' class='click' data-url='#{uri.urlString}' id="app-linkout"></paper-icon-button>
         </span>
       </h3>
@@ -229,7 +229,7 @@ loadModalTaxonEditor = (extraHtml = "", affirmativeText = "Save") ->
   <div id="upload-image"></div>
   <span class="help-block" id="upload-image-help">You can drag and drop an image above, or enter its server path below.</span>
   <paper-input label="Image" id="edit-image" name="edit-image" floatingLabel aria-describedby="imagehelp"></paper-input>
-    <span class="help-block" id="imagehelp">The image path here should be relative to the <span class="code">public_html/cndb/</span> directory.</span>
+    <span class="help-block" id="imagehelp">The image path here should be relative to the <span class="code">public_html/</span> directory.</span>
   <paper-input label="Image Credit" id="edit-image-credit" name="edit-image-credit" floatingLabel></paper-input>
   <paper-input label="Image License" id="edit-image-license" name="edit-image-license" floatingLabel></paper-input>
   <paper-input label="Taxon Credit" id="edit-taxon-credit" name="edit-taxon-credit" floatingLabel aria-describedby="taxon-credit-help"></paper-input>
@@ -957,6 +957,6 @@ $ ->
     .unbind()
     .click ->
       openTab(adminParams.adminPageUrl)
-  loadJS "https://mammaldiversity.org/cndb/bower_components/bootstrap/dist/js/bootstrap.min.js", ->
+  loadJS "bower_components/bootstrap/dist/js/bootstrap.min.js", ->
     $("[data-toggle='tooltip']").tooltip()
   # The rest of the onload for the admin has been moved to the core.coffee file.

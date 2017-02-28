@@ -17,9 +17,10 @@ loadAdminUi = ->
   try
     verifyLoginCredentials (data) ->
       # Post verification
+      cookieName = "#{uri.domain}_name"
       articleHtml = """
       <h3>
-        Welcome, #{$.cookie("asmherps_name")}
+        Welcome, #{$.cookie(cookieName)}
         <span id="pib-wrapper-settings" class="pib-wrapper" data-toggle="tooltip" title="User Settings" data-placement="bottom">
           <paper-icon-button icon='settings-applications' class='click' data-url='#{data.login_url}'></paper-icon-button>
         </span>
@@ -75,9 +76,9 @@ verifyLoginCredentials = (callback) ->
   # could force the local JS check to succeed.
   # SECURE AUTHENTICATION MUST BE WHOLLY SERVER SIDE.
   ###
-  hash = $.cookie("asmherps_auth")
-  secret = $.cookie("asmherps_secret")
-  link = $.cookie("asmherps_link")
+  hash = $.cookie("#{uri.domain}_auth")
+  secret = $.cookie("#{uri.domain}_secret")
+  link = $.cookie("#{uri.domain}_link")
   args = "hash=#{hash}&secret=#{secret}&dblink=#{link}"
   $.post(adminParams.loginApiTarget,args,"json")
   .done (result) ->
@@ -289,7 +290,7 @@ createNewTaxon = ->
   # Remove the dupliate button
   d$("#duplicate-taxon").remove()
   # Append the editor value
-  whoEdited = if isNull($.cookie("asmherps_fullname")) then $.cookie("asmherps_user") else $.cookie("asmherps_fullname")
+  whoEdited = if isNull($.cookie("#{uri.domain}_fullname")) then $.cookie("#{uri.domain}_user") else $.cookie("#{uri.domain}_fullname")
   d$("#edit-taxon-author").attr("value",whoEdited)
   # Bind the save button
   d$("#save-editor")
@@ -482,7 +483,7 @@ lookupEditorSpecies = (taxon = undefined) ->
             console.warn("Removed #last-edited-by! Didn't have an author provided for column '#{col}', giving '#{d}'. It's probably the first edit to this taxon.")
           else
             d$("#taxon-author-last").text(d)
-          whoEdited = if isNull($.cookie("asmherps_fullname")) then $.cookie("asmherps_user") else $.cookie("asmherps_fullname")
+          whoEdited = if isNull($.cookie("#{uri.domain}_fullname")) then $.cookie("#{uri.domain}_user") else $.cookie("#{uri.domain}_fullname")
           d$("#edit-taxon-author").attr("value",whoEdited)
         else
           fieldSelector = "#edit-#{col.replace(/_/g,"-")}"
@@ -794,9 +795,9 @@ saveEditorEntry = (performMode = "save") ->
     console.warn("Got the output string",saveSring)
     console.warn("Sending b64 string",s64)
     return true
-  hash = $.cookie("asmherps_auth")
-  secret = $.cookie("asmherps_secret")
-  link = $.cookie("asmherps_link")
+  hash = $.cookie("#{uri.domain}_auth")
+  secret = $.cookie("#{uri.domain}_secret")
+  link = $.cookie("#{uri.domain}_link")
   userVerification = "hash=#{hash}&secret=#{secret}&dblink=#{link}"
   args = "perform=#{performMode}&#{userVerification}&data=#{s64}"
   console.log("Going to save",saveObject)

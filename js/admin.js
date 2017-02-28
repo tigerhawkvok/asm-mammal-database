@@ -26,8 +26,9 @@ loadAdminUi = function() {
   var e, error1;
   try {
     verifyLoginCredentials(function(data) {
-      var articleHtml, searchForm;
-      articleHtml = "<h3>\n  Welcome, " + ($.cookie("asmherps_name")) + "\n  <span id=\"pib-wrapper-settings\" class=\"pib-wrapper\" data-toggle=\"tooltip\" title=\"User Settings\" data-placement=\"bottom\">\n    <paper-icon-button icon='settings-applications' class='click' data-url='" + data.login_url + "'></paper-icon-button>\n  </span>\n  <span id=\"pib-wrapper-exit-to-app\" class=\"pib-wrapper\" data-toggle=\"tooltip\" title=\"Go to CNDB app\" data-placement=\"bottom\">\n    <paper-icon-button icon='exit-to-app' class='click' data-url='" + uri.urlString + "' id=\"app-linkout\"></paper-icon-button>\n  </span>\n</h3>\n<div id='admin-actions-block'>\n  <div class='bs-callout bs-callout-info'>\n    <p>Please be patient while the administrative interface loads.</p>\n  </div>\n</div>";
+      var articleHtml, cookieName, searchForm;
+      cookieName = uri.domain + "_name";
+      articleHtml = "<h3>\n  Welcome, " + ($.cookie(cookieName)) + "\n  <span id=\"pib-wrapper-settings\" class=\"pib-wrapper\" data-toggle=\"tooltip\" title=\"User Settings\" data-placement=\"bottom\">\n    <paper-icon-button icon='settings-applications' class='click' data-url='" + data.login_url + "'></paper-icon-button>\n  </span>\n  <span id=\"pib-wrapper-exit-to-app\" class=\"pib-wrapper\" data-toggle=\"tooltip\" title=\"Go to CNDB app\" data-placement=\"bottom\">\n    <paper-icon-button icon='exit-to-app' class='click' data-url='" + uri.urlString + "' id=\"app-linkout\"></paper-icon-button>\n  </span>\n</h3>\n<div id='admin-actions-block'>\n  <div class='bs-callout bs-callout-info'>\n    <p>Please be patient while the administrative interface loads.</p>\n  </div>\n</div>";
       $("article #main-body").html(articleHtml);
       bindClicks();
 
@@ -72,9 +73,9 @@ verifyLoginCredentials = function(callback) {
    * SECURE AUTHENTICATION MUST BE WHOLLY SERVER SIDE.
    */
   var args, hash, link, secret;
-  hash = $.cookie("asmherps_auth");
-  secret = $.cookie("asmherps_secret");
-  link = $.cookie("asmherps_link");
+  hash = $.cookie(uri.domain + "_auth");
+  secret = $.cookie(uri.domain + "_secret");
+  link = $.cookie(uri.domain + "_link");
   args = "hash=" + hash + "&secret=" + secret + "&dblink=" + link;
   $.post(adminParams.loginApiTarget, args, "json").done(function(result) {
     if (result.status === true) {
@@ -245,7 +246,7 @@ createNewTaxon = function() {
   d$("#modal-taxon-editor div.scrollable").css("max-height", "");
   d$("#modal-taxon-edit").addClass("create-new-taxon");
   d$("#duplicate-taxon").remove();
-  whoEdited = isNull($.cookie("asmherps_fullname")) ? $.cookie("asmherps_user") : $.cookie("asmherps_fullname");
+  whoEdited = isNull($.cookie(uri.domain + "_fullname")) ? $.cookie(uri.domain + "_user") : $.cookie(uri.domain + "_fullname");
   d$("#edit-taxon-author").attr("value", whoEdited);
   d$("#save-editor").click(function() {
     return saveEditorEntry("new");
@@ -438,7 +439,7 @@ lookupEditorSpecies = function(taxon) {
           } else {
             d$("#taxon-author-last").text(d);
           }
-          whoEdited = isNull($.cookie("asmherps_fullname")) ? $.cookie("asmherps_user") : $.cookie("asmherps_fullname");
+          whoEdited = isNull($.cookie(uri.domain + "_fullname")) ? $.cookie(uri.domain + "_user") : $.cookie(uri.domain + "_fullname");
           d$("#edit-taxon-author").attr("value", whoEdited);
         } else {
           fieldSelector = "#edit-" + (col.replace(/_/g, "-"));
@@ -718,9 +719,9 @@ saveEditorEntry = function(performMode) {
     console.warn("Sending b64 string", s64);
     return true;
   }
-  hash = $.cookie("asmherps_auth");
-  secret = $.cookie("asmherps_secret");
-  link = $.cookie("asmherps_link");
+  hash = $.cookie(uri.domain + "_auth");
+  secret = $.cookie(uri.domain + "_secret");
+  link = $.cookie(uri.domain + "_link");
   userVerification = "hash=" + hash + "&secret=" + secret + "&dblink=" + link;
   args = "perform=" + performMode + "&" + userVerification + "&data=" + s64;
   console.log("Going to save", saveObject);

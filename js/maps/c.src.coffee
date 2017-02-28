@@ -2,6 +2,13 @@ uri = new Object()
 uri.o = $.url()
 uri.urlString = uri.o.attr('protocol') + '://' + uri.o.attr('host')  + uri.o.attr("directory")
 uri.query = uri.o.attr("fragment")
+domainPlaceholder = uri.o.attr("host").split "."
+# Now we pop off the last before taking the zero-index
+# This preserves behaviour around localhost
+domainPlaceholder.pop()
+uri.domain = domainPlaceholder[0] ? ""
+
+
 
 _metaStatus = new Object()
 

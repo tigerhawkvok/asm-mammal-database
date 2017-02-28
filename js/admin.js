@@ -54,10 +54,13 @@ loadAdminUi = function() {
         return createNewTaxon();
       });
       bindClickTargets();
+      console.info("Successfully validated user");
       return false;
     });
   } catch (error1) {
     e = error1;
+    console.error("Couldn't check status - " + e.message);
+    console.warn(e.stack);
     $("main #main-body").html("<div class='bs-callout bs-callout-danger'><h4>Application Error</h4><p>There was an error in the application. Please refresh and try again. If this persists, please contact administration.</p></div>");
   }
   return false;

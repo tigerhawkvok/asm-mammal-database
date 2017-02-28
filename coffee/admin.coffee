@@ -62,8 +62,11 @@ loadAdminUi = ->
       $("#do-admin-add").click ->
         createNewTaxon()
       bindClickTargets()
+      console.info "Successfully validated user"
       false
   catch e
+    console.error "Couldn't check status - #{e.message}"
+    console.warn e.stack
     $("main #main-body").html("<div class='bs-callout bs-callout-danger'><h4>Application Error</h4><p>There was an error in the application. Please refresh and try again. If this persists, please contact administration.</p></div>")
   false
 

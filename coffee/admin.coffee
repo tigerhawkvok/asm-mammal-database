@@ -14,12 +14,13 @@ loadAdminUi = ->
   # fetches/draws the page contents if it's OK. Otherwise, boots the
   # user back to the login page.
   ###
+  console.log "Loading admin UI"
   try
     verifyLoginCredentials (data) ->
       # Post verification
       cookieName = "#{uri.domain}_name"
       mainHtml = """
-      <h3>
+      <h3 class="col-xs-12">
         Welcome, #{$.cookie(cookieName)}
         <span id="pib-wrapper-settings" class="pib-wrapper" data-toggle="tooltip" title="User Settings" data-placement="bottom">
           <paper-icon-button icon='settings-applications' class='click' data-url='#{data.login_url}'></paper-icon-button>
@@ -28,7 +29,7 @@ loadAdminUi = ->
           <paper-icon-button icon='exit-to-app' class='click' data-url='#{uri.urlString}' id="app-linkout"></paper-icon-button>
         </span>
       </h3>
-      <div id='admin-actions-block'>
+      <div id='admin-actions-block' class="col-xs-12">
         <div class='bs-callout bs-callout-info'>
           <p>Please be patient while the administrative interface loads.</p>
         </div>
@@ -52,7 +53,7 @@ loadAdminUi = ->
       </form>
       <div id='search-results' class="row"></div>
       """
-      $("#admin-actions-block").html(searchForm)
+      $("#admin-actions-block").html("<div class='col-xs-12'>#{searchForm}</div>")
       $("#admin-search-form").submit (e) ->
         e.preventDefault()
       $("#admin-search").keypress (e) ->
@@ -67,7 +68,7 @@ loadAdminUi = ->
   catch e
     console.error "Couldn't check status - #{e.message}"
     console.warn e.stack
-    $("main #main-body").html("<div class='bs-callout bs-callout-danger'><h4>Application Error</h4><p>There was an error in the application. Please refresh and try again. If this persists, please contact administration.</p></div>")
+    $("main #main-body").html("<div class='bs-callout bs-callout-danger col-xs-12'><h4>Application Error</h4><p>There was an error in the application. Please refresh and try again. If this persists, please contact administration.</p></div>")
   false
 
 
@@ -83,15 +84,19 @@ verifyLoginCredentials = (callback) ->
   secret = $.cookie("#{uri.domain}_secret")
   link = $.cookie("#{uri.domain}_link")
   args = "hash=#{hash}&secret=#{secret}&dblink=#{link}"
-  $.post(adminParams.loginApiTarget,args,"json")
+  $.post adminParams.loginApiTarget, args, "json"
   .done (result) ->
+    console.log "Server called back from login credential verification", result
     if result.status is true
       callback(result)
     else
-      goTo(result.login_url)
+      unless isNull result.login_url
+        goTo(result.login_url)
+      else
+        $("main #main-body").html("<div class='bs-callout-danger bs-callout col-xs-12'><h4>Couldn't verify login</h4><p>There's currently a server problem. Try back again soon.</p><p>The server said:</p><code>#{result.error}</code></div>")
   .fail (result,status) ->
     # Throw up some warning here
-    $("main #main-body").html("<div class='bs-callout-danger bs-callout'><h4>Couldn't verify login</h4><p>There's currently a server problem. Try back again soon.</p>'</div>")
+    $("main #main-body").html("<div class='bs-callout-danger bs-callout col-xs-12'><h4>Couldn't verify login</h4><p>There's currently a server problem. Try back again soon.</p></div>")
     console.log(result,status)
     false
   false

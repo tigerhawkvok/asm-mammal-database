@@ -1048,7 +1048,7 @@ class UserFunctions extends DBHelper
               }
               $cookies = $this->createCookieTokens();
 
-              return array_merge(array('status' => true, 'message' => $message), $userdata, $cookies, $auth_result);
+              return array_merge($userdata, $cookies, $auth_result, array('status' => true, 'message' => $message));
           } else {
               /*
                 , "lookup_result" => $res, "storage_passed" => $store,

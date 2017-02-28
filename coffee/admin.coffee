@@ -18,7 +18,7 @@ loadAdminUi = ->
     verifyLoginCredentials (data) ->
       # Post verification
       cookieName = "#{uri.domain}_name"
-      articleHtml = """
+      mainHtml = """
       <h3>
         Welcome, #{$.cookie(cookieName)}
         <span id="pib-wrapper-settings" class="pib-wrapper" data-toggle="tooltip" title="User Settings" data-placement="bottom">
@@ -34,7 +34,7 @@ loadAdminUi = ->
         </div>
       </div>
       """
-      $("article #main-body").html(articleHtml)
+      $("main #main-body").html(mainHtml)
       # $(".pib-wrapper").tooltip()
       bindClicks()
       ###
@@ -64,7 +64,7 @@ loadAdminUi = ->
       bindClickTargets()
       false
   catch e
-    $("article #main-body").html("<div class='bs-callout bs-callout-danger'><h4>Application Error</h4><p>There was an error in the application. Please refresh and try again. If this persists, please contact administration.</p></div>")
+    $("main #main-body").html("<div class='bs-callout bs-callout-danger'><h4>Application Error</h4><p>There was an error in the application. Please refresh and try again. If this persists, please contact administration.</p></div>")
   false
 
 
@@ -88,7 +88,7 @@ verifyLoginCredentials = (callback) ->
       goTo(result.login_url)
   .fail (result,status) ->
     # Throw up some warning here
-    $("article #main-body").html("<div class='bs-callout-danger bs-callout'><h4>Couldn't verify login</h4><p>There's currently a server problem. Try back again soon.</p>'</div>")
+    $("main #main-body").html("<div class='bs-callout-danger bs-callout'><h4>Couldn't verify login</h4><p>There's currently a server problem. Try back again soon.</p>'</div>")
     console.log(result,status)
     false
   false

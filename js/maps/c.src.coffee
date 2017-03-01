@@ -1184,7 +1184,8 @@ performSearch = (stateArgs = undefined) ->
     # Populate the result container
     # console.log("Search executed by #{result.method} with #{result.count} results.")
     if toInt(result.count) is 0
-      showBadSearchErrorMessage(result)
+      console.error "No search results: Got search value #{s}, from hitting","#{searchParams.apiPath}?#{args}"
+      showBadSearchErrorMessage.debounce null, null, null, result
       clearSearch(true)
       return false
     if result.status is true
@@ -2659,7 +2660,7 @@ $ ->
     catch e
       loadArgs = ""
     #console.log("Popping state to #{loadArgs}")
-    performSearch(loadArgs)
+    performSearch.debounce 50, null, null, loadArgs
     temp = loadArgs.split("&")[0]
     $("#search").attr("value",temp)
   ## Set events
@@ -2667,23 +2668,23 @@ $ ->
     clearSearch()
   $("#search_form").submit (e) ->
     e.preventDefault()
-    performSearch()
+    performSearch.debounce 50
   $("#collapse-advanced").on "shown.bs.collapse", ->
     $("#collapse-icon").attr("icon","icons:unfold-less")
   $("#collapse-advanced").on "hidden.bs.collapse", ->
     $("#collapse-icon").attr("icon","icons:unfold-more")
   # Bind enter keydown
   $("#search_form").keypress (e) ->
-    if e.which is 13 then performSearch()
+    if e.which is 13 then performSearch.debounce 50
   # Bind clicks
   $("#do-search").click ->
-    performSearch()
+    performSearch.debounce 50
   $("#do-search-all").click ->
-    performSearch(true)
+    performSearch.debounce 50, null, null, true
   $("#linnean").on "iron-select", ->
     # We do want to auto-trigger this when there's a search value,
     # but not when it's empty (even though this is valid)
-    if not isNull($("#search").val()) then performSearch()
+    if not isNull($("#search").val()) then performSearch.debounce()
   eutheriaFilterHelper()
   bindPaperMenuButton()
   # Do a fill of the result container
@@ -2779,6 +2780,7 @@ $ ->
         console.log("Got a valid result, formatting #{result.count} results.")
         formatSearchResults(result)
         return false
+      console.warn "Bad initial search"
       showBadSearchErrorMessage.debounce null, null, null, result
       console.error result.error 
       console.warn result

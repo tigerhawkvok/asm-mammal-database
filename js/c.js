@@ -1404,7 +1404,8 @@ performSearch = function(stateArgs) {
   animateLoad();
   return $.get(searchParams.targetApi, args, "json").done(function(result) {
     if (toInt(result.count) === 0) {
-      showBadSearchErrorMessage(result);
+      console.error("No search results: Got search value " + s + ", from hitting", searchParams.apiPath + "?" + args);
+      showBadSearchErrorMessage.debounce(null, null, null, result);
       clearSearch(true);
       return false;
     }
@@ -2753,7 +2754,7 @@ $(function() {
       e = error1;
       loadArgs = "";
     }
-    performSearch(loadArgs);
+    performSearch.debounce(50, null, null, loadArgs);
     temp = loadArgs.split("&")[0];
     return $("#search").attr("value", temp);
   });
@@ -2762,7 +2763,7 @@ $(function() {
   });
   $("#search_form").submit(function(e) {
     e.preventDefault();
-    return performSearch();
+    return performSearch.debounce(50);
   });
   $("#collapse-advanced").on("shown.bs.collapse", function() {
     return $("#collapse-icon").attr("icon", "icons:unfold-less");
@@ -2772,18 +2773,18 @@ $(function() {
   });
   $("#search_form").keypress(function(e) {
     if (e.which === 13) {
-      return performSearch();
+      return performSearch.debounce(50);
     }
   });
   $("#do-search").click(function() {
-    return performSearch();
+    return performSearch.debounce(50);
   });
   $("#do-search-all").click(function() {
-    return performSearch(true);
+    return performSearch.debounce(50, null, null, true);
   });
   $("#linnean").on("iron-select", function() {
     if (!isNull($("#search").val())) {
-      return performSearch();
+      return performSearch.debounce();
     }
   });
   eutheriaFilterHelper();
@@ -2896,6 +2897,7 @@ $(function() {
         formatSearchResults(result);
         return false;
       }
+      console.warn("Bad initial search");
       showBadSearchErrorMessage.debounce(null, null, null, result);
       console.error(result.error);
       return console.warn(result);

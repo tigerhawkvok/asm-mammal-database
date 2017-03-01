@@ -219,6 +219,7 @@ formatSearchResults = (result,container = searchParams.targetContainer) ->
   # http://mammaldiversity.org/cndb/commonnames_api.php?q=batrachoseps+attenuatus&loose=true
   # for a sample search result return.
   ###
+  $("#result-header-container").removeAttr "hidden"
   data = result.result
   searchParams.result = data
   headers = new Array()
@@ -1021,6 +1022,7 @@ clearSearch = (partialReset = false) ->
   </div>
   """
   $("#result_container").html(calloutHtml)
+  $("#result-header-container").attr "hidden", "hidden"
   if partialReset is true then return false
   # Do a history breakpoint
   setHistory()
@@ -1597,7 +1599,7 @@ $ ->
   Hello developer!
   If you're looking for hints on our API information, this site is open-source
   and released under the GPL. Just click on the GitHub link on the bottom of
-  the page, or check out https://github.com/SSARHERPS
+  the page, or check out LINK_TO_ORG_REPO
   ****************************************************************************
   """
   console.log(devHello)

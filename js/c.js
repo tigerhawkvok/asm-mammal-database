@@ -1471,6 +1471,7 @@ formatSearchResults = function(result, container) {
    * http://mammaldiversity.org/cndb/commonnames_api.php?q=batrachoseps+attenuatus&loose=true
    * for a sample search result return.
    */
+  $("#result-header-container").removeAttr("hidden");
   data = result.result;
   searchParams.result = data;
   headers = new Array();
@@ -2260,6 +2261,7 @@ clearSearch = function(partialReset) {
   $("#result-count").text("");
   calloutHtml = "<div class=\"bs-callout bs-callout-info center-block col-xs-12 col-sm-8 col-md-5\">\n  Search for a common or scientific name above to begin, eg, \"California slender salamander\" or \"<span class=\"sciname\">Batrachoseps attenuatus</span>\"\n</div>";
   $("#result_container").html(calloutHtml);
+  $("#result-header-container").attr("hidden", "hidden");
   if (partialReset === true) {
     return false;
   }
@@ -2709,7 +2711,7 @@ bindPaperMenuButton = function(selector, unbindTargets) {
 
 $(function() {
   var col, devHello, e, error1, error2, error3, error4, f64, filterObj, fixState, fuzzyState, loadArgs, looseState, openFilters, queryUrl, selectedState, selector, temp, val;
-  devHello = "****************************************************************************\nHello developer!\nIf you're looking for hints on our API information, this site is open-source\nand released under the GPL. Just click on the GitHub link on the bottom of\nthe page, or check out https://github.com/SSARHERPS\n****************************************************************************";
+  devHello = "****************************************************************************\nHello developer!\nIf you're looking for hints on our API information, this site is open-source\nand released under the GPL. Just click on the GitHub link on the bottom of\nthe page, or check out LINK_TO_ORG_REPO\n****************************************************************************";
   console.log(devHello);
   animateLoad();
   window.addEventListener("popstate", function(e) {

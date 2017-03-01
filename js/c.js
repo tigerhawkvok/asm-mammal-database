@@ -2290,7 +2290,7 @@ clearSearch = function(partialReset) {
    * Clear out the search and reset it to a "fresh" state.
    */
   $("#result-count").text("");
-  calloutHtml = "<div class=\"bs-callout bs-callout-info center-block col-xs-12 col-sm-8 col-md-5\">\n  Search for a common or scientific name above to begin, eg, \"California slender salamander\" or \"<span class=\"sciname\">Batrachoseps attenuatus</span>\"\n</div>";
+  calloutHtml = "<div class=\"bs-callout bs-callout-info center-block col-xs-12 col-sm-8 col-md-5\">\n  Search for a common or scientific name above to begin, eg, \"Brown Bear\" or \"<span class=\"sciname\">Ursus arctos</span>\"\n</div>";
   $("#result_container").html(calloutHtml);
   $("#result-header-container").attr("hidden", "hidden");
   if (partialReset === true) {

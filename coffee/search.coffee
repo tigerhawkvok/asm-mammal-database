@@ -1731,12 +1731,12 @@ $ ->
     .done (result) ->
       # Populate the result container
       if result.status is true and result.count > 0
-        # console.log("Got a valid result, formatting #{result.count} results.")
+        console.log("Got a valid result, formatting #{result.count} results.")
         formatSearchResults(result)
         return false
-      showBadSearchErrorMessage(result)
-      console.error(result.error)
-      console.warn(result)
+      showBadSearchErrorMessage.debounce null, null, null, result
+      console.error result.error 
+      console.warn result
     .fail (result,error) ->
       console.error("There was an error loading the generic table")
       console.warn(result,error,result.statusText)

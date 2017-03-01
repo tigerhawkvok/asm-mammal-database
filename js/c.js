@@ -265,35 +265,24 @@ randomInt = function(lower, upper) {
 
 window.debounce_timer = null;
 
-({
-  debounce: function(func, threshold, execAsap) {
-    if (threshold == null) {
-      threshold = 300;
-    }
-    if (execAsap == null) {
-      execAsap = false;
-    }
-    return function() {
-      var args, delayed, obj;
-      args = 1 <= arguments.length ? slice.call(arguments, 0) : [];
-      obj = this;
-      delayed = function() {
-        if (!execAsap) {
-          return func.apply(obj, args);
-        }
-      };
-      if (window.debounce_timer != null) {
-        clearTimeout(window.debounce_timer);
-      } else if (execAsap) {
-        func.apply(obj, args);
-      }
-      return window.debounce_timer = setTimeout(delayed, threshold);
-    };
+Function.prototype.getName = function() {
+
+  /*
+   * Returns a unique identifier for a function
+   */
+  var name;
+  name = this.name;
+  if (name == null) {
+    name = this.toString().substr(0, this.toString().indexOf("(")).replace("function ", "");
   }
-});
+  if (isNull(name)) {
+    name = md5(this.toString());
+  }
+  return name;
+};
 
 Function.prototype.debounce = function() {
-  var args, delayed, e, error1, execAsap, func, threshold, timeout;
+  var args, delayed, e, error1, execAsap, func, key, ref1, threshold, timeout;
   threshold = arguments[0], execAsap = arguments[1], timeout = arguments[2], args = 4 <= arguments.length ? slice.call(arguments, 3) : [];
   if (threshold == null) {
     threshold = 300;
@@ -304,11 +293,39 @@ Function.prototype.debounce = function() {
   if (timeout == null) {
     timeout = window.debounce_timer;
   }
+
+  /*
+   * Borrowed from http://coffeescriptcookbook.com/chapters/functions/debounce
+   * Only run the prototyped function once per interval.
+   *
+   * @param threshold -> Timeout in ms
+   * @param execAsap -> Do it NAOW
+   * @param timeout -> backup timeout object
+   */
+  if (((ref1 = window.core) != null ? ref1.debouncers : void 0) == null) {
+    if (window.core == null) {
+      window.core = new Object();
+    }
+    core.debouncers = new Object();
+  }
+  try {
+    key = this.getName();
+  } catch (undefined) {}
+  try {
+    if (core.debouncers[key] != null) {
+      timeout = core.debouncers[key];
+    }
+  } catch (undefined) {}
   func = this;
   delayed = function() {
-    if (!execAsap) {
-      return func.apply(func, args);
+    if (key != null) {
+      clearTimeout(timeout);
+      delete core.debouncers[key];
     }
+    if (!execAsap) {
+      func.apply(func, args);
+    }
+    return console.info("Debounce applied");
   };
   if (timeout != null) {
     try {
@@ -316,10 +333,23 @@ Function.prototype.debounce = function() {
     } catch (error1) {
       e = error1;
     }
-  } else if (execAsap) {
-    func.apply(obj, args);
   }
-  return window.debounce_timer = setTimeout(delayed, threshold);
+  if (execAsap) {
+    func.apply(obj, args);
+    console.log("Executed " + key + " immediately");
+    return false;
+  }
+  if (key != null) {
+    console.log("Debouncing '" + key + "' for " + threshold + " ms");
+    return core.debouncers[key] = delay(threshold, function() {
+      return delayed();
+    });
+  } else {
+    console.log("Delaying '" + key + "' for GLOBAL " + threshold + " ms");
+    return window.debounce_timer = delay(threshold, function() {
+      return delayed();
+    });
+  }
 };
 
 loadJS = function(src, callback, doCallbackOnError) {
@@ -2862,10 +2892,11 @@ $(function() {
   if (!isNull(loadArgs) && loadArgs !== "#") {
     return $.get(searchParams.targetApi, "q=" + loadArgs, "json").done(function(result) {
       if (result.status === true && result.count > 0) {
+        console.log("Got a valid result, formatting " + result.count + " results.");
         formatSearchResults(result);
         return false;
       }
-      showBadSearchErrorMessage(result);
+      showBadSearchErrorMessage.debounce(null, null, null, result);
       console.error(result.error);
       return console.warn(result);
     }).fail(function(result, error) {

@@ -161,35 +161,61 @@ randomInt = (lower = 0, upper = 1) ->
 
 
 window.debounce_timer = null
-debounce: (func, threshold = 300, execAsap = false) ->
-  # Borrowed from http://coffeescriptcookbook.com/chapters/functions/debounce
-  # Only run the prototyped function once per interval.
-  (args...) ->
-    obj = this
-    delayed = ->
-      func.apply(obj, args) unless execAsap
-    if window.debounce_timer?
-      clearTimeout(window.debounce_timer)
-    else if (execAsap)
-      func.apply(obj, args)
-    window.debounce_timer = setTimeout(delayed, threshold)
+
+Function::getName = ->
+  ###
+  # Returns a unique identifier for a function
+  ###
+  name = this.name
+  unless name?
+    name = this.toString().substr( 0, this.toString().indexOf( "(" ) ).replace( "function ", "" );
+  if isNull name
+    name = md5 this.toString()
+  name
 
 Function::debounce = (threshold = 300, execAsap = false, timeout = window.debounce_timer, args...) ->
+  ###
   # Borrowed from http://coffeescriptcookbook.com/chapters/functions/debounce
   # Only run the prototyped function once per interval.
+  #
+  # @param threshold -> Timeout in ms
+  # @param execAsap -> Do it NAOW
+  # @param timeout -> backup timeout object
+  ###
+  unless window.core?.debouncers?
+    unless window.core?
+      window.core = new Object()
+    core.debouncers = new Object()
+  try
+    key = this.getName()
+  try
+    if core.debouncers[key]?
+      timeout = core.debouncers[key]
   func = this
   delayed = ->
+    if key?
+      clearTimeout timeout
+      delete core.debouncers[key]
     func.apply(func, args) unless execAsap
-    # console.log("Debounce applied")
+    console.info("Debounce applied")
   if timeout?
     try
-      clearTimeout(timeout)
+      clearTimeout timeout
     catch e
       # just do nothing
-  else if execAsap
+  if execAsap
     func.apply(obj, args)
-    # console.log("Executed immediately")
-  window.debounce_timer = setTimeout(delayed, threshold)
+    console.log("Executed #{key} immediately")
+    return false
+  if key?
+    console.log "Debouncing '#{key}' for #{threshold} ms"
+    core.debouncers[key] = delay threshold, ->
+      delayed()
+  else
+    console.log "Delaying '#{key}' for GLOBAL #{threshold} ms"
+    window.debounce_timer = delay threshold, ->
+      delayed()
+
 
 
 loadJS = (src, callback = new Object(), doCallbackOnError = true) ->

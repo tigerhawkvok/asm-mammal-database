@@ -61,6 +61,7 @@ if(!function_exists('elapsed'))
     }
   }
 
+if(!function_exists("returnAjax")) {
 function returnAjax($data)
 {
   /***
@@ -78,7 +79,8 @@ function returnAjax($data)
   $replace_array = array("&quot;","&#34;");
   print str_replace($replace_array,"\\\"",$json);
   exit();
-}
+} }
+
 
 function checkColumnExists($column_list)
 {
@@ -195,6 +197,48 @@ $search = strtolower($db->sanitize(deEscape(urldecode($_REQUEST['q']))));
 /*****************************
  * The actual handlers
  *****************************/
+
+function fetchMajorMinorGroups($scientific = false) {
+    global $db;
+          $sciMajor = array(
+          "eutheria",
+              "metatheria",
+              "prototheria",
+          );
+          $commonMajor = array(
+          "placental mammals",
+              "marsupials",
+              "monotremes",
+          );
+          $majorGroups = toBool($scientific) ?  $sciMajor : $commonMajor;
+    $minorCol = toBool($scientific) ? "linnean_order":"simple_linnean_subgroup";
+    $query = "SELECT DISTINCT `$minorCol` FROM `".$db->getTable()."`";
+    $result = mysqli_query($db->getLink(), $query);
+    if($result === false) {
+          return array(
+          "status" => false,
+                   "error" => mysqli_error($db->getLink()),
+                   "human_error" => "DATABASE_ERROR",
+          );
+      }
+    $minorGroups = array();
+    while($row = mysqli_fetch_row($result)) {
+          $minorGroups[] = $row[0];
+      }
+    return array(
+          "status" => true,
+              "major" => $majorGroups,
+                    "minor" => $minorGroups,
+          );
+}
+
+    /***
+     * Break out early for these special cases
+     ***/
+if(toBool($_REQUEST["fetch-groups"])) {
+          returnAjax(fetchMajorMinorGroups($_REQUEST["scientific"]));
+}
+
 
 function areSimilar($string1,$string2,$distance=70,$depth=3)
 {
@@ -789,6 +833,8 @@ if ($search == "mohave" || $search == "mojave")
     $result["original_alt"] = $result2;
 
 }
-returnAjax($result);
+
+# $as_include isn't specified, so if it is, it's from a parent file
+if($as_include !== true) returnAjax($result);
 
 ?>

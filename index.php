@@ -55,15 +55,28 @@
             <div class="col-md-4 col-sm-6 col-xs-12">
               <!-- This is a filter column. We need a radio button for
                    AND/OR, and then to walk through the filters and append the object to the query. -->
+              <?php
+                $as_include = true;
+                include_once dirname(__FILE__)."/api.php";
+                $groups = fetchMajorMinorGroups(true);
+                echo "<script type='text/javascript'> _asm.mammalGroupsBase = ".json_encode($groups["minor"])." ; </script>"
+                ?>
               <label for="type" class="sr-only">Clade Restriction</label>
               <paper-menu-button id="simple-linnean-groups">
                 <paper-button class="dropdown-trigger"><iron-icon icon="icons:filter-list"></iron-icon><span id="filter-what" class="dropdown-label"></span></paper-button>
                 <paper-menu label="Group" data-column="simple_linnean_group" class="cndb-filter dropdown-content" id="linnean" name="type" attrForSelected="data-type" selected="0">
                   <paper-item data-type="any">All</paper-item>
-                  <paper-item data-type="prototheria">Prototheria</paper-item>
-                  <paper-item data-type="metatheria">Metatheria</paper-item>
-                  <paper-item data-type="eutheria">Eutheria</paper-item>
-                  <!-- As per flag 4 in readme -->
+                  <?php
+                    try {
+                    echo "<!--".print_r($groups, true)."-->\n\n";
+                    foreach($groups["major"] as $major) {
+                    echo "<paper-item data-type='$major'>".ucwords($major)."</paper-item>\n";
+                    }
+                    } catch (Exception $e) {
+                    # Do nothing
+                    echo "<!-- ".$e->getMessage()."  -->";
+                    }
+                  ?>
                 </paper-menu>
               </paper-menu-button>
             </div>

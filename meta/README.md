@@ -7,19 +7,19 @@ Project Meta Files
 ### CSV -> SQL
 
 ```bash
-cd meta/parsers/db
+$: cd meta/parsers/db
 # If from a human-edited source ....
-python clean_asm_db_source.py
+$: python clean_asm_db_source.py
 # Always
-python parse_csv_to_sql.py
-cd ../..
-mysql -u root -p
+$: python parse_csv_to_sql.py
+$: cd ../..
+$: mysql -u root -p
 MariaDB > use asm_sadb;
-MariaDB [asm_sadb]> source FILENAME_OF_OUTPUT.csv
+MariaDB [asm_sadb]> source FILENAME_OF_OUTPUT.sql
 ```
 
 ### Exporting SQL -> CSV
 
 ```bash
-mysql -u root -p asm_sadb -e "select * from mammal_diversity_database" -B | sed "s/'/\'/;s/\t/\",\"/g;s/^/\"/;s/$/\"/;s/\n//g" > meta/exported-table.csv
+$: mysql -u root -p asm_sadb -e "select * from mammal_diversity_database" -B | sed "s/'/\'/;s/\t/\",\"/g;s/^/\"/;s/$/\"/;s/\n//g" > meta/exported-table.csv
 ```

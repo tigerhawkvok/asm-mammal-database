@@ -1294,9 +1294,9 @@ fetchMajorMinorGroups = (scientific = null, callback) ->
       $("#simple-linnean-groups").replaceWith buttonHtml
       $("#simple-linnean-groups")
       .on "iron-select", ->
-        type = $(p$("#simple-linnean-groups paper-menu").selectedItem).attr "data-type"
+        type = $(p$("#simple-linnean-groups paper-menu").selectedItem).text()
         $("#simple-linnean-groups span.dropdown-label").text type
-      type = $(p$("#simple-linnean-groups paper-menu").selectedItem).attr "data-type"
+      type = $(p$("#simple-linnean-groups paper-menu").selectedItem).text()
       $("#simple-linnean-groups span.dropdown-label").text type
       eutheriaFilterHelper(true)
       console.log "Replaced menu items with", menuItems

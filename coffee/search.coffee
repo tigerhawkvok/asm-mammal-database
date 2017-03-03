@@ -15,50 +15,49 @@ asm.affiliateQueryUrl =
   # As of 2015.05.24, the SSL cert is only for www.inaturalist.org
   iNaturalist: "https://www.inaturalist.org/taxa/search"
 
+asm.mammalGroupsBase = [
+  "rodents"
+  "lagomorphs"
+  "primates"
+  "solenodons"
+  "soricomorphs"
+  "bats"
+  "perissodactyls"
+  "pangolins"
+  "musteloids"
+  "pinnipeds"
+  "true bears"
+  "canids"
+  "Mongooses / meerkats"
+  "hyenas"
+  "civets"
+  "true cats"
+  "palm civet"
+  "Whales / dolphins"
+  "hippos"
+  "cervoids"
+  "non-cervoid ruminants"
+  "camelidae"
+  "suinae"
+  "tethytheria"
+  "elephants"
+  "afroscoricida"
+  "aardvarks"
+  "elephant shrews"
+  "armadillos"
+  "sloths"
+  "anteaters"
+  ]
+
 
 
 eutheriaFilterHelper = ->
   $("#linnean")
   .on "iron-select", ->
     if $(p$("#linnean").selectedItem).attr("data-type") is "eutheria"
-      # Entries in this array will be pre-sorted and auto-formatted
-      # for the dropdown
-      mammalGroupsBase = [
-        "rodents"
-        "lagomorphs"
-        "primates"
-        "solenodons"
-        "soricomorphs"
-        "bats"
-        "perissodactyls"
-        "pangolins"
-        "musteloids"
-        "pinnipeds"
-        "true bears"
-        "canids"
-        "Mongooses / meerkats"
-        "hyenas"
-        "civets"
-        "true cats"
-        "palm civet"
-        "Whales"
-        "hippos"
-        "cervoids"
-        "non-cervoid ruminants"
-        "camelidae"
-        "suinae"
-        "tethytheria"
-        "elephants"
-        "afroscoricida"
-        "aardvarks"
-        "elephant shrews"
-        "armadillos"
-        "sloths"
-        "anteaters"
-        ]
       # Clean it up for the code
       mammalGroups = new Array()
-      for humanGroup in mammalGroupsBase
+      for humanGroup in asm.mammalGroupsBase
         mammalGroups.push humanGroup.toLowerCase()
       mammalGroups.sort()
       mammalItems = ""

@@ -906,7 +906,7 @@ handleDragDropImage = (uploadTargetSelector = "#upload-image", callback) ->
       try
         fileName = file.name
         # Disable the selector
-        asm.dropzone.disable()
+        _asm.dropzone.disable()
         # Now, process the rename and insert it into the file area
         # Get the MD5 of the original filename
         ext = fileName.split(".").pop()
@@ -973,7 +973,7 @@ handleDragDropImage = (uploadTargetSelector = "#upload-image", callback) ->
     unless d$(uploadTargetSelector).hasClass("dropzone")
       d$(uploadTargetSelector).addClass("dropzone")
     fileUploadDropzone = new Dropzone(d$(uploadTargetSelector).get(0), dropzoneConfig)
-    asm.dropzone = fileUploadDropzone
+    _asm.dropzone = fileUploadDropzone
   false
 
 

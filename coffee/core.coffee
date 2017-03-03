@@ -23,11 +23,32 @@ isEmpty = (str) -> not str or str.length is 0
 
 isBlank = (str) -> not str or /^\s*$/.test(str)
 
-isNull = (str) ->
+isNull = (str, dirty = false) ->
+  if typeof str is "object"
+    try
+      l = str.length
+      if l?
+        try
+          return l is 0
+      return Object.size is 0
   try
     if isEmpty(str) or isBlank(str) or not str?
-      unless str is false or str is 0 then return true
+      #unless (str is false or str is 0) and not dirty
+      unless str is false or str is 0
+        return true
+      if dirty
+        if str is false or str is 0
+          return true
+  catch e
+    return false
+  try
+    str = str.toString().toLowerCase()
+  if str is "undefined" or str is "null"
+    return true
+  if dirty and (str is "false" or str is "0")
+    return true
   false
+
 
 isJson = (str) ->
   if typeof str is 'object' then return true
@@ -35,6 +56,14 @@ isJson = (str) ->
     JSON.parse(str)
     return true
   false
+
+isArray = (arr) ->
+  try
+    shadow = arr.slice 0
+    shadow.push "foo"
+    return true
+  catch
+    return false
 
 isNumber = (n) -> not isNaN(parseFloat(n)) and isFinite(n)
 
@@ -62,22 +91,191 @@ toObject = (array) ->
     if element isnt undefined then rv[index] = element
   rv
 
+String::toAscii = ->
+  ###
+  # Remove MS Word bullshit
+  ###
+  @replace(/[\u2018\u2019\u201A\u201B\u2032\u2035]/g, "'")
+    .replace(/[\u201C\u201D\u201E\u201F\u2033\u2036]/g, '"')
+    .replace(/[\u2013\u2014]/g, '-')
+    .replace(/[\u2026]/g, '...')
+    .replace(/\u02C6/g, "^")
+    .replace(/\u2039/g, "")
+    .replace(/[\u02DC|\u00A0]/g, " ")
+
+
 String::toBool = -> @toString() is 'true'
 
 Boolean::toBool = -> @toString() is 'true' # In case lazily tested
 
 Number::toBool = -> @toString() is "1"
 
+
+String::addSlashes = ->
+  `this.replace(/[\\"']/g, '\\$&').replace(/\u0000/g, '\\0')`
+
+Array::max = -> Math.max.apply null, this
+
+Array::min = -> Math.min.apply null, this
+
+Array::containsObject = (obj) ->
+  # Value-ish rather than indexOf
+  # Uses underscore, but since I don't usually use it ...
+  try
+    res = _.find this, (val) ->
+      _.isEqual obj, val
+    typeof res is "object"
+  catch e
+    console.error "Please load underscore.js before using this."
+    console.info  "https://cdnjs.cloudflare.com/ajax/libs/underscore.js/1.8.3/underscore-min.js"
+
+Object.toArray = (obj) ->
+  try
+    shadowObj = obj.slice 0
+    shadowObj.push "foo" # Throws error on obj
+    return obj
+  Object.keys(obj).map (key) =>
+    obj[key]
+
 Object.size = (obj) ->
+  if typeof obj isnt "object"
+    try
+      return obj.length
+    catch e
+      console.error("Passed argument isn't an object and doesn't have a .length parameter")
+      console.warn(e.message)
   size = 0
   size++ for key of obj when obj.hasOwnProperty(key)
   size
 
+Object.doOnSortedKeys = (obj, fn) ->
+  sortedKeys = Object.keys(obj).sort()
+  for key in sortedKeys
+    data = obj[key]
+    fn data
+
+
 delay = (ms,f) -> setTimeout(f,ms)
+interval = (ms,f) -> setInterval(f,ms)
 
 roundNumber = (number,digits = 0) ->
   multiple = 10 ** digits
   Math.round(number * multiple) / multiple
+
+
+
+roundNumberSigfig = (number, digits = 0) ->
+  newNumber = roundNumber(number, digits).toString()
+  digArr = newNumber.split(".")
+  if digArr.length is 1
+    return "#{newNumber}.#{Array(digits + 1).join("0")}"
+  trailingDigits = digArr.pop()
+  significand = "#{digArr[0]}."
+  if trailingDigits.length is digits
+    return newNumber
+  needDigits = digits - trailingDigits.length
+  trailingDigits += Array(needDigits + 1).join("0")
+  "#{significand}#{trailingDigits}"
+
+
+String::stripHtml = (stripChildren = false) ->
+  str = this
+  if stripChildren
+    # Pull out the children
+    str = str.replace /<(\w+)(?:[^"'>]|"[^"]*"|'[^']*')*>(?:((?:.)*?))<\/?\1(?:[^"'>]|"[^"]*"|'[^']*')*>/mg, ""
+  # Script tags
+  str = str.replace /<script[^>]*>([\S\s]*?)<\/script>/gmi, ''
+  # HTML tags
+  str = str.replace /<\/?\w(?:[^"'>]|"[^"]*"|'[^']*')*>/gmi, ''
+  str
+
+String::unescape = (strict = false) ->
+  ###
+  # Take escaped text, and return the unescaped version
+  #
+  # @param string str | String to be used
+  # @param bool strict | Stict mode will remove all HTML
+  #
+  # Test it here:
+  # https://jsfiddle.net/tigerhawkvok/t9pn1dn5/
+  #
+  # Code: https://gist.github.com/tigerhawkvok/285b8631ed6ebef4446d
+  ###
+  # Create a dummy element
+  element = document.createElement("div")
+  decodeHTMLEntities = (str) ->
+    if str? and typeof str is "string"
+      unless strict is true
+        # escape HTML tags
+        str = escape(str).replace(/%26/g,'&').replace(/%23/g,'#').replace(/%3B/g,';')
+      else
+        str = str.replace(/<script[^>]*>([\S\s]*?)<\/script>/gmi, '')
+        str = str.replace(/<\/?\w(?:[^"'>]|"[^"]*"|'[^']*')*>/gmi, '')
+      element.innerHTML = str
+      if element.innerText
+        # Do we support innerText?
+        str = element.innerText
+        element.innerText = ""
+      else
+        # Firefox
+        str = element.textContent
+        element.textContent = ""
+    unescape(str)
+  # Remove encoded or double-encoded tags
+  tmp = deEscape(this)
+  # Run it
+  decodeHTMLEntities(tmp)
+
+
+deEscape = (string) ->
+  string = string.replace(/\&amp;#/mg, '&#') # The rest
+  string = string.replace(/\&quot;/mg, '"')
+  string = string.replace(/\&quote;/mg, '"')
+  string = string.replace(/\&#95;/mg, '_')
+  string = string.replace(/\&#39;/mg, "'")
+  string = string.replace(/\&#34;/mg, '"')
+  string = string.replace(/\&#62;/mg, '>')
+  string = string.replace(/\&#60;/mg, '<')
+  string
+
+
+String::escapeQuotes = ->
+  str = this.replace /"/mg, "&#34;"
+  str = str.replace /'/mg, "&#39;"
+  str
+
+
+getElementHtml = (el) ->
+  el.outerHTML
+
+
+jQuery.fn.outerHTML = ->
+  e = $(this).get(0)
+  e.outerHTML
+
+
+jQuery.fn.outerHtml = ->
+  $(this).outerHTML()
+
+`
+jQuery.fn.selectText = function(){
+    var doc = document
+        , element = this[0]
+        , range, selection
+    ;
+    if (doc.body.createTextRange) {
+        range = document.body.createTextRange();
+        range.moveToElementText(element);
+        range.select();
+    } else if (window.getSelection) {
+        selection = window.getSelection();
+        range = document.createRange();
+        range.selectNodeContents(element);
+        selection.removeAllRanges();
+        selection.addRange(range);
+    }
+};
+`
 
 jQuery.fn.exists = -> jQuery(this).length > 0
 
@@ -962,9 +1160,9 @@ checkFileVersion = (forceNow = false) ->
         console.log("Forced version check:",result)
       unless isNumber result.last_mod
         return false
-      unless asm.lastMod?
-        asm.lastMod = result.last_mod
-      if result.last_mod > asm.lastMod
+      unless _asm.lastMod?
+        _asm.lastMod = result.last_mod
+      if result.last_mod > _asm.lastMod
         # File has updated
         html = """
         <div id="outdated-warning" class="alert alert-warning alert-dismissible fade in" role="alert">
@@ -978,14 +1176,14 @@ checkFileVersion = (forceNow = false) ->
             document.location.reload(true)
         console.warn("Your current version is out of date! Please refresh the page.")
       else if forceNow
-        console.info("Your version is up to date: have #{asm.lastMod}, got #{result.last_mod}")
+        console.info("Your version is up to date: have #{_asm.lastMod}, got #{result.last_mod}")
     .fail ->
       console.warn("Couldn't check file version!!")
     .always ->
       delay 5*60*1000, ->
         # Delay 5 minutes
         checkVersion()
-  if forceNow or not asm.lastMod?
+  if forceNow or not _asm.lastMod?
     checkVersion()
     return true
   false

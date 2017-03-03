@@ -1,4 +1,4 @@
-var _metaStatus, activityIndicatorOff, activityIndicatorOn, animateLoad, bindClickTargets, bindClicks, bindDismissalRemoval, bindPaperMenuButton, browserBeware, byteCount, checkFileVersion, checkTaxonNear, clearSearch, deepJQuery, delay, doCORSget, doFontExceptions, domainPlaceholder, downloadCSVList, downloadHTMLList, eutheriaFilterHelper, fetchMajorMinorGroups, foo, formatAlien, formatScientificNames, formatSearchResults, getFilters, getLocation, getMaxZ, goTo, insertCORSWorkaround, insertModalImage, isBlank, isBool, isEmpty, isJson, isNull, isNumber, isNumeric, lightboxImages, loadJS, mapNewWindows, modalTaxon, openLink, openTab, overlayOff, overlayOn, p$, parseTaxonYear, performSearch, prepURI, randomInt, ref, roundNumber, safariDialogHelper, safariSearchArgHelper, searchParams, setHistory, setupServiceWorker, showBadSearchErrorMessage, showDownloadChooser, smartCalPhotosLink, smartReptileDatabaseLink, smartUpperCasing, sortResults, stopLoad, stopLoadError, toFloat, toInt, toObject, toastStatusMessage, uri,
+var _metaStatus, activityIndicatorOff, activityIndicatorOn, animateLoad, bindClickTargets, bindClicks, bindDismissalRemoval, bindPaperMenuButton, browserBeware, byteCount, checkFileVersion, checkTaxonNear, clearSearch, deEscape, deepJQuery, delay, doCORSget, doFontExceptions, domainPlaceholder, downloadCSVList, downloadHTMLList, eutheriaFilterHelper, fetchMajorMinorGroups, foo, formatAlien, formatScientificNames, formatSearchResults, getElementHtml, getFilters, getLocation, getMaxZ, goTo, insertCORSWorkaround, insertModalImage, interval, isArray, isBlank, isBool, isEmpty, isJson, isNull, isNumber, isNumeric, lightboxImages, loadJS, mapNewWindows, modalTaxon, openLink, openTab, overlayOff, overlayOn, p$, parseTaxonYear, performSearch, prepURI, randomInt, ref, roundNumber, roundNumberSigfig, safariDialogHelper, safariSearchArgHelper, searchParams, setHistory, setupServiceWorker, showBadSearchErrorMessage, showDownloadChooser, smartCalPhotosLink, smartReptileDatabaseLink, smartUpperCasing, sortResults, stopLoad, stopLoadError, toFloat, toInt, toObject, toastStatusMessage, uri,
   slice = [].slice,
   indexOf = [].indexOf || function(item) { for (var i = 0, l = this.length; i < l; i++) { if (i in this && this[i] === item) return i; } return -1; };
 
@@ -38,14 +38,46 @@ isBlank = function(str) {
   return !str || /^\s*$/.test(str);
 };
 
-isNull = function(str) {
+isNull = function(str, dirty) {
+  var e, error1, l;
+  if (dirty == null) {
+    dirty = false;
+  }
+  if (typeof str === "object") {
+    try {
+      l = str.length;
+      if (l != null) {
+        try {
+          return l === 0;
+        } catch (undefined) {}
+      }
+      return Object.size === 0;
+    } catch (undefined) {}
+  }
   try {
     if (isEmpty(str) || isBlank(str) || (str == null)) {
       if (!(str === false || str === 0)) {
         return true;
       }
+      if (dirty) {
+        if (str === false || str === 0) {
+          return true;
+        }
+      }
     }
+  } catch (error1) {
+    e = error1;
+    return false;
+  }
+  try {
+    str = str.toString().toLowerCase();
   } catch (undefined) {}
+  if (str === "undefined" || str === "null") {
+    return true;
+  }
+  if (dirty && (str === "false" || str === "0")) {
+    return true;
+  }
   return false;
 };
 
@@ -58,6 +90,17 @@ isJson = function(str) {
     return true;
   } catch (undefined) {}
   return false;
+};
+
+isArray = function(arr) {
+  var error1, shadow;
+  try {
+    shadow = arr.slice(0);
+    shadow.push("foo");
+    return true;
+  } catch (error1) {
+    return false;
+  }
 };
 
 isNumber = function(n) {
@@ -106,6 +149,14 @@ toObject = function(array) {
   return rv;
 };
 
+String.prototype.toAscii = function() {
+
+  /*
+   * Remove MS Word bullshit
+   */
+  return this.replace(/[\u2018\u2019\u201A\u201B\u2032\u2035]/g, "'").replace(/[\u201C\u201D\u201E\u201F\u2033\u2036]/g, '"').replace(/[\u2013\u2014]/g, '-').replace(/[\u2026]/g, '...').replace(/\u02C6/g, "^").replace(/\u2039/g, "").replace(/[\u02DC|\u00A0]/g, " ");
+};
+
 String.prototype.toBool = function() {
   return this.toString() === 'true';
 };
@@ -118,8 +169,57 @@ Number.prototype.toBool = function() {
   return this.toString() === "1";
 };
 
+String.prototype.addSlashes = function() {
+  return this.replace(/[\\"']/g, '\\$&').replace(/\u0000/g, '\\0');
+};
+
+Array.prototype.max = function() {
+  return Math.max.apply(null, this);
+};
+
+Array.prototype.min = function() {
+  return Math.min.apply(null, this);
+};
+
+Array.prototype.containsObject = function(obj) {
+  var e, error1, res;
+  try {
+    res = _.find(this, function(val) {
+      return _.isEqual(obj, val);
+    });
+    return typeof res === "object";
+  } catch (error1) {
+    e = error1;
+    console.error("Please load underscore.js before using this.");
+    return console.info("https://cdnjs.cloudflare.com/ajax/libs/underscore.js/1.8.3/underscore-min.js");
+  }
+};
+
+Object.toArray = function(obj) {
+  var shadowObj;
+  try {
+    shadowObj = obj.slice(0);
+    shadowObj.push("foo");
+    return obj;
+  } catch (undefined) {}
+  return Object.keys(obj).map((function(_this) {
+    return function(key) {
+      return obj[key];
+    };
+  })(this));
+};
+
 Object.size = function(obj) {
-  var key, size;
+  var e, error1, key, size;
+  if (typeof obj !== "object") {
+    try {
+      return obj.length;
+    } catch (error1) {
+      e = error1;
+      console.error("Passed argument isn't an object and doesn't have a .length parameter");
+      console.warn(e.message);
+    }
+  }
   size = 0;
   for (key in obj) {
     if (obj.hasOwnProperty(key)) {
@@ -129,8 +229,24 @@ Object.size = function(obj) {
   return size;
 };
 
+Object.doOnSortedKeys = function(obj, fn) {
+  var data, key, len, m, results, sortedKeys;
+  sortedKeys = Object.keys(obj).sort();
+  results = [];
+  for (m = 0, len = sortedKeys.length; m < len; m++) {
+    key = sortedKeys[m];
+    data = obj[key];
+    results.push(fn(data));
+  }
+  return results;
+};
+
 delay = function(ms, f) {
   return setTimeout(f, ms);
+};
+
+interval = function(ms, f) {
+  return setInterval(f, ms);
 };
 
 roundNumber = function(number, digits) {
@@ -141,6 +257,134 @@ roundNumber = function(number, digits) {
   multiple = Math.pow(10, digits);
   return Math.round(number * multiple) / multiple;
 };
+
+roundNumberSigfig = function(number, digits) {
+  var digArr, needDigits, newNumber, significand, trailingDigits;
+  if (digits == null) {
+    digits = 0;
+  }
+  newNumber = roundNumber(number, digits).toString();
+  digArr = newNumber.split(".");
+  if (digArr.length === 1) {
+    return newNumber + "." + (Array(digits + 1).join("0"));
+  }
+  trailingDigits = digArr.pop();
+  significand = digArr[0] + ".";
+  if (trailingDigits.length === digits) {
+    return newNumber;
+  }
+  needDigits = digits - trailingDigits.length;
+  trailingDigits += Array(needDigits + 1).join("0");
+  return "" + significand + trailingDigits;
+};
+
+String.prototype.stripHtml = function(stripChildren) {
+  var str;
+  if (stripChildren == null) {
+    stripChildren = false;
+  }
+  str = this;
+  if (stripChildren) {
+    str = str.replace(/<(\w+)(?:[^"'>]|"[^"]*"|'[^']*')*>(?:((?:.)*?))<\/?\1(?:[^"'>]|"[^"]*"|'[^']*')*>/mg, "");
+  }
+  str = str.replace(/<script[^>]*>([\S\s]*?)<\/script>/gmi, '');
+  str = str.replace(/<\/?\w(?:[^"'>]|"[^"]*"|'[^']*')*>/gmi, '');
+  return str;
+};
+
+String.prototype.unescape = function(strict) {
+  var decodeHTMLEntities, element, tmp;
+  if (strict == null) {
+    strict = false;
+  }
+
+  /*
+   * Take escaped text, and return the unescaped version
+   *
+   * @param string str | String to be used
+   * @param bool strict | Stict mode will remove all HTML
+   *
+   * Test it here:
+   * https://jsfiddle.net/tigerhawkvok/t9pn1dn5/
+   *
+   * Code: https://gist.github.com/tigerhawkvok/285b8631ed6ebef4446d
+   */
+  element = document.createElement("div");
+  decodeHTMLEntities = function(str) {
+    if ((str != null) && typeof str === "string") {
+      if (strict !== true) {
+        str = escape(str).replace(/%26/g, '&').replace(/%23/g, '#').replace(/%3B/g, ';');
+      } else {
+        str = str.replace(/<script[^>]*>([\S\s]*?)<\/script>/gmi, '');
+        str = str.replace(/<\/?\w(?:[^"'>]|"[^"]*"|'[^']*')*>/gmi, '');
+      }
+      element.innerHTML = str;
+      if (element.innerText) {
+        str = element.innerText;
+        element.innerText = "";
+      } else {
+        str = element.textContent;
+        element.textContent = "";
+      }
+    }
+    return unescape(str);
+  };
+  tmp = deEscape(this);
+  return decodeHTMLEntities(tmp);
+};
+
+deEscape = function(string) {
+  string = string.replace(/\&amp;#/mg, '&#');
+  string = string.replace(/\&quot;/mg, '"');
+  string = string.replace(/\&quote;/mg, '"');
+  string = string.replace(/\&#95;/mg, '_');
+  string = string.replace(/\&#39;/mg, "'");
+  string = string.replace(/\&#34;/mg, '"');
+  string = string.replace(/\&#62;/mg, '>');
+  string = string.replace(/\&#60;/mg, '<');
+  return string;
+};
+
+String.prototype.escapeQuotes = function() {
+  var str;
+  str = this.replace(/"/mg, "&#34;");
+  str = str.replace(/'/mg, "&#39;");
+  return str;
+};
+
+getElementHtml = function(el) {
+  return el.outerHTML;
+};
+
+jQuery.fn.outerHTML = function() {
+  var e;
+  e = $(this).get(0);
+  return e.outerHTML;
+};
+
+jQuery.fn.outerHtml = function() {
+  return $(this).outerHTML();
+};
+
+
+jQuery.fn.selectText = function(){
+    var doc = document
+        , element = this[0]
+        , range, selection
+    ;
+    if (doc.body.createTextRange) {
+        range = document.body.createTextRange();
+        range.moveToElementText(element);
+        range.select();
+    } else if (window.getSelection) {
+        selection = window.getSelection();
+        range = document.createRange();
+        range.selectNodeContents(element);
+        selection.removeAllRanges();
+        selection.addRange(range);
+    }
+};
+;
 
 jQuery.fn.exists = function() {
   return jQuery(this).length > 0;
@@ -1228,10 +1472,10 @@ checkFileVersion = function(forceNow) {
       if (!isNumber(result.last_mod)) {
         return false;
       }
-      if (asm.lastMod == null) {
-        asm.lastMod = result.last_mod;
+      if (_asm.lastMod == null) {
+        _asm.lastMod = result.last_mod;
       }
-      if (result.last_mod > asm.lastMod) {
+      if (result.last_mod > _asm.lastMod) {
         html = "<div id=\"outdated-warning\" class=\"alert alert-warning alert-dismissible fade in\" role=\"alert\">\n  <button type=\"button\" class=\"close\" data-dismiss=\"alert\" aria-label=\"Close\"><span aria-hidden=\"true\">&times;</span></button>\n  <strong>We have page updates!</strong> This page has been updated since you last refreshed. <a class=\"alert-link\" id=\"refresh-page\" style=\"cursor:pointer\">Click here to refresh now</a> and get bugfixes and updates.\n</div>";
         if (!$("#outdated-warning").exists()) {
           $("body").append(html);
@@ -1241,7 +1485,7 @@ checkFileVersion = function(forceNow) {
         }
         return console.warn("Your current version is out of date! Please refresh the page.");
       } else if (forceNow) {
-        return console.info("Your version is up to date: have " + asm.lastMod + ", got " + result.last_mod);
+        return console.info("Your version is up to date: have " + _asm.lastMod + ", got " + result.last_mod);
       }
     }).fail(function() {
       return console.warn("Couldn't check file version!!");
@@ -1251,7 +1495,7 @@ checkFileVersion = function(forceNow) {
       });
     });
   };
-  if (forceNow || (asm.lastMod == null)) {
+  if (forceNow || (_asm.lastMod == null)) {
     checkVersion();
     return true;
   }

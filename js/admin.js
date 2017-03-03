@@ -837,7 +837,7 @@ handleDragDropImage = function(uploadTargetSelector, callback) {
       }
       try {
         fileName = file.name;
-        asm.dropzone.disable();
+        _asm.dropzone.disable();
         ext = fileName.split(".").pop();
         fullFile = (md5(fileName)) + "." + ext;
         fullPath = "species_photos/" + fullFile;
@@ -906,7 +906,7 @@ handleDragDropImage = function(uploadTargetSelector, callback) {
       d$(uploadTargetSelector).addClass("dropzone");
     }
     fileUploadDropzone = new Dropzone(d$(uploadTargetSelector).get(0), dropzoneConfig);
-    return asm.dropzone = fileUploadDropzone;
+    return _asm.dropzone = fileUploadDropzone;
   });
   return false;
 };

@@ -65,7 +65,7 @@
               <paper-menu-button id="simple-linnean-groups">
                 <paper-button class="dropdown-trigger"><iron-icon icon="icons:filter-list"></iron-icon><span id="filter-what" class="dropdown-label"></span></paper-button>
                 <paper-menu label="Group" data-column="simple_linnean_group" class="cndb-filter dropdown-content" id="linnean" name="type" attrForSelected="data-type" selected="0">
-                  <paper-item data-type="any">All</paper-item>
+                  <paper-item data-type="any" selected>All</paper-item>
                   <?php
                     try {
                     echo "<!--".print_r($groups, true)."-->\n\n";

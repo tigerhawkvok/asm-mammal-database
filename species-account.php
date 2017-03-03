@@ -112,14 +112,16 @@ ERROR: ".$e->getMessage()."
 
 function getCanonicalSpecies($speciesRow, $short = false) {
     $output = ucwords($speciesRow["genus"]);
-    $short = substr(ucwords($speciesRow["genus"], 0, 1)) . ". ";
-    $output.= " ".$speciesRow["species"];
+    $short = ucwords(substr($speciesRow["genus"], 0, 1)) . ". ";
+    $output .= " " . $speciesRow["species"];
     if(!empty($speciesRow["subspecies"])) {
         $output .= " " . $speciesRow["subspecies"];
         $short .= substr($speciesRow["species"], 0, 1) . ". " . $speciesRow["subspecies"];
     } else {
         $short .= $speciesRow["species"];
     }
+    if(!empty($speciesRow["canonical_sciname"])) $output = $speciesRow["canonical_sciname"];
+    return $short === true ? $short : $output;
 }
 
 $loose = false;
@@ -179,7 +181,7 @@ INVALID_LOOKUP_REFERENCE
 
 # Attempt the search
 try {
-    $rows = $db->getQueryResults($lookup, null, null, $loose);
+    $rows = $db->getQueryResults($lookup, "*", "AND", $loose, false, false, true);
 } catch (Exception $e) {
     $output = buildHeader("Database Error");
     $content = "<h1 class='col-xs-12'>Database Error</h1>
@@ -195,6 +197,8 @@ Sorry, you tried to do an invalid species search. The system said:
     echo $output;
     exit();
 }
+
+$orig_rows = $rows;
 
 if ( sizeof($rows) < 1 ) {
     $bad = true;
@@ -214,6 +218,11 @@ Sorry, you tried to do an invalid species search. The system said:
 </p>
 <code class='col-xs-12 col-md-8 col-lg-6 col-md-offset-2 col-lg-offset-3'>
 NO_ROWS_RETURNED
+
+".print_r($lookup, true)."
+
+".print_r($orig_rows, true)."
+
 </code>
 <p class='col-xs-12'>Please try searching above for a new species.</p>";
         $output .= getBody($content);
@@ -242,8 +251,43 @@ $speciesRow = $rows[0];
 
 $output = buildHeader(getCanonicalSpecies($speciesRow));
 
+if(empty($speciesRow["common_name"])) {
+    try {
+    $endpoint = "http://apiv3.iucnredlist.org/api/v3/species/common_names/";
+    $destUrl = $endpoint.urlencode(getCanonicalSpecies($speciesRow))."token=".$iucnToken;
+    $opts = array(
+        'http' => array(
+            'method' => 'GET',
+            #'request_fulluri' => true,
+            'ignore_errors' => true,
+            'timeout' => 3.5, # Seconds
+        ),
+    );
+    $context = stream_context_create($opts);
+    $response = file_get_contents($destUrl, false, $context);
+    $decoded = json_decode($response, true);
+    foreach($decoded["result"] as $result) {
+        if($result["primary"] === true || $result["language"] == "eng") {
+            $speciesRow["common_name"] = $result["taxonname"];
+            break;
+        }
+    }
+    if(empty($speciesRow["common_name"])) {
+        throw new Exception("NO_IUCN_RESULT_ERROR");
+    } else {
+        # Save this common name to the database
+        try {
+            $db->updateEntry( array("common_name" => $speciesRow["common_name"]), array("id" => $speciesRow["id"]));
+        } catch (Exception $e) {
+            $output .= "<!-- Warning: Unable to save common name to database -->";
+        }
+    }
+    } catch (Exception $e) {
+        $output .= "<!-- Warning: Unable to generate common name: ". $e->getMessage() . " -->";
+    }
+}
 
-$entryTitle = "<h1 class='species-title'>".getCanonicalSpecies($speciesRow)."</h1><h2 class='species-common'>".$speciesRow["common_name"]."</h2>";
+$entryTitle = "<h1 class='species-title col-xs-12'>".getCanonicalSpecies($speciesRow)."</h1><h2 class='species-common col-xs-offset-1 col-xs-11'>".$speciesRow["common_name"]."</h2>";
 
 # Taxonomy notes
 $taxanomyNotes = "";
@@ -267,10 +311,12 @@ if(!is_numeric($creditTime) || $creditTime == 0) {
     $creditTime = time();
 }
 $creditAuthor = empty($speciesRow["taxon_author"]) ? "your local ASM server" : $speciesRow["taxon_author"];
-$credit = empty($speciesRow["taxon_credit"]) ? "Entry by ".$creditAuthor." on ".stftime("%d %B %Y", $creditTime) : $speciesRow["taxon_credit"];
+$credit = empty($speciesRow["taxon_credit"]) ? "Entry by ".$creditAuthor." on ".strftime("%d %B %Y", $creditTime) : $speciesRow["taxon_credit"];
 $entryCredits = "<section id='entry-credits' class='col-xs-12 small'><p>".$credit."</p></section>";
 
 $content = $entryTitle . $images . $taxonomyNotes. $entryNote . $primaryEntry . $entryCredits;
+
+$content .= "<code class='col-xs-12'>Species: ". print_r($speciesRow, true) . "</code>";
 
 $output .= getBody($content);
 

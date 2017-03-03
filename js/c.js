@@ -1,4 +1,4 @@
-var _metaStatus, activityIndicatorOff, activityIndicatorOn, animateLoad, asm, bindClickTargets, bindClicks, bindDismissalRemoval, bindPaperMenuButton, browserBeware, byteCount, checkFileVersion, checkTaxonNear, clearSearch, deepJQuery, delay, doCORSget, doFontExceptions, domainPlaceholder, downloadCSVList, downloadHTMLList, eutheriaFilterHelper, foo, formatAlien, formatScientificNames, formatSearchResults, getFilters, getLocation, getMaxZ, goTo, insertCORSWorkaround, insertModalImage, isBlank, isBool, isEmpty, isJson, isNull, isNumber, isNumeric, lightboxImages, loadJS, mapNewWindows, modalTaxon, openLink, openTab, overlayOff, overlayOn, p$, parseTaxonYear, performSearch, prepURI, randomInt, ref, roundNumber, safariDialogHelper, safariSearchArgHelper, searchParams, setHistory, setupServiceWorker, showBadSearchErrorMessage, showDownloadChooser, smartCalPhotosLink, smartReptileDatabaseLink, smartUpperCasing, sortResults, stopLoad, stopLoadError, toFloat, toInt, toObject, toastStatusMessage, uri,
+var _metaStatus, activityIndicatorOff, activityIndicatorOn, animateLoad, bindClickTargets, bindClicks, bindDismissalRemoval, bindPaperMenuButton, browserBeware, byteCount, checkFileVersion, checkTaxonNear, clearSearch, deepJQuery, delay, doCORSget, doFontExceptions, domainPlaceholder, downloadCSVList, downloadHTMLList, eutheriaFilterHelper, fetchMajorMinorGroups, foo, formatAlien, formatScientificNames, formatSearchResults, getFilters, getLocation, getMaxZ, goTo, insertCORSWorkaround, insertModalImage, isBlank, isBool, isEmpty, isJson, isNull, isNumber, isNumeric, lightboxImages, loadJS, mapNewWindows, modalTaxon, openLink, openTab, overlayOff, overlayOn, p$, parseTaxonYear, performSearch, prepURI, randomInt, ref, roundNumber, safariDialogHelper, safariSearchArgHelper, searchParams, setHistory, setupServiceWorker, showBadSearchErrorMessage, showDownloadChooser, smartCalPhotosLink, smartReptileDatabaseLink, smartUpperCasing, sortResults, stopLoad, stopLoadError, toFloat, toInt, toObject, toastStatusMessage, uri,
   slice = [].slice,
   indexOf = [].indexOf || function(item) { for (var i = 0, l = this.length; i < l; i++) { if (i in this && this[i] === item) return i; } return -1; };
 
@@ -1322,23 +1322,45 @@ searchParams.targetContainer = "#result_container";
 
 searchParams.apiPath = uri.urlString + searchParams.targetApi;
 
-asm = new Object();
+window._asm = new Object();
 
-asm.affiliateQueryUrl = {
+_asm.affiliateQueryUrl = {
   amphibiaWeb: "http://amphibiaweb.org/cgi/amphib_query",
   reptileDatabase: "http://reptile-database.reptarium.cz/species",
   calPhotos: "http://calphotos.berkeley.edu/cgi/img_query",
   iNaturalist: "https://www.inaturalist.org/taxa/search"
 };
 
+fetchMajorMinorGroups = function(scientific, callback) {
+  if (scientific == null) {
+    scientific = false;
+  }
+  if (typeof _asm.mammalGroupsBase === "object") {
+    if (!isArray(_asm.mammalGroupsBase)) {
+      _asm.mammalGroupsBase = Object.toArray(_asm.mammalGroupsBase);
+    }
+    if (typeof callback === "function") {
+      callback();
+    }
+  } else {
+    _asm.mammalGroupsBase = ["rodents", "lagomorphs", "primates", "solenodons", "soricomorphs", "bats", "perissodactyls", "pangolins", "musteloids", "pinnipeds", "true bears", "canids", "Mongooses / meerkats", "hyenas", "civets", "true cats", "palm civet", "Whales / dolphins", "hippos", "cervoids", "non-cervoid ruminants", "camelidae", "suinae", "tethytheria", "elephants", "afroscoricida", "aardvarks", "elephant shrews", "armadillos", "sloths", "anteaters"];
+    foo();
+    if (typeof callback === "function") {
+      callback();
+    }
+  }
+  return false;
+};
+
 eutheriaFilterHelper = function() {
+  fetchMajorMinorGroups();
   $("#linnean").on("iron-select", function() {
-    var group, html, humanGroup, len, len1, m, mammalGroups, mammalGroupsBase, mammalItems, o;
+    var group, html, humanGroup, len, len1, m, mammalGroups, mammalItems, o, ref1;
     if ($(p$("#linnean").selectedItem).attr("data-type") === "eutheria") {
-      mammalGroupsBase = ["rodents", "lagomorphs", "primates", "solenodons", "soricomorphs", "bats", "perissodactyls", "pangolins", "musteloids", "pinnipeds", "true bears", "canids", "Mongooses / meerkats", "hyenas", "civets", "true cats", "palm civet", "Whales", "hippos", "cervoids", "non-cervoid ruminants", "camelidae", "suinae", "tethytheria", "elephants", "afroscoricida", "aardvarks", "elephant shrews", "armadillos", "sloths", "anteaters"];
       mammalGroups = new Array();
-      for (m = 0, len = mammalGroupsBase.length; m < len; m++) {
-        humanGroup = mammalGroupsBase[m];
+      ref1 = _asm.mammalGroupsBase;
+      for (m = 0, len = ref1.length; m < len; m++) {
+        humanGroup = ref1[m];
         mammalGroups.push(humanGroup.toLowerCase());
       }
       mammalGroups.sort();
@@ -1605,7 +1627,7 @@ formatSearchResults = function(result, container) {
         if (k !== alt) {
           if (k === "image") {
             if (isNull(col)) {
-              col = "<paper-icon-button icon='launch' data-href='" + asm.affiliateQueryUrl.calPhotos + "?rel-taxon=contains&where-taxon=" + taxonQuery + "' class='newwindow calphoto click' data-taxon=\"" + taxonQuery + "\"></paper-icon-button>";
+              col = "<paper-icon-button icon='launch' data-href='" + _asm.affiliateQueryUrl.calPhotos + "?rel-taxon=contains&where-taxon=" + taxonQuery + "' class='newwindow calphoto click' data-taxon=\"" + taxonQuery + "\"></paper-icon-button>";
             } else {
               col = "<paper-icon-button icon='image:image' data-lightbox='" + uri.urlString + col + "' class='lightboximage'></paper-icon-button>";
             }
@@ -1806,10 +1828,10 @@ checkTaxonNear = function(taxonQuery, callback, selector) {
 insertModalImage = function(imageObject, taxon, callback) {
   var args, doneCORS, e, error1, extension, failCORS, imageUrl, imgArray, imgPath, insertImage, taxonArray, taxonString, warnArgs;
   if (imageObject == null) {
-    imageObject = asm.taxonImage;
+    imageObject = _asm.taxonImage;
   }
   if (taxon == null) {
-    taxon = asm.activeTaxon;
+    taxon = _asm.activeTaxon;
   }
   if (callback == null) {
     callback = void 0;
@@ -1831,8 +1853,8 @@ insertModalImage = function(imageObject, taxon, callback) {
     warnArgs = {
       taxon: taxon,
       imageUrl: imageUrl,
-      defaultTaxon: asm.activeTaxon,
-      defaultImage: asm.taxonImage
+      defaultTaxon: _asm.activeTaxon,
+      defaultImage: _asm.taxonImage
     };
     console.warn(warnArgs);
     return false;
@@ -1948,7 +1970,7 @@ insertModalImage = function(imageObject, taxon, callback) {
       imageObject.imageCredit = data.copyright[0]["_text"] + " (via CalPhotos)";
     } catch (error2) {
       e = error2;
-      console.warn("CalPhotos didn't return any valid images for this search!", asm.affiliateQueryUrl.calPhotos + "?" + args);
+      console.warn("CalPhotos didn't return any valid images for this search!", _asm.affiliateQueryUrl.calPhotos + "?" + args);
       return false;
     }
     insertImage(imageObject, taxonString);
@@ -1960,7 +1982,7 @@ insertModalImage = function(imageObject, taxon, callback) {
     return false;
   };
   try {
-    doCORSget(asm.affiliateQueryUrl.calPhotos, args, doneCORS, failCORS);
+    doCORSget(_asm.affiliateQueryUrl.calPhotos, args, doneCORS, failCORS);
   } catch (error1) {
     e = error1;
     console.error(e.message);
@@ -1977,7 +1999,7 @@ smartReptileDatabaseLink = function() {
    */
   var args, humanTaxon, taxon, taxonArray, taxonString, url;
   url = "http://reptile-database.reptarium.cz/interfaces/services/check-taxon";
-  taxon = asm.activeTaxon;
+  taxon = _asm.activeTaxon;
   taxonArray = [taxon.genus, taxon.species];
   if (taxon.subspecies != null) {
     taxonArray.push(taxon.subspecies);
@@ -2002,7 +2024,7 @@ smartReptileDatabaseLink = function() {
       };
       buttonText = "Reptile Database";
       button = "<paper-button id='modal-alt-linkout' class=\"hidden-xs\">" + buttonText + "</paper-button>";
-      outboundLink = asm.affiliateQueryUrl.reptileDatabase + "?genus=" + data.genus + "&species=" + data.species;
+      outboundLink = _asm.affiliateQueryUrl.reptileDatabase + "?genus=" + data.genus + "&species=" + data.species;
       if (outboundLink != null) {
         $("#modal-alt-linkout").replaceWith(button);
         $("#modal-alt-linkout").click(function() {
@@ -2034,7 +2056,7 @@ smartCalPhotosLink = function(overrideTaxon) {
   calPhotosTaxon = {
     genus: overrideTaxon.genus,
     species: overrideTaxon.species,
-    subspecies: asm.activeTaxon.species
+    subspecies: _asm.activeTaxon.species
   };
   taxonArray = [calPhotosTaxon.genus, calPhotosTaxon.species];
   if (calPhotosTaxon.subspecies != null) {
@@ -2050,11 +2072,11 @@ smartCalPhotosLink = function(overrideTaxon) {
     humanTaxon = humanTaxon.slice(0, 1).toUpperCase() + humanTaxon.slice(1);
     console.info("CalPhotos agrees with Reptile Database, so we're linking to _" + humanTaxon + "_ for CalPhotos");
     $("#modal-calphotos-linkout").unbind().click(function() {
-      return openTab(asm.affiliateQueryUrl.calPhotos + "?rel-taxon=contains&where-taxon=" + (taxonArray.join("+")));
+      return openTab(_asm.affiliateQueryUrl.calPhotos + "?rel-taxon=contains&where-taxon=" + (taxonArray.join("+")));
     });
     return false;
   };
-  insertModalImage(asm.taxonImage, calPhotosTaxon, postImageInsertion);
+  insertModalImage(_asm.taxonImage, calPhotosTaxon, postImageInsertion);
   return false;
 };
 
@@ -2148,26 +2170,26 @@ modalTaxon = function(taxon) {
     html = "<div id='meta-taxon-info'>\n  " + yearHtml + "\n  <p>\n    English name: <span id='taxon-common-name' class='common_name no-cap'>" + (smartUpperCasing(data.common_name)) + "</span>\n  </p>\n  <p>\n    Type: <span id='taxon-type' class=\"major_type\">" + data.major_type + "</span>\n    " + commonType + "\n    <iron-icon icon='arrow-forward'></iron-icon>\n    <span id='taxon-subtype' class=\"major_subtype\">" + data.major_subtype + "</span>" + minorTypeHtml + "\n  </p>\n  " + deprecatedHtml + "\n</div>\n<h3>Taxon Notes</h3>\n<p id='taxon-notes'>" + notes + "</p>\n<p class=\"text-right small text-muted\">" + data.taxon_credit + "</p>";
     $("#modal-taxon-content").html(html);
     $("#modal-inat-linkout").unbind().click(function() {
-      return openTab(asm.affiliateQueryUrl.iNaturalist + "?q=" + taxon);
+      return openTab(_asm.affiliateQueryUrl.iNaturalist + "?q=" + taxon);
     });
     $("#modal-calphotos-linkout").unbind().click(function() {
-      return openTab(asm.affiliateQueryUrl.calPhotos + "?rel-taxon=contains&where-taxon=" + taxon);
+      return openTab(_asm.affiliateQueryUrl.calPhotos + "?rel-taxon=contains&where-taxon=" + taxon);
     });
     outboundLink = null;
     buttonText = null;
     taxonArray = taxon.split("+");
-    asm.activeTaxon = {
+    _asm.activeTaxon = {
       genus: taxonArray[0],
       species: taxonArray[1],
       subspecies: taxonArray[2]
     };
     if ((ref1 = data.linnean_order.toLowerCase()) === "caudata" || ref1 === "anura" || ref1 === "gymnophiona") {
       buttonText = "AmphibiaWeb";
-      outboundLink = asm.affiliateQueryUrl.amphibiaWeb + "?where-genus=" + data.genus + "&where-species=" + data.species;
+      outboundLink = _asm.affiliateQueryUrl.amphibiaWeb + "?where-genus=" + data.genus + "&where-species=" + data.species;
     } else if (!isNull(data.linnean_order)) {
       buttonText = "Reptile Database";
       button = "<paper-button id='modal-alt-linkout' class=\"hidden-xs\">" + buttonText + "</paper-button>";
-      outboundLink = asm.affiliateQueryUrl.reptileDatabase + "?genus=" + data.genus + "&species=" + data.species;
+      outboundLink = _asm.affiliateQueryUrl.reptileDatabase + "?genus=" + data.genus + "&species=" + data.species;
       smartReptileDatabaseLink();
     }
     if (outboundLink != null) {
@@ -2186,7 +2208,7 @@ modalTaxon = function(taxon) {
     if (isNull(data.image)) {
       data.image = void 0;
     }
-    asm.taxonImage = {
+    _asm.taxonImage = {
       imageUri: data.image,
       imageCredit: data.image_credit,
       imageLicense: data.image_license
@@ -2639,10 +2661,10 @@ safariSearchArgHelper = function(value, didLateRecheck) {
 
 insertCORSWorkaround = function() {
   var browserExtensionLink, browsers, e, error1, html;
-  if (asm.hasShownWorkaround == null) {
-    asm.hasShownWorkaround = false;
+  if (_asm.hasShownWorkaround == null) {
+    _asm.hasShownWorkaround = false;
   }
-  if (asm.hasShownWorkaround) {
+  if (_asm.hasShownWorkaround) {
     return false;
   }
   try {
@@ -2652,7 +2674,7 @@ insertCORSWorkaround = function() {
     return false;
   }
   if (browsers.isType("mobile")) {
-    asm.hasShownWorkaround = true;
+    _asm.hasShownWorkaround = true;
     return false;
   }
   browserExtensionLink = (function() {
@@ -2670,7 +2692,7 @@ insertCORSWorkaround = function() {
   html = "<div class=\"alert alert-info alert-dismissible center-block fade in\" role=\"alert\">\n  <button type=\"button\" class=\"close\" data-dismiss=\"alert\" aria-label=\"Close\"><span aria-hidden=\"true\">&times;</span></button>\n  <strong>Want CalPhotos images in your species dialogs?</strong> " + browserExtensionLink + "\n  We're working with CalPhotos to enable this natively, but it's a server change on their side.\n</div>";
   $("#result_container").before(html);
   $(".alert").alert();
-  asm.hasShownWorkaround = true;
+  _asm.hasShownWorkaround = true;
   return false;
 };
 
@@ -2824,11 +2846,11 @@ $(function() {
             return false;
           }
         }
-        if (asm.stateIter == null) {
-          asm.stateIter = 0;
+        if (_asm.stateIter == null) {
+          _asm.stateIter = 0;
         }
-        ++asm.stateIter;
-        if (asm.stateIter > 30) {
+        ++_asm.stateIter;
+        if (_asm.stateIter > 30) {
           console.warn("Couldn't attach Polymer.Base.ready");
           return false;
         }
@@ -2926,11 +2948,11 @@ $(function() {
           return false;
         }
       }
-      if (asm.stateIter == null) {
-        asm.stateIter = 0;
+      if (_asm.stateIter == null) {
+        _asm.stateIter = 0;
       }
-      ++asm.stateIter;
-      if (asm.stateIter > 30) {
+      ++_asm.stateIter;
+      if (_asm.stateIter > 30) {
         console.warn("Couldn't attach Polymer.Base.ready");
         return false;
       }

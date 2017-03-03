@@ -102,6 +102,8 @@ verifyLoginCredentials = (callback) ->
   false
 
 
+
+
 renderAdminSearchResults = (containerSelector = "#search-results") ->
   ###
   # Takes parts of performSearch() but only in the admin context
@@ -277,6 +279,22 @@ loadModalTaxonEditor = (extraHtml = "", affirmativeText = "Save") ->
   .unbind()
   .click ->
     createDuplicateTaxon()
+
+
+
+
+handleDeprecatedInput = ->
+  false
+
+
+renderDeprecatedFromDatabase = ->
+  false
+
+
+fillEmptyCommonName = ->
+  false
+
+
 
 
 

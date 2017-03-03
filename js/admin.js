@@ -3,7 +3,7 @@
  * The main coffeescript file for administrative stuff
  * Triggered from admin-page.html
  */
-var adminParams, createDuplicateTaxon, createNewTaxon, deleteTaxon, handleDragDropImage, loadAdminUi, loadModalTaxonEditor, lookupEditorSpecies, renderAdminSearchResults, saveEditorEntry, verifyLoginCredentials,
+var adminParams, createDuplicateTaxon, createNewTaxon, deleteTaxon, fillEmptyCommonName, handleDeprecatedInput, handleDragDropImage, loadAdminUi, loadModalTaxonEditor, lookupEditorSpecies, renderAdminSearchResults, renderDeprecatedFromDatabase, saveEditorEntry, verifyLoginCredentials,
   indexOf = [].indexOf || function(item) { for (var i = 0, l = this.length; i < l; i++) { if (i in this && this[i] === item) return i; } return -1; };
 
 adminParams = new Object();
@@ -239,6 +239,18 @@ loadModalTaxonEditor = function(extraHtml, affirmativeText) {
   return d$("#duplicate-taxon").unbind().click(function() {
     return createDuplicateTaxon();
   });
+};
+
+handleDeprecatedInput = function() {
+  return false;
+};
+
+renderDeprecatedFromDatabase = function() {
+  return false;
+};
+
+fillEmptyCommonName = function() {
+  return false;
 };
 
 createNewTaxon = function() {

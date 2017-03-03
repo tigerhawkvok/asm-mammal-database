@@ -3,9 +3,9 @@ searchParams.targetApi = "api.php"
 searchParams.targetContainer = "#result_container"
 searchParams.apiPath = uri.urlString + searchParams.targetApi
 
-asm = new Object()
+window._asm = new Object()
 # Base query URLs for out-of-site linkouts
-asm.affiliateQueryUrl =
+_asm.affiliateQueryUrl =
   # As of 2015.05.24, no SSL connection
   amphibiaWeb: "http://amphibiaweb.org/cgi/amphib_query"
   # As of 2015.05.24, no SSL connection
@@ -15,49 +15,64 @@ asm.affiliateQueryUrl =
   # As of 2015.05.24, the SSL cert is only for www.inaturalist.org
   iNaturalist: "https://www.inaturalist.org/taxa/search"
 
-asm.mammalGroupsBase = [
-  "rodents"
-  "lagomorphs"
-  "primates"
-  "solenodons"
-  "soricomorphs"
-  "bats"
-  "perissodactyls"
-  "pangolins"
-  "musteloids"
-  "pinnipeds"
-  "true bears"
-  "canids"
-  "Mongooses / meerkats"
-  "hyenas"
-  "civets"
-  "true cats"
-  "palm civet"
-  "Whales / dolphins"
-  "hippos"
-  "cervoids"
-  "non-cervoid ruminants"
-  "camelidae"
-  "suinae"
-  "tethytheria"
-  "elephants"
-  "afroscoricida"
-  "aardvarks"
-  "elephant shrews"
-  "armadillos"
-  "sloths"
-  "anteaters"
-  ]
+
+
+fetchMajorMinorGroups = (scientific = false, callback) ->
+  if typeof _asm.mammalGroupsBase is "object"
+    unless isArray _asm.mammalGroupsBase
+      _asm.mammalGroupsBase = Object.toArray _asm.mammalGroupsBase
+    if typeof callback is "function"
+      callback()
+  else
+    # Hit the API
+    _asm.mammalGroupsBase = [
+      "rodents"
+      "lagomorphs"
+      "primates"
+      "solenodons"
+      "soricomorphs"
+      "bats"
+      "perissodactyls"
+      "pangolins"
+      "musteloids"
+      "pinnipeds"
+      "true bears"
+      "canids"
+      "Mongooses / meerkats"
+      "hyenas"
+      "civets"
+      "true cats"
+      "palm civet"
+      "Whales / dolphins"
+      "hippos"
+      "cervoids"
+      "non-cervoid ruminants"
+      "camelidae"
+      "suinae"
+      "tethytheria"
+      "elephants"
+      "afroscoricida"
+      "aardvarks"
+      "elephant shrews"
+      "armadillos"
+      "sloths"
+      "anteaters"
+      ]
+    foo()
+    if typeof callback is "function"
+      callback()
+  false
 
 
 
 eutheriaFilterHelper = ->
+  fetchMajorMinorGroups()
   $("#linnean")
   .on "iron-select", ->
     if $(p$("#linnean").selectedItem).attr("data-type") is "eutheria"
       # Clean it up for the code
       mammalGroups = new Array()
-      for humanGroup in asm.mammalGroupsBase
+      for humanGroup in _asm.mammalGroupsBase
         mammalGroups.push humanGroup.toLowerCase()
       mammalGroups.sort()
       mammalItems = ""
@@ -326,7 +341,7 @@ formatSearchResults = (result,container = searchParams.targetContainer) ->
             if isNull(col)
               # Get a CalPhotos link as
               # http://calphotos.berkeley.edu/cgi/img_query?rel-taxon=contains&where-taxon=batrachoseps+attenuatus
-              col = "<paper-icon-button icon='launch' data-href='#{asm.affiliateQueryUrl.calPhotos}?rel-taxon=contains&where-taxon=#{taxonQuery}' class='newwindow calphoto click' data-taxon=\"#{taxonQuery}\"></paper-icon-button>"
+              col = "<paper-icon-button icon='launch' data-href='#{_asm.affiliateQueryUrl.calPhotos}?rel-taxon=contains&where-taxon=#{taxonQuery}' class='newwindow calphoto click' data-taxon=\"#{taxonQuery}\"></paper-icon-button>"
             else
               col = "<paper-icon-button icon='image:image' data-lightbox='#{uri.urlString}#{col}' class='lightboximage'></paper-icon-button>"
           # What should be centered, and what should be left-aligned?
@@ -508,7 +523,7 @@ checkTaxonNear = (taxonQuery = undefined, callback = undefined, selector = "#nea
 
 
 
-insertModalImage = (imageObject = asm.taxonImage, taxon = asm.activeTaxon, callback = undefined) ->
+insertModalImage = (imageObject = _asm.taxonImage, taxon = _asm.activeTaxon, callback = undefined) ->
   ###
   # Insert into the taxon modal a lightboxable photo. If none exists,
   # load from CalPhotos
@@ -525,8 +540,8 @@ insertModalImage = (imageObject = asm.taxonImage, taxon = asm.activeTaxon, callb
     warnArgs =
       taxon: taxon
       imageUrl: imageUrl
-      defaultTaxon: asm.activeTaxon
-      defaultImage: asm.taxonImage
+      defaultTaxon: _asm.activeTaxon
+      defaultImage: _asm.taxonImage
     console.warn(warnArgs)
     return false
   # Image insertion helper
@@ -619,7 +634,7 @@ insertModalImage = (imageObject = asm.taxonImage, taxon = asm.activeTaxon, callb
   ###
 
   args = "getthumbinfo=1&num=all&cconly=1&taxon=#{taxonString}&format=xml"
-  # console.log("Looking at","#{asm.affiliateQueryUrl.calPhotos}?#{args}")
+  # console.log("Looking at","#{_asm.affiliateQueryUrl.calPhotos}?#{args}")
   ## CalPhotos doesn't have good headers set up. Try a CORS request.
   # CORS success callback
   doneCORS = (resultXml) ->
@@ -643,7 +658,7 @@ insertModalImage = (imageObject = asm.taxonImage, taxon = asm.activeTaxon, callb
       imageObject.imageLicense = data.license[0]["_text"]
       imageObject.imageCredit = "#{data.copyright[0]["_text"]} (via CalPhotos)"
     catch e
-      console.warn("CalPhotos didn't return any valid images for this search!","#{asm.affiliateQueryUrl.calPhotos}?#{args}")
+      console.warn("CalPhotos didn't return any valid images for this search!","#{_asm.affiliateQueryUrl.calPhotos}?#{args}")
       return false
     # Do the image insertion via our helper function
     insertImage(imageObject,taxonString)
@@ -655,7 +670,7 @@ insertModalImage = (imageObject = asm.taxonImage, taxon = asm.activeTaxon, callb
     false
   # The actual call attempts.
   try
-    doCORSget(asm.affiliateQueryUrl.calPhotos, args, doneCORS, failCORS)
+    doCORSget(_asm.affiliateQueryUrl.calPhotos, args, doneCORS, failCORS)
   catch e
     console.error(e.message)
   false
@@ -668,7 +683,7 @@ smartReptileDatabaseLink = ->
   # https://github.com/SSARHERPS/SSAR-species-database/issues/77
   ###
   url = "http://reptile-database.reptarium.cz/interfaces/services/check-taxon"
-  taxon = asm.activeTaxon
+  taxon = _asm.activeTaxon
   taxonArray = [taxon.genus,taxon.species]
   if taxon.subspecies?
     taxonArray.push(taxon.subspecies)
@@ -694,7 +709,7 @@ smartReptileDatabaseLink = ->
       button = """
       <paper-button id='modal-alt-linkout' class="hidden-xs">#{buttonText}</paper-button>
       """
-      outboundLink = "#{asm.affiliateQueryUrl.reptileDatabase}?genus=#{data.genus}&species=#{data.species}"
+      outboundLink = "#{_asm.affiliateQueryUrl.reptileDatabase}?genus=#{data.genus}&species=#{data.species}"
       if outboundLink?
         # First, un-hide it in case it was hidden
         $("#modal-alt-linkout")
@@ -726,7 +741,7 @@ smartCalPhotosLink = (overrideTaxon) ->
   calPhotosTaxon =
     genus: overrideTaxon.genus
     species: overrideTaxon.species
-    subspecies: asm.activeTaxon.species
+    subspecies: _asm.activeTaxon.species
   taxonArray = [
     calPhotosTaxon.genus
     calPhotosTaxon.species
@@ -745,9 +760,9 @@ smartCalPhotosLink = (overrideTaxon) ->
     $("#modal-calphotos-linkout")
     .unbind()
     .click ->
-      openTab("#{asm.affiliateQueryUrl.calPhotos}?rel-taxon=contains&where-taxon=#{taxonArray.join("+")}")
+      openTab("#{_asm.affiliateQueryUrl.calPhotos}?rel-taxon=contains&where-taxon=#{taxonArray.join("+")}")
     false
-  insertModalImage(asm.taxonImage, calPhotosTaxon, postImageInsertion)
+  insertModalImage(_asm.taxonImage, calPhotosTaxon, postImageInsertion)
   false
 
 
@@ -874,19 +889,19 @@ modalTaxon = (taxon = undefined) ->
     $("#modal-inat-linkout")
     .unbind()
     .click ->
-      openTab("#{asm.affiliateQueryUrl.iNaturalist}?q=#{taxon}")
+      openTab("#{_asm.affiliateQueryUrl.iNaturalist}?q=#{taxon}")
     # CalPhotos
     $("#modal-calphotos-linkout")
     .unbind()
     .click ->
-      openTab("#{asm.affiliateQueryUrl.calPhotos}?rel-taxon=contains&where-taxon=#{taxon}")
+      openTab("#{_asm.affiliateQueryUrl.calPhotos}?rel-taxon=contains&where-taxon=#{taxon}")
     # AmphibiaWeb or Reptile Database
     # See
     # https://github.com/tigerhawkvok/SSAR-species-database/issues/35
     outboundLink = null
     buttonText = null
     taxonArray = taxon.split("+")
-    asm.activeTaxon =
+    _asm.activeTaxon =
       genus: taxonArray[0]
       species: taxonArray[1]
       subspecies: taxonArray[2]
@@ -896,14 +911,14 @@ modalTaxon = (taxon = undefined) ->
       # https://www.youtube.com/watch?v=xxsUQtfQ5Ew
       # Anyway, here we want a link to AmphibiaWeb
       buttonText = "AmphibiaWeb"
-      outboundLink = "#{asm.affiliateQueryUrl.amphibiaWeb}?where-genus=#{data.genus}&where-species=#{data.species}"
+      outboundLink = "#{_asm.affiliateQueryUrl.amphibiaWeb}?where-genus=#{data.genus}&where-species=#{data.species}"
     else unless isNull(data.linnean_order)
       # It's not an amphibian -- so we want a link to Reptile Database
       buttonText = "Reptile Database"
       button = """
       <paper-button id='modal-alt-linkout' class="hidden-xs">#{buttonText}</paper-button>
       """
-      outboundLink = "#{asm.affiliateQueryUrl.reptileDatabase}?genus=#{data.genus}&species=#{data.species}"
+      outboundLink = "#{_asm.affiliateQueryUrl.reptileDatabase}?genus=#{data.genus}&species=#{data.species}"
       # Now, lazily check this against the Reptile Database taxon API
       smartReptileDatabaseLink()
     if outboundLink?
@@ -928,7 +943,7 @@ modalTaxon = (taxon = undefined) ->
     d$("#modal-heading").text(humanTaxon)
     # Open it
     if isNull(data.image) then data.image = undefined
-    asm.taxonImage =
+    _asm.taxonImage =
       imageUri: data.image
       imageCredit: data.image_credit
       imageLicense: data.image_license
@@ -1505,9 +1520,9 @@ safariSearchArgHelper = (value, didLateRecheck = false) ->
 
 
 insertCORSWorkaround = ->
-  unless asm.hasShownWorkaround?
-    asm.hasShownWorkaround = false
-  if asm.hasShownWorkaround
+  unless _asm.hasShownWorkaround?
+    _asm.hasShownWorkaround = false
+  if _asm.hasShownWorkaround
     return false
   try
     browsers = new WhichBrowser()
@@ -1516,7 +1531,7 @@ insertCORSWorkaround = ->
     return false
   if browsers.isType("mobile")
     # We don't need to show this at all -- no extensions!
-    asm.hasShownWorkaround = true
+    _asm.hasShownWorkaround = true
     return false
   browserExtensionLink = switch browsers.browser.name
     when "Chrome"
@@ -1541,7 +1556,7 @@ insertCORSWorkaround = ->
   """
   $("#result_container").before(html)
   $(".alert").alert()
-  asm.hasShownWorkaround = true
+  _asm.hasShownWorkaround = true
   false
 
 
@@ -1671,10 +1686,10 @@ $ ->
               if fuzzyState
                 d$("#fuzzy").attr("checked", "checked")
             return false
-        unless asm.stateIter?
-          asm.stateIter = 0
-        ++asm.stateIter
-        if asm.stateIter > 30
+        unless _asm.stateIter?
+          _asm.stateIter = 0
+        ++_asm.stateIter
+        if _asm.stateIter > 30
           console.warn("Couldn't attach Polymer.Base.ready")
           return false
         try
@@ -1736,7 +1751,7 @@ $ ->
         return false
       console.warn "Bad initial search"
       showBadSearchErrorMessage.debounce null, null, null, result
-      console.error result.error 
+      console.error result.error
       console.warn result
     .fail (result,error) ->
       console.error("There was an error loading the generic table")
@@ -1762,10 +1777,10 @@ $ ->
             d$("#loose").attr("checked", "checked")
             eutheriaFilterHelper()
           return false
-      unless asm.stateIter?
-        asm.stateIter = 0
-      ++asm.stateIter
-      if asm.stateIter > 30
+      unless _asm.stateIter?
+        _asm.stateIter = 0
+      ++_asm.stateIter
+      if _asm.stateIter > 30
         console.warn("Couldn't attach Polymer.Base.ready")
         return false
       try

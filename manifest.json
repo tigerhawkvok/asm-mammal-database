@@ -1,38 +1,38 @@
 {
-    "short_name": "SSAR North American Species Database",
-    "name": "SSAR North American Reptile and Amphibian Species Names Database",
+    "short_name": "ASM Species DB",
+    "name": "American Society of Mammalogists Species Account Database",
     "icons": [
         {
-            "src":"http://mammaldiversity.org/cndb/assets/favicon1024.png",
+            "src":"http://mammaldiversity.org/assets/favicon1024.png",
             "sizes":"1024x1024",
             "type":"image/png"
         },
         {
-            "src":"http://mammaldiversity.org/cndb/assets/favicon512.png",
+            "src":"http://mammaldiversity.org/assets/favicon512.png",
             "sizes":"512x512",
             "type":"image/png"
         },
         {
-            "src":"http://mammaldiversity.org/cndb/assets/favicon256.png",
+            "src":"http://mammaldiversity.org/assets/favicon256.png",
             "sizes":"256x256",
             "type":"image/png"
         },
         {
-            "src":"http://mammaldiversity.org/cndb/assets/favicon128.png",
+            "src":"http://mammaldiversity.org/assets/favicon128.png",
             "sizes":"128x128",
             "type":"image/png"
         },
         {
-            "src":"http://mammaldiversity.org/cndb/assets/favicon64.png",
+            "src":"http://mammaldiversity.org/assets/favicon64.png",
             "sizes":"64x64",
             "type":"image/png"
         },
         {
-            "src":"http://mammaldiversity.org/cndb/assets/favicon32.png",
+            "src":"http://mammaldiversity.org/assets/favicon32.png",
             "sizes":"32x32",
             "type":"image/png"
         }
     ],
-    "start_url":"http://mammaldiversity.org/cndb/",
+    "start_url":"http://mammaldiversity.org/",
     "display":"standalone"
 }

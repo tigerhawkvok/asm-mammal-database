@@ -1,4 +1,7 @@
-default_table = "north_american_species"
+defaultFile = "../../asm_predatabase_clean.csv"
+outputFile = "../../asm_database_insert.sql"
+configFilePath = "../../../CONFIG.php"
+default_table = "mammal_diversity_database"
 
 ## Helper functions
 
@@ -25,42 +28,80 @@ def cleanKVPairs(col,val):
         # But enclosed as an SQL string
         val = val.replace("'","&#39;")
         return "'"+val+"'"
-        
 
-def generateInsertSqlQueries(rowList,tableName,makeLower=True):
+
+def generateInsertSqlQueries(rowList, tableName, makeLower=False, configFile = configFilePath):
     # Generate update SQL queries
     i=0
     j=0
     query = ""
     queryList = list()
+    dbConfig = None
+    # Check for a PHP config file
+    if os.path.isfile(configFile):
+        try:
+            import re
+            fileStream = open(configFile)
+            configFileContents = fileStream.read()
+            fileStream.close()
+            phpDBConfig = re.sub(r"(?sim)^.*= ?array\((.*)\).*$", r"\1", configFileContents)
+            phpDBConfigItems = re.sub(r"""(?im)^\s*("|')(\w+)\1\s*=>\s*("|')([\w()0-9]+)\3\s*,?$""", r'"\2":"\4"', phpDBConfig)
+            dbConfigJsonRaw = re.sub('(?im)(\r|\n|\r\n)"', ",\"", phpDBConfigItems).strip()
+            dbConfigJson = "{"+dbConfigJsonRaw+"}"
+            try:
+                import simplejson as json
+            except ImportError:
+                import json
+            dbConfig = json.loads(dbConfigJson)
+            createDefs = list()
+            createDefs.append("CREATE TABLE `"+tableName+"` (id int(10) NOT NULL auto_increment")
+            for colName, colDef in dbConfig.items():
+                createDefs.append(", `"+str(colName)+"` "+str(colDef))
+            createDefs.append(",PRIMARY KEY (id),UNIQUE id (id),KEY id_2 (id));")
+            queryList.append("DROP TABLE IF EXISTS `"+tableName+"`;")
+            queryList.append("".join(createDefs))
+            
+        except:
+            print("WARNING: No PHP configuration file found. Not declaring table.")
+            pass
     first=True
     try:
         for row in rowList:
             # Each row should be a dict of the form "column":"value"
-            query="INSERT INTO`"+tableName+"` "
+            query="INSERT INTO `"+tableName+"` "
             s=""
-            set_statement = ""
+            set_statement = "SET "
             try:
                 for col,val in row.items():
                     if makeLower: val = val.lower()
+                    if dbConfig is not None:
+                        try:
+                            test = dbConfig[col]
+                        except KeyError:
+                            print("ERROR: Found a DB Config file, but the data had a key not represented there!")
+                            print("Key Found: "+str(col))
+                            print("Config File Used: "+configFile)
+                            print("DB Config Read: ", dbConfig)
+                            doExit()
                     val = cleanKVPairs(col,val)
                     s+="\n\t`"+col+"`="+str(val)+","
-                # Trim the last comma
+                    # Trim the last comma
                 s = s[:-1]
-                set_statement = s
-                s+=where
+                set_statement += s
             except AttributeError:
                 print("ERROR: Row is not a dictionary.")
                 print("Each row should be a dictionary of the form {column:value}.")
                 return False
-            query += s
+            query += set_statement
             query+=";"
-            if query not in queryList and len(set_statement) > 0:
+            if query not in queryList and len(s) > 0:
                 # Avoid duplicate entries and only use entries with alterations
                 queryList.append(query)
                 j+=1
-            i+=1
-            first = False
+                i+=1
+                first = False
+                if i % 500 is 0:
+                    print("Processed",i,"rows, generated ",j,"entries")
         print("Processed",i,"rows, generated ",j,"entries")
         return queryList
     except:
@@ -70,17 +111,18 @@ def generateInsertSqlQueries(rowList,tableName,makeLower=True):
         return False
 
 
-def updateTableQueries(rowList,tableName):
+
+def updateTableQueries(rowList,tableName,refFile = outputFile):
     # generate queries for this directory
     import time
     time.clock()
     # Check the format of rowList
     print("Table",tableName)
     preamble="/* Automatically generated SQL entries from "+time.strftime('%d %B %Y at %H%M%S %Z')+"  */\n"
-    queries = generateInsertSqlQueries(rowList,refCol,tableName)
+    queries = generateInsertSqlQueries(rowList,tableName)
     if queries is not False:
         queries_string = "\n\n".join(queries)
-        filename = "sql_creation_"+tableName+".sql"
+        filename = refFile + "__sql_creation_"+tableName+str(time.time())+".sql"
         f=open(filename,'w')
         f.write(preamble)
         f.write(queries_string)
@@ -89,15 +131,19 @@ def updateTableQueries(rowList,tableName):
     else:
         print("Unable to generate queries.")
 
+
+
 ## Primary Script at runtime
-        
+
 # Take in input CSV file and write out an SQL file to update a database.
 path = None
 while path is None:
     try:
-        path = input("Enter the path to the CSV file to be used: ")
+        path = input("Enter the path to the CSV file to be used: (default:"+defaultFile+")")
         # Check for file existence and filetype
         exit_script_prompt = "If you want to exit, press Control-c."
+        if path == "":
+            path = defaultFile
         if not os.path.isfile(path):
             path = None
             print("Invalid file.",exit_script_prompt)

@@ -1,7 +1,7 @@
 import time, os, glob, sys, qinput, string, yn
 
-defaultFile = "../../ssar_predatabase.csv"
-outputFile = "../../ssar_predatabase_clean.csv"
+defaultFile = "../../MasterTax_MamPhy-v1.0_Sept2015.csv"
+outputFile = "../../asm_predatabase_clean.csv"
 exitScriptPrompt = "Press Control-c to exit."
 
 def doExit():
@@ -13,22 +13,23 @@ def doExit():
 def cleanGenus(data):
     # Split spaces, throw out first, throw out numbers, trim and throw
     # out comma if exists at end
-    data_split = data.split(" ")
-    genus = data_split.pop(0)
-    data = " ".join(data_split)
-    data_split = data.split(",")
-    year = data_split.pop()
-    authority = ",".join(data_split)
-    return [year,authority]
+    return formatData(data)
+
 
 def cleanSpecies(data):
     #throw out numbers, parens
-    data = data.replace("(","")
-    data = data.replace(")","")
-    data_split = data.split(",")
-    year = data_split.pop()
-    authority = ",".join(data_split)
-    return [year,authority]
+    return formatData(data)
+
+
+def cleanSciname(data):
+    return data.strip().replace("_", " ")
+
+def formatData(data):
+    try:
+        return data.lower().strip()
+    except:
+        return data
+
 
 def cleanCSV(path = defaultFile, newPath = outputFile):
     if not os.path.isfile(path):
@@ -47,33 +48,25 @@ def cleanCSV(path = defaultFile, newPath = outputFile):
     rows = csv.reader(contents.split("\n"),delimiter=",")
     newFile = open(newPath,"w", newline='')
     cleanRows = csv.writer(newFile,delimiter=",",quoting=csv.QUOTE_ALL)
-    genus_auth_col = 0
-    species_auth_col = 0
-    auth_year_col = 0
+    colDefs = {}
+    colClean = {
+        "genus": lambda x: cleanGenus(x),
+        "species": lambda x: cleanSpecies(x),
+        "canonical_sciname": lambda x: cleanSciname(x),
+    }
     for i,row in enumerate(rows):
         if i is 0:
             for j,column in enumerate(row):
-                if column == "genus_authority":
-                    genus_auth_col = j
-                if column == "species_authority":
-                    species_auth_col = j
-                if column == "authority_year":
-                    auth_year_col = j
+                colDefs[j] = column
         else:
             # All other loops
-            json_year = "{"
-            for j,column in enumerate(row):
-                if j is genus_auth_col:
-                    cleaned = cleanGenus(column)
-                    json_year += cleaned[0]
-                    row[j] = cleaned[1]
-                if j is species_auth_col:
-                    cleaned = cleanSpecies(column)
-                    json_year += ":" + cleaned[0]
-                    row[j] = cleaned[1]
-                if j is auth_year_col:
-                    json_year += "}"
-                    row[j] = json_year
+            for j, column in enumerate(row):
+                colName = colDefs[j]
+                try:
+                    row[j] = colClean[colName](column)
+                except KeyError:
+                    # Doesn't need cleaning
+                    row[j] = formatData(column)
         # Append the cleaned row back on
         cleanRows.writerow(row)
         if i%50 is 0 and i > 0:

@@ -6,18 +6,12 @@ searchParams.apiPath = uri.urlString + searchParams.targetApi
 window._asm = new Object()
 # Base query URLs for out-of-site linkouts
 _asm.affiliateQueryUrl =
-  # As of 2015.05.24, no SSL connection
-  amphibiaWeb: "http://amphibiaweb.org/cgi/amphib_query"
-  # As of 2015.05.24, no SSL connection
-  reptileDatabase: "http://reptile-database.reptarium.cz/species"
-  # As of 2015.05.24, no SSL connection
-  calPhotos: "http://calphotos.berkeley.edu/cgi/img_query"
-  # As of 2015.05.24, the SSL cert is only for www.inaturalist.org
+  iucnRedlist: "http://apiv3.iucnredlist.org/api/v3/species/common_names/"
   iNaturalist: "https://www.inaturalist.org/taxa/search"
 
 
 
-fetchMajorMinorGroups = (scientific = false, callback) ->
+fetchMajorMinorGroups = (scientific = null, callback) ->
   if typeof _asm.mammalGroupsBase is "object"
     unless isArray _asm.mammalGroupsBase
       _asm.mammalGroupsBase = Object.toArray _asm.mammalGroupsBase
@@ -25,48 +19,60 @@ fetchMajorMinorGroups = (scientific = false, callback) ->
       callback()
   else
     # Hit the API
-    _asm.mammalGroupsBase = [
-      "rodents"
-      "lagomorphs"
-      "primates"
-      "solenodons"
-      "soricomorphs"
-      "bats"
-      "perissodactyls"
-      "pangolins"
-      "musteloids"
-      "pinnipeds"
-      "true bears"
-      "canids"
-      "Mongooses / meerkats"
-      "hyenas"
-      "civets"
-      "true cats"
-      "palm civet"
-      "Whales / dolphins"
-      "hippos"
-      "cervoids"
-      "non-cervoid ruminants"
-      "camelidae"
-      "suinae"
-      "tethytheria"
-      "elephants"
-      "afroscoricida"
-      "aardvarks"
-      "elephant shrews"
-      "armadillos"
-      "sloths"
-      "anteaters"
-      ]
-    foo()
-    if typeof callback is "function"
-      callback()
+    unless isBool scientific
+      try
+        scientific = p$("#use-scientific").checked ? true
+      catch
+        scientific = true
+    $.get searchParams.apiPath, "fetch-groups=true&scientific=#{scientific}"
+    .done (result) ->
+      console.log "Group fetch got", result
+      if result.status isnt true
+        return false
+      $("#eutheria-extra").remove()
+      _asm.mammalGroupsBase = Object.toArray result.minor
+      # Change the item list
+      menuItems = """
+      <paper-item data-type="any" selected>All</paper-item>
+      """
+      for itemType, itemLabel of result.major
+        menuItems += """
+      <paper-item data-type="#{itemType}">#{itemLabel.toTitleCase()}</paper-item>
+        """
+      column = if scientific then "linnean_family" else "simple_linnean_subgroup"
+      buttonHtml = """
+              <paper-menu-button id="simple-linnean-groups" class="col-xs-6 col-md-4">
+                <paper-button class="dropdown-trigger"><iron-icon icon="icons:filter-list"></iron-icon><span id="filter-what" class="dropdown-label"></span></paper-button>
+                <paper-menu label="Group" data-column="#{column}" class="cndb-filter dropdown-content" id="linnean" name="type" attrForSelected="data-type" selected="0">
+                  #{menuItems}
+                </paper-menu>
+              </paper-menu-button>
+      """
+      $("#simple-linnean-groups").replaceWith buttonHtml
+      $("#simple-linnean-groups")
+      .on "iron-select", ->
+        type = $(p$("#simple-linnean-groups paper-menu").selectedItem).attr "data-type"
+        $("#simple-linnean-groups span.dropdown-label").text type
+      type = $(p$("#simple-linnean-groups paper-menu").selectedItem).attr "data-type"
+      $("#simple-linnean-groups span.dropdown-label").text type
+      eutheriaFilterHelper(true)
+      console.log "Replaced menu items with", menuItems
+      if typeof callback is "function"
+        callback()
+    .fail (result, error) ->
+      false
   false
 
 
 
-eutheriaFilterHelper = ->
-  fetchMajorMinorGroups()
+eutheriaFilterHelper = (skipFetch = false) ->
+  unless skipFetch
+    fetchMajorMinorGroups.debounce()
+    try
+      $("#use-scientific")
+      .on "iron-change", ->
+        delete _asm.mammalGroupsBase
+        fetchMajorMinorGroups.debounce()
   $("#linnean")
   .on "iron-select", ->
     if $(p$("#linnean").selectedItem).attr("data-type") is "eutheria"
@@ -84,19 +90,27 @@ eutheriaFilterHelper = ->
         """
         mammalItems += html
       html = """
-        <div id="eutheria-extra">
+        <div id="eutheria-extra"  class="col-xs-6 col-md-4">
             <label for="type" class="sr-only">Eutheria Filter</label>
-            <paper-menu-button>
+            <div class="row">
+            <paper-menu-button class="col-xs-12" id="eutheria-subfilter">
               <paper-button class="dropdown-trigger"><iron-icon icon="icons:filter-list"></iron-icon><span id="filter-what" class="dropdown-label"></span></paper-button>
               <paper-menu label="Group" data-column="simple_linnean_subgroup" class="cndb-filter dropdown-content" id="linnean-eutheria" name="type" attrForSelected="data-type" selected="0">
-                <paper-item data-type="any">All</paper-item>
+                <paper-item data-type="any" selected>All</paper-item>
                 #{mammalItems}
                 <!-- As per flag 4 in readme -->
               </paper-menu>
             </paper-menu-button>
+            </div>
           </div>
       """
       $("#simple-linnean-groups").after html
+      $("#eutheria-subfilter")
+      .on "iron-select", ->
+        type = $(p$("#eutheria-subfilter paper-menu").selectedItem).attr "data-type"
+        $("#eutheria-subfilter span.dropdown-label").text type
+      type = $(p$("#eutheria-subfilter paper-menu").selectedItem).attr "data-type"
+      $("#eutheria-subfilter span.dropdown-label").text type
     else
       $("#eutheria-extra").remove()
   false

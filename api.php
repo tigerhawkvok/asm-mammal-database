@@ -201,18 +201,18 @@ $search = strtolower($db->sanitize(deEscape(urldecode($_REQUEST['q']))));
 function fetchMajorMinorGroups($scientific = false) {
     global $db;
           $sciMajor = array(
-          "eutheria",
-              "metatheria",
-              "prototheria",
+          "eutheria"=>"eutheria",
+              "metatheria"=>"metatheria",
+              "prototheria"=>"prototheria",
           );
           $commonMajor = array(
-          "placental mammals",
-              "marsupials",
-              "monotremes",
+          "eutheria"=>"placental mammals",
+              "metatheria"=>"marsupials",
+              "prototheria"=>"monotremes",
           );
           $majorGroups = toBool($scientific) ?  $sciMajor : $commonMajor;
     $minorCol = toBool($scientific) ? "linnean_order":"simple_linnean_subgroup";
-    $query = "SELECT DISTINCT `$minorCol` FROM `".$db->getTable()."`";
+    $query = "SELECT DISTINCT `$minorCol`, `linnean_order` FROM `".$db->getTable()."`";
     $result = mysqli_query($db->getLink(), $query);
     if($result === false) {
           return array(

@@ -6817,6 +6817,12 @@ paper-dialog-scrollable {
 html >>> paper-dialog-scrollable {
   padding: 1rem !important;
 }
+.toggle-container paper-icon-button {
+  margin-top: calc(-0.5em - 5px);
+}
+#eutheria-extra {
+  display: inline-block;
+}
 #modal-taxon,
 #modal-taxon-edit {
   position: fixed !important;

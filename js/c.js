@@ -1569,15 +1569,14 @@ searchParams.apiPath = uri.urlString + searchParams.targetApi;
 window._asm = new Object();
 
 _asm.affiliateQueryUrl = {
-  amphibiaWeb: "http://amphibiaweb.org/cgi/amphib_query",
-  reptileDatabase: "http://reptile-database.reptarium.cz/species",
-  calPhotos: "http://calphotos.berkeley.edu/cgi/img_query",
+  iucnRedlist: "http://apiv3.iucnredlist.org/api/v3/species/common_names/",
   iNaturalist: "https://www.inaturalist.org/taxa/search"
 };
 
 fetchMajorMinorGroups = function(scientific, callback) {
+  var error1, ref1;
   if (scientific == null) {
-    scientific = false;
+    scientific = null;
   }
   if (typeof _asm.mammalGroupsBase === "object") {
     if (!isArray(_asm.mammalGroupsBase)) {
@@ -1587,19 +1586,64 @@ fetchMajorMinorGroups = function(scientific, callback) {
       callback();
     }
   } else {
-    _asm.mammalGroupsBase = ["rodents", "lagomorphs", "primates", "solenodons", "soricomorphs", "bats", "perissodactyls", "pangolins", "musteloids", "pinnipeds", "true bears", "canids", "Mongooses / meerkats", "hyenas", "civets", "true cats", "palm civet", "Whales / dolphins", "hippos", "cervoids", "non-cervoid ruminants", "camelidae", "suinae", "tethytheria", "elephants", "afroscoricida", "aardvarks", "elephant shrews", "armadillos", "sloths", "anteaters"];
-    foo();
-    if (typeof callback === "function") {
-      callback();
+    if (!isBool(scientific)) {
+      try {
+        scientific = (ref1 = p$("#use-scientific").checked) != null ? ref1 : true;
+      } catch (error1) {
+        scientific = true;
+      }
     }
+    $.get(searchParams.apiPath, "fetch-groups=true&scientific=" + scientific).done(function(result) {
+      var buttonHtml, column, itemLabel, itemType, menuItems, ref2, type;
+      console.log("Group fetch got", result);
+      if (result.status !== true) {
+        return false;
+      }
+      $("#eutheria-extra").remove();
+      _asm.mammalGroupsBase = Object.toArray(result.minor);
+      menuItems = "<paper-item data-type=\"any\" selected>All</paper-item>";
+      ref2 = result.major;
+      for (itemType in ref2) {
+        itemLabel = ref2[itemType];
+        menuItems += "<paper-item data-type=\"" + itemType + "\">" + (itemLabel.toTitleCase()) + "</paper-item>";
+      }
+      column = scientific ? "linnean_family" : "simple_linnean_subgroup";
+      buttonHtml = "<paper-menu-button id=\"simple-linnean-groups\" class=\"col-xs-6 col-md-4\">\n  <paper-button class=\"dropdown-trigger\"><iron-icon icon=\"icons:filter-list\"></iron-icon><span id=\"filter-what\" class=\"dropdown-label\"></span></paper-button>\n  <paper-menu label=\"Group\" data-column=\"" + column + "\" class=\"cndb-filter dropdown-content\" id=\"linnean\" name=\"type\" attrForSelected=\"data-type\" selected=\"0\">\n    " + menuItems + "\n  </paper-menu>\n</paper-menu-button>";
+      $("#simple-linnean-groups").replaceWith(buttonHtml);
+      $("#simple-linnean-groups").on("iron-select", function() {
+        var type;
+        type = $(p$("#simple-linnean-groups paper-menu").selectedItem).attr("data-type");
+        return $("#simple-linnean-groups span.dropdown-label").text(type);
+      });
+      type = $(p$("#simple-linnean-groups paper-menu").selectedItem).attr("data-type");
+      $("#simple-linnean-groups span.dropdown-label").text(type);
+      eutheriaFilterHelper(true);
+      console.log("Replaced menu items with", menuItems);
+      if (typeof callback === "function") {
+        return callback();
+      }
+    }).fail(function(result, error) {
+      return false;
+    });
   }
   return false;
 };
 
-eutheriaFilterHelper = function() {
-  fetchMajorMinorGroups();
+eutheriaFilterHelper = function(skipFetch) {
+  if (skipFetch == null) {
+    skipFetch = false;
+  }
+  if (!skipFetch) {
+    fetchMajorMinorGroups.debounce();
+    try {
+      $("#use-scientific").on("iron-change", function() {
+        delete _asm.mammalGroupsBase;
+        return fetchMajorMinorGroups.debounce();
+      });
+    } catch (undefined) {}
+  }
   $("#linnean").on("iron-select", function() {
-    var group, html, humanGroup, len, len1, m, mammalGroups, mammalItems, o, ref1;
+    var group, html, humanGroup, len, len1, m, mammalGroups, mammalItems, o, ref1, type;
     if ($(p$("#linnean").selectedItem).attr("data-type") === "eutheria") {
       mammalGroups = new Array();
       ref1 = _asm.mammalGroupsBase;
@@ -1614,8 +1658,15 @@ eutheriaFilterHelper = function() {
         html = "<paper-item data-type=\"" + group + "\">\n  " + (group.toTitleCase()) + "\n</paper-item>";
         mammalItems += html;
       }
-      html = "<div id=\"eutheria-extra\">\n    <label for=\"type\" class=\"sr-only\">Eutheria Filter</label>\n    <paper-menu-button>\n      <paper-button class=\"dropdown-trigger\"><iron-icon icon=\"icons:filter-list\"></iron-icon><span id=\"filter-what\" class=\"dropdown-label\"></span></paper-button>\n      <paper-menu label=\"Group\" data-column=\"simple_linnean_subgroup\" class=\"cndb-filter dropdown-content\" id=\"linnean-eutheria\" name=\"type\" attrForSelected=\"data-type\" selected=\"0\">\n        <paper-item data-type=\"any\">All</paper-item>\n        " + mammalItems + "\n        <!-- As per flag 4 in readme -->\n      </paper-menu>\n    </paper-menu-button>\n  </div>";
-      return $("#simple-linnean-groups").after(html);
+      html = "<div id=\"eutheria-extra\"  class=\"col-xs-6 col-md-4\">\n    <label for=\"type\" class=\"sr-only\">Eutheria Filter</label>\n    <div class=\"row\">\n    <paper-menu-button class=\"col-xs-12\" id=\"eutheria-subfilter\">\n      <paper-button class=\"dropdown-trigger\"><iron-icon icon=\"icons:filter-list\"></iron-icon><span id=\"filter-what\" class=\"dropdown-label\"></span></paper-button>\n      <paper-menu label=\"Group\" data-column=\"simple_linnean_subgroup\" class=\"cndb-filter dropdown-content\" id=\"linnean-eutheria\" name=\"type\" attrForSelected=\"data-type\" selected=\"0\">\n        <paper-item data-type=\"any\" selected>All</paper-item>\n        " + mammalItems + "\n        <!-- As per flag 4 in readme -->\n      </paper-menu>\n    </paper-menu-button>\n    </div>\n  </div>";
+      $("#simple-linnean-groups").after(html);
+      $("#eutheria-subfilter").on("iron-select", function() {
+        var type;
+        type = $(p$("#eutheria-subfilter paper-menu").selectedItem).attr("data-type");
+        return $("#eutheria-subfilter span.dropdown-label").text(type);
+      });
+      type = $(p$("#eutheria-subfilter paper-menu").selectedItem).attr("data-type");
+      return $("#eutheria-subfilter span.dropdown-label").text(type);
     } else {
       return $("#eutheria-extra").remove();
     }

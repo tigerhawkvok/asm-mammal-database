@@ -43,18 +43,29 @@
         </div>
         <fieldset class="fullwidth">
           <legend>Options</legend>
-          <div class="row">
-            <div class="col-md-4 col-xs-6">
-              <label for="loose">Loose</label> <paper-icon-button icon="info-outline" data-toggle="tooltip" title="Check this to do a partial-string search, rather than a strict exact match."></paper-icon-button>
-              <paper-toggle-button id="loose"></paper-toggle-button>
+          <section id="search-options-container" class="row">
+            <div class="col-md-3 col-xs-6 toggle-container">
+              <div class="row">
+                <label for="loose" class="col-xs-3">Loose</label> 
+                <paper-icon-button icon="info-outline" data-toggle="tooltip" title="Check this to do a partial-string search, rather than a strict exact match." class="col-xs-3"></paper-icon-button>
+                <paper-toggle-button id="loose" class="col-xs-4"></paper-toggle-button>
+               </div>
             </div>
-            <div class="col-md-4 col-xs-6">
-              <label for="fuzzy">Fuzzy</label>  <paper-icon-button icon="info-outline" data-toggle="tooltip" title="Check this to do a 'close match' search. Check this if you're unsure of your spelling or only have part of the name, for example."></paper-icon-button>
-              <paper-toggle-button id="fuzzy"></paper-toggle-button>
+            <div class="col-md-3 col-xs-6 toggle-container">
+              <div class="row">
+              <label for="fuzzy" class="col-xs-3">Fuzzy</label>  
+              <paper-icon-button icon="info-outline" data-toggle="tooltip" title="Check this to do a 'close match' search. Check this if you're unsure of your spelling or only have part of the name, for example." class="col-xs-3"></paper-icon-button>
+              <paper-toggle-button id="fuzzy" class="col-xs-4"></paper-toggle-button>
+              </div>
             </div>
-            <div class="col-md-4 col-sm-6 col-xs-12">
+            <div class="col-md-6 col-sm-6 col-xs-12">
               <!-- This is a filter column. We need a radio button for
                    AND/OR, and then to walk through the filters and append the object to the query. -->
+              <div class="row">
+                <div class="toggle-container col-xs-6 col-md-2">
+                  <label for="use-scientific" class="">Scientific</label>  
+                  <paper-toggle-button id="use-scientific" class="" checked></paper-toggle-button>
+                </div>
               <?php
                 $as_include = true;
                 include_once dirname(__FILE__)."/api.php";
@@ -62,9 +73,9 @@
                 echo "<script type='text/javascript'> _asm.mammalGroupsBase = ".json_encode($groups["minor"])." ; </script>"
                 ?>
               <label for="type" class="sr-only">Clade Restriction</label>
-              <paper-menu-button id="simple-linnean-groups">
+              <paper-menu-button id="simple-linnean-groups" class="col-xs-6 col-md-4">
                 <paper-button class="dropdown-trigger"><iron-icon icon="icons:filter-list"></iron-icon><span id="filter-what" class="dropdown-label"></span></paper-button>
-                <paper-menu label="Group" data-column="simple_linnean_group" class="cndb-filter dropdown-content" id="linnean" name="type" attrForSelected="data-type" selected="0">
+                <paper-menu label="Group" data-column="linnean_order" class="cndb-filter dropdown-content" id="linnean" name="type" attrForSelected="data-type" selected="0">
                   <paper-item data-type="any" selected>All</paper-item>
                   <?php
                     try {
@@ -79,9 +90,10 @@
                   ?>
                 </paper-menu>
               </paper-menu-button>
+              </div>
             </div>
-          </div>
-          <div>
+          </section>
+          <section id="default-hidden-search-option-container">
             <!-- Now, elements that are hidden by default -->
             <paper-button data-toggle="collapse" data-target="#collapse-advanced" aria-expanded="false" aria-controls="collapse-advanced" class="asm-blue-light" id="collapse-button" raised>Advanced Options <iron-icon icon="icons:unfold-more" id="collapse-icon"></iron-icon></paper-button>
             <div class="collapse form-group" id="collapse-advanced">
@@ -95,17 +107,9 @@
               <paper-input label="Genus Authority" id="genus-authority-filter" name="species-authority-filter" class="cndb-filter col-md-4 col-xs-6" data-column="genus_authority"></paper-input>
               <!-- Species authority -->
               <paper-input label="Species Authority" id="species-authority-filter" name="species-authority-filter" class="cndb-filter col-md-4 col-xs-6" data-column="species_authority"></paper-input>
-              <br/>
-              <div>
-                <label for="alien-filter" class="sr-only">Alien Species</label>
-                <paper-radio-group id="alien-filter" selected="both">
-                  <paper-radio-button name="both" id="radio-both">Show both alien and native species</paper-radio-button>
-                  <paper-radio-button name="native-only" id="radio-native">Show only native species</paper-radio-button>
-                  <paper-radio-button name="alien-only" id="radio-alien">Show only alien species</paper-radio-button>
-                </paper-radio-group>
-              </div>
+
             </div>
-          </div>
+          </section>
         </fieldset>
         <input type="submit" style="display:none;" value="Search"/>
       </form>

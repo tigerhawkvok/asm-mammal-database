@@ -290,7 +290,16 @@ if(empty($speciesRow["common_name"])) {
 $entryTitle = "<h1 class='species-title col-xs-12'>".getCanonicalSpecies($speciesRow)."</h1><h2 class='species-common col-xs-offset-1 col-xs-11'>".$speciesRow["common_name"]."</h2>";
 
 # Taxonomy notes
-$taxanomyNotes = "";
+$englishMap = array(
+    "eutheria" => "placental mammals",
+        "metatheria" => "marsupials",
+        "prototheria" => "egg-laying mammals (monotremes)",
+    );
+$taxonomyNotes = "<section id='taxonomy' class='col-xs-12'>
+<section class='scientific-taxonomy'><span class='clade'>".$speciesRow["simple_linnean_group"]."</span> &#187; <span class='clade'>".$speciesRow["linnean_order"]."</clade> &#187; <span class='clade'>".$speciesRow["linnean_family"]."</span></section>
+
+<section class='common-taxonomy'>".$englishMap[$speciesRow["simple_linnean_group"]]." &#187; ".$speciesRow["simple_linnean_subgroup"]."</section>
+</section>";
 
 # Any aside / note for this species.
 $entryNote = empty($speciesRow["entry"]) ? "" : "<section id='species-note' class='col-xs-12'><marked-element><div class='markdown-html'></div><script type='text/markdown'>".$speciesRow["notes"]."</script></marked-element></section></section>";

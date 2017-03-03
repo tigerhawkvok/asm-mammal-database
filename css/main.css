@@ -7111,3 +7111,9 @@ iron-label + paper-icon-button,
 label + paper-icon-button {
   padding-left: 0;
 }
+.clade {
+  text-transform: title-case;
+}
+#taxonomy .common-taxonomy {
+  color: #777777;
+}

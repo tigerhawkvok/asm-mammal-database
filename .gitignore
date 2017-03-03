@@ -61,3 +61,4 @@ pdf/pdf-gen/*.pdf
 *.orig/keyrings/live/pubring.gpg~
 /keyrings/live/pubring.kbx~
 /keyrings/live/secring.gpg
+*.pyc

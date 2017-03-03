@@ -21,7 +21,12 @@ class _Getch:
 
     def __call__(self):
         # Return as a string
-        return self.impl().decode('utf-8')
+        try:
+            return self.impl().decode('utf-8')
+        except:
+            # Python 3 on Linux returns and error above, but this fix
+            # means you have to hit the key twice ...
+            return self.impl()
 
 
 class _GetchUnix:

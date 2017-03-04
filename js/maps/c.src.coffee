@@ -1286,7 +1286,7 @@ fetchMajorMinorGroups = (scientific = null, callback) ->
       buttonHtml = """
               <paper-menu-button id="simple-linnean-groups" class="col-xs-6 col-md-4">
                 <paper-button class="dropdown-trigger"><iron-icon icon="icons:filter-list"></iron-icon><span id="filter-what" class="dropdown-label"></span></paper-button>
-                <paper-menu label="Group" data-column="#{column}" class="cndb-filter dropdown-content" id="linnean" name="type" attrForSelected="data-type" selected="0">
+                <paper-menu label="Group" data-column="simple_linnean_group" class="cndb-filter dropdown-content" id="linnean" name="type" attrForSelected="data-type" selected="0">
                   #{menuItems}
                 </paper-menu>
               </paper-menu-button>
@@ -1332,13 +1332,19 @@ eutheriaFilterHelper = (skipFetch = false) ->
         </paper-item>
         """
         mammalItems += html
+      unless isBool scientific
+        try
+          scientific = p$("#use-scientific").checked ? true
+        catch
+          scientific = true
+      column = if scientific then "linnean_family" else "simple_linnean_subgroup"
       html = """
         <div id="eutheria-extra"  class="col-xs-6 col-md-4">
             <label for="type" class="sr-only">Eutheria Filter</label>
             <div class="row">
             <paper-menu-button class="col-xs-12" id="eutheria-subfilter">
               <paper-button class="dropdown-trigger"><iron-icon icon="icons:filter-list"></iron-icon><span id="filter-what" class="dropdown-label"></span></paper-button>
-              <paper-menu label="Group" data-column="simple_linnean_subgroup" class="cndb-filter dropdown-content" id="linnean-eutheria" name="type" attrForSelected="data-type" selected="0">
+              <paper-menu label="Group" data-column="#{column}" class="cndb-filter dropdown-content" id="linnean-eutheria" name="type" attrForSelected="data-type" selected="0">
                 <paper-item data-type="any" selected>All</paper-item>
                 #{mammalItems}
                 <!-- As per flag 4 in readme -->
@@ -1439,7 +1445,7 @@ performSearch = (stateArgs = undefined) ->
     if s? then setHistory("#{uri.urlString}##{b64s}")
     false
 
-getFilters = (selector = ".cndb-filter",booleanType = "AND") ->
+getFilters = (selector = ".cndb-filter", booleanType = "AND") ->
   ###
   # Look at $(selector) and apply the filters as per
   # https://github.com/tigerhawkvok/SSAR-species-database#search-flags
@@ -1463,12 +1469,6 @@ getFilters = (selector = ".cndb-filter",booleanType = "AND") ->
         return true
       else
     filterList[col] = val.toLowerCase()
-  # Check the alien species filter
-  alien = $("#alien-filter").get(0).selected
-  if alien isnt "both"
-    # The filter only needs to be applied if the filter isn't looking
-    # for both alien and non-alien/native species
-    filterList.is_alien = if alien is "alien-only" then 1 else 0
   if Object.size(filterList) is 0
     # Pass back an empty string
     # console.log("Got back an empty filter list.")
@@ -1515,6 +1515,13 @@ formatSearchResults = (result,container = searchParams.targetContainer) ->
     "parens_auth_genus"
     "parens_auth_species"
     "is_alien"
+    "internal_id"
+    "source"
+    "species_authority"
+    "genus_authority"
+    "canonical_sciname"
+    "simple_linnean_group"
+    "authority_year"
     ]
   externalCounter = 0
   renderTimeout = delay 5000, ->
@@ -1522,6 +1529,24 @@ formatSearchResults = (result,container = searchParams.targetContainer) ->
     console.error("Couldn't finish parsing the results! Expecting #{targetCount} elements, timed out on #{externalCounter}.")
     console.warn(data)
     return false
+  requiredKeyOrder = [
+    "common_name"
+    "genus"
+    "species"
+    "subspecies"
+    ]
+  # Get all the rows in order
+  for k, v of data[0]
+    unless k in requiredKeyOrder
+      requiredKeyOrder.push k
+  # Re-sort the data
+  origData = data
+  data = new Object()
+  for i, row of origData
+    data[i] = new Object()
+    for key in requiredKeyOrder
+      data[i][key] = row[key]
+  # The real render loop
   for i, row of data
     externalCounter = i
     if toInt(i) is 0
@@ -1530,20 +1555,16 @@ formatSearchResults = (result,container = searchParams.targetContainer) ->
       for k, v of row
         niceKey = k.replace(/_/g," ")
         unless k in dontShowColumns
-          # or niceKey is "image" ...
           if $("#show-deprecated").polymerSelected() isnt true
             alt = "deprecated_scientific"
           else
             # Empty placeholder
             alt = ""
           if k isnt alt
-            # Remap names that were changed late into dev
-            # See
-            # https://github.com/tigerhawkvok/SSAR-species-database/issues/19
-            # as an example
+            # Remap names to pretty names
             niceKey = switch niceKey
-              when "common name" then "english name"
-              when "major subtype" then "english genus name"
+              when "simple linnean subgroup" then "Group"
+              when "major subtype" then "Clade"
               else niceKey
             htmlHead += "\n\t\t<th class='text-center'>#{niceKey}</th>"
             bootstrapColCount++
@@ -1557,7 +1578,7 @@ formatSearchResults = (result,container = searchParams.targetContainer) ->
     taxonQuery = "#{row.genus}+#{row.species}"
     if not isNull(row.subspecies)
       taxonQuery = "#{taxonQuery}+#{row.subspecies}"
-    htmlRow = "\n\t<tr id='cndb-row#{i}' class='cndb-result-entry' data-taxon=\"#{taxonQuery}\">"
+    htmlRow = """\n\t<tr id='cndb-row#{i}' class='cndb-result-entry' data-taxon="#{taxonQuery}" data-genus="#{row.genus}" data-species="#{row.species}">"""
     l = 0
     for k, col of row
       unless k in dontShowColumns
@@ -1625,7 +1646,10 @@ formatSearchResults = (result,container = searchParams.targetContainer) ->
       clearTimeout(renderTimeout)
       mapNewWindows()
       lightboxImages()
-      modalTaxon()
+      # modalTaxon()
+      $(".cndb-result-entry").click ->
+        accountArgs = "genus=#{$(this).attr("data-genus")}&species=#{$(this).attr("data-species")}"
+        goTo "species-account.php?#{accountArgs}"
       doFontExceptions()
       $("#result-count").text(" - #{result.count} entries")
       stopLoad()
@@ -2969,23 +2993,23 @@ $ ->
         f64 = queryUrl.param("filter")
         filterObj = JSON.parse(Base64.decode(f64))
         openFilters = false
+        simpleAllowedFilters = [
+          "simple-linnean-group"
+          "simple-linnean-subgroup"
+          "linnean-family"
+          "type"
+          "BOOLEAN-TYPE"
+          ]
         for col, val of filterObj
           col = col.replace(/_/g,"-")
-          selector = "##{col}-filter"
-          if col isnt "type"
-            if col isnt "is-alien"
-              $(selector).attr("value",val)
-              openFilters = true
-            else
-              selectedState = if toInt(val) is 1 then "alien-only" else "native-only"
-              console.log("Setting alien-filter to #{selectedState}")
-              $("#alien-filter").get(0).selected = selectedState
-              delay 750, ->
-                # Sometimes, the load delay can make this not
-                # work. Let's be sure.
-                $("#alien-filter").get(0).selected = selectedState
+          #selector = "##{col}-filter"
+          selector = ".cndb-filter[data-column='#{col}']"
+          unless col in simpleAllowedFilters
+            console.debug "Col '#{col}' is not a simple filter"
+            $(selector).attr("value",val)
+            openFilters = true
           else
-            $("#linnean").polymerSelected(val)
+            $(".cndb-filter[data-column='#{col}']").polymerSelected(val)
         if openFilters
           # Open up #collapse-advanced
           $("#collapse-advanced").collapse("show")

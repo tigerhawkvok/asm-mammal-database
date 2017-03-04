@@ -1608,7 +1608,7 @@ fetchMajorMinorGroups = function(scientific, callback) {
         menuItems += "<paper-item data-type=\"" + itemType + "\">" + (itemLabel.toTitleCase()) + "</paper-item>";
       }
       column = scientific ? "linnean_family" : "simple_linnean_subgroup";
-      buttonHtml = "<paper-menu-button id=\"simple-linnean-groups\" class=\"col-xs-6 col-md-4\">\n  <paper-button class=\"dropdown-trigger\"><iron-icon icon=\"icons:filter-list\"></iron-icon><span id=\"filter-what\" class=\"dropdown-label\"></span></paper-button>\n  <paper-menu label=\"Group\" data-column=\"" + column + "\" class=\"cndb-filter dropdown-content\" id=\"linnean\" name=\"type\" attrForSelected=\"data-type\" selected=\"0\">\n    " + menuItems + "\n  </paper-menu>\n</paper-menu-button>";
+      buttonHtml = "<paper-menu-button id=\"simple-linnean-groups\" class=\"col-xs-6 col-md-4\">\n  <paper-button class=\"dropdown-trigger\"><iron-icon icon=\"icons:filter-list\"></iron-icon><span id=\"filter-what\" class=\"dropdown-label\"></span></paper-button>\n  <paper-menu label=\"Group\" data-column=\"simple_linnean_group\" class=\"cndb-filter dropdown-content\" id=\"linnean\" name=\"type\" attrForSelected=\"data-type\" selected=\"0\">\n    " + menuItems + "\n  </paper-menu>\n</paper-menu-button>";
       $("#simple-linnean-groups").replaceWith(buttonHtml);
       $("#simple-linnean-groups").on("iron-select", function() {
         var type;
@@ -1643,7 +1643,7 @@ eutheriaFilterHelper = function(skipFetch) {
     } catch (undefined) {}
   }
   $("#linnean").on("iron-select", function() {
-    var group, html, humanGroup, len, len1, m, mammalGroups, mammalItems, o, ref1, type;
+    var column, error1, group, html, humanGroup, len, len1, m, mammalGroups, mammalItems, o, ref1, ref2, scientific, type;
     if ($(p$("#linnean").selectedItem).attr("data-type") === "eutheria") {
       mammalGroups = new Array();
       ref1 = _asm.mammalGroupsBase;
@@ -1658,7 +1658,15 @@ eutheriaFilterHelper = function(skipFetch) {
         html = "<paper-item data-type=\"" + group + "\">\n  " + (group.toTitleCase()) + "\n</paper-item>";
         mammalItems += html;
       }
-      html = "<div id=\"eutheria-extra\"  class=\"col-xs-6 col-md-4\">\n    <label for=\"type\" class=\"sr-only\">Eutheria Filter</label>\n    <div class=\"row\">\n    <paper-menu-button class=\"col-xs-12\" id=\"eutheria-subfilter\">\n      <paper-button class=\"dropdown-trigger\"><iron-icon icon=\"icons:filter-list\"></iron-icon><span id=\"filter-what\" class=\"dropdown-label\"></span></paper-button>\n      <paper-menu label=\"Group\" data-column=\"simple_linnean_subgroup\" class=\"cndb-filter dropdown-content\" id=\"linnean-eutheria\" name=\"type\" attrForSelected=\"data-type\" selected=\"0\">\n        <paper-item data-type=\"any\" selected>All</paper-item>\n        " + mammalItems + "\n        <!-- As per flag 4 in readme -->\n      </paper-menu>\n    </paper-menu-button>\n    </div>\n  </div>";
+      if (!isBool(scientific)) {
+        try {
+          scientific = (ref2 = p$("#use-scientific").checked) != null ? ref2 : true;
+        } catch (error1) {
+          scientific = true;
+        }
+      }
+      column = scientific ? "linnean_family" : "simple_linnean_subgroup";
+      html = "<div id=\"eutheria-extra\"  class=\"col-xs-6 col-md-4\">\n    <label for=\"type\" class=\"sr-only\">Eutheria Filter</label>\n    <div class=\"row\">\n    <paper-menu-button class=\"col-xs-12\" id=\"eutheria-subfilter\">\n      <paper-button class=\"dropdown-trigger\"><iron-icon icon=\"icons:filter-list\"></iron-icon><span id=\"filter-what\" class=\"dropdown-label\"></span></paper-button>\n      <paper-menu label=\"Group\" data-column=\"" + column + "\" class=\"cndb-filter dropdown-content\" id=\"linnean-eutheria\" name=\"type\" attrForSelected=\"data-type\" selected=\"0\">\n        <paper-item data-type=\"any\" selected>All</paper-item>\n        " + mammalItems + "\n        <!-- As per flag 4 in readme -->\n      </paper-menu>\n    </paper-menu-button>\n    </div>\n  </div>";
       $("#simple-linnean-groups").after(html);
       $("#eutheria-subfilter").on("iron-select", function() {
         var type;
@@ -1754,7 +1762,7 @@ performSearch = function(stateArgs) {
 };
 
 getFilters = function(selector, booleanType) {
-  var alien, e, encodedFilter, error1, filterList, jsonString;
+  var e, encodedFilter, error1, filterList, jsonString;
   if (selector == null) {
     selector = ".cndb-filter";
   }
@@ -1788,10 +1796,6 @@ getFilters = function(selector, booleanType) {
     }
     return filterList[col] = val.toLowerCase();
   });
-  alien = $("#alien-filter").get(0).selected;
-  if (alien !== "both") {
-    filterList.is_alien = alien === "alien-only" ? 1 : 0;
-  }
   if (Object.size(filterList) === 0) {
     return "";
   }
@@ -1807,7 +1811,7 @@ getFilters = function(selector, booleanType) {
 };
 
 formatSearchResults = function(result, container) {
-  var alt, bootstrapColCount, bootstrapColSize, col, colClass, d, data, dontShowColumns, e, error1, error2, externalCounter, genus, headers, html, htmlClose, htmlHead, htmlRow, i, j, k, kClass, l, niceKey, noticeHtml, renderTimeout, row, species, split, targetCount, taxonQuery, v, year;
+  var alt, bootstrapColCount, bootstrapColSize, col, colClass, d, data, dontShowColumns, e, error1, error2, externalCounter, genus, headers, html, htmlClose, htmlHead, htmlRow, i, j, k, kClass, key, l, len, m, niceKey, noticeHtml, origData, ref1, renderTimeout, requiredKeyOrder, row, species, split, targetCount, taxonQuery, v, year;
   if (container == null) {
     container = searchParams.targetContainer;
   }
@@ -1829,7 +1833,7 @@ formatSearchResults = function(result, container) {
   targetCount = toInt(result.count) - 1;
   colClass = null;
   bootstrapColCount = 0;
-  dontShowColumns = ["id", "minor_type", "notes", "major_type", "taxon_author", "taxon_credit", "image_license", "image_credit", "taxon_credit_date", "parens_auth_genus", "parens_auth_species", "is_alien"];
+  dontShowColumns = ["id", "minor_type", "notes", "major_type", "taxon_author", "taxon_credit", "image_license", "image_credit", "taxon_credit_date", "parens_auth_genus", "parens_auth_species", "is_alien", "internal_id", "source", "species_authority", "genus_authority", "canonical_sciname", "simple_linnean_group", "authority_year"];
   externalCounter = 0;
   renderTimeout = delay(5000, function() {
     stopLoadError("There was a problem parsing the search results.");
@@ -1837,6 +1841,24 @@ formatSearchResults = function(result, container) {
     console.warn(data);
     return false;
   });
+  requiredKeyOrder = ["common_name", "genus", "species", "subspecies"];
+  ref1 = data[0];
+  for (k in ref1) {
+    v = ref1[k];
+    if (indexOf.call(requiredKeyOrder, k) < 0) {
+      requiredKeyOrder.push(k);
+    }
+  }
+  origData = data;
+  data = new Object();
+  for (i in origData) {
+    row = origData[i];
+    data[i] = new Object();
+    for (m = 0, len = requiredKeyOrder.length; m < len; m++) {
+      key = requiredKeyOrder[m];
+      data[i][key] = row[key];
+    }
+  }
   for (i in data) {
     row = data[i];
     externalCounter = i;
@@ -1855,10 +1877,10 @@ formatSearchResults = function(result, container) {
           if (k !== alt) {
             niceKey = (function() {
               switch (niceKey) {
-                case "common name":
-                  return "english name";
+                case "simple linnean subgroup":
+                  return "Group";
                 case "major subtype":
-                  return "english genus name";
+                  return "Clade";
                 default:
                   return niceKey;
               }
@@ -1880,7 +1902,7 @@ formatSearchResults = function(result, container) {
     if (!isNull(row.subspecies)) {
       taxonQuery = taxonQuery + "+" + row.subspecies;
     }
-    htmlRow = "\n\t<tr id='cndb-row" + i + "' class='cndb-result-entry' data-taxon=\"" + taxonQuery + "\">";
+    htmlRow = "\n\t<tr id='cndb-row" + i + "' class='cndb-result-entry' data-taxon=\"" + taxonQuery + "\" data-genus=\"" + row.genus + "\" data-species=\"" + row.species + "\">";
     l = 0;
     for (k in row) {
       col = row[k];
@@ -1954,7 +1976,11 @@ formatSearchResults = function(result, container) {
       clearTimeout(renderTimeout);
       mapNewWindows();
       lightboxImages();
-      modalTaxon();
+      $(".cndb-result-entry").click(function() {
+        var accountArgs;
+        accountArgs = "genus=" + ($(this).attr("data-genus")) + "&species=" + ($(this).attr("data-species"));
+        return goTo("species-account.php?" + accountArgs);
+      });
       doFontExceptions();
       $("#result-count").text(" - " + result.count + " entries");
       stopLoad();
@@ -3058,7 +3084,7 @@ bindPaperMenuButton = function(selector, unbindTargets) {
 };
 
 $(function() {
-  var col, devHello, e, error1, error2, error3, error4, f64, filterObj, fixState, fuzzyState, loadArgs, looseState, openFilters, queryUrl, selectedState, selector, temp, val;
+  var col, devHello, e, error1, error2, error3, error4, f64, filterObj, fixState, fuzzyState, loadArgs, looseState, openFilters, queryUrl, selector, simpleAllowedFilters, temp, val;
   devHello = "****************************************************************************\nHello developer!\nIf you're looking for hints on our API information, this site is open-source\nand released under the GPL. Just click on the GitHub link on the bottom of\nthe page, or check out LINK_TO_ORG_REPO\n****************************************************************************";
   console.log(devHello);
   animateLoad();
@@ -3173,24 +3199,17 @@ $(function() {
         f64 = queryUrl.param("filter");
         filterObj = JSON.parse(Base64.decode(f64));
         openFilters = false;
+        simpleAllowedFilters = ["simple-linnean-group", "simple-linnean-subgroup", "linnean-family", "type", "BOOLEAN-TYPE"];
         for (col in filterObj) {
           val = filterObj[col];
           col = col.replace(/_/g, "-");
-          selector = "#" + col + "-filter";
-          if (col !== "type") {
-            if (col !== "is-alien") {
-              $(selector).attr("value", val);
-              openFilters = true;
-            } else {
-              selectedState = toInt(val) === 1 ? "alien-only" : "native-only";
-              console.log("Setting alien-filter to " + selectedState);
-              $("#alien-filter").get(0).selected = selectedState;
-              delay(750, function() {
-                return $("#alien-filter").get(0).selected = selectedState;
-              });
-            }
+          selector = ".cndb-filter[data-column='" + col + "']";
+          if (indexOf.call(simpleAllowedFilters, col) < 0) {
+            console.debug("Col '" + col + "' is not a simple filter");
+            $(selector).attr("value", val);
+            openFilters = true;
           } else {
-            $("#linnean").polymerSelected(val);
+            $(".cndb-filter[data-column='" + col + "']").polymerSelected(val);
           }
         }
         if (openFilters) {

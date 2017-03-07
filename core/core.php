@@ -310,16 +310,35 @@ if (!function_exists('do_post_request')) {
             'content' => http_build_query($data),
             'header'  => 'Content-type: application/x-www-form-urlencoded',
         ));
+        $method = null;
         if ($optional_headers !== null) {
             $params['http']['header'] = $optional_headers;
         }
         $ctx = stream_context_create($params);
         # If url handlers are set,t his whole next part can be file_get_contents($url,false,$ctx)
         try {
-            ini_set("default_socket_timeout",3);
+            ini_set("default_socket_timeout",3.5);
             ini_set("allow_url_fopen", true);
-            $response = file_get_contents($bareUrl,false,$ctx);
-            if(empty($response) || $response === false) throw new Exception("No Response from file_get_contents");
+            $simpleOptions = array(
+                'http' => array(
+                    'method' => $method,
+                    #'request_fulluri' => true,
+                    'ignore_errors' => true,
+                    'timeout' => 3.5, # Seconds
+                ),
+            );
+            $method = "simple_fgc";
+            if(!is_array($data)) $data = array($data);
+            $postArgs = implode("&", $data);
+            $getContentsUrl = $bareUrl . "?" . $postArgs;
+            $simpleCtx = stream_context_create($simpleOptions);
+            $response = file_get_contents($getContentsUrl, false, $simpleCtx);
+            if(empty($response) || $response === false) {
+                # Try the longer context
+                $method = "complex_fgc";
+                $response = file_get_contents($getContentsUrl, false, $ctx);
+                if(empty($response) || $response === false) throw new Exception("No Response from file_get_contents");
+            }
         } catch (Exception $e) {
             ini_set("allow_url_fopen", true);
             $fp = @fopen($bareUrl, 'rb', false, $ctx);
@@ -327,7 +346,8 @@ if (!function_exists('do_post_request')) {
                 if(function_exists("http_post_fields")) {
                     $response = http_post_fields($bareUrl, $data);
                     if($response === false || empty($response)) throw new Exception("Could not POST to $bareUrl");
-                    return $response;
+                    $method = "hpf";
+                    # return $response;
                 }
                 else if (function_exists("curl_init")) {
                     # Last-ditch: CURL
@@ -337,19 +357,27 @@ if (!function_exists('do_post_request')) {
                     curl_setopt( $ch, CURLOPT_FOLLOWLOCATION, 1);
                     curl_setopt( $ch, CURLOPT_HEADER, 0);
                     curl_setopt( $ch, CURLOPT_RETURNTRANSFER, 1);
-
+                    
+                    $method = "curl";
                     $response = curl_exec( $ch );
                     if($response === false || empty($response)) throw new Exception("CURL failure: ".curl_error($ch));
-                    return $response;
+                    # return $response;
                 }
                 else throw new Exception("Problem POSTing to  $bareUrl");
-            }
+            } else {
+                $method = "fopen";
             $response = @stream_get_contents($fp);
             if ($response === false) {
                 throw new Exception("Problem reading data from $bareUrl");
             }
+            }
         }
-        return $response;
+        return array(
+            "response" => $response,
+            "method" => $method,
+            "data" => $data,
+            "url" => $bareUrl,
+        );
     }
 }
 
@@ -505,7 +533,7 @@ class ImageFunctions
         return $dir.'/'.$images[$item];
     }
 
-    
+
     protected function getImage($imgFile) {
         if (function_exists(get_magic_quotes_gpc) && get_magic_quotes_gpc()) {
             $image = stripslashes($this->img);
@@ -514,7 +542,7 @@ class ImageFunctions
         }
         return $image;
     }
-    
+
     public function setImage($imagePath) {
         if (function_exists(get_magic_quotes_gpc) && get_magic_quotes_gpc()) {
             $image = stripslashes($imagePath);
@@ -523,7 +551,7 @@ class ImageFunctions
         }
         $this->img = $image;
     }
-    
+
     public function imageExists() {
         $image = $this->getImage();
 
@@ -532,10 +560,10 @@ class ImageFunctions
         } else {
             $filename = $image;
         }
-        
+
         return file_exists($image);
     }
-    
+
     public function getImageDimensions() {
         $image = $this->getImage();
 
@@ -557,17 +585,17 @@ class ImageFunctions
             "height" => $height,
         );
     }
-    
+
     public function getWidth() {
         $size = $this->getImageDimensions();
         return $size["width"];
     }
-    
+
     public function getHeight() {
         $size = $this->getImageDimensions();
         return $size["height"];
     }
-    
+
     public static function staticResizeImage($imgfile, $output, $max_width = null, $max_height = null)
     {
         /***
@@ -661,7 +689,7 @@ class ImageFunctions
 
         # set up canvas
         $dst = imagecreatetruecolor($tn_width, $tn_height);
-        
+
         if(function_exists("imageantialias")) {
             imageantialias($dst, true);
         }
@@ -715,7 +743,7 @@ class ImageFunctions
         if (!is_numeric($max_width)) {
             $max_width = 2000;
         }
-        
+
         $image = $this->getImage();
 
         if (strrchr($image, '/')) {
@@ -783,7 +811,7 @@ class ImageFunctions
         if(function_exists("imageantialias")) {
             imageantialias($dst, true);
         }
-        
+
         # copy resized image to new canvas
         imagecopyresampled($dst, $src, 0, 0, 0, 0, $tn_width, $tn_height, $width, $height);
 

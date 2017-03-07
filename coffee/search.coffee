@@ -273,11 +273,12 @@ formatSearchResults = (result,container = searchParams.targetContainer) ->
     "is_alien"
     "internal_id"
     "source"
-    "species_authority"
-    "genus_authority"
+    # "species_authority"
+    # "genus_authority"
+    # "authority_year"
     "canonical_sciname"
     "simple_linnean_group"
-    "authority_year"
+    "iucn"
     ]
   externalCounter = 0
   renderTimeout = delay 5000, ->

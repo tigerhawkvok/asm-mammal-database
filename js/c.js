@@ -1727,6 +1727,7 @@ performSearch = function(stateArgs) {
     return false;
   }
   animateLoad();
+  console.log("Got search value " + s + ", hitting", searchParams.apiPath + "?" + args);
   return $.get(searchParams.targetApi, args, "json").done(function(result) {
     if (toInt(result.count) === 0) {
       console.error("No search results: Got search value " + s + ", from hitting", searchParams.apiPath + "?" + args);
@@ -1833,7 +1834,7 @@ formatSearchResults = function(result, container) {
   targetCount = toInt(result.count) - 1;
   colClass = null;
   bootstrapColCount = 0;
-  dontShowColumns = ["id", "minor_type", "notes", "major_type", "taxon_author", "taxon_credit", "image_license", "image_credit", "taxon_credit_date", "parens_auth_genus", "parens_auth_species", "is_alien", "internal_id", "source", "species_authority", "genus_authority", "canonical_sciname", "simple_linnean_group", "authority_year"];
+  dontShowColumns = ["id", "minor_type", "notes", "major_type", "taxon_author", "taxon_credit", "image_license", "image_credit", "taxon_credit_date", "parens_auth_genus", "parens_auth_species", "is_alien", "internal_id", "source", "canonical_sciname", "simple_linnean_group", "iucn"];
   externalCounter = 0;
   renderTimeout = delay(5000, function() {
     stopLoadError("There was a problem parsing the search results.");

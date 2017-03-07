@@ -1409,8 +1409,7 @@ performSearch = (stateArgs = undefined) ->
   if s is "#" or (isNull(s) and isNull(args)) or (args is "q=" and stateArgs isnt true)
     return false
   animateLoad()
-  # unless isNull(filters)
-  #   console.log("Got search value #{s}, hitting","#{searchParams.apiPath}?#{args}")
+  console.log("Got search value #{s}, hitting","#{searchParams.apiPath}?#{args}")
   $.get(searchParams.targetApi,args,"json")
   .done (result) ->
     # Populate the result container
@@ -1517,11 +1516,12 @@ formatSearchResults = (result,container = searchParams.targetContainer) ->
     "is_alien"
     "internal_id"
     "source"
-    "species_authority"
-    "genus_authority"
+    # "species_authority"
+    # "genus_authority"
+    # "authority_year"
     "canonical_sciname"
     "simple_linnean_group"
-    "authority_year"
+    "iucn"
     ]
   externalCounter = 0
   renderTimeout = delay 5000, ->

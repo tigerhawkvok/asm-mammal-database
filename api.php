@@ -820,6 +820,7 @@ $result = doSearch();
  ***/
 
 $apiTarget = "http://apiv3.iucnredlist.org/api/v3/species/";
+$args = "token=" . $iucnToken;
 
 $iucnCanProvide = array(
     "common_name" => "main_common_name",
@@ -827,30 +828,38 @@ $iucnCanProvide = array(
     
 );
 
-foreach($result["result"] as $i=>$taxon) {
-    # Check for important empty fields ....
-    $doIucn = false;
-    foreach($iucnCanProvide as $field=>$iucnField) {
-        if(empty($taxon[$field])) {
-            $doIucn = true;
-            break;
-        }
-    }
-    if ($doIucn) {
-        # IUCN returns an empty result unless "%20" is used to separate the
-        # genus and species
-        $nameTarget = $taxon["genus"] . "%20" . $taxon["species"];
-        $args = "token=" . $iucnToken;
-        $iucnRawResponse = do_post_request($apiTarget.$nameTarget, $args);
-        $iucnResponse = json_decode($iucnRawResponse["response"], true);
-        $iucnTaxon = $iucnResponse["result"][0];    
-        $taxon["iucn"] = $iucnTaxon;
+
+if(!empty($search)) {
+    foreach($result["result"] as $i => $taxon) {
+        # Check for important empty fields ....
+        $doIucn = false;
         foreach($iucnCanProvide as $field=>$iucnField) {
-            if(empty($field)) {
-                $taxon[$field] = $iucnTaxon[$iucnField];
+            if(empty($taxon[$field])) {
+                $doIucn = true;
+                break;
             }
         }
-        $result["result"][$i] = $taxon;
+    
+        if ($doIucn === true) {
+            # IUCN returns an empty result unless "%20" is used to separate the
+            # genus and species
+            $nameTarget = $taxon["genus"] . "%20" . $taxon["species"];
+            try {
+                $iucnRawResponse = do_post_request($apiTarget.$nameTarget, $args);
+                $iucnResponse = json_decode($iucnRawResponse["response"], true);
+            } catch (Exception $e) {
+                continue;
+            }
+            $iucnTaxon = $iucnResponse["result"][0];    
+            $taxon["iucn"] = $iucnTaxon;
+            foreach($iucnCanProvide as $field=>$iucnField) {
+                if(empty($taxon[$field]) && !empty($iucnTaxon[$iucnField])) {
+                    $taxon[$field] = $iucnTaxon[$iucnField];
+                }
+            }
+            $result["result"][$i] = $taxon;
+            continue;
+        }
     }
 }
 

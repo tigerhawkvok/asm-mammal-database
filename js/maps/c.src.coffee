@@ -3026,6 +3026,7 @@ $ ->
     $.get(searchParams.targetApi,"q=#{loadArgs}","json")
     .done (result) ->
       # Populate the result container
+      console.debug "Server query got", result
       if result.status is true and result.count > 0
         console.log("Got a valid result, formatting #{result.count} results.")
         formatSearchResults(result)

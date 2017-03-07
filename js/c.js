@@ -3228,6 +3228,7 @@ $(function() {
   }
   if (!isNull(loadArgs) && loadArgs !== "#") {
     return $.get(searchParams.targetApi, "q=" + loadArgs, "json").done(function(result) {
+      console.debug("Server query got", result);
       if (result.status === true && result.count > 0) {
         console.log("Got a valid result, formatting " + result.count + " results.");
         formatSearchResults(result);

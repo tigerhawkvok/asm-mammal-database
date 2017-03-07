@@ -737,7 +737,7 @@ function doSearch($overrideSearch = null)
                      * check and append the results for no
                      * space.
                      *
-                     * After 
+                     * After
                      * https://github.com/SSARHERPS/SSAR-species-database/issues/70
                      */
                     if ($method == "space_common_fallback")
@@ -748,10 +748,10 @@ function doSearch($overrideSearch = null)
                         {
                             while($row = mysqli_fetch_assoc($r))
                             {
-                                if ( !in_array( intval($row["id"]), $id_list) ) 
+                                if ( !in_array( intval($row["id"]), $id_list) )
                                 {
                                     $result_vector[] = $row;
-                                    $id_list[] = intval($row["id"]);   
+                                    $id_list[] = intval($row["id"]);
                                 }
                             }
                         }
@@ -760,7 +760,7 @@ function doSearch($overrideSearch = null)
                             if(is_string($r)) $error = $r;
                             else $error = $e;
                         }
-                                    
+
                     }
                 }
             }
@@ -810,28 +810,48 @@ function doSearch($overrideSearch = null)
 }
 
 $result = doSearch();
-if ($search == "mohave" || $search == "mojave")
-{
-    if ($search == "mohave") $search = "mojave";
-    else $search = "mohave";
-    foreach($params as $key=>$param) {
-        $params[$key] = $search;
-    }
-    $result2 = doSearch($search);
-    $result["query"] = $result["query"] . " && " . $result2["query"];
-    $result["method"] = $result["method"] . " && " . $result2["method"];
-    $final_array = array();
-    foreach($result["result"] as $key=>$value)
-    {
-        if(!in_array($value,$result2["result"]))
-        {
-            $final_array[] = $value;
+
+/***
+ * Check for missing, important, fields.
+ *
+ * Uses
+ * http://apiv3.iucnredlist.org/api/v3/docs
+ *
+ ***/
+
+$apiTarget = "http://apiv3.iucnredlist.org/api/v3/species/";
+
+$iucnCanProvide = array(
+    "common_name" => "main_common_name",
+    "species_authority" => "authority",
+    
+);
+
+foreach($result["result"] as $i=>$taxon) {
+    # Check for important empty fields ....
+    $doIucn = false;
+    foreach($iucnCanProvide as $field=>$iucnField) {
+        if(empty($taxon[$field])) {
+            $doIucn = true;
+            break;
         }
     }
-    $result["result"] = array_merge($result2["result"],$final_array);
-    $result["count"] = sizeof($result["result"]);
-    $result["original_alt"] = $result2;
-
+    if ($doIucn) {
+        # IUCN returns an empty result unless "%20" is used to separate the
+        # genus and species
+        $nameTarget = $taxon["genus"] . "%20" . $taxon["species"];
+        $args = "token=" . $iucnToken;
+        $iucnRawResponse = do_post_request($apiTarget.$nameTarget, $args);
+        $iucnResponse = json_decode($iucnRawResponse["response"], true);
+        $iucnTaxon = $iucnResponse["result"][0];    
+        $taxon["iucn"] = $iucnTaxon;
+        foreach($iucnCanProvide as $field=>$iucnField) {
+            if(empty($field)) {
+                $taxon[$field] = $iucnTaxon[$iucnField];
+            }
+        }
+        $result["result"][$i] = $taxon;
+    }
 }
 
 # $as_include isn't specified, so if it is, it's from a parent file

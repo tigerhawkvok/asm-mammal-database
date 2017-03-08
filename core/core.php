@@ -294,8 +294,7 @@ if (!function_exists('displayDebug')) {
 }
 
 if (!function_exists('do_post_request')) {
-    function do_post_request($url, $data, $method = "POST", $optional_headers = null)
-    {
+    function do_post_request($url, $data, $method = "POST", $optional_headers = null) {
         /***
          * Do a POST request
          *
@@ -305,6 +304,9 @@ if (!function_exists('do_post_request')) {
          ***/
         $bareUrl = $url;
         $url = urlencode($url);
+        
+        if(!is_array($data)) $data = array($data);
+        
         $params = array('http' => array(
             'method' => $method,
             'content' => http_build_query($data),
@@ -328,7 +330,6 @@ if (!function_exists('do_post_request')) {
                 ),
             );
             $method = "simple_fgc";
-            if(!is_array($data)) $data = array($data);
             $postArgs = implode("&", $data);
             $getContentsUrl = $bareUrl . "?" . $postArgs;
             $simpleCtx = stream_context_create($simpleOptions);
@@ -366,10 +367,10 @@ if (!function_exists('do_post_request')) {
                 else throw new Exception("Problem POSTing to  $bareUrl");
             } else {
                 $method = "fopen";
-            $response = @stream_get_contents($fp);
-            if ($response === false) {
-                throw new Exception("Problem reading data from $bareUrl");
-            }
+                $response = @stream_get_contents($fp);
+                if ($response === false) {
+                    throw new Exception("Problem reading data from $bareUrl");
+                }
             }
         }
         return array(

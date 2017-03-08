@@ -851,12 +851,24 @@ if(!empty($search)) {
                 continue;
             }
             $iucnTaxon = $iucnResponse["result"][0];    
-            $taxon["iucn"] = $iucnTaxon;
+            $flagSave = false;
             foreach($iucnCanProvide as $field=>$iucnField) {
                 if(empty($taxon[$field]) && !empty($iucnTaxon[$iucnField])) {
                     $taxon[$field] = $iucnTaxon[$iucnField];
+                    # Save the field to the database ....
+                    $flagSave = true;
                 }
             }
+            if($flagSave) {
+                global $db;
+                $ref = array();
+                $ref["id"] = $taxon["id"];
+                unset($taxon["id"]);
+                $saveResult = $db->updateEntry($taxon, $ref);
+                $taxon["saveResult"] = $saveResult;
+            }
+            $taxon["iucn"] = $iucnTaxon;
+            unset($taxon["id"]);
             $result["result"][$i] = $taxon;
             continue;
         }

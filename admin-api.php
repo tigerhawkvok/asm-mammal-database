@@ -4,6 +4,22 @@
  * Handle admin-specific requests
  ***/
 
+#$debug = true;
+
+
+if ($debug) {
+    error_reporting(E_ALL);
+    ini_set('display_errors', 1);
+    error_log('AdminAPI is running in debug mode!');
+}
+
+try {
+    ini_set('post_max_size', '500M');
+    ini_set('upload_max_filesize', '500M');
+} catch (Exception $e) {
+    
+}
+
 $print_login_state = false;
 require_once("CONFIG.php");
 require_once(dirname(__FILE__)."/core/core.php");
@@ -37,44 +53,118 @@ if(!function_exists('elapsed'))
     }
   }
 
+
 $admin_req=isset($_REQUEST['perform']) ? strtolower($_REQUEST['perform']):null;
-
-
 $login_status = getLoginState($get);
-if($login_status["status"] !== true) {
-  $login_status["error"] = "Invalid user";
-  $login_status["human_error"] = "You're not logged in as a valid user to edit this. Please log in and try again.";
-  returnAjax($login_status);
+
+
+if($as_include !== true) {
+
+
+    if($login_status["status"] !== true) {
+        $login_status["error"] = "Invalid user";
+        $login_status["human_error"] = "You're not logged in as a valid user to edit this. Please log in and try again.";
+        returnAjax($login_status);
+    }
+
+    switch($admin_req)
+    {
+        # Stuff
+    case "save":
+        returnAjax(saveEntry($_REQUEST));
+        break;
+    case "new":
+        returnAjax(newEntry($_REQUEST));
+        break;
+    case "delete":
+        returnAjax(deleteEntry($_REQUEST));
+        break;
+    default:
+        returnAjax(getLoginState($_REQUEST,true));
+    }
+
 }
 
-switch($admin_req)
-  {
-    # Stuff
-  case "save":
-    returnAjax(saveEntry($_REQUEST));
-    break;
-  case "new":
-    returnAjax(newEntry($_REQUEST));
-    break;
-  case "delete":
-    returnAjax(deleteEntry($_REQUEST));
-    break;
-  default:
-    returnAjax(getLoginState($_REQUEST,true));
-  }
+function inviteUser($get) {
+    # Is the invite target valid?
+    $destination = deEscape($get["invitee"]);
+    if (!preg_match('/^(?:[a-z0-9!#$%&\'*+\/=?^_`{|}~-]+(?:\.[a-z0-9!#$%&\'*+\/=?^_`{|}~-]+)*|"(?:[\x01-\x08\x0b\x0c\x0e-\x1f\x21\x23-\x5b\x5d-\x7f]|\\\\[\x01-\x09\x0b\x0c\x0e-\x7f])*")@(?:(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\.)+[a-z0-9](?:[a-z0-9-]*[a-z0-9])?|\[(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?|[a-z0-9-]*[a-z0-9]:(?:[\x01-\x08\x0b\x0c\x0e-\x1f\x21-\x5a\x53-\x7f]|\\\\[\x01-\x09\x0b\x0c\x0e-\x7f])+)\])$/im', $destination)) {
+        return array(
+            "status" => false,
+            "action" => "INVITE_USER",
+            "error" => "INVALID_EMAIL",
+            "target" => $destination,
+        );
+    }
+    # Go through the process
+    $u = new UserFunctions($login_status["detail"]["dblink"], 'dblink');
+    # Does the invite target exist as a user?
+    $userExists = $u->isEntry($destination, $u->userColumn);
+    if($userExists !== false) {
+        return array(
+            "status" => false,
+            "error" => "ALREADY_REGISTERED",
+            "target" => $destination,
+            "action" => "INVITE_USER",
+        );
+    }
+    require_once dirname(__FILE__).'/admin/PHPMailer/PHPMailerAutoload.php';
+    require_once dirname(__FILE__).'/admin/CONFIG.php';
+    global $is_smtp,$mail_host,$mail_user,$mail_password,$is_pop3;
+    $mail = new PHPMailer();
+    if ($is_smtp) {
+        $mail->isSMTP();
+        $mail->SMTPAuth = true;
+        $mail->Host = $mail_host;
+        $mail->Username = $mail_user;
+        $mail->Password = $mail_password;
+        $mail->SMTPSecure = 'tls';
+        $mail->Port = 587;
+    }
+    if ($is_pop3) {
+        $mail->isPOP3();
+    } # Need to expand this
+    $mail->From = $u->getUsername();
+    $mail->FromName = $u->getShortUrl().' on behalf of '.$u->getName();
+    $mail->isHTML(true);
+    $mail->addAddress($destination);
+    $mail->Subject = "[".$u->getShortUrl()."] Invitation to Collaborate";
+    $body = "<h1>You've been invited to join a research project!</h1><p>You've been invited to join ".$u->getShortUrl()." by ".$u->getName()." (".$u->getUsername().").</p><p>Visit <a href='".$u->getQualifiedDomain()."/admin-login.php?q=create'>".$u->getQualifiedDomain()."/admin-login.php?q=create</a> to create a new user and get going!</p>";
+    $mail->Body = $body;
+    $success = $mail->send();
+    if($success) {
+        return array(
+            "status" => $success,
+            "action" => "INVITE_USER",
+            "invited" => $destination,
+        );
+    } else {
+        return array(
+            "status" => $success,
+            "action" => "INVITE_USER",
+            "invited" => $destination,
+            "error" => "MAIL_SEND_FAIL",
+            "error_detail" => $mail->ErrorInfo,
+        );
+    }
+}
 
-function saveEntry($get)
-{
+function saveEntry($get, $dataIsDecoded = false) {
   /***
-   * Save a new taxon entry
+   * Save edits to a taxon entry
+   *
+   * Requires the "id" attribute to be set
    ***/
-
+  if($dataIsDecoded !== true) {
   $data64 = $get["data"];
   $enc = strtr($data64, '-_', '+/');
   $enc = chunk_split(preg_replace('!\015\012|\015|\012!','',$enc));
   $enc = str_replace(' ','+',$enc);
   $data_string = base64_decode($enc);
   $data = json_decode($data_string,true);
+        } else {
+$data = $get["data"];
+}
   if(!isset($data["id"]))
     {
       # The required attribute is missing

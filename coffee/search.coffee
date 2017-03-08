@@ -18,7 +18,7 @@ fetchMajorMinorGroups = (scientific = null, callback) ->
     menuItems = """
     <paper-item data-type="any" selected>All</paper-item>
     """
-    for itemType, itemLabel of result.major
+    for itemType, itemLabel of _asm.major
       menuItems += """
     <paper-item data-type="#{itemType}">#{itemLabel.toTitleCase()}</paper-item>
       """
@@ -61,6 +61,7 @@ fetchMajorMinorGroups = (scientific = null, callback) ->
       if result.status isnt true
         return false
       _asm.mammalGroupsBase = Object.toArray result.minor
+      _asm.major = result.major
       renderItemsList()
     .fail (result, error) ->
       console.error "Failed to hit API"
@@ -186,12 +187,13 @@ performSearch = (stateArgs = undefined) ->
       if result.do_client_update is true
         try
           for i, taxon of result.result
-            args = "fetch_missing=true&genus=#{taxon.genus}&species=#{taxon.species}"
+            args = "missing=true&genus=#{taxon.genus}&species=#{taxon.species}"
             $.post searchParams.targetApi, args, "json"
-            .done (result) ->
-              console.log "Update for #{taxon.canonical_sciname}", result
-            .fail (result, status) ->
-              console.warn "Couldn't update #{taxon.canonical_sciname}", result, status
+            .done (subResult) ->
+              console.log "Update for #{subResult.canonical_sciname}", subResult
+              console.log  "#{searchParams.targetApi}?#{args}"
+            .fail (subResult, status) ->
+              console.warn "Couldn't update #{taxon.canonical_sciname}", subResult, status
               console.warn "#{searchParams.targetApi}?#{args}"
       return false
     clearSearch(true)

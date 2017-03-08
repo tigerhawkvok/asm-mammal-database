@@ -1582,7 +1582,7 @@ fetchMajorMinorGroups = function(scientific, callback) {
     var buttonHtml, column, itemLabel, itemType, menuItems, ref1, type;
     $("#eutheria-extra").remove();
     menuItems = "<paper-item data-type=\"any\" selected>All</paper-item>";
-    ref1 = result.major;
+    ref1 = _asm.major;
     for (itemType in ref1) {
       itemLabel = ref1[itemType];
       menuItems += "<paper-item data-type=\"" + itemType + "\">" + (itemLabel.toTitleCase()) + "</paper-item>";
@@ -1624,6 +1624,7 @@ fetchMajorMinorGroups = function(scientific, callback) {
         return false;
       }
       _asm.mammalGroupsBase = Object.toArray(result.minor);
+      _asm.major = result.major;
       return renderItemsList();
     }).fail(function(result, error) {
       console.error("Failed to hit API");
@@ -1748,9 +1749,9 @@ performSearch = function(stateArgs) {
           ref1 = result.result;
           for (i in ref1) {
             taxon = ref1[i];
-            args = "fetch_missing=true&genus=" + taxon.genus + "&species=" + taxon.species;
+            args = "missing=true&genus=" + taxon.genus + "&species=" + taxon.species;
             $.post(searchParams.targetApi, args, "json").done(function(result) {
-              return console.log("Update for " + taxon.canonical_sciname, result);
+              return console.log("Update for " + result.canonical_sciname, result);
             }).fail(function(result, status) {
               console.warn("Couldn't update " + taxon.canonical_sciname, result, status);
               return console.warn(searchParams.targetApi + "?" + args);

@@ -103,7 +103,7 @@ function checkColumnExists($column_list)
   return true;
 }
 
-if(boolstr($_REQUEST["fetch_missing"])) {
+if(boolstr($_REQUEST["missing"]) || boolstr($_REQUEST["fetch_missing"])) {
     returnAjax(getTaxonIucnData($_REQUEST));
 }
 

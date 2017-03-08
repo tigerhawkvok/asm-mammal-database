@@ -12,11 +12,42 @@ _asm.affiliateQueryUrl =
 
 
 fetchMajorMinorGroups = (scientific = null, callback) ->
+  renderItemsList = ->
+    $("#eutheria-extra").remove()
+    # Change the item list
+    menuItems = """
+    <paper-item data-type="any" selected>All</paper-item>
+    """
+    for itemType, itemLabel of result.major
+      menuItems += """
+    <paper-item data-type="#{itemType}">#{itemLabel.toTitleCase()}</paper-item>
+      """
+    column = if scientific then "linnean_family" else "simple_linnean_subgroup"
+    buttonHtml = """
+            <paper-menu-button id="simple-linnean-groups" class="col-xs-6 col-md-4">
+              <paper-button class="dropdown-trigger"><iron-icon icon="icons:filter-list"></iron-icon><span id="filter-what" class="dropdown-label"></span></paper-button>
+              <paper-menu label="Group" data-column="simple_linnean_group" class="cndb-filter dropdown-content" id="linnean" name="type" attrForSelected="data-type" selected="0">
+                #{menuItems}
+              </paper-menu>
+            </paper-menu-button>
+    """
+    $("#simple-linnean-groups").replaceWith buttonHtml
+    $("#simple-linnean-groups")
+    .on "iron-select", ->
+      type = $(p$("#simple-linnean-groups paper-menu").selectedItem).text()
+      $("#simple-linnean-groups span.dropdown-label").text type
+    type = $(p$("#simple-linnean-groups paper-menu").selectedItem).text()
+    $("#simple-linnean-groups span.dropdown-label").text type
+    eutheriaFilterHelper(true)
+    console.log "Replaced menu items with", menuItems
+    if typeof callback is "function"
+      callback()
+    false
   if typeof _asm.mammalGroupsBase is "object"
     unless isArray _asm.mammalGroupsBase
       _asm.mammalGroupsBase = Object.toArray _asm.mammalGroupsBase
-    if typeof callback is "function"
-      callback()
+    renderItemsList()
+    return true
   else
     # Hit the API
     unless isBool scientific
@@ -29,37 +60,11 @@ fetchMajorMinorGroups = (scientific = null, callback) ->
       console.log "Group fetch got", result
       if result.status isnt true
         return false
-      $("#eutheria-extra").remove()
       _asm.mammalGroupsBase = Object.toArray result.minor
-      # Change the item list
-      menuItems = """
-      <paper-item data-type="any" selected>All</paper-item>
-      """
-      for itemType, itemLabel of result.major
-        menuItems += """
-      <paper-item data-type="#{itemType}">#{itemLabel.toTitleCase()}</paper-item>
-        """
-      column = if scientific then "linnean_family" else "simple_linnean_subgroup"
-      buttonHtml = """
-              <paper-menu-button id="simple-linnean-groups" class="col-xs-6 col-md-4">
-                <paper-button class="dropdown-trigger"><iron-icon icon="icons:filter-list"></iron-icon><span id="filter-what" class="dropdown-label"></span></paper-button>
-                <paper-menu label="Group" data-column="simple_linnean_group" class="cndb-filter dropdown-content" id="linnean" name="type" attrForSelected="data-type" selected="0">
-                  #{menuItems}
-                </paper-menu>
-              </paper-menu-button>
-      """
-      $("#simple-linnean-groups").replaceWith buttonHtml
-      $("#simple-linnean-groups")
-      .on "iron-select", ->
-        type = $(p$("#simple-linnean-groups paper-menu").selectedItem).text()
-        $("#simple-linnean-groups span.dropdown-label").text type
-      type = $(p$("#simple-linnean-groups paper-menu").selectedItem).text()
-      $("#simple-linnean-groups span.dropdown-label").text type
-      eutheriaFilterHelper(true)
-      console.log "Replaced menu items with", menuItems
-      if typeof callback is "function"
-        callback()
+      renderItemsList()
     .fail (result, error) ->
+      console.error "Failed to hit API"
+      console.warn result, error
       false
   false
 
@@ -341,26 +346,29 @@ formatSearchResults = (result,container = searchParams.targetContainer) ->
       unless k in dontShowColumns
         if k is "authority_year"
           try
-            try
-              d = JSON.parse(col)
-            catch e
-              # attempt to fix it
-              console.warn("There was an error parsing authority_year='#{col}', attempting to fix - ",e.message)
-              split = col.split(":")
-              year = split[1].slice(split[1].search("\"")+1,-2)
-              # console.log("Examining #{year}")
-              year = year.replace(/"/g,"'")
-              split[1] = "\"#{year}\"}"
-              col = split.join(":")
-              # console.log("Reconstructed #{col}")
-              d = JSON.parse(col)
-            genus = Object.keys(d)[0]
-            species = d[genus]
-            if toInt(row.parens_auth_genus).toBool()
-              genus = "(#{genus})"
-            if toInt(row.parens_auth_species).toBool()
-              species = "(#{species})"
-            col = "G: #{genus}<br/>S: #{species}"
+            unless isNull col
+              try
+                d = JSON.parse(col)
+              catch e
+                # attempt to fix it
+                console.warn("There was an error parsing authority_year='#{col}', attempting to fix - ",e.message)
+                split = col.split(":")
+                year = split[1].slice(split[1].search("\"")+1,-2)
+                # console.log("Examining #{year}")
+                year = year.replace(/"/g,"'")
+                split[1] = "\"#{year}\"}"
+                col = split.join(":")
+                # console.log("Reconstructed #{col}")
+                d = JSON.parse(col)
+              genus = Object.keys(d)[0]
+              species = d[genus]
+              if toInt(row.parens_auth_genus).toBool()
+                genus = "(#{genus})"
+              if toInt(row.parens_auth_species).toBool()
+                species = "(#{species})"
+              col = "G: #{genus}<br/>S: #{species}"
+            else
+              d = col
           catch e
             # Render as-is
             console.error("There was an error parsing '#{col}'",e.message)

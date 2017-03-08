@@ -1574,17 +1574,42 @@ _asm.affiliateQueryUrl = {
 };
 
 fetchMajorMinorGroups = function(scientific, callback) {
-  var error1, ref1;
+  var error1, ref1, renderItemsList;
   if (scientific == null) {
     scientific = null;
   }
+  renderItemsList = function() {
+    var buttonHtml, column, itemLabel, itemType, menuItems, ref1, type;
+    $("#eutheria-extra").remove();
+    menuItems = "<paper-item data-type=\"any\" selected>All</paper-item>";
+    ref1 = result.major;
+    for (itemType in ref1) {
+      itemLabel = ref1[itemType];
+      menuItems += "<paper-item data-type=\"" + itemType + "\">" + (itemLabel.toTitleCase()) + "</paper-item>";
+    }
+    column = scientific ? "linnean_family" : "simple_linnean_subgroup";
+    buttonHtml = "<paper-menu-button id=\"simple-linnean-groups\" class=\"col-xs-6 col-md-4\">\n  <paper-button class=\"dropdown-trigger\"><iron-icon icon=\"icons:filter-list\"></iron-icon><span id=\"filter-what\" class=\"dropdown-label\"></span></paper-button>\n  <paper-menu label=\"Group\" data-column=\"simple_linnean_group\" class=\"cndb-filter dropdown-content\" id=\"linnean\" name=\"type\" attrForSelected=\"data-type\" selected=\"0\">\n    " + menuItems + "\n  </paper-menu>\n</paper-menu-button>";
+    $("#simple-linnean-groups").replaceWith(buttonHtml);
+    $("#simple-linnean-groups").on("iron-select", function() {
+      var type;
+      type = $(p$("#simple-linnean-groups paper-menu").selectedItem).text();
+      return $("#simple-linnean-groups span.dropdown-label").text(type);
+    });
+    type = $(p$("#simple-linnean-groups paper-menu").selectedItem).text();
+    $("#simple-linnean-groups span.dropdown-label").text(type);
+    eutheriaFilterHelper(true);
+    console.log("Replaced menu items with", menuItems);
+    if (typeof callback === "function") {
+      callback();
+    }
+    return false;
+  };
   if (typeof _asm.mammalGroupsBase === "object") {
     if (!isArray(_asm.mammalGroupsBase)) {
       _asm.mammalGroupsBase = Object.toArray(_asm.mammalGroupsBase);
     }
-    if (typeof callback === "function") {
-      callback();
-    }
+    renderItemsList();
+    return true;
   } else {
     if (!isBool(scientific)) {
       try {
@@ -1594,35 +1619,15 @@ fetchMajorMinorGroups = function(scientific, callback) {
       }
     }
     $.get(searchParams.apiPath, "fetch-groups=true&scientific=" + scientific).done(function(result) {
-      var buttonHtml, column, itemLabel, itemType, menuItems, ref2, type;
       console.log("Group fetch got", result);
       if (result.status !== true) {
         return false;
       }
-      $("#eutheria-extra").remove();
       _asm.mammalGroupsBase = Object.toArray(result.minor);
-      menuItems = "<paper-item data-type=\"any\" selected>All</paper-item>";
-      ref2 = result.major;
-      for (itemType in ref2) {
-        itemLabel = ref2[itemType];
-        menuItems += "<paper-item data-type=\"" + itemType + "\">" + (itemLabel.toTitleCase()) + "</paper-item>";
-      }
-      column = scientific ? "linnean_family" : "simple_linnean_subgroup";
-      buttonHtml = "<paper-menu-button id=\"simple-linnean-groups\" class=\"col-xs-6 col-md-4\">\n  <paper-button class=\"dropdown-trigger\"><iron-icon icon=\"icons:filter-list\"></iron-icon><span id=\"filter-what\" class=\"dropdown-label\"></span></paper-button>\n  <paper-menu label=\"Group\" data-column=\"simple_linnean_group\" class=\"cndb-filter dropdown-content\" id=\"linnean\" name=\"type\" attrForSelected=\"data-type\" selected=\"0\">\n    " + menuItems + "\n  </paper-menu>\n</paper-menu-button>";
-      $("#simple-linnean-groups").replaceWith(buttonHtml);
-      $("#simple-linnean-groups").on("iron-select", function() {
-        var type;
-        type = $(p$("#simple-linnean-groups paper-menu").selectedItem).text();
-        return $("#simple-linnean-groups span.dropdown-label").text(type);
-      });
-      type = $(p$("#simple-linnean-groups paper-menu").selectedItem).text();
-      $("#simple-linnean-groups span.dropdown-label").text(type);
-      eutheriaFilterHelper(true);
-      console.log("Replaced menu items with", menuItems);
-      if (typeof callback === "function") {
-        return callback();
-      }
+      return renderItemsList();
     }).fail(function(result, error) {
+      console.error("Failed to hit API");
+      console.warn(result, error);
       return false;
     });
   }
@@ -1910,27 +1915,31 @@ formatSearchResults = function(result, container) {
       if (indexOf.call(dontShowColumns, k) < 0) {
         if (k === "authority_year") {
           try {
-            try {
-              d = JSON.parse(col);
-            } catch (error1) {
-              e = error1;
-              console.warn("There was an error parsing authority_year='" + col + "', attempting to fix - ", e.message);
-              split = col.split(":");
-              year = split[1].slice(split[1].search("\"") + 1, -2);
-              year = year.replace(/"/g, "'");
-              split[1] = "\"" + year + "\"}";
-              col = split.join(":");
-              d = JSON.parse(col);
+            if (!isNull(col)) {
+              try {
+                d = JSON.parse(col);
+              } catch (error1) {
+                e = error1;
+                console.warn("There was an error parsing authority_year='" + col + "', attempting to fix - ", e.message);
+                split = col.split(":");
+                year = split[1].slice(split[1].search("\"") + 1, -2);
+                year = year.replace(/"/g, "'");
+                split[1] = "\"" + year + "\"}";
+                col = split.join(":");
+                d = JSON.parse(col);
+              }
+              genus = Object.keys(d)[0];
+              species = d[genus];
+              if (toInt(row.parens_auth_genus).toBool()) {
+                genus = "(" + genus + ")";
+              }
+              if (toInt(row.parens_auth_species).toBool()) {
+                species = "(" + species + ")";
+              }
+              col = "G: " + genus + "<br/>S: " + species;
+            } else {
+              d = col;
             }
-            genus = Object.keys(d)[0];
-            species = d[genus];
-            if (toInt(row.parens_auth_genus).toBool()) {
-              genus = "(" + genus + ")";
-            }
-            if (toInt(row.parens_auth_species).toBool()) {
-              species = "(" + species + ")";
-            }
-            col = "G: " + genus + "<br/>S: " + species;
           } catch (error2) {
             e = error2;
             console.error("There was an error parsing '" + col + "'", e.message);

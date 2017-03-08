@@ -1734,6 +1734,7 @@ performSearch = function(stateArgs) {
   animateLoad();
   console.log("Got search value " + s + ", hitting", searchParams.apiPath + "?" + args);
   return $.get(searchParams.targetApi, args, "json").done(function(result) {
+    var i, ref1, taxon;
     if (toInt(result.count) === 0) {
       console.error("No search results: Got search value " + s + ", from hitting", searchParams.apiPath + "?" + args);
       showBadSearchErrorMessage.debounce(null, null, null, result);
@@ -1742,6 +1743,21 @@ performSearch = function(stateArgs) {
     }
     if (result.status === true) {
       formatSearchResults(result);
+      if (result.do_client_update === true) {
+        try {
+          ref1 = result.result;
+          for (i in ref1) {
+            taxon = ref1[i];
+            args = "fetch_missing=true&genus=" + taxon.genus + "&species=" + taxon.species;
+            $.post(searchParams.targetApi, args, "json").done(function(result) {
+              return console.log("Update for " + taxon.canonical_sciname, result);
+            }).fail(function(result, status) {
+              console.warn("Couldn't update " + taxon.canonical_sciname, result, status);
+              return console.warn(searchParams.targetApi + "?" + args);
+            });
+          }
+        } catch (undefined) {}
+      }
       return false;
     }
     clearSearch(true);

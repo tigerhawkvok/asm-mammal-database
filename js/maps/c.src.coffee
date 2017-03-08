@@ -1426,6 +1426,16 @@ performSearch = (stateArgs = undefined) ->
       return false
     if result.status is true
       formatSearchResults(result)
+      if result.do_client_update is true
+        try
+          for i, taxon of result.result
+            args = "fetch_missing=true&genus=#{taxon.genus}&species=#{taxon.species}"
+            $.post searchParams.targetApi, args, "json"
+            .done (result) ->
+              console.log "Update for #{taxon.canonical_sciname}", result
+            .fail (result, status) ->
+              console.warn "Couldn't update #{taxon.canonical_sciname}", result, status
+              console.warn "#{searchParams.targetApi}?#{args}"
       return false
     clearSearch(true)
     $("#search-status").attr("text",result.human_error)

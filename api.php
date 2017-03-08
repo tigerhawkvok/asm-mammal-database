@@ -103,6 +103,10 @@ function checkColumnExists($column_list)
   return true;
 }
 
+if(boolstr($_REQUEST["fetch_missing"])) {
+    returnAjax(getTaxonIucnData($_REQUEST));
+}
+
 /*****************************
  * Setup flags
  *****************************/
@@ -828,50 +832,116 @@ $iucnCanProvide = array(
     
 );
 
+function getTaxonIucnData($taxonBase) {
+    if(empty($taxonBase["genus"]) || empty($taxonBase["species"])) {
+        return array(
+            "status" => false,
+            "error" => "REQUIRED_COLS_MISSING",
+        );
+    }
+    global $apiTarget, $args, $iucnCanProvide, $db;
+    $params = array(
+        "genus" => $taxonBase["genus"],
+        "species" => $taxonBase["species"],
+    );
+    $r = $db->doQuery($params,"*");
+    if($r === false) {
+        return array(
+            "status" => false,
+            "params" => $params,
+        );
+    }
+    $taxon = mysqli_fetch_assoc($r);
+    # Check for important empty fields ....
+    $doIucn = false;
+    foreach($iucnCanProvide as $field=>$iucnField) {
+        if(empty($taxon[$field])) {
+            $doIucn = true;
+            break;
+        }
+    }
+    
+    if ($doIucn === true) {
+        # IUCN returns an empty result unless "%20" is used to separate the
+        # genus and species
+        $nameTarget = $taxon["genus"] . "%20" . $taxon["species"];
+        try {
+            $iucnRawResponse = do_post_request($apiTarget.$nameTarget, $args);
+            $iucnResponse = json_decode($iucnRawResponse["response"], true);
+        } catch (Exception $e) {
+        }
+        $iucnTaxon = $iucnResponse["result"][0];    
+        $flagSave = false;
+        foreach($iucnCanProvide as $field=>$iucnField) {
+            if(empty($taxon[$field]) && !empty($iucnTaxon[$iucnField])) {
+                $taxon[$field] = $iucnTaxon[$iucnField];
+                # Save the field to the database ....
+                $flagSave = true;
+            }
+        }
+        if($flagSave) {
+            $ref = array();
+            $ref["id"] = $taxon["id"];
+            unset($taxon["id"]);
+            $saveResult = $db->updateEntry($taxon, $ref);
+            $taxon["saveResult"] = $saveResult;
+        }
+        $taxon["iucn"] = $iucnTaxon;
+        unset($taxon["id"]);
+    }
+    
+    return $taxon;
+}
+
 
 if(!empty($search)) {
-    foreach($result["result"] as $i => $taxon) {
-        # Check for important empty fields ....
-        $doIucn = false;
-        foreach($iucnCanProvide as $field=>$iucnField) {
-            if(empty($taxon[$field])) {
-                $doIucn = true;
-                break;
-            }
-        }
-    
-        if ($doIucn === true) {
-            # IUCN returns an empty result unless "%20" is used to separate the
-            # genus and species
-            $nameTarget = $taxon["genus"] . "%20" . $taxon["species"];
-            try {
-                $iucnRawResponse = do_post_request($apiTarget.$nameTarget, $args);
-                $iucnResponse = json_decode($iucnRawResponse["response"], true);
-            } catch (Exception $e) {
-                continue;
-            }
-            $iucnTaxon = $iucnResponse["result"][0];    
-            $flagSave = false;
+    if(sizeof($result["result"]) <= 5) {
+        foreach($result["result"] as $i => $taxon) {
+            # Check for important empty fields ....
+            $doIucn = false;
             foreach($iucnCanProvide as $field=>$iucnField) {
-                if(empty($taxon[$field]) && !empty($iucnTaxon[$iucnField])) {
-                    $taxon[$field] = $iucnTaxon[$iucnField];
-                    # Save the field to the database ....
-                    $flagSave = true;
+                if(empty($taxon[$field])) {
+                    $doIucn = true;
+                    break;
                 }
             }
-            if($flagSave) {
-                global $db;
-                $ref = array();
-                $ref["id"] = $taxon["id"];
+    
+            if ($doIucn === true) {
+                # IUCN returns an empty result unless "%20" is used to separate the
+                # genus and species
+                $nameTarget = $taxon["genus"] . "%20" . $taxon["species"];
+                try {
+                    $iucnRawResponse = do_post_request($apiTarget.$nameTarget, $args);
+                    $iucnResponse = json_decode($iucnRawResponse["response"], true);
+                } catch (Exception $e) {
+                    continue;
+                }
+                $iucnTaxon = $iucnResponse["result"][0];    
+                $flagSave = false;
+                foreach($iucnCanProvide as $field=>$iucnField) {
+                    if(empty($taxon[$field]) && !empty($iucnTaxon[$iucnField])) {
+                        $taxon[$field] = $iucnTaxon[$iucnField];
+                        # Save the field to the database ....
+                        $flagSave = true;
+                    }
+                }
+                if($flagSave) {
+                    global $db;
+                    $ref = array();
+                    $ref["id"] = $taxon["id"];
+                    unset($taxon["id"]);
+                    $saveResult = $db->updateEntry($taxon, $ref);
+                    $taxon["saveResult"] = $saveResult;
+                }
+                $taxon["iucn"] = $iucnTaxon;
                 unset($taxon["id"]);
-                $saveResult = $db->updateEntry($taxon, $ref);
-                $taxon["saveResult"] = $saveResult;
+                $result["result"][$i] = $taxon;
+                continue;
             }
-            $taxon["iucn"] = $iucnTaxon;
-            unset($taxon["id"]);
-            $result["result"][$i] = $taxon;
-            continue;
         }
+        $result["do_client_update"] = false;
+    } else {
+        $result["do_client_update"] = true;
     }
 }
 

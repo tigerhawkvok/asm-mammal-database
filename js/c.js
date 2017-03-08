@@ -1914,7 +1914,7 @@ formatSearchResults = function(result, container) {
               d = JSON.parse(col);
             } catch (error1) {
               e = error1;
-              console.warn("There was an error parsing '" + col + "', attempting to fix - ", e.message);
+              console.warn("There was an error parsing authority_year='" + col + "', attempting to fix - ", e.message);
               split = col.split(":");
               year = split[1].slice(split[1].search("\"") + 1, -2);
               year = year.replace(/"/g, "'");
@@ -3019,29 +3019,37 @@ insertCORSWorkaround = function() {
 };
 
 showBadSearchErrorMessage = function(result) {
-  var filterText, i, sOrig, text;
-  sOrig = result.query.replace(/\+/g, " ");
-  if (result.status === true) {
-    if (result.query_params.filter.had_filter === true) {
-      filterText = "";
-      i = 0;
-      $.each(result.query_params.filter.filter_params, function(col, val) {
-        if (col !== "BOOLEAN_TYPE") {
-          if (i !== 0) {
-            filterText = filter_text + " " + result.filter.filter_params.BOOLEAN_TYPE;
+  var error1, error2, filterText, i, sOrig, text;
+  try {
+    sOrig = result.query.replace(/\+/g, " ");
+  } catch (error1) {
+    sOrig = $("#search").val();
+  }
+  try {
+    if (result.status === true) {
+      if (result.query_params.filter.had_filter === true) {
+        filterText = "";
+        i = 0;
+        $.each(result.query_params.filter.filter_params, function(col, val) {
+          if (col !== "BOOLEAN_TYPE") {
+            if (i !== 0) {
+              filterText = filter_text + " " + result.filter.filter_params.BOOLEAN_TYPE;
+            }
+            if (isNumber(toInt(val, true))) {
+              val = toInt(val) === 1 ? "true" : "false";
+            }
+            return filterText = filterText + " " + (col.replace(/_/g, " ")) + " is " + val;
           }
-          if (isNumber(toInt(val, true))) {
-            val = toInt(val) === 1 ? "true" : "false";
-          }
-          return filterText = filterText + " " + (col.replace(/_/g, " ")) + " is " + val;
-        }
-      });
-      text = "\"" + sOrig + "\" where " + filterText + " returned no results.";
+        });
+        text = "\"" + sOrig + "\" where " + filterText + " returned no results.";
+      } else {
+        text = "\"" + sOrig + "\" returned no results.";
+      }
     } else {
-      text = "\"" + sOrig + "\" returned no results.";
+      text = result.human_error;
     }
-  } else {
-    text = result.human_error;
+  } catch (error2) {
+    text = "Sorry, there was a problem with your search";
   }
   return stopLoadError(text);
 };

@@ -8,7 +8,7 @@ var adminParams, createDuplicateTaxon, createNewTaxon, deleteTaxon, fillEmptyCom
 
 adminParams = new Object();
 
-adminParams.apiTarget = "admin_api.php";
+adminParams.apiTarget = "admin-api.php";
 
 adminParams.adminPageUrl = "https://mammaldiversity.org/admin-page.html";
 

@@ -3,7 +3,7 @@
 # Triggered from admin-page.html
 ###
 adminParams = new Object()
-adminParams.apiTarget = "admin_api.php"
+adminParams.apiTarget = "admin-api.php"
 adminParams.adminPageUrl = "https://mammaldiversity.org/admin-page.html"
 adminParams.loginDir = "admin/"
 adminParams.loginApiTarget = "#{adminParams.loginDir}async_login_handler.php"

@@ -345,7 +345,7 @@ formatSearchResults = (result,container = searchParams.targetContainer) ->
               d = JSON.parse(col)
             catch e
               # attempt to fix it
-              console.warn("There was an error parsing '#{col}', attempting to fix - ",e.message)
+              console.warn("There was an error parsing authority_year='#{col}', attempting to fix - ",e.message)
               split = col.split(":")
               year = split[1].slice(split[1].search("\"")+1,-2)
               # console.log("Examining #{year}")
@@ -1599,23 +1599,29 @@ insertCORSWorkaround = ->
 
 
 showBadSearchErrorMessage = (result) ->
-  sOrig = result.query.replace(/\+/g," ")
-  if result.status is true
-    if result.query_params.filter.had_filter is true
-      filterText = ""
-      i = 0
-      $.each result.query_params.filter.filter_params, (col,val) ->
-        if col isnt "BOOLEAN_TYPE"
-          if i isnt 0
-            filterText = "#{filter_text} #{result.filter.filter_params.BOOLEAN_TYPE}"
-          if isNumber(toInt(val,true))
-            val = if toInt(val) is 1 then "true" else "false"
-          filterText = "#{filterText} #{col.replace(/_/g," ")} is #{val}"
-      text = "\"#{sOrig}\" where #{filterText} returned no results."
+  try
+    sOrig = result.query.replace(/\+/g," ")
+  catch
+    sOrig = $("#search").val()
+  try
+    if result.status is true
+      if result.query_params.filter.had_filter is true
+        filterText = ""
+        i = 0
+        $.each result.query_params.filter.filter_params, (col,val) ->
+          if col isnt "BOOLEAN_TYPE"
+            if i isnt 0
+              filterText = "#{filter_text} #{result.filter.filter_params.BOOLEAN_TYPE}"
+            if isNumber(toInt(val,true))
+              val = if toInt(val) is 1 then "true" else "false"
+            filterText = "#{filterText} #{col.replace(/_/g," ")} is #{val}"
+        text = "\"#{sOrig}\" where #{filterText} returned no results."
+      else
+        text = "\"#{sOrig}\" returned no results."
     else
-      text = "\"#{sOrig}\" returned no results."
-  else
-    text = result.human_error
+      text = result.human_error
+  catch
+    text = "Sorry, there was a problem with your search"
   stopLoadError(text)
 
 

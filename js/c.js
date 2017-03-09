@@ -1,4 +1,4 @@
-var _metaStatus, activityIndicatorOff, activityIndicatorOn, animateLoad, bindClickTargets, bindClicks, bindDismissalRemoval, bindPaperMenuButton, browserBeware, byteCount, checkFileVersion, checkTaxonNear, clearSearch, deEscape, deepJQuery, delay, doCORSget, doFontExceptions, domainPlaceholder, downloadCSVList, downloadHTMLList, eutheriaFilterHelper, fetchMajorMinorGroups, foo, formatAlien, formatScientificNames, formatSearchResults, getElementHtml, getFilters, getLocation, getMaxZ, goTo, insertCORSWorkaround, insertModalImage, interval, isArray, isBlank, isBool, isEmpty, isJson, isNull, isNumber, isNumeric, lightboxImages, loadJS, mapNewWindows, modalTaxon, openLink, openTab, overlayOff, overlayOn, p$, parseTaxonYear, performSearch, prepURI, randomInt, ref, roundNumber, roundNumberSigfig, safariDialogHelper, safariSearchArgHelper, searchParams, setHistory, setupServiceWorker, showBadSearchErrorMessage, showDownloadChooser, smartCalPhotosLink, smartReptileDatabaseLink, smartUpperCasing, sortResults, stopLoad, stopLoadError, toFloat, toInt, toObject, toastStatusMessage, uri,
+var _metaStatus, activityIndicatorOff, activityIndicatorOn, animateLoad, bindClickTargets, bindClicks, bindDismissalRemoval, bindPaperMenuButton, browserBeware, byteCount, checkFileVersion, checkLaggedUpdate, checkTaxonNear, clearSearch, deEscape, deepJQuery, delay, doCORSget, doFontExceptions, domainPlaceholder, downloadCSVList, downloadHTMLList, eutheriaFilterHelper, fetchMajorMinorGroups, foo, formatAlien, formatScientificNames, formatSearchResults, getElementHtml, getFilters, getLocation, getMaxZ, goTo, insertCORSWorkaround, insertModalImage, interval, isArray, isBlank, isBool, isEmpty, isJson, isNull, isNumber, isNumeric, lightboxImages, loadJS, mapNewWindows, modalTaxon, openLink, openTab, overlayOff, overlayOn, p$, parseTaxonYear, performSearch, prepURI, randomInt, ref, roundNumber, roundNumberSigfig, safariDialogHelper, safariSearchArgHelper, searchParams, setHistory, setupServiceWorker, showBadSearchErrorMessage, showDownloadChooser, smartCalPhotosLink, smartReptileDatabaseLink, smartUpperCasing, sortResults, stopLoad, stopLoadError, toFloat, toInt, toObject, toastStatusMessage, uri,
   slice = [].slice,
   indexOf = [].indexOf || function(item) { for (var i = 0, l = this.length; i < l; i++) { if (i in this && this[i] === item) return i; } return -1; };
 
@@ -1688,6 +1688,66 @@ eutheriaFilterHelper = function(skipFetch) {
   return false;
 };
 
+checkLaggedUpdate = function(result) {
+  var args, e, error1, i, iucnCanProvide, key, len, m, ref1, results, shouldSkip, taxon;
+  iucnCanProvide = ["common_name", "species_authority"];
+  if (result.do_client_update === true) {
+    console.info("About to trigger client update process");
+    try {
+      ref1 = result.result;
+      results = [];
+      for (i in ref1) {
+        taxon = ref1[i];
+        shouldSkip = true;
+        for (m = 0, len = iucnCanProvide.length; m < len; m++) {
+          key = iucnCanProvide[m];
+          if (!isNull(taxon[key])) {
+            continue;
+          } else {
+            console.debug("Missing key '" + key + "' in ", taxon);
+            shouldSkip = false;
+            break;
+          }
+        }
+        if (shouldSkip) {
+          continue;
+        }
+        args = "missing=true&genus=" + taxon.genus + "&species=" + taxon.species;
+        console.log("About to ping missing update url", searchParams.targetApi + "?" + args);
+        results.push($.get(searchParams.targetApi, args, "json").done(function(subResult) {
+          var col, row, val;
+          console.log("Update for " + subResult.canonical_sciname, subResult);
+          console.log(searchParams.targetApi + "?" + args);
+          row = $(".cndb-result-entry[data-taxon='" + subResult.genus + "+" + subResult.species + "']");
+          for (col in subResult) {
+            val = subResult[col];
+            if ($(row).find("." + col).exists() && !isNull(val)) {
+              if (isNull($(row).find("." + col).text())) {
+                console.log("Set " + col + " text of " + subResult.canonical_sciname + " to " + val);
+                $(row).find("." + col).text(val);
+              }
+            } else if ($(row).find("." + col).exists() && isNull(val)) {
+              console.warn("Couldn't update " + col + " - got an empty IUCN result");
+            }
+          }
+          return false;
+        }).fail(function(subResult, status) {
+          console.warn("Couldn't update " + taxon.canonical_sciname, subResult, status);
+          console.warn(searchParams.targetApi + "?" + args);
+          return false;
+        }));
+      }
+      return results;
+    } catch (error1) {
+      e = error1;
+      console.warn("Couldn't do client update -- " + e.message);
+      return console.warn(e.stack);
+    }
+  } else {
+    return console.debug("Server did not request a client update");
+  }
+};
+
 performSearch = function(stateArgs) {
   var args, filters, s, sOrig;
   if (stateArgs == null) {
@@ -1735,7 +1795,6 @@ performSearch = function(stateArgs) {
   animateLoad();
   console.log("Got search value " + s + ", hitting", searchParams.apiPath + "?" + args);
   return $.get(searchParams.targetApi, args, "json").done(function(result) {
-    var i, ref1, taxon;
     if (toInt(result.count) === 0) {
       console.error("No search results: Got search value " + s + ", from hitting", searchParams.apiPath + "?" + args);
       showBadSearchErrorMessage.debounce(null, null, null, result);
@@ -1743,22 +1802,9 @@ performSearch = function(stateArgs) {
       return false;
     }
     if (result.status === true) {
+      console.log("Server response:", result);
       formatSearchResults(result);
-      if (result.do_client_update === true) {
-        try {
-          ref1 = result.result;
-          for (i in ref1) {
-            taxon = ref1[i];
-            args = "missing=true&genus=" + taxon.genus + "&species=" + taxon.species;
-            $.post(searchParams.targetApi, args, "json").done(function(result) {
-              return console.log("Update for " + result.canonical_sciname, result);
-            }).fail(function(result, status) {
-              console.warn("Couldn't update " + taxon.canonical_sciname, result, status);
-              return console.warn(searchParams.targetApi + "?" + args);
-            });
-          }
-        } catch (undefined) {}
-      }
+      checkLaggedUpdate(result);
       return false;
     }
     clearSearch(true);
@@ -3267,6 +3313,7 @@ $(function() {
       if (result.status === true && result.count > 0) {
         console.log("Got a valid result, formatting " + result.count + " results.");
         formatSearchResults(result);
+        checkLaggedUpdate(result);
         return false;
       }
       console.warn("Bad initial search");

@@ -61,18 +61,26 @@ module.exports = (grunt) ->
       combine:
         options:
           sourceMap:true
-          sourceMapName:"js/maps/combined.map"
           sourceMapIncludeSources:true
-          sourceMapIn:"js/maps/c.js.map"
+          sourceMapIn: (fileIn) ->
+            fileName = fileIn.split("/").pop()
+            fileNameArr = fileName.split(".")
+            fileNameArr.pop()
+            fileId = fileNameArr.join(".")
+            "js/maps/#{fileId}.js.map"
         files:
           "js/combined.min.js":["js/c.js","js/admin.js","bower_components/purl/purl.js","bower_components/xmlToJSON/lib/xmlToJSON.js","bower_components/jquery-cookie/jquery.cookie.js"]
           "js/app.min.js":["js/c.js","js/admin.js"]
       dist:
         options:
           sourceMap:true
-          sourceMapName:"js/maps/c.map"
           sourceMapIncludeSources:true
-          sourceMapIn:"js/maps/c.js.map"
+          sourceMapIn: (fileIn) ->
+            fileName = fileIn.split("/").pop()
+            fileNameArr = fileName.split(".")
+            fileNameArr.pop()
+            fileId = fileNameArr.join(".")
+            "js/maps/#{fileId}.js.map"
           compress:
             # From https://github.com/mishoo/UglifyJS2#compressor-options
             dead_code: true

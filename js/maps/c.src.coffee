@@ -1372,6 +1372,52 @@ eutheriaFilterHelper = (skipFetch = false) ->
 
 
 
+checkLaggedUpdate = (result) ->
+  iucnCanProvide = [
+    "common_name"
+    "species_authority"
+    ]
+  if result.do_client_update is true
+    console.info "About to trigger client update process"
+    try
+      for i, taxon of result.result
+        shouldSkip = true
+        for key in iucnCanProvide
+          unless isNull taxon[key]
+            continue
+          else
+            console.debug "Missing key '#{key}' in ", taxon
+            shouldSkip = false
+            break
+        if shouldSkip
+          continue
+        args = "missing=true&genus=#{taxon.genus}&species=#{taxon.species}"
+        console.log "About to ping missing update url", "#{searchParams.targetApi}?#{args}"
+        $.get searchParams.targetApi, args, "json"
+        .done (subResult) ->
+          console.log "Update for #{subResult.canonical_sciname}", subResult
+          console.log  "#{searchParams.targetApi}?#{args}"
+          row = $(".cndb-result-entry[data-taxon='#{subResult.genus}+#{subResult.species}']")
+          for col, val of subResult
+            if $(row).find(".#{col}").exists() and not isNull val
+              if isNull $(row).find(".#{col}").text()
+                console.log "Set #{col} text of #{subResult.canonical_sciname} to #{val}"
+                $(row).find(".#{col}").text val
+            else if $(row).find(".#{col}").exists() and isNull val
+              console.warn "Couldn't update #{col} - got an empty IUCN result"
+          false
+        .fail (subResult, status) ->
+          console.warn "Couldn't update #{taxon.canonical_sciname}", subResult, status
+          console.warn "#{searchParams.targetApi}?#{args}"
+          false
+    catch e
+      console.warn "Couldn't do client update -- #{e.message}"
+      console.warn e.stack
+  else
+    console.debug "Server did not request a client update"
+
+
+
 performSearch = (stateArgs = undefined) ->
   ###
   # Check the fields and filters and do the async search
@@ -1426,17 +1472,10 @@ performSearch = (stateArgs = undefined) ->
       clearSearch(true)
       return false
     if result.status is true
+      console.log "Server response:", result
+      # May be worth moving this part to a service worker
       formatSearchResults(result)
-      if result.do_client_update is true
-        try
-          for i, taxon of result.result
-            args = "missing=true&genus=#{taxon.genus}&species=#{taxon.species}"
-            $.post searchParams.targetApi, args, "json"
-            .done (result) ->
-              console.log "Update for #{result.canonical_sciname}", result
-            .fail (result, status) ->
-              console.warn "Couldn't update #{taxon.canonical_sciname}", result, status
-              console.warn "#{searchParams.targetApi}?#{args}"
+      checkLaggedUpdate result
       return false
     clearSearch(true)
     $("#search-status").attr("text",result.human_error)
@@ -3048,13 +3087,14 @@ $ ->
   # Perform the initial search
   if not isNull(loadArgs) and loadArgs isnt "#"
     # console.log("Doing initial search with '#{loadArgs}', hitting","#{searchParams.apiPath}?q=#{loadArgs}")
-    $.get(searchParams.targetApi,"q=#{loadArgs}","json")
+    $.get searchParams.targetApi,"q=#{loadArgs}","json"
     .done (result) ->
       # Populate the result container
       console.debug "Server query got", result
       if result.status is true and result.count > 0
         console.log("Got a valid result, formatting #{result.count} results.")
         formatSearchResults(result)
+        checkLaggedUpdate result
         return false
       console.warn "Bad initial search"
       showBadSearchErrorMessage.debounce null, null, null, result

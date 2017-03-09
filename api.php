@@ -894,7 +894,7 @@ function getTaxonIucnData($taxonBase) {
 }
 
 
-if(!empty($search)) {
+
     if(sizeof($result["result"]) <= 5) {
         foreach($result["result"] as $i => $taxon) {
             # Check for important empty fields ....
@@ -943,7 +943,7 @@ if(!empty($search)) {
     } else {
         $result["do_client_update"] = true;
     }
-}
+
 
 # $as_include isn't specified, so if it is, it's from a parent file
 if($as_include !== true) returnAjax($result);

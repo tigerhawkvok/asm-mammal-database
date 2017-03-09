@@ -528,6 +528,8 @@ String::toTitleCase = ->
 
 
 smartUpperCasing = (text) ->
+  if isNull text
+    return ""
   replacer = (match) ->
     return match.replace(match, match.toUpperCase())
   smartCased = text.replace(/((?=((?!-)[\W\s\r\n]))\s[A-Za-z]|^[A-Za-z])/g, replacer)
@@ -1206,6 +1208,10 @@ foo = ->
   toastStatusMessage("Sorry, this feature is not yet finished")
   stopLoad()
   false
+
+doNothing = ->
+  # Placeholder function
+  return null
 
 $ ->
   formatScientificNames()

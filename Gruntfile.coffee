@@ -143,7 +143,7 @@ module.exports = (grunt) ->
         files:
           "js/c.js":["coffee/core.coffee","coffee/search.coffee"]
           "js/admin.js":"coffee/admin.coffee"
-          "js/serviceWorker.js":"coffee/serviceWorker.coffee"
+          "js/serviceWorker.js":["coffee/core-worker.coffee","coffee/serviceWorker.coffee"]
     watch:
       scripts:
         files: ["coffee/*.coffee"]

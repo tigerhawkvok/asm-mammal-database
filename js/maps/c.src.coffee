@@ -528,6 +528,8 @@ String::toTitleCase = ->
 
 
 smartUpperCasing = (text) ->
+  if isNull text
+    return ""
   replacer = (match) ->
     return match.replace(match, match.toUpperCase())
   smartCased = text.replace(/((?=((?!-)[\W\s\r\n]))\s[A-Za-z]|^[A-Za-z])/g, replacer)
@@ -1207,6 +1209,10 @@ foo = ->
   stopLoad()
   false
 
+doNothing = ->
+  # Placeholder function
+  return null
+
 $ ->
   formatScientificNames()
   bindClicks()
@@ -1316,12 +1322,12 @@ fetchMajorMinorGroups = (scientific = null, callback) ->
 
 eutheriaFilterHelper = (skipFetch = false) ->
   unless skipFetch
-    fetchMajorMinorGroups.debounce()
+    fetchMajorMinorGroups.debounce(50)
     try
       $("#use-scientific")
       .on "iron-change", ->
         delete _asm.mammalGroupsBase
-        fetchMajorMinorGroups.debounce()
+        fetchMajorMinorGroups.debounce(50)
   $("#linnean")
   .on "iron-select", ->
     if $(p$("#linnean").selectedItem).attr("data-type") is "eutheria"
@@ -1377,8 +1383,11 @@ checkLaggedUpdate = (result) ->
     "common_name"
     "species_authority"
     ]
+  start = Date.now()
   if result.do_client_update is true
-    console.info "About to trigger client update process"
+    # console.info "About to trigger client update process"
+    k = j = 0
+    finishedLoop = false
     try
       for i, taxon of result.result
         shouldSkip = true
@@ -1386,17 +1395,20 @@ checkLaggedUpdate = (result) ->
           unless isNull taxon[key]
             continue
           else
-            console.debug "Missing key '#{key}' in ", taxon
+            # console.debug "Missing key '#{key}' in ", taxon
             shouldSkip = false
             break
         if shouldSkip
           continue
+        ++k
         args = "missing=true&genus=#{taxon.genus}&species=#{taxon.species}"
-        console.log "About to ping missing update url", "#{searchParams.targetApi}?#{args}"
+        #console.log "About to ping missing update url", "#{searchParams.targetApi}?#{args}"
         $.get searchParams.targetApi, args, "json"
         .done (subResult) ->
+          ++j
+          unless subResult.did_update
+            return false
           console.log "Update for #{subResult.canonical_sciname}", subResult
-          console.log  "#{searchParams.targetApi}?#{args}"
           row = $(".cndb-result-entry[data-taxon='#{subResult.genus}+#{subResult.species}']")
           for col, val of subResult
             if $(row).find(".#{col}").exists() and not isNull val
@@ -1410,11 +1422,15 @@ checkLaggedUpdate = (result) ->
           console.warn "Couldn't update #{taxon.canonical_sciname}", subResult, status
           console.warn "#{searchParams.targetApi}?#{args}"
           false
+        .always ->
+          if j is k and finishedLoop
+            elapsed = Date.now() - start
+            console.log "Finished async IUCN taxa check in #{elapsed}ms"
+      finishedLoop = true
     catch e
       console.warn "Couldn't do client update -- #{e.message}"
       console.warn e.stack
-  else
-    console.debug "Server did not request a client update"
+  false
 
 
 
@@ -1474,8 +1490,8 @@ performSearch = (stateArgs = undefined) ->
     if result.status is true
       console.log "Server response:", result
       # May be worth moving this part to a service worker
-      formatSearchResults(result)
-      checkLaggedUpdate result
+      formatSearchResults result, undefined, ->
+        checkLaggedUpdate result
       return false
     clearSearch(true)
     $("#search-status").attr("text",result.human_error)
@@ -1537,7 +1553,7 @@ getFilters = (selector = ".cndb-filter", booleanType = "AND") ->
     return false
 
 
-formatSearchResults = (result,container = searchParams.targetContainer) ->
+formatSearchResults = (result, container = searchParams.targetContainer, callback) ->
   ###
   # Take a result object from the server's lookup, and format it to
   # display search results.
@@ -1545,15 +1561,19 @@ formatSearchResults = (result,container = searchParams.targetContainer) ->
   # http://mammaldiversity.org/cndb/commonnames_api.php?q=batrachoseps+attenuatus&loose=true
   # for a sample search result return.
   ###
+  start = Date.now()
+  elapsed = 0
   $("#result-header-container").removeAttr "hidden"
   data = result.result
   searchParams.result = data
   headers = new Array()
-  html = ""
-  htmlHead = "<table id='cndb-result-list' class='table table-striped table-hover col-md-12'>\n\t<tr class='cndb-row-headers'>"
+  tableId = "cndb-result-list"
+  htmlHead = "<table id='#{tableId}' class='table table-striped table-hover col-md-12'>\n\t<tr class='cndb-row-headers'>"
   htmlClose = "</table>"
   # We start at 0, so we want to count one below
   targetCount = toInt(result.count)-1
+  if targetCount > 150
+    toastStatusMessage "We found #{result.count} results, please hang on a moment while we render them...", "", 5000
   colClass = null
   bootstrapColCount = 0
   dontShowColumns = [
@@ -1571,6 +1591,7 @@ formatSearchResults = (result,container = searchParams.targetContainer) ->
     "is_alien"
     "internal_id"
     "source"
+    "deprecated_scientific"
     # "species_authority"
     # "genus_authority"
     # "authority_year"
@@ -1580,156 +1601,250 @@ formatSearchResults = (result,container = searchParams.targetContainer) ->
     ]
   externalCounter = 0
   renderTimeout = delay 5000, ->
-    stopLoadError("There was a problem parsing the search results.")
-    console.error("Couldn't finish parsing the results! Expecting #{targetCount} elements, timed out on #{externalCounter}.")
-    console.warn(data)
+    stopLoadError "There was a problem parsing the search results."
+    console.error "Couldn't finish parsing the results! Expecting #{targetCount} elements, timed out on #{externalCounter}."
+    console.warn data
     return false
   requiredKeyOrder = [
     "common_name"
     "genus"
     "species"
-    "subspecies"
     ]
-  # Get all the rows in order
-  for k, v of data[0]
-    unless k in requiredKeyOrder
-      requiredKeyOrder.push k
-  # Re-sort the data
-  origData = data
-  data = new Object()
-  for i, row of origData
-    data[i] = new Object()
-    for key in requiredKeyOrder
-      data[i][key] = row[key]
-  # The real render loop
-  for i, row of data
-    externalCounter = i
-    if toInt(i) is 0
-      j = 0
-      htmlHead += "\n<!-- Table Headers - #{Object.size(row)} entries -->"
+  delay 5, ->
+    # Remove data-less columns
+    colHasData = new Array()
+    for i, row of data
+      allColsHaveData = true
       for k, v of row
-        niceKey = k.replace(/_/g," ")
-        unless k in dontShowColumns
-          if $("#show-deprecated").polymerSelected() isnt true
-            alt = "deprecated_scientific"
-          else
-            # Empty placeholder
-            alt = ""
-          if k isnt alt
-            # Remap names to pretty names
-            niceKey = switch niceKey
-              when "simple linnean subgroup" then "Group"
-              when "major subtype" then "Clade"
-              else niceKey
-            htmlHead += "\n\t\t<th class='text-center'>#{niceKey}</th>"
-            bootstrapColCount++
-        j++
-        if j is Object.size(row)
-          htmlHead += "\n\t</tr>"
-          htmlHead += "\n<!-- End Table Headers -->"
-          # console.log("Got #{bootstrapColCount} display columns.")
-          bootstrapColSize = roundNumber(12/bootstrapColCount,0)
-          colClass = "col-md-#{bootstrapColSize}"
-    taxonQuery = "#{row.genus}+#{row.species}"
-    if not isNull(row.subspecies)
-      taxonQuery = "#{taxonQuery}+#{row.subspecies}"
-    htmlRow = """\n\t<tr id='cndb-row#{i}' class='cndb-result-entry' data-taxon="#{taxonQuery}" data-genus="#{row.genus}" data-species="#{row.species}">"""
-    l = 0
-    for k, col of row
-      unless k in dontShowColumns
-        if k is "authority_year"
-          try
-            unless isNull col
-              try
-                d = JSON.parse(col)
-              catch e
-                # attempt to fix it
-                console.warn("There was an error parsing authority_year='#{col}', attempting to fix - ",e.message)
-                split = col.split(":")
-                year = split[1].slice(split[1].search("\"")+1,-2)
-                # console.log("Examining #{year}")
-                year = year.replace(/"/g,"'")
-                split[1] = "\"#{year}\"}"
-                col = split.join(":")
-                # console.log("Reconstructed #{col}")
-                d = JSON.parse(col)
-              genus = Object.keys(d)[0]
-              species = d[genus]
-              if toInt(row.parens_auth_genus).toBool()
-                genus = "(#{genus})"
-              if toInt(row.parens_auth_species).toBool()
-                species = "(#{species})"
-              col = "G: #{genus}<br/>S: #{species}"
-            else
-              d = col
-          catch e
-            # Render as-is
-            console.error("There was an error parsing '#{col}'",e.message)
-            d = col
-        if $("#show-deprecated").polymerSelected() isnt true
-          alt = "deprecated_scientific"
+        if k in colHasData
+          continue
+        if isNull v
+          allColsHaveData = false
         else
-          # Empty placeholder
-          alt = ""
-        if k isnt alt
-          if k is "image"
-            # Set up the images
-            if isNull(col)
-              # Get a CalPhotos link as
-              # http://calphotos.berkeley.edu/cgi/img_query?rel-taxon=contains&where-taxon=batrachoseps+attenuatus
-              col = "<paper-icon-button icon='launch' data-href='#{_asm.affiliateQueryUrl.calPhotos}?rel-taxon=contains&where-taxon=#{taxonQuery}' class='newwindow calphoto click' data-taxon=\"#{taxonQuery}\"></paper-icon-button>"
+          # console.log "Col '#{k}' has non-empty value '#{v}' at row #{i}", row
+          colHasData.push k
+      if allColsHaveData
+        break
+    if "subspecies" in colHasData
+      requiredKeyOrder.push "subspecies"
+    # Get all the rows in order
+    for k, v of data[0]
+      # Don't double-count a column
+      unless k in requiredKeyOrder
+        # Don't render columns that we shouldn't show, duh
+        unless k in dontShowColumns
+          # Only render columns that have data
+          if k in colHasData
+            requiredKeyOrder.push k
+    # elapsed = Date.now() - start
+    # console.debug "Took #{elapsed}ms to finish sorting keys"
+    # Re-sort the data
+    origData = data
+    data = new Object()
+    for i, row of origData
+      data[i] = new Object()
+      for key in requiredKeyOrder
+        data[i][key] = row[key]
+    # elapsedBetween = Date.now() - start - elapsed
+    # elapsed = Date.now() - start
+    # console.debug "Took #{elapsedBetween}ms to re-order data (total time: #{elapsed}ms)"
+    # The real render loop
+    totalLoops = 0
+    dataArray = Object.toArray data
+    do renderDataArray = (data = dataArray, firstIteration = true, renderChunk = 100) ->
+      html = ""
+      i = 0
+      nextIterationData = null
+      wasOffThread = false
+      unless isNumber renderChunk
+        renderChunk = 100
+      finalIteration = if data.length <= renderChunk then true else false
+      try
+        postMessageContent =
+          action: "render-row"
+          data: data
+          chunk: renderChunk
+          firstIteration: firstIteration
+        worker = new Worker "js/serviceWorker.js"
+        console.info "Rendering list off-thread"
+        worker.addEventListener "message", (e) ->
+          console.info "Got message back from service worker", e.data
+          wasOffThread = true
+          html = e.data.html
+          nextIterationData = e.data.nextChunk
+          usedRenderChunk = e.data.renderChunk
+          i = e.data.loops
+          loopCleanup()
+        worker.postMessage postMessageContent
+      catch
+        # No web worker
+        console.log "Starting loop with i = #{i}, renderChunk = #{renderChunk}, data length = #{data.length}", firstIteration, finalIteration
+        for row in data
+          ++totalLoops
+          externalCounter = i
+          if toInt(i) is 0 and firstIteration
+            j = 0
+            htmlHead += "\n<!-- Table Headers - #{Object.size(row)} entries -->"
+            for k, v of row
+              ++totalLoops
+              niceKey = k.replace(/_/g," ")
+              # Remap names to pretty names
+              niceKey = switch niceKey
+                when "simple linnean subgroup" then "Group"
+                when "major subtype" then "Clade"
+                else niceKey
+              htmlHead += "\n\t\t<th class='text-center'>#{niceKey}</th>"
+              bootstrapColCount++
+              j++
+            # End header build loop
+            htmlHead += "\n\t</tr>"
+            htmlHead += "\n<!-- End Table Headers -->"
+            console.log("Got #{bootstrapColCount} display columns.")
+            bootstrapColSize = roundNumber(12/bootstrapColCount,0)
+            colClass = "col-md-#{bootstrapColSize}"
+            # elapsedBetween = Date.now() - start - elapsed
+            # elapsed = Date.now() - start
+            # console.debug "Took #{elapsedBetween}ms to build headers (total time: #{elapsed}ms)"
+            frameHtml = htmlHead + htmlClose
+            html = htmlHead
+            $(container).html frameHtml
+          # End header construction
+          # Start building the data rows
+          taxonQuery = "#{row.genus}+#{row.species}"
+          if not isNull(row.subspecies)
+            taxonQuery = "#{taxonQuery}+#{row.subspecies}"
+          rowId = "msadb-row#{i}"
+          htmlRow = """\n\t<tr id='#{rowId}' class='cndb-result-entry' data-taxon="#{taxonQuery}" data-genus="#{row.genus}" data-species="#{row.species}">"""
+          for k, col of row
+            ++totalLoops
+            if k is "authority_year"
+              unless isNull col
+                try
+                  d = JSON.parse(col)
+                catch e
+                  # attempt to fix it
+                  try
+                    console.warn("There was an error parsing authority_year='#{col}', attempting to fix - ",e.message)
+                    split = col.split(":")
+                    year = split[1].slice(split[1].search("\"")+1,-2)
+                    # console.log("Examining #{year}")
+                    year = year.replace(/"/g,"'")
+                    split[1] = "\"#{year}\"}"
+                    col = split.join(":")
+                    # console.log("Reconstructed #{col}")
+                    d = JSON.parse(col)
+                    genus = Object.keys(d)[0]
+                    species = d[genus]
+                    if toInt(row.parens_auth_genus).toBool()
+                      genus = "(#{genus})"
+                    if toInt(row.parens_auth_species).toBool()
+                      species = "(#{species})"
+                    col = "G: #{genus}<br/>S: #{species}"
+                  catch e
+                    # Render as-is
+                    console.error("There was an error parsing '#{col}'",e.message)
+                    d = col
+              else
+                d = col
+            if k is "image"
+              # Set up the images
+              if isNull col
+                # Link out to mammal photos database
+                col = "<paper-icon-button icon='launch' data-href='#{_asm.affiliateQueryUrl.mammalPhotos}?rel-taxon=contains&where-taxon=#{taxonQuery}' class='newwindow calphoto click' data-taxon=\"#{taxonQuery}\"></paper-icon-button>"
+              else
+                col = "<paper-icon-button icon='image:image' data-lightbox='#{uri.urlString}#{col}' class='lightboximage'></paper-icon-button>"
+            ###
+            # Assign classes to the rows
+            ###
+            # What should be centered, and what should be left-aligned?
+            if k isnt "genus" and k isnt "species" and k isnt "subspecies"
+              kClass = "#{k} text-center"
             else
-              col = "<paper-icon-button icon='image:image' data-lightbox='#{uri.urlString}#{col}' class='lightboximage'></paper-icon-button>"
-          # What should be centered, and what should be left-aligned?
-          if k isnt "genus" and k isnt "species" and k isnt "subspecies"
-            kClass = "#{k} text-center"
+              # Left-aligned
+              kClass = k
+            if k is "genus_authority" or k is "species_authority"
+              kClass += " authority"
+            else if k is "common_name"
+              col = smartUpperCasing col
+              kClass += " no-cap"
+            # Append the completed column to the row
+            htmlRow += "\n\t\t<td id='#{k}-#{i}' class='#{kClass} #{colClass}'>#{col}</td>"
+          # Finish building the row
+          htmlRow += "\n\t</tr>"
+          html += htmlRow
+          # Render the rows one at a time
+          # $("table##{tableId} tbody").append htmlRow
+          # $("##{rowId}").click ->
+          #   accountArgs = "genus=#{$(this).attr("data-genus")}&species=#{$(this).attr("data-species")}"
+          #   goTo "species-account.php?#{accountArgs}"
+          # Debug timing per-row
+          # if toInt(i) %% 50 is 0
+          #   elapsedBetween = Date.now() - start - elapsed
+          #   elapsed = Date.now() - start
+          #   console.debug "Took #{elapsedBetween}ms to build 50 rows through #{i} (total time: #{elapsed}ms)"
+          i++
+          if i >= renderChunk
+            break
+        console.log "Ended data loop with i = #{i}, renderChunk = #{renderChunk}"
+        loopCleanup()
+        # End data loop
+      loopCleanup = ->
+        if firstIteration
+          html += htmlClose
+          $(container).html html
+          $("#result-count").text(" - #{result.count} entries")
+          if result.method is "space_common_fallback" and not $("#space-fallback-info").exists()
+            noticeHtml = """
+            <div id="space-fallback-info" class="alert alert-info alert-dismissible center-block fade in" role="alert">
+              <button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+              <strong>Don't see what you want?</strong> We might use a slightly different name. Try <a href="" class="alert-link" id="do-instant-fuzzy">checking the "fuzzy" toggle and searching again</a>, or use a shorter search term.
+            </div>
+            """
+            $("#result_container").before(noticeHtml)
+            $("#do-instant-fuzzy").click (e) ->
+              e.preventDefault()
+              doBatch = ->
+                $("#fuzzy").get(0).checked = true
+                performSearch()
+              doBatch.debounce()
+          else if $("#space-fallback-info").exists()
+            # We only want to show it once, so we'll hide it now
+            $("#space-fallback-info").prop("hidden",true)
+            #$("#space-fallback-info").remove()
+        else
+          # Just add the new rows
+          $("table##{tableId} tbody").append html
+        unless finalIteration
+          elapsed = Date.now() - start
+          nextIterationData ?= data.slice i
+          console.log "Chunk rendered at #{elapsed}ms, next bit with slice @ #{i}:", nextIterationData
+          unless nextIterationData.length is 0
+            delayInterval = if wasOffThread then 25 else 250
+            delay delayInterval, ->
+              renderDataArray nextIterationData, false, renderChunk
           else
-            # Left-aligned
-            kClass = k
-          if k is "genus_authority" or k is "species_authority"
-            kClass += " authority"
-          if k is "common_name"
-            col = smartUpperCasing col
-            kClass += " no-cap"
-          htmlRow += "\n\t\t<td id='#{k}-#{i}' class='#{kClass} #{colClass}'>#{col}</td>"
-      l++
-      if l is Object.size(row)
-        htmlRow += "\n\t</tr>"
-        html += htmlRow
-    # Check if we're done
-    if toInt(i) is targetCount
-      html = htmlHead + html + htmlClose
-      # console.log("Processed #{toInt(i)+1} rows")
-      $(container).html(html)
-      clearTimeout(renderTimeout)
-      mapNewWindows()
-      lightboxImages()
-      # modalTaxon()
-      $(".cndb-result-entry").click ->
-        accountArgs = "genus=#{$(this).attr("data-genus")}&species=#{$(this).attr("data-species")}"
-        goTo "species-account.php?#{accountArgs}"
-      doFontExceptions()
-      $("#result-count").text(" - #{result.count} entries")
-      stopLoad()
-  if result.method is "space_common_fallback" and not $("#space-fallback-info").exists()
-    noticeHtml = """
-    <div id="space-fallback-info" class="alert alert-info alert-dismissible center-block fade in" role="alert">
-      <button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button>
-      <strong>Don't see what you want?</strong> We might use a slightly different name. Try <a href="" class="alert-link" id="do-instant-fuzzy">checking the "fuzzy" toggle and searching again</a>, or use a shorter search term.
-    </div>
-    """
-    $("#result_container").before(noticeHtml)
-    $("#do-instant-fuzzy").click (e) ->
-      e.preventDefault()
-      doBatch = ->
-        $("#fuzzy").get(0).checked = true
-        performSearch()
-      doBatch.debounce()
-  else if $("#space-fallback-info").exists()
-    # We only want to show it once, so we'll hide it now
-    $("#space-fallback-info").prop("hidden",true)
-    #$("#space-fallback-info").remove()
-
+            finalIteration = true
+        if finalIteration
+          elapsed = Date.now() - start
+          console.log "Finished rendering list in #{elapsed}ms"
+          console.debug "Executed #{totalLoops} loops"
+          if elapsed > 3000
+            console.warn "Warning: Took greater than 3 seconds to render!"
+          stopLoad()
+          if typeof callback is "function"
+            try
+              callback()
+        clearTimeout renderTimeout
+        mapNewWindows()
+        lightboxImages()
+        # modalTaxon()
+        $(".cndb-result-entry")
+        .unbind()
+        .click ->
+          accountArgs = "genus=#{$(this).attr("data-genus")}&species=#{$(this).attr("data-species")}"
+          goTo "species-account.php?#{accountArgs}"
+        doFontExceptions()
+  false
 
 
 parseTaxonYear = (taxonYearString,strict = true) ->
@@ -3093,8 +3208,8 @@ $ ->
       console.debug "Server query got", result
       if result.status is true and result.count > 0
         console.log("Got a valid result, formatting #{result.count} results.")
-        formatSearchResults(result)
-        checkLaggedUpdate result
+        formatSearchResults result, undefined, ->
+          checkLaggedUpdate result
         return false
       console.warn "Bad initial search"
       showBadSearchErrorMessage.debounce null, null, null, result

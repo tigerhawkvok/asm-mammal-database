@@ -1,4 +1,4 @@
-var _metaStatus, activityIndicatorOff, activityIndicatorOn, animateLoad, bindClickTargets, bindClicks, bindDismissalRemoval, bindPaperMenuButton, browserBeware, byteCount, checkFileVersion, checkLaggedUpdate, checkTaxonNear, clearSearch, deEscape, deepJQuery, delay, doCORSget, doFontExceptions, domainPlaceholder, downloadCSVList, downloadHTMLList, eutheriaFilterHelper, fetchMajorMinorGroups, foo, formatAlien, formatScientificNames, formatSearchResults, getElementHtml, getFilters, getLocation, getMaxZ, goTo, insertCORSWorkaround, insertModalImage, interval, isArray, isBlank, isBool, isEmpty, isJson, isNull, isNumber, isNumeric, lightboxImages, loadJS, mapNewWindows, modalTaxon, openLink, openTab, overlayOff, overlayOn, p$, parseTaxonYear, performSearch, prepURI, randomInt, ref, roundNumber, roundNumberSigfig, safariDialogHelper, safariSearchArgHelper, searchParams, setHistory, setupServiceWorker, showBadSearchErrorMessage, showDownloadChooser, smartCalPhotosLink, smartReptileDatabaseLink, smartUpperCasing, sortResults, stopLoad, stopLoadError, toFloat, toInt, toObject, toastStatusMessage, uri,
+var _metaStatus, activityIndicatorOff, activityIndicatorOn, animateLoad, bindClickTargets, bindClicks, bindDismissalRemoval, bindPaperMenuButton, browserBeware, byteCount, checkFileVersion, checkLaggedUpdate, checkTaxonNear, clearSearch, deEscape, deepJQuery, delay, doCORSget, doFontExceptions, doNothing, domainPlaceholder, downloadCSVList, downloadHTMLList, eutheriaFilterHelper, fetchMajorMinorGroups, foo, formatAlien, formatScientificNames, formatSearchResults, getElementHtml, getFilters, getLocation, getMaxZ, goTo, insertCORSWorkaround, insertModalImage, interval, isArray, isBlank, isBool, isEmpty, isJson, isNull, isNumber, isNumeric, lightboxImages, loadJS, mapNewWindows, modalTaxon, openLink, openTab, overlayOff, overlayOn, p$, parseTaxonYear, performSearch, prepURI, randomInt, ref, roundNumber, roundNumberSigfig, safariDialogHelper, safariSearchArgHelper, searchParams, setHistory, setupServiceWorker, showBadSearchErrorMessage, showDownloadChooser, smartCalPhotosLink, smartReptileDatabaseLink, smartUpperCasing, sortResults, stopLoad, stopLoadError, toFloat, toInt, toObject, toastStatusMessage, uri,
   slice = [].slice,
   indexOf = [].indexOf || function(item) { for (var i = 0, l = this.length; i < l; i++) { if (i in this && this[i] === item) return i; } return -1; };
 
@@ -706,6 +706,9 @@ String.prototype.toTitleCase = function() {
 
 smartUpperCasing = function(text) {
   var len, m, r, replaceLower, replacer, searchUpper, secondWord, secondWordCased, smartCased, specialLowerCaseWords, word;
+  if (isNull(text)) {
+    return "";
+  }
   replacer = function(match) {
     return match.replace(match, match.toUpperCase());
   };
@@ -1521,6 +1524,10 @@ foo = function() {
   return false;
 };
 
+doNothing = function() {
+  return null;
+};
+
 $(function() {
   var e, error1, error2;
   formatScientificNames();
@@ -1640,11 +1647,11 @@ eutheriaFilterHelper = function(skipFetch) {
     skipFetch = false;
   }
   if (!skipFetch) {
-    fetchMajorMinorGroups.debounce();
+    fetchMajorMinorGroups.debounce(50);
     try {
       $("#use-scientific").on("iron-change", function() {
         delete _asm.mammalGroupsBase;
-        return fetchMajorMinorGroups.debounce();
+        return fetchMajorMinorGroups.debounce(50);
       });
     } catch (undefined) {}
   }
@@ -1689,13 +1696,14 @@ eutheriaFilterHelper = function(skipFetch) {
 };
 
 checkLaggedUpdate = function(result) {
-  var args, e, error1, i, iucnCanProvide, key, len, m, ref1, results, shouldSkip, taxon;
+  var args, e, error1, finishedLoop, i, iucnCanProvide, j, k, key, len, m, ref1, shouldSkip, start, taxon;
   iucnCanProvide = ["common_name", "species_authority"];
+  start = Date.now();
   if (result.do_client_update === true) {
-    console.info("About to trigger client update process");
+    k = j = 0;
+    finishedLoop = false;
     try {
       ref1 = result.result;
-      results = [];
       for (i in ref1) {
         taxon = ref1[i];
         shouldSkip = true;
@@ -1704,7 +1712,6 @@ checkLaggedUpdate = function(result) {
           if (!isNull(taxon[key])) {
             continue;
           } else {
-            console.debug("Missing key '" + key + "' in ", taxon);
             shouldSkip = false;
             break;
           }
@@ -1712,12 +1719,15 @@ checkLaggedUpdate = function(result) {
         if (shouldSkip) {
           continue;
         }
+        ++k;
         args = "missing=true&genus=" + taxon.genus + "&species=" + taxon.species;
-        console.log("About to ping missing update url", searchParams.targetApi + "?" + args);
-        results.push($.get(searchParams.targetApi, args, "json").done(function(subResult) {
+        $.get(searchParams.targetApi, args, "json").done(function(subResult) {
           var col, row, val;
+          ++j;
+          if (!subResult.did_update) {
+            return false;
+          }
           console.log("Update for " + subResult.canonical_sciname, subResult);
-          console.log(searchParams.targetApi + "?" + args);
           row = $(".cndb-result-entry[data-taxon='" + subResult.genus + "+" + subResult.species + "']");
           for (col in subResult) {
             val = subResult[col];
@@ -1735,17 +1745,22 @@ checkLaggedUpdate = function(result) {
           console.warn("Couldn't update " + taxon.canonical_sciname, subResult, status);
           console.warn(searchParams.targetApi + "?" + args);
           return false;
-        }));
+        }).always(function() {
+          var elapsed;
+          if (j === k && finishedLoop) {
+            elapsed = Date.now() - start;
+            return console.log("Finished async IUCN taxa check in " + elapsed + "ms");
+          }
+        });
       }
-      return results;
+      finishedLoop = true;
     } catch (error1) {
       e = error1;
       console.warn("Couldn't do client update -- " + e.message);
-      return console.warn(e.stack);
+      console.warn(e.stack);
     }
-  } else {
-    return console.debug("Server did not request a client update");
   }
+  return false;
 };
 
 performSearch = function(stateArgs) {
@@ -1803,8 +1818,9 @@ performSearch = function(stateArgs) {
     }
     if (result.status === true) {
       console.log("Server response:", result);
-      formatSearchResults(result);
-      checkLaggedUpdate(result);
+      formatSearchResults(result, void 0, function() {
+        return checkLaggedUpdate(result);
+      });
       return false;
     }
     clearSearch(true);
@@ -1879,8 +1895,8 @@ getFilters = function(selector, booleanType) {
   }
 };
 
-formatSearchResults = function(result, container) {
-  var alt, bootstrapColCount, bootstrapColSize, col, colClass, d, data, dontShowColumns, e, error1, error2, externalCounter, genus, headers, html, htmlClose, htmlHead, htmlRow, i, j, k, kClass, key, l, len, m, niceKey, noticeHtml, origData, ref1, renderTimeout, requiredKeyOrder, row, species, split, targetCount, taxonQuery, v, year;
+formatSearchResults = function(result, container, callback) {
+  var bootstrapColCount, colClass, data, dontShowColumns, elapsed, externalCounter, headers, htmlClose, htmlHead, renderTimeout, requiredKeyOrder, start, tableId, targetCount;
   if (container == null) {
     container = searchParams.targetContainer;
   }
@@ -1892,17 +1908,22 @@ formatSearchResults = function(result, container) {
    * http://mammaldiversity.org/cndb/commonnames_api.php?q=batrachoseps+attenuatus&loose=true
    * for a sample search result return.
    */
+  start = Date.now();
+  elapsed = 0;
   $("#result-header-container").removeAttr("hidden");
   data = result.result;
   searchParams.result = data;
   headers = new Array();
-  html = "";
-  htmlHead = "<table id='cndb-result-list' class='table table-striped table-hover col-md-12'>\n\t<tr class='cndb-row-headers'>";
+  tableId = "cndb-result-list";
+  htmlHead = "<table id='" + tableId + "' class='table table-striped table-hover col-md-12'>\n\t<tr class='cndb-row-headers'>";
   htmlClose = "</table>";
   targetCount = toInt(result.count) - 1;
+  if (targetCount > 150) {
+    toastStatusMessage("We found " + result.count + " results, please hang on a moment while we render them...", "", 5000);
+  }
   colClass = null;
   bootstrapColCount = 0;
-  dontShowColumns = ["id", "minor_type", "notes", "major_type", "taxon_author", "taxon_credit", "image_license", "image_credit", "taxon_credit_date", "parens_auth_genus", "parens_auth_species", "is_alien", "internal_id", "source", "canonical_sciname", "simple_linnean_group", "iucn"];
+  dontShowColumns = ["id", "minor_type", "notes", "major_type", "taxon_author", "taxon_credit", "image_license", "image_credit", "taxon_credit_date", "parens_auth_genus", "parens_auth_species", "is_alien", "internal_id", "source", "deprecated_scientific", "canonical_sciname", "simple_linnean_group", "iucn"];
   externalCounter = 0;
   renderTimeout = delay(5000, function() {
     stopLoadError("There was a problem parsing the search results.");
@@ -1910,170 +1931,262 @@ formatSearchResults = function(result, container) {
     console.warn(data);
     return false;
   });
-  requiredKeyOrder = ["common_name", "genus", "species", "subspecies"];
-  ref1 = data[0];
-  for (k in ref1) {
-    v = ref1[k];
-    if (indexOf.call(requiredKeyOrder, k) < 0) {
-      requiredKeyOrder.push(k);
-    }
-  }
-  origData = data;
-  data = new Object();
-  for (i in origData) {
-    row = origData[i];
-    data[i] = new Object();
-    for (m = 0, len = requiredKeyOrder.length; m < len; m++) {
-      key = requiredKeyOrder[m];
-      data[i][key] = row[key];
-    }
-  }
-  for (i in data) {
-    row = data[i];
-    externalCounter = i;
-    if (toInt(i) === 0) {
-      j = 0;
-      htmlHead += "\n<!-- Table Headers - " + (Object.size(row)) + " entries -->";
+  requiredKeyOrder = ["common_name", "genus", "species"];
+  delay(5, function() {
+    var allColsHaveData, colHasData, dataArray, i, k, key, len, m, origData, ref1, renderDataArray, row, totalLoops, v;
+    colHasData = new Array();
+    for (i in data) {
+      row = data[i];
+      allColsHaveData = true;
       for (k in row) {
         v = row[k];
-        niceKey = k.replace(/_/g, " ");
-        if (indexOf.call(dontShowColumns, k) < 0) {
-          if ($("#show-deprecated").polymerSelected() !== true) {
-            alt = "deprecated_scientific";
-          } else {
-            alt = "";
-          }
-          if (k !== alt) {
-            niceKey = (function() {
-              switch (niceKey) {
-                case "simple linnean subgroup":
-                  return "Group";
-                case "major subtype":
-                  return "Clade";
-                default:
-                  return niceKey;
-              }
-            })();
-            htmlHead += "\n\t\t<th class='text-center'>" + niceKey + "</th>";
-            bootstrapColCount++;
-          }
+        if (indexOf.call(colHasData, k) >= 0) {
+          continue;
         }
-        j++;
-        if (j === Object.size(row)) {
-          htmlHead += "\n\t</tr>";
-          htmlHead += "\n<!-- End Table Headers -->";
-          bootstrapColSize = roundNumber(12 / bootstrapColCount, 0);
-          colClass = "col-md-" + bootstrapColSize;
-        }
-      }
-    }
-    taxonQuery = row.genus + "+" + row.species;
-    if (!isNull(row.subspecies)) {
-      taxonQuery = taxonQuery + "+" + row.subspecies;
-    }
-    htmlRow = "\n\t<tr id='cndb-row" + i + "' class='cndb-result-entry' data-taxon=\"" + taxonQuery + "\" data-genus=\"" + row.genus + "\" data-species=\"" + row.species + "\">";
-    l = 0;
-    for (k in row) {
-      col = row[k];
-      if (indexOf.call(dontShowColumns, k) < 0) {
-        if (k === "authority_year") {
-          try {
-            if (!isNull(col)) {
-              try {
-                d = JSON.parse(col);
-              } catch (error1) {
-                e = error1;
-                console.warn("There was an error parsing authority_year='" + col + "', attempting to fix - ", e.message);
-                split = col.split(":");
-                year = split[1].slice(split[1].search("\"") + 1, -2);
-                year = year.replace(/"/g, "'");
-                split[1] = "\"" + year + "\"}";
-                col = split.join(":");
-                d = JSON.parse(col);
-              }
-              genus = Object.keys(d)[0];
-              species = d[genus];
-              if (toInt(row.parens_auth_genus).toBool()) {
-                genus = "(" + genus + ")";
-              }
-              if (toInt(row.parens_auth_species).toBool()) {
-                species = "(" + species + ")";
-              }
-              col = "G: " + genus + "<br/>S: " + species;
-            } else {
-              d = col;
-            }
-          } catch (error2) {
-            e = error2;
-            console.error("There was an error parsing '" + col + "'", e.message);
-            d = col;
-          }
-        }
-        if ($("#show-deprecated").polymerSelected() !== true) {
-          alt = "deprecated_scientific";
+        if (isNull(v)) {
+          allColsHaveData = false;
         } else {
-          alt = "";
+          colHasData.push(k);
         }
-        if (k !== alt) {
-          if (k === "image") {
-            if (isNull(col)) {
-              col = "<paper-icon-button icon='launch' data-href='" + _asm.affiliateQueryUrl.calPhotos + "?rel-taxon=contains&where-taxon=" + taxonQuery + "' class='newwindow calphoto click' data-taxon=\"" + taxonQuery + "\"></paper-icon-button>";
-            } else {
-              col = "<paper-icon-button icon='image:image' data-lightbox='" + uri.urlString + col + "' class='lightboximage'></paper-icon-button>";
+      }
+      if (allColsHaveData) {
+        break;
+      }
+    }
+    if (indexOf.call(colHasData, "subspecies") >= 0) {
+      requiredKeyOrder.push("subspecies");
+    }
+    ref1 = data[0];
+    for (k in ref1) {
+      v = ref1[k];
+      if (indexOf.call(requiredKeyOrder, k) < 0) {
+        if (indexOf.call(dontShowColumns, k) < 0) {
+          if (indexOf.call(colHasData, k) >= 0) {
+            requiredKeyOrder.push(k);
+          }
+        }
+      }
+    }
+    origData = data;
+    data = new Object();
+    for (i in origData) {
+      row = origData[i];
+      data[i] = new Object();
+      for (m = 0, len = requiredKeyOrder.length; m < len; m++) {
+        key = requiredKeyOrder[m];
+        data[i][key] = row[key];
+      }
+    }
+    totalLoops = 0;
+    dataArray = Object.toArray(data);
+    return (renderDataArray = function(data, firstIteration, renderChunk) {
+      var bootstrapColSize, col, d, e, error1, error2, error3, finalIteration, frameHtml, genus, html, htmlRow, j, kClass, len1, loopCleanup, nextIterationData, niceKey, o, postMessageContent, rowId, species, split, taxonQuery, wasOffThread, worker, year;
+      html = "";
+      i = 0;
+      nextIterationData = null;
+      wasOffThread = false;
+      if (!isNumber(renderChunk)) {
+        renderChunk = 100;
+      }
+      finalIteration = data.length <= renderChunk ? true : false;
+      try {
+        postMessageContent = {
+          action: "render-row",
+          data: data,
+          chunk: renderChunk,
+          firstIteration: firstIteration
+        };
+        worker = new Worker("js/serviceWorker.js");
+        console.info("Rendering list off-thread");
+        worker.addEventListener("message", function(e) {
+          var usedRenderChunk;
+          console.info("Got message back from service worker", e.data);
+          wasOffThread = true;
+          html = e.data.html;
+          nextIterationData = e.data.nextChunk;
+          usedRenderChunk = e.data.renderChunk;
+          i = e.data.loops;
+          return loopCleanup();
+        });
+        worker.postMessage(postMessageContent);
+      } catch (error1) {
+        console.log("Starting loop with i = " + i + ", renderChunk = " + renderChunk + ", data length = " + data.length, firstIteration, finalIteration);
+        for (o = 0, len1 = data.length; o < len1; o++) {
+          row = data[o];
+          ++totalLoops;
+          externalCounter = i;
+          if (toInt(i) === 0 && firstIteration) {
+            j = 0;
+            htmlHead += "\n<!-- Table Headers - " + (Object.size(row)) + " entries -->";
+            for (k in row) {
+              v = row[k];
+              ++totalLoops;
+              niceKey = k.replace(/_/g, " ");
+              niceKey = (function() {
+                switch (niceKey) {
+                  case "simple linnean subgroup":
+                    return "Group";
+                  case "major subtype":
+                    return "Clade";
+                  default:
+                    return niceKey;
+                }
+              })();
+              htmlHead += "\n\t\t<th class='text-center'>" + niceKey + "</th>";
+              bootstrapColCount++;
+              j++;
             }
+            htmlHead += "\n\t</tr>";
+            htmlHead += "\n<!-- End Table Headers -->";
+            console.log("Got " + bootstrapColCount + " display columns.");
+            bootstrapColSize = roundNumber(12 / bootstrapColCount, 0);
+            colClass = "col-md-" + bootstrapColSize;
+            frameHtml = htmlHead + htmlClose;
+            html = htmlHead;
+            $(container).html(frameHtml);
           }
-          if (k !== "genus" && k !== "species" && k !== "subspecies") {
-            kClass = k + " text-center";
-          } else {
-            kClass = k;
+          taxonQuery = row.genus + "+" + row.species;
+          if (!isNull(row.subspecies)) {
+            taxonQuery = taxonQuery + "+" + row.subspecies;
           }
-          if (k === "genus_authority" || k === "species_authority") {
-            kClass += " authority";
+          rowId = "msadb-row" + i;
+          htmlRow = "\n\t<tr id='" + rowId + "' class='cndb-result-entry' data-taxon=\"" + taxonQuery + "\" data-genus=\"" + row.genus + "\" data-species=\"" + row.species + "\">";
+          for (k in row) {
+            col = row[k];
+            ++totalLoops;
+            if (k === "authority_year") {
+              if (!isNull(col)) {
+                try {
+                  d = JSON.parse(col);
+                } catch (error2) {
+                  e = error2;
+                  try {
+                    console.warn("There was an error parsing authority_year='" + col + "', attempting to fix - ", e.message);
+                    split = col.split(":");
+                    year = split[1].slice(split[1].search("\"") + 1, -2);
+                    year = year.replace(/"/g, "'");
+                    split[1] = "\"" + year + "\"}";
+                    col = split.join(":");
+                    d = JSON.parse(col);
+                    genus = Object.keys(d)[0];
+                    species = d[genus];
+                    if (toInt(row.parens_auth_genus).toBool()) {
+                      genus = "(" + genus + ")";
+                    }
+                    if (toInt(row.parens_auth_species).toBool()) {
+                      species = "(" + species + ")";
+                    }
+                    col = "G: " + genus + "<br/>S: " + species;
+                  } catch (error3) {
+                    e = error3;
+                    console.error("There was an error parsing '" + col + "'", e.message);
+                    d = col;
+                  }
+                }
+              } else {
+                d = col;
+              }
+            }
+            if (k === "image") {
+              if (isNull(col)) {
+                col = "<paper-icon-button icon='launch' data-href='" + _asm.affiliateQueryUrl.mammalPhotos + "?rel-taxon=contains&where-taxon=" + taxonQuery + "' class='newwindow calphoto click' data-taxon=\"" + taxonQuery + "\"></paper-icon-button>";
+              } else {
+                col = "<paper-icon-button icon='image:image' data-lightbox='" + uri.urlString + col + "' class='lightboximage'></paper-icon-button>";
+              }
+            }
+
+            /*
+             * Assign classes to the rows
+             */
+            if (k !== "genus" && k !== "species" && k !== "subspecies") {
+              kClass = k + " text-center";
+            } else {
+              kClass = k;
+            }
+            if (k === "genus_authority" || k === "species_authority") {
+              kClass += " authority";
+            } else if (k === "common_name") {
+              col = smartUpperCasing(col);
+              kClass += " no-cap";
+            }
+            htmlRow += "\n\t\t<td id='" + k + "-" + i + "' class='" + kClass + " " + colClass + "'>" + col + "</td>";
           }
-          if (k === "common_name") {
-            col = smartUpperCasing(col);
-            kClass += " no-cap";
+          htmlRow += "\n\t</tr>";
+          html += htmlRow;
+          i++;
+          if (i >= renderChunk) {
+            break;
           }
-          htmlRow += "\n\t\t<td id='" + k + "-" + i + "' class='" + kClass + " " + colClass + "'>" + col + "</td>";
         }
+        console.log("Ended data loop with i = " + i + ", renderChunk = " + renderChunk);
+        loopCleanup();
       }
-      l++;
-      if (l === Object.size(row)) {
-        htmlRow += "\n\t</tr>";
-        html += htmlRow;
-      }
-    }
-    if (toInt(i) === targetCount) {
-      html = htmlHead + html + htmlClose;
-      $(container).html(html);
-      clearTimeout(renderTimeout);
-      mapNewWindows();
-      lightboxImages();
-      $(".cndb-result-entry").click(function() {
-        var accountArgs;
-        accountArgs = "genus=" + ($(this).attr("data-genus")) + "&species=" + ($(this).attr("data-species"));
-        return goTo("species-account.php?" + accountArgs);
-      });
-      doFontExceptions();
-      $("#result-count").text(" - " + result.count + " entries");
-      stopLoad();
-    }
-  }
-  if (result.method === "space_common_fallback" && !$("#space-fallback-info").exists()) {
-    noticeHtml = "<div id=\"space-fallback-info\" class=\"alert alert-info alert-dismissible center-block fade in\" role=\"alert\">\n  <button type=\"button\" class=\"close\" data-dismiss=\"alert\" aria-label=\"Close\"><span aria-hidden=\"true\">&times;</span></button>\n  <strong>Don't see what you want?</strong> We might use a slightly different name. Try <a href=\"\" class=\"alert-link\" id=\"do-instant-fuzzy\">checking the \"fuzzy\" toggle and searching again</a>, or use a shorter search term.\n</div>";
-    $("#result_container").before(noticeHtml);
-    return $("#do-instant-fuzzy").click(function(e) {
-      var doBatch;
-      e.preventDefault();
-      doBatch = function() {
-        $("#fuzzy").get(0).checked = true;
-        return performSearch();
+      return loopCleanup = function() {
+        var delayInterval, noticeHtml;
+        if (firstIteration) {
+          html += htmlClose;
+          $(container).html(html);
+          $("#result-count").text(" - " + result.count + " entries");
+          if (result.method === "space_common_fallback" && !$("#space-fallback-info").exists()) {
+            noticeHtml = "<div id=\"space-fallback-info\" class=\"alert alert-info alert-dismissible center-block fade in\" role=\"alert\">\n  <button type=\"button\" class=\"close\" data-dismiss=\"alert\" aria-label=\"Close\"><span aria-hidden=\"true\">&times;</span></button>\n  <strong>Don't see what you want?</strong> We might use a slightly different name. Try <a href=\"\" class=\"alert-link\" id=\"do-instant-fuzzy\">checking the \"fuzzy\" toggle and searching again</a>, or use a shorter search term.\n</div>";
+            $("#result_container").before(noticeHtml);
+            $("#do-instant-fuzzy").click(function(e) {
+              var doBatch;
+              e.preventDefault();
+              doBatch = function() {
+                $("#fuzzy").get(0).checked = true;
+                return performSearch();
+              };
+              return doBatch.debounce();
+            });
+          } else if ($("#space-fallback-info").exists()) {
+            $("#space-fallback-info").prop("hidden", true);
+          }
+        } else {
+          $("table#" + tableId + " tbody").append(html);
+        }
+        if (!finalIteration) {
+          elapsed = Date.now() - start;
+          if (nextIterationData == null) {
+            nextIterationData = data.slice(i);
+          }
+          console.log("Chunk rendered at " + elapsed + "ms, next bit with slice @ " + i + ":", nextIterationData);
+          if (nextIterationData.length !== 0) {
+            delayInterval = wasOffThread ? 25 : 250;
+            delay(delayInterval, function() {
+              return renderDataArray(nextIterationData, false, renderChunk);
+            });
+          } else {
+            finalIteration = true;
+          }
+        }
+        if (finalIteration) {
+          elapsed = Date.now() - start;
+          console.log("Finished rendering list in " + elapsed + "ms");
+          console.debug("Executed " + totalLoops + " loops");
+          if (elapsed > 3000) {
+            console.warn("Warning: Took greater than 3 seconds to render!");
+          }
+          stopLoad();
+          if (typeof callback === "function") {
+            try {
+              callback();
+            } catch (undefined) {}
+          }
+        }
+        clearTimeout(renderTimeout);
+        mapNewWindows();
+        lightboxImages();
+        $(".cndb-result-entry").unbind().click(function() {
+          var accountArgs;
+          accountArgs = "genus=" + ($(this).attr("data-genus")) + "&species=" + ($(this).attr("data-species"));
+          return goTo("species-account.php?" + accountArgs);
+        });
+        return doFontExceptions();
       };
-      return doBatch.debounce();
-    });
-  } else if ($("#space-fallback-info").exists()) {
-    return $("#space-fallback-info").prop("hidden", true);
-  }
+    })(dataArray, true, 100);
+  });
+  return false;
 };
 
 parseTaxonYear = function(taxonYearString, strict) {
@@ -3312,8 +3425,9 @@ $(function() {
       console.debug("Server query got", result);
       if (result.status === true && result.count > 0) {
         console.log("Got a valid result, formatting " + result.count + " results.");
-        formatSearchResults(result);
-        checkLaggedUpdate(result);
+        formatSearchResults(result, void 0, function() {
+          return checkLaggedUpdate(result);
+        });
         return false;
       }
       console.warn("Bad initial search");

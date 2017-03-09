@@ -120,7 +120,7 @@ checkColumnExists($_REQUEST['only']);
 checkColumnExists($_REQUEST['include']);
 checkColumnExists($_REQUEST['order']);
 
-$order_by = isset($_REQUEST['order']) ? $_REQUEST['order']:"genus,species,subspecies";
+$order_by = isset($_REQUEST['order']) ? $_REQUEST['order']:"genus,species,subspecies,common_name";
 
 $params = array();
 $boolean_type = false; # This is always set by the filter
@@ -884,8 +884,10 @@ function getTaxonIucnData($taxonBase) {
             $ref["id"] = $taxon["id"];
             unset($taxon["id"]);
             $saveResult = $db->updateEntry($taxon, $ref);
-            $taxon["saveResult"] = $saveResult;
+            $taxon["save_result"] = $saveResult;
         }
+        $taxon["did_update"] = $flagSave;
+
         $taxon["iucn"] = $iucnTaxon;
         unset($taxon["id"]);
     }
@@ -900,7 +902,7 @@ function getTaxonIucnData($taxonBase) {
             # Check for important empty fields ....
             $doIucn = false;
             foreach($iucnCanProvide as $field=>$iucnField) {
-                if(empty($taxon[$field])) {
+                if(empty($taxon[$field]) && isset($taxon[$field])) {
                     $doIucn = true;
                     break;
                 }

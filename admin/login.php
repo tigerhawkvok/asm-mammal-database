@@ -116,7 +116,7 @@ if($_REQUEST['q']=='logout') {
     $deferredJS.="\n$.removeCookie('$cookiekey',{path:'/'});";
     $deferredJS.="\n$.removeCookie('$cookiepic',{path:'/'});";
     $deferredJS.="\nresetLoginState();";
-    $deferredScriptBlock = "<script type='text/javascript' src='https://ajax.googleapis.com/ajax/libs/jquery/2.1.1/jquery.min.js'></script>
+    $deferredScriptBlock = "<script type='text/javascript' src='https://ajax.googleapis.com/ajax/libs/jquery/2.2.4/jquery.min.js'></script>
 <script type='text/javascript' src='".$relative_path."js/loadJQuery.js'></script>
 <script type='text/javascript'>
 var loadLast = function () {

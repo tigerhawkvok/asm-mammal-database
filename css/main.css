@@ -6823,18 +6823,6 @@ html >>> paper-dialog-scrollable {
 #eutheria-extra {
   display: inline-block;
 }
-#modal-taxon,
-#modal-taxon-edit {
-  position: fixed !important;
-  max-height: 75vh;
-  top: 12.5vh;
-}
-@media (max-width: 991px) {
-  #modal-taxon,
-  #modal-taxon-edit {
-    top: 6.5vh;
-  }
-}
 #modal-taxon paper-dialog-scrollable#modal-taxon-editor,
 #modal-taxon-edit paper-dialog-scrollable#modal-taxon-editor {
   max-height: 66vh;
@@ -7055,6 +7043,9 @@ copyright-statement {
   margin-top: 1.25rem;
   margin-bottom: 10px;
   color: #737373;
+}
+#modal-taxon-editor .filled-editor-dropdown paper-dropdown-menu {
+  width: 90%;
 }
 #modal-taxon-editor paper-input {
   display: block;

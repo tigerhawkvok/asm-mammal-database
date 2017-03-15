@@ -3,7 +3,7 @@
  * The main coffeescript file for administrative stuff
  * Triggered from admin-page.html
  */
-var adminParams, createDuplicateTaxon, createNewTaxon, deleteTaxon, fillEmptyCommonName, handleDeprecatedInput, handleDragDropImage, loadAdminUi, loadModalTaxonEditor, lookupEditorSpecies, renderAdminSearchResults, renderDeprecatedFromDatabase, saveEditorEntry, verifyLoginCredentials,
+var adminParams, createDuplicateTaxon, createNewTaxon, deleteTaxon, fetchEditorDropdownContent, fillEmptyCommonName, handleDeprecatedInput, handleDragDropImage, loadAdminUi, loadModalTaxonEditor, lookupEditorSpecies, newColumnHelper, prefetchEditorDropdowns, renderAdminSearchResults, renderDeprecatedFromDatabase, saveEditorEntry, verifyLoginCredentials,
   indexOf = [].indexOf || function(item) { for (var i = 0, l = this.length; i < l; i++) { if (i in this && this[i] === item) return i; } return -1; };
 
 adminParams = new Object();
@@ -27,8 +27,11 @@ loadAdminUi = function() {
   console.log("Loading admin UI");
   try {
     verifyLoginCredentials(function(data) {
-      var cookieName, mainHtml, searchForm;
+      var cookieFullName, cookieName, mainHtml, searchForm;
       cookieName = uri.domain + "_name";
+      cookieFullName = uri.domain + "_fullname";
+      adminParams.cookieName = cookieName;
+      adminParams.cookieFullName = cookieFullName;
       mainHtml = "<h3 class=\"col-xs-12\">\n  Welcome, " + ($.cookie(cookieName)) + "\n  <span id=\"pib-wrapper-settings\" class=\"pib-wrapper\" data-toggle=\"tooltip\" title=\"User Settings\" data-placement=\"bottom\">\n    <paper-icon-button icon='settings-applications' class='click' data-url='" + data.login_url + "'></paper-icon-button>\n  </span>\n  <span id=\"pib-wrapper-exit-to-app\" class=\"pib-wrapper\" data-toggle=\"tooltip\" title=\"Go to SADB app\" data-placement=\"bottom\">\n    <paper-icon-button icon='exit-to-app' class='click' data-url='" + uri.urlString + "' id=\"app-linkout\"></paper-icon-button>\n  </span>\n</h3>\n<div id='admin-actions-block' class=\"col-xs-12\">\n  <div class='bs-callout bs-callout-info'>\n    <p>Please be patient while the administrative interface loads.</p>\n  </div>\n</div>";
       $("main #main-body").html(mainHtml);
       bindClicks();
@@ -215,8 +218,167 @@ renderAdminSearchResults = function(containerSelector) {
   });
 };
 
+fetchEditorDropdownContent = function(column, columnLabel, updateDom, localSave) {
+  var colIdLabel;
+  if (column == null) {
+    column = "simple_linnean_goup";
+  }
+  if (updateDom == null) {
+    updateDom = true;
+  }
+  if (localSave == null) {
+    localSave = true;
+  }
+
+  /*
+   * Ping the server for a list of unique entries for a given column
+   */
+  if (typeof (typeof _asm !== "undefined" && _asm !== null ? _asm.dropdownPopulation : void 0) !== "object") {
+    if (typeof _asm !== "object") {
+      window._asm = new Object();
+    }
+    _asm.dropdownPopulation = new Object();
+  }
+  colIdLabel = column.replace(/\_/g, "-");
+  if (isNull(columnLabel)) {
+    columnLabel = column.replace(/\_/g, " ").toTitleCase();
+  }
+  _asm.dropdownPopulation[column] = {
+    html: "<paper-input label=\"" + columnLabel + "\" id=\"edit-" + colIdLabel + "\" name=\"edit-" + colIdLabel + "\" class=\"" + column + "\" floatingLabel></paper-input>"
+  };
+  $.get(searchParams.targetApi, "get_unique=true&col=" + column, "json").done(function(result) {
+    var html, len, listHtml, m, selector, value, valueArray;
+    if (result.status !== true) {
+      console.warn("Didn't get a valid set of values for column '" + column + "': " + result.error);
+      return false;
+    }
+    valueArray = Object.toArray(result.values);
+    listHtml = "";
+    for (m = 0, len = valueArray.length; m < len; m++) {
+      value = valueArray[m];
+      listHtml += "<paper-item data-value=\"" + value + "\" data-column=\"" + column + "\">" + value + "</paper-item>\n";
+    }
+    html = "<section class=\"row filled-editor-dropdown\">\n<div class=\"col-xs-9\">\n  <paper-dropdown-menu label=\"" + columnLabel + "\" id=\"edit-" + colIdLabel + "\" name=\"edit-" + colIdLabel + "\" class=\"" + column + "\" data-column=\"" + column + "\">\n    <paper-listbox class=\"dropdown-content\">\n      " + listHtml + "\n    </paper-listbox>\n  </paper-dropdown-menu>\n</div>\n<div class=\"col-xs-3\">\n  <paper-icon-button class=\"add-col-value\" data-column=" + column + " icon=\"icons:add-circle\" title=\"Add new " + columnLabel + "\" data-toggle=\"tooltip\"></paper-icon-button>\n</div>\n</section>";
+    if (localSave) {
+      _asm.dropdownPopulation[column] = {
+        values: valueArray,
+        html: html,
+        selector: "#edit-" + colIdLabel
+      };
+    }
+    if (updateDom) {
+      selector = "#edit-" + colIdLabel;
+      if ($(selector).exists()) {
+        $(selector).replaceWith(html);
+      }
+    }
+    return false;
+  }).fail(function(result, error) {
+    console.warn("Unable to get dropdown content for '" + column + "'");
+    console.warn(result, error);
+    return _asm.dropdownPopulation[column] = {
+      html: "<paper-input label=\"" + columnLabel + "\" id=\"edit-" + colIdLabel + "\" name=\"edit-" + colIdLabel + "\" class=\"" + column + "\" floatingLabel></paper-input>"
+    };
+  });
+  return false;
+};
+
+newColumnHelper = function(selector) {
+  if (selector == null) {
+    selector = ".add-col-value";
+  }
+  $(selector).unbind();
+  _asm._addColumnDialog = function(el) {
+    var html, targetColumn;
+    targetColumn = $(el).attr("data-column");
+    if (isNull(targetColumn)) {
+      console.error("Unable to show dialog -- invalud column designator");
+      return false;
+    }
+    console.debug("Add column fired -- target is " + targetColumn);
+    $("paper-dialog#add-column-value").remove();
+    html = "<paper-dialog id=\"add-column-value\" data-column=\"" + targetColumn + "\" modal>\n  <h2>Add New <code>" + (targetColumn.replace(/[\_-]/g, " ")) + "</code> Value</h2>\n  <paper-dialog-scrollable>\n    <paper-input class=\"new-col-value\" label=\"Data Value\" floatingLabel autofocus></paper-input>\n  </paper-dialog-scrollable>\n  <div class=\"buttons\">\n    <paper-button dialog-dismiss>Cancel</paper-button>\n    <paper-button class=\"add-value\">Add</paper-button>\n  </div>\n</paper-dialog>";
+    $("body").append(html);
+    _asm._saveNewCol = function() {
+      var item, listHtml, listbox, newValue;
+      newValue = $("#add-column-value paper-input.new-col-value").val();
+      console.log("Going to test and add '" + newValue + "'");
+      if (indexOf.call(_asm.dropdownPopulation[targetColumn].values, newValue) >= 0) {
+        console.warn("Invalid value: already exists");
+        p$("#add-column-value paper-input.new-col-value").errorMessage = "This value already exists";
+        p$("#add-column-value paper-input.new-col-value").invalid = true;
+        p$("#add-column-value").refit();
+        return false;
+      }
+      item = document.createElement("paper-item");
+      item.setAttribute("data-value", newValue);
+      item.setAttribute("data-column", targetColumn);
+      item.textContent = newValue;
+      listHtml = "<paper-item data-value=\"" + newValue + "\" data-column=\"" + targetColumn + "\">" + newValue + "</paper-item>\n";
+      _asm.dropdownPopulation[targetColumn].values.push(newValue);
+      _asm.dropdownPopulation[targetColumn].values.sort();
+      listbox = p$("paper-dropdown-menu[data-column='" + targetColumn + "'] paper-listbox");
+      Polymer.dom(listbox).appendChild(item);
+      delay(250, function() {
+        $("paper-dropdown-menu[data-column='" + targetColumn + "']").polymerSelected(newValue, true);
+        return p$("#add-column-value").close();
+      });
+      return false;
+    };
+    $("#add-column-value paper-button.add-value").click(function() {
+      var error1;
+      try {
+        _asm._saveNewCol.debounce(50);
+      } catch (error1) {
+        console.warn("Couldn't debounce save new col call");
+        stopLoadError("There was a problem saving this data");
+      }
+      return false;
+    });
+    $("#add-column-value paper-input").keyup(function(e) {
+      var error1, kc;
+      kc = e.keyCode ? e.keyCode : e.which;
+      if (kc === 13) {
+        try {
+          _asm._saveNewCol.debounce(50);
+        } catch (error1) {
+          console.warn("Couldn't debounce save new col call");
+          stopLoadError("There was a problem saving this data");
+        }
+      }
+      return false;
+    });
+    p$("#add-column-value").open();
+    return false;
+  };
+  return $(selector).click(function() {
+    console.debug("Add column clicked");
+    _asm._addColumnDialog.debounce(50, null, null, this);
+    return false;
+  });
+};
+
+prefetchEditorDropdowns = function() {
+  var col, label, needCols;
+  needCols = {
+    major_type: "Clade (eg., boreoeutheria)",
+    major_subtype: "Sub-Clade (eg., euarchontoglires)",
+    linnean_order: null,
+    linnean_family: null,
+    simple_linnean_group: "Common Group (eg., metatheria)",
+    simple_linnean_subgroup: "Common type (eg., bat)"
+  };
+  for (col in needCols) {
+    label = needCols[col];
+    fetchEditorDropdownContent(col, label);
+  }
+  return false;
+};
+
+window.prefetchEditorDropdowns = prefetchEditorDropdowns;
+
 loadModalTaxonEditor = function(extraHtml, affirmativeText) {
-  var editHtml, html;
+  var e, editHtml, error1, html, prettyDate, today;
   if (extraHtml == null) {
     extraHtml = "";
   }
@@ -227,12 +389,21 @@ loadModalTaxonEditor = function(extraHtml, affirmativeText) {
   /*
    * Load a modal taxon editor
    */
-  editHtml = "<paper-input label=\"Genus\" id=\"edit-genus\" name=\"edit-genus\" class=\"genus\" floatingLabel></paper-input>\n<paper-input label=\"Species\" id=\"edit-species\" name=\"edit-species\" class=\"species\" floatingLabel></paper-input>\n<paper-input label=\"Subspecies\" id=\"edit-subspecies\" name=\"edit-subspecies\" class=\"subspecies\" floatingLabel></paper-input>\n<iron-label>\n  Alien species?\n  <paper-toggle-button id=\"is-alien\"  checked=\"false\"></paper-toggle-button>\n</iron-label>\n<paper-input label=\"Common Name\" id=\"edit-common-name\" name=\"edit-common-name\"  class=\"common_name\" floatingLabel></paper-input>\n<paper-input label=\"Deprecated Scientific Names\" id=\"edit-deprecated-scientific\" name=\"edit-depreated-scientific\" floatingLabel aria-describedby=\"deprecatedHelp\"></paper-input>\n  <span class=\"help-block\" id=\"deprecatedHelp\">List names here in the form <span class=\"code\">\"Genus species\":\"Authority: year\",\"Genus species\":\"Authority: year\",[...]</span>.<br/>There should be no spaces between the quotes and comma or colon. If there are, it may not save correctly.</span>\n<paper-input label=\"Clade\" class=\"capitalize\" id=\"edit-major-type\" name=\"edit-major-type\" floatingLabel></paper-input>\n<paper-input label=\"Subtype\" class=\"capitalize\" id=\"edit-major-subtype\" name=\"edit-major-subtype\" floatingLabel></paper-input>\n<paper-input label=\"Minor clade / 'Family'\" id=\"edit-minor-type\" name=\"edit-minor-type\" floatingLabel></paper-input>\n<paper-input label=\"Linnean Order\" id=\"edit-linnean-order\" name=\"edit-linnean-order\" class=\"linnean_order\" floatingLabel></paper-input>\n<paper-input label=\"Common Type (eg., 'lizard')\" id=\"edit-major-common-type\" name=\"edit-major-common-type\" class=\"major_common_type\" floatingLabel></paper-input>\n<paper-input label=\"Genus authority\" id=\"edit-genus-authority\" name=\"edit-genus-authority\" class=\"genus_authority\" floatingLabel></paper-input>\n<paper-input label=\"Genus authority year\" id=\"edit-gauthyear\" name=\"edit-gauthyear\" floatingLabel></paper-input>\n<iron-label>\n  Use Parenthesis for Genus Authority\n  <paper-toggle-button id=\"genus-authority-parens\"  checked=\"false\"></paper-toggle-button>\n</iron-label>\n<paper-input label=\"Species authority\" id=\"edit-species-authority\" name=\"edit-species-authority\" class=\"species_authority\" floatingLabel></paper-input>\n<paper-input label=\"Species authority year\" id=\"edit-sauthyear\" name=\"edit-sauthyear\" floatingLabel></paper-input>\n<iron-label>\n  Use Parenthesis for Species Authority\n  <paper-toggle-button id=\"species-authority-parens\" checked=\"false\"></paper-toggle-button>\n</iron-label>\n<br/><br/>\n<iron-autogrow-textarea id=\"edit-notes\" rows=\"5\" aria-describedby=\"notes-help\" placeholder=\"Notes\">\n  <textarea placeholder=\"Notes\" id=\"edit-notes-textarea\" name=\"edit-notes-textarea\" aria-describedby=\"notes-help\" rows=\"5\"></textarea>\n</iron-autogrow-textarea>\n<span class=\"help-block\" id=\"notes-help\">You can write your notes in Markdown. (<a href=\"https://daringfireball.net/projects/markdown/syntax\" \"onclick='window.open(this.href); return false;' onkeypress='window.open(this.href); return false;'\">Official Full Syntax Guide</a>)</span>\n<div id=\"upload-image\"></div>\n<span class=\"help-block\" id=\"upload-image-help\">You can drag and drop an image above, or enter its server path below.</span>\n<paper-input label=\"Image\" id=\"edit-image\" name=\"edit-image\" floatingLabel aria-describedby=\"imagehelp\"></paper-input>\n  <span class=\"help-block\" id=\"imagehelp\">The image path here should be relative to the <span class=\"code\">public_html/</span> directory.</span>\n<paper-input label=\"Image Credit\" id=\"edit-image-credit\" name=\"edit-image-credit\" floatingLabel></paper-input>\n<paper-input label=\"Image License\" id=\"edit-image-license\" name=\"edit-image-license\" floatingLabel></paper-input>\n<paper-input label=\"Taxon Credit\" id=\"edit-taxon-credit\" name=\"edit-taxon-credit\" floatingLabel aria-describedby=\"taxon-credit-help\"></paper-input>\n  <span class=\"help-block\" id=\"taxon-credit-help\">This will be displayed as \"Taxon information by [your entry].\"</span>\n<paper-input label=\"Taxon Credit Date\" id=\"edit-taxon-credit-date\" name=\"edit-taxon-credit-date\" floatingLabel></paper-input>\n" + extraHtml + "\n<input type=\"hidden\" name=\"edit-taxon-author\" id=\"edit-taxon-author\" value=\"\" />";
+  today = new Date();
+  prettyDate = today.toISOString().split("T")[0];
+  editHtml = "<paper-input label=\"Genus\" id=\"edit-genus\" name=\"edit-genus\" class=\"genus\" floatingLabel></paper-input>\n<paper-input label=\"Species\" id=\"edit-species\" name=\"edit-species\" class=\"species\" floatingLabel></paper-input>\n<paper-input label=\"Subspecies\" id=\"edit-subspecies\" name=\"edit-subspecies\" class=\"subspecies\" floatingLabel></paper-input>\n<paper-input label=\"Common Name\" id=\"edit-common-name\" name=\"edit-common-name\"  class=\"common_name\" floatingLabel></paper-input>\n<paper-input label=\"Deprecated Scientific Names\" id=\"edit-deprecated-scientific\" name=\"edit-depreated-scientific\" floatingLabel aria-describedby=\"deprecatedHelp\"></paper-input>\n  <span class=\"help-block\" id=\"deprecatedHelp\">List names here in the form <span class=\"code\">\"Genus species\":\"Authority: year\",\"Genus species\":\"Authority: year\",[...]</span>.<br/>There should be no spaces between the quotes and comma or colon. If there are, it may not save correctly.</span>\n" + _asm.dropdownPopulation.major_type.html + "\n" + _asm.dropdownPopulation.major_subtype.html + "\n" + _asm.dropdownPopulation.linnean_order.html + "\n" + _asm.dropdownPopulation.linnean_family.html + "\n" + _asm.dropdownPopulation.simple_linnean_group.html + "\n" + _asm.dropdownPopulation.simple_linnean_subgroup.html + "\n<paper-input label=\"Genus authority\" id=\"edit-genus-authority\" name=\"edit-genus-authority\" class=\"genus_authority\" floatingLabel></paper-input>\n<paper-input label=\"Genus authority year\" id=\"edit-gauthyear\" name=\"edit-gauthyear\" floatingLabel></paper-input>\n<iron-label>\n  Use Parenthesis for Genus Authority\n  <paper-toggle-button id=\"genus-authority-parens\"  checked=\"false\"></paper-toggle-button>\n</iron-label>\n<paper-input label=\"Species authority\" id=\"edit-species-authority\" name=\"edit-species-authority\" class=\"species_authority\" floatingLabel></paper-input>\n<paper-input label=\"Species authority year\" id=\"edit-sauthyear\" name=\"edit-sauthyear\" floatingLabel></paper-input>\n<iron-label>\n  Use Parenthesis for Species Authority\n  <paper-toggle-button id=\"species-authority-parens\" checked=\"false\"></paper-toggle-button>\n</iron-label>\n<br/><br/>\n<paper-input label=\"ASM ID Number\" id=\"edit-internal-id\" name=\"edit-internal-id\" floatingLabel></paper-input>\n<iron-autogrow-textarea id=\"edit-notes\" rows=\"5\" aria-describedby=\"notes-help\" placeholder=\"Notes\">\n  <textarea placeholder=\"Notes\" id=\"edit-notes-textarea\" name=\"edit-notes-textarea\" aria-describedby=\"notes-help\" rows=\"5\"></textarea>\n</iron-autogrow-textarea>\n<span class=\"help-block\" id=\"notes-help\">You can write your notes in Markdown. (<a href=\"https://daringfireball.net/projects/markdown/syntax\" \"onclick='window.open(this.href); return false;' onkeypress='window.open(this.href); return false;'\">Official Full Syntax Guide</a>)</span>\n<br/><br/>\n<paper-input label=\"Data Source\" id=\"edit-source\" name=\"edit-source\" floatingLabel></paper-input>\n<paper-input label=\"Data Citation\" id=\"edit-citation\" name=\"edit-source\" floatingLabel></paper-input>\n<div id=\"upload-image\"></div>\n<span class=\"help-block\" id=\"upload-image-help\">You can drag and drop an image above, or enter its server path below.</span>\n<paper-input label=\"Image\" id=\"edit-image\" name=\"edit-image\" floatingLabel aria-describedby=\"imagehelp\"></paper-input>\n  <span class=\"help-block\" id=\"imagehelp\">The image path here should be relative to the <span class=\"code\">public_html/</span> directory.</span>\n<paper-input label=\"Image Credit\" id=\"edit-image-credit\" name=\"edit-image-credit\" floatingLabel></paper-input>\n<paper-input label=\"Image License\" id=\"edit-image-license\" name=\"edit-image-license\" floatingLabel></paper-input>\n<paper-input label=\"Taxon Credit\" id=\"edit-taxon-credit\" name=\"edit-taxon-credit\" floatingLabel aria-describedby=\"taxon-credit-help\" value=\"" + ($.cookie(adminParams.cookieFullName)) + "\"></paper-input>\n  <span class=\"help-block\" id=\"taxon-credit-help\">This will be displayed as \"Taxon information by [your entry].\"</span>\n<paper-input label=\"Taxon Credit Date\" id=\"edit-taxon-credit-date\" name=\"edit-taxon-credit-date\" floatingLabel value=\"" + prettyDate + "\"></paper-input>\n" + extraHtml + "\n<input type=\"hidden\" name=\"edit-taxon-author\" id=\"edit-taxon-author\" value=\"\" />";
   html = "<paper-dialog modal id='modal-taxon-edit' entry-animation=\"scale-up-animation\" exit-animation=\"fade-out-animation\">\n  <h2 id=\"editor-title\">Taxon Editor</h2>\n  <paper-dialog-scrollable id='modal-taxon-editor'>\n    " + editHtml + "\n  </paper-dialog-scrollable>\n  <div class=\"buttons\">\n    <paper-button id='close-editor' dialog-dismiss>Cancel</paper-button>\n    <paper-button id='duplicate-taxon'>Duplicate</paper-button>\n    <paper-button id='save-editor'>" + affirmativeText + "</paper-button>\n  </div>\n</paper-dialog>";
   if ($("#modal-taxon-edit").exists()) {
     $("#modal-taxon-edit").remove();
   }
   $("#search-results").after(html);
+  try {
+    newColumnHelper();
+  } catch (error1) {
+    e = error1;
+    console.warn("Couldn't bind columns: " + e.message);
+    console.warn(e.stack);
+  }
   handleDragDropImage();
   $("#modal-taxon-edit").unbind();
   d$("#save-editor").unbind();
@@ -400,8 +571,9 @@ lookupEditorSpecies = function(taxon) {
     console.warn("Pinging with", "" + uri.urlString + searchParams.targetApi + "?q=" + taxon);
   }
   $.get(searchParams.targetApi, args, "json").done(function(result) {
-    var category, col, colSplit, d, data, e, error1, error2, error3, error4, fieldSelector, modalElement, speciesString, tempSelector, textarea, toggleColumns, whoEdited, width, year;
+    var authorityParts, category, col, colAsDropdownExists, colSplit, d, data, dropdownTentativeSelector, e, error1, error2, fieldSelector, hasParens, modalElement, speciesString, tempSelector, textarea, today, toggleColumns, whoEdited, width, year;
     try {
+      console.debug("Admin lookup rending editor UI for", result);
       data = result.result[0];
       if (data == null) {
         stopLoadError("Sorry, there was a problem parsing the information for this taxon. If it persists, you may have to fix it manually.");
@@ -427,23 +599,52 @@ lookupEditorSpecies = function(taxon) {
         }
         data.deprecated_scientific[(originalNames.genus.toTitleCase()) + " " + speciesString] = "AUTHORITY: YEAR";
       }
-      toggleColumns = ["parens_auth_genus", "parens_auth_species", "is_alien"];
+      toggleColumns = ["parens_auth_genus", "parens_auth_species"];
       for (col in data) {
         d = data[col];
         try {
           if (typeof d === "string") {
             d = d.trim();
           }
-        } catch (error2) {
-          e = error2;
-        }
+        } catch (undefined) {}
         if (col === "id") {
           $("#taxon-id").attr("value", d);
         }
+        colAsDropdownExists = false;
+        try {
+          dropdownTentativeSelector = "#edit-" + (col.replace(/\_/g, "-"));
+          if ($(dropdownTentativeSelector).get(0).tagName.toLowerCase() === "paper-dropdown-menu") {
+            colAsDropdownExists = true;
+          }
+        } catch (undefined) {}
+        console.debug("Col editor exists for '" + dropdownTentativeSelector + "'?", colAsDropdownExists);
+        if (colAsDropdownExists) {
+          console.debug("Trying to polymer-select", d);
+          $(dropdownTentativeSelector).polymerSelected(d, true);
+        }
+        if (col === "species_authority" || col === "genus_authority") {
+          if (!isNull(d.match(/\(?\w+, ?[0-9]{4}\)?/g))) {
+            hasParens = d.search(/\(/) >= 0 && d.search(/\)/) >= 0;
+            authorityParts = d.replace(/[\(\)]/g, "").split(",");
+            d = authorityParts[0].trim();
+            year = toInt(authorityParts[1]);
+            if (col === "genus_authority") {
+              $("#edit-gauthyear").attr("value", year);
+            }
+            if (col === "species_authority") {
+              $("#edit-sauthyear").attr("value", year);
+            }
+            if (hasParens) {
+              p$("#" + (col.replace(/\_/g, "-")) + "-parens").checked = true;
+            }
+          }
+        }
         if (col === "authority_year") {
           year = parseTaxonYear(d);
-          $("#edit-gauthyear").attr("value", year.genus);
-          $("#edit-sauthyear").attr("value", year.species);
+          if (typeof year === "object") {
+            $("#edit-gauthyear").attr("value", year.genus);
+            $("#edit-sauthyear").attr("value", year.species);
+          }
         } else if (indexOf.call(toggleColumns, col) >= 0) {
           colSplit = col.split("_");
           if (colSplit[0] === "parens") {
@@ -462,6 +663,16 @@ lookupEditorSpecies = function(taxon) {
           }
           whoEdited = isNull($.cookie(uri.domain + "_fullname")) ? $.cookie(uri.domain + "_user") : $.cookie(uri.domain + "_fullname");
           d$("#edit-taxon-author").attr("value", whoEdited);
+        } else if (col === "taxon_credit") {
+          fieldSelector = "#edit-" + (col.replace(/_/g, "-"));
+          p$(fieldSelector).value = $.cookie(adminParams.cookieFullName);
+        } else if (col === "taxon_credit_date") {
+          if (isNull(d)) {
+            today = new Date();
+            d = today.toISOString().split("T")[0];
+            fieldSelector = "#edit-" + (col.replace(/_/g, "-"));
+            p$(fieldSelector).value = d;
+          }
         } else {
           fieldSelector = "#edit-" + (col.replace(/_/g, "-"));
           if (col === "deprecated_scientific") {
@@ -477,34 +688,22 @@ lookupEditorSpecies = function(taxon) {
           } else {
             width = $("#modal-taxon-edit").width() * .9;
             d$(fieldSelector).css("width", width + "px");
-            textarea = d$(fieldSelector).get(0).textarea;
+            textarea = p$(fieldSelector).textarea;
             $(textarea).text(d);
-            try {
-              d$(fieldSelector).get(0)._update();
-            } catch (error3) {
-              e = error3;
-              console.warn("Couldn't update the textarea! See", "https://github.com/PolymerElements/iron-autogrow-textarea/issues/24");
-            }
           }
         }
       }
-      modalElement = $("#modal-taxon-edit")[0];
+      modalElement = p$("#modal-taxon-edit");
       $("#modal-taxon-edit").on("iron-overlay-opened", function() {
-        modalElement.fit();
-        modalElement.scrollTop = 0;
-        if (toFloat($(modalElement).css("top").slice(0, -2)) > $(window).height()) {
-          $(modalElement).css("top", "12.5vh");
-        }
-        return delay(250, function() {
-          return modalElement.fit();
-        });
+        return p$("#modal-taxon-edit").refit();
       });
-      modalElement.sizingTarget = d$("#modal-taxon-editor")[0];
       safariDialogHelper("#modal-taxon-edit");
       return stopLoad();
-    } catch (error4) {
-      e = error4;
-      return stopLoadError("Unable to populate the editor for this taxon - " + e.message);
+    } catch (error2) {
+      e = error2;
+      stopLoadError("Unable to populate the editor for this taxon - " + e.message);
+      console.error("Error populating the taxon popup -- " + e.message);
+      return console.warn(e.stack);
     }
   }).fail(function(result, status) {
     return stopLoadError("There was a server error populating this taxon. Please try again.");
@@ -513,7 +712,7 @@ lookupEditorSpecies = function(taxon) {
 };
 
 saveEditorEntry = function(performMode) {
-  var args, auth, authYearString, authority, authorityA, col, completionErrorMessage, consoleError, dep, depA, depS, depString, e, error, error1, error2, error3, escapeCompletion, examineIds, gYear, hash, id, item, k, keepCase, len, link, m, nullTest, requiredNotEmpty, s64, sYear, saveObject, saveString, secret, selectorSample, spilloverError, taxon, testAuthorityYear, trimmedYearString, userVerification, val, year;
+  var args, auth, authYearString, authority, authorityA, col, colAsDropdownExists, completionErrorMessage, consoleError, dep, depA, depS, depString, dropdownTentativeSelector, e, err, error, error1, error2, error3, error4, error5, escapeCompletion, examineIds, gYear, hash, id, item, k, keepCase, len, link, m, nullTest, parsedDate, requiredNotEmpty, s64, sYear, saveObject, saveString, secret, selectorSample, spilloverError, taxon, testAuthorityYear, trimmedYearString, userVerification, val, year;
   if (performMode == null) {
     performMode = "save";
   }
@@ -522,7 +721,7 @@ saveEditorEntry = function(performMode) {
    * Send an editor state along with login credentials,
    * and report the save result back to the user
    */
-  examineIds = ["genus", "species", "subspecies", "common-name", "major-type", "major-common-type", "major-subtype", "minor-type", "linnean-order", "genus-authority", "species-authority", "notes", "image", "image-credit", "image-license", "taxon-author", "taxon-credit", "taxon-credit-date"];
+  examineIds = ["genus", "species", "subspecies", "common-name", "major-type", "major-subtype", "linnean-order", "linnean-family", "simple-linnean-group", "simple-linnean-subgroup", "genus-authority", "species-authority", "notes", "image", "image-credit", "image-license", "taxon-author", "taxon-credit", "taxon-credit-date", "internal_id", "source", "citation"];
   saveObject = new Object();
   escapeCompletion = false;
   d$("paper-input").removeAttr("invalid");
@@ -624,7 +823,7 @@ saveEditorEntry = function(performMode) {
         auth = authorityA[0].trim();
         trimmedYearString = authorityA[1].trim();
         if (trimmedYearString.search(",") !== -1) {
-          throw Error("Looks like there may be an extra space, or forgotten \", near '" + trimmedYearString + "'");
+          throw Error("Looks like there may be an extra space, or forgotten \", near '" + trimmedYearString + "' ");
         }
         year = testAuthorityYear(trimmedYearString, true);
         console.log("Validated", auth, year);
@@ -659,12 +858,39 @@ saveEditorEntry = function(performMode) {
     id = examineIds[k];
     col = id.replace(/-/g, "_");
     if (col !== "notes") {
-      val = d$("#edit-" + id).val().trim();
+      colAsDropdownExists = false;
+      try {
+        dropdownTentativeSelector = "#edit-" + (col.replace(/\_/g, "-"));
+        if ($(dropdownTentativeSelector).get(0).tagName.toLowerCase() === "paper-dropdown-menu") {
+          colAsDropdownExists = true;
+        }
+      } catch (undefined) {}
+      console.debug("Col editor exists for '" + dropdownTentativeSelector + "'?", colAsDropdownExists);
+      if (colAsDropdownExists) {
+        val = $(dropdownTentativeSelector).polymerSelected();
+      } else {
+        try {
+          val = d$("#edit-" + id).val().trim();
+        } catch (error4) {
+          val = "";
+          err = "Unable to get value for " + id;
+          console.warn(err);
+          toastStatusMessage(err);
+        }
+      }
     } else {
       val = d$("#edit-notes").get(0).textarea.value;
     }
     if (indexOf.call(keepCase, col) < 0) {
-      val = val.toLowerCase();
+      try {
+        val = val.toLowerCase();
+      } catch (error5) {
+        e = error5;
+        console.warn("Column '" + col + "' threw error for value '" + val + "': " + e.message);
+        if (isNull(val)) {
+          val = "";
+        }
+      }
     }
     switch (id) {
       case "genus":
@@ -696,7 +922,15 @@ saveEditorEntry = function(performMode) {
             spilloverError = "This cannot be empty if an image is provided";
           }
           if (selectorSample === "#edit-taxon-credit-date") {
-            spilloverError = "If you have a taxon credit, it also needs a date";
+            parsedDate = new Date(val);
+            if (parsedDate === "Invalid Date") {
+              spilloverError = "We couldn't understand your date format. Please try again.";
+              val = null;
+            } else {
+              val = parsedDate.toISOString().split("T")[0];
+              $(selectorSample).attr("value", val);
+              spilloverError = "If you have a taxon credit, it also needs a date";
+            }
           }
           if (isNull(val)) {
             d$("#edit-" + id).attr("error-message", spilloverError).attr("invalid", "invalid");
@@ -719,7 +953,6 @@ saveEditorEntry = function(performMode) {
   saveObject.id = d$("#taxon-id").val();
   saveObject.parens_auth_genus = d$("#genus-authority-parens").polymerChecked();
   saveObject.parens_auth_species = d$("#species-authority-parens").polymerChecked();
-  saveObject.is_alien = d$("#is-alien").polymerChecked();
   if (performMode === "save") {
     if (!isNumber(saveObject.id)) {
       animateLoad();
@@ -917,9 +1150,12 @@ $(function() {
       return openTab(adminParams.adminPageUrl);
     });
   }
-  return loadJS("bower_components/bootstrap/dist/js/bootstrap.min.js", function() {
+  loadJS("bower_components/bootstrap/dist/js/bootstrap.min.js", function() {
     return $("[data-toggle='tooltip']").tooltip();
   });
+  try {
+    return prefetchEditorDropdowns();
+  } catch (undefined) {}
 });
 
 //# sourceMappingURL=maps/admin.js.map

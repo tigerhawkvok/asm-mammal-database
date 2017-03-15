@@ -34,7 +34,7 @@
     "tag": "v1.4.1",
     "commit": "66b281a5d871b57ab596f5814d49970f52589ed8"
   },
-  "_source": "https://github.com/PolymerElements/iron-test-helpers.git",
+  "_source": "git://github.com/PolymerElements/iron-test-helpers.git",
   "_target": "^1.0.0",
   "_originalSource": "PolymerElements/iron-test-helpers"
 }

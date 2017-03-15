@@ -390,13 +390,22 @@ jQuery.fn.exists = function() {
   return jQuery(this).length > 0;
 };
 
-jQuery.fn.polymerSelected = function(setSelected, attrLookup) {
-  var attr, e, error1, error2, itemSelector, val;
+jQuery.fn.polymerSelected = function(setSelected, attrLookup, dropdownSelector, childElement, ignoreCase) {
+  var attr, dropdownId, dropdownUniqueSelector, e, error1, error2, error3, error4, index, item, itemSelector, len, m, ref1, selectedMatch, selector, text, val;
   if (setSelected == null) {
     setSelected = void 0;
   }
   if (attrLookup == null) {
     attrLookup = "attrForSelected";
+  }
+  if (dropdownSelector == null) {
+    dropdownSelector = "paper-listbox";
+  }
+  if (childElement == null) {
+    childElement = "paper-item";
+  }
+  if (ignoreCase == null) {
+    ignoreCase = true;
   }
 
   /*
@@ -404,23 +413,68 @@ jQuery.fn.polymerSelected = function(setSelected, attrLookup) {
    * https://elements.polymer-project.org/elements/paper-menu
    * https://elements.polymer-project.org/elements/paper-radio-group
    *
+   * @param setSelected ->
    * @param attrLookup is based on
    * https://elements.polymer-project.org/elements/iron-selector?active=Polymer.IronSelectableBehavior
+   * @param childElement
+   * @param ignoreCase -> match lower case trimmed values
    */
+  dropdownId = $(this).attr("id");
+  if (isNull(dropdownId)) {
+    console.error("Your parent dropdown (eg, paper-dropdown-menu) must have a unique ID");
+    return false;
+  }
+  dropdownUniqueSelector = "#" + dropdownId + " " + dropdownSelector;
   if (attrLookup !== true) {
-    attr = $(this).attr(attrLookup);
+    attr = $(dropdownUniqueSelector).attr(attrLookup);
+    if (isNull(attr)) {
+      attr = true;
+    }
   } else {
     attr = true;
   }
   if (setSelected != null) {
-    if (!isBool(setSelected)) {
+    selector = dropdownUniqueSelector;
+    if (!isBool(setSelected) && !isNull(setSelected)) {
       try {
-        return $(this).get(0).select(setSelected);
-      } catch (error1) {
-        e = error1;
+        if (attr === true) {
+          ref1 = $(this).find(childElement);
+          for (m = 0, len = ref1.length; m < len; m++) {
+            item = ref1[m];
+            text = ignoreCase ? $(item).text().toLowerCase().trim() : $(item).text();
+            selectedMatch = ignoreCase ? setSelected.toLowerCase().trim() : setSelected;
+            if (text === selectedMatch) {
+              index = $(item).index();
+              break;
+            }
+          }
+          if (isNull(index)) {
+            console.error("Unable to find an index for " + childElement + " with text '" + setSelected + "' (ignore case: " + ignoreCase + ")");
+            return false;
+          }
+          try {
+            p$(selector).select(index);
+          } catch (error1) {
+            e = error1;
+            p$(selector).selected = index;
+          }
+          if (p$(selector).selected !== index) {
+            doNothing();
+          }
+        } else {
+          try {
+            p$(selector).select(setSelected);
+          } catch (error2) {
+            p$(selector).selected = setSelected;
+          }
+        }
+        return true;
+      } catch (error3) {
+        e = error3;
+        console.error("Unable to set selected '" + setSelected + "': " + e.message);
         return false;
       }
-    } else {
+    } else if (isBool(setSelected)) {
       $(this).parent().children().removeAttribute("aria-selected");
       $(this).parent().children().removeAttribute("active");
       $(this).parent().children().removeClass("iron-selected");
@@ -434,17 +488,28 @@ jQuery.fn.polymerSelected = function(setSelected, attrLookup) {
   } else {
     val = void 0;
     try {
-      val = $(this).get(0).selected;
+      try {
+        val = p$(this).selected;
+      } catch (undefined) {}
+      if (isNull(val)) {
+        val = p$(dropdownUniqueSelector).selected;
+      }
       if (isNumber(val) && !isNull(attr)) {
-        itemSelector = $(this).find("paper-item")[toInt(val)];
+        itemSelector = $(this).find(childElement)[toInt(val)];
         if (attr !== true) {
           val = $(itemSelector).attr(attr);
         } else {
           val = $(itemSelector).text();
         }
+      } else {
+        console.debug("isNumber(val)", isNumber(val, val));
+        console.debug("isNull attr", isNull(attr, attr));
       }
-    } catch (error2) {
-      e = error2;
+    } catch (error4) {
+      e = error4;
+      console.error("Couldn't find selected: " + e.message);
+      console.warn(e.stack);
+      console.debug("Selector", dropdownUniqueSelector);
       return false;
     }
     if (val === "null" || (val == null)) {
@@ -569,7 +634,7 @@ Function.prototype.debounce = function() {
     if (!execAsap) {
       func.apply(func, args);
     }
-    return console.info("Debounce applied");
+    return console.debug("Debounce executed for " + key);
   };
   if (timeout != null) {
     try {
@@ -580,11 +645,11 @@ Function.prototype.debounce = function() {
   }
   if (execAsap) {
     func.apply(obj, args);
-    console.log("Executed " + key + " immediately");
+    console.debug("Executed " + key + " immediately");
     return false;
   }
   if (key != null) {
-    console.log("Debouncing '" + key + "' for " + threshold + " ms");
+    console.debug("Debouncing '" + key + "' for " + threshold + " ms");
     return core.debouncers[key] = delay(threshold, function() {
       return delayed();
     });
@@ -1417,6 +1482,7 @@ getMaxZ = function() {
 
 browserBeware = function() {
   var browsers, e, error1, warnBrowserHtml;
+  return false;
   if ((typeof Browsers !== "undefined" && Browsers !== null ? Browsers.hasCheckedBrowser : void 0) == null) {
     if (typeof Browsers === "undefined" || Browsers === null) {
       window.Browsers = new Object();
@@ -1904,8 +1970,15 @@ formatSearchResults = function(result, container, callback) {
   /*
    * Take a result object from the server's lookup, and format it to
    * display search results.
+   *
+   * By default, this will try to render the results off-thread with a
+   * service worker for the best client performance, but it will fall
+   * back on to an on-thread renderer if no service worker exists.
+   *
    * See
-   * http://mammaldiversity.org/cndb/commonnames_api.php?q=batrachoseps+attenuatus&loose=true
+   *
+   * http://mammaldiversity.org/api.php?q=ursus+arctos&loose=true
+   *
    * for a sample search result return.
    */
   start = Date.now();
@@ -2164,7 +2237,7 @@ formatSearchResults = function(result, container, callback) {
           elapsed = Date.now() - start;
           console.log("Finished rendering list in " + elapsed + "ms");
           console.debug("Executed " + totalLoops + " loops");
-          if (elapsed > 3000) {
+          if (elapsed > 3000 && !wasOffThread) {
             console.warn("Warning: Took greater than 3 seconds to render!");
           }
           stopLoad();
@@ -2190,7 +2263,7 @@ formatSearchResults = function(result, container, callback) {
 };
 
 parseTaxonYear = function(taxonYearString, strict) {
-  var d, e, error1, error2, genus, species, split, year;
+  var d, e, error1, error2, error3, genus, species, split, year;
   if (strict == null) {
     strict = true;
   }
@@ -2204,15 +2277,24 @@ parseTaxonYear = function(taxonYearString, strict) {
   } catch (error1) {
     e = error1;
     console.warn("There was an error parsing '" + taxonYearString + "', attempting to fix - ", e.message);
-    split = taxonYearString.split(":");
-    year = split[1].slice(split[1].search('"') + 1, -2);
-    year = year.replace(/"/g, "'");
-    split[1] = "\"" + year + "\"}";
-    taxonYearString = split.join(":");
     try {
-      d = JSON.parse(taxonYearString);
-    } catch (error2) {
-      e = error2;
+      split = taxonYearString.split(":");
+      year = split[1].slice(split[1].search('"') + 1, -2);
+      year = year.replace(/"/g, "'");
+      split[1] = "\"" + year + "\"}";
+      taxonYearString = split.join(":");
+      try {
+        d = JSON.parse(taxonYearString);
+      } catch (error2) {
+        e = error2;
+        if (strict) {
+          return false;
+        } else {
+          return taxonYearString;
+        }
+      }
+    } catch (error3) {
+      e = error3;
       if (strict) {
         return false;
       } else {
@@ -3278,9 +3360,13 @@ bindPaperMenuButton = function(selector, unbindTargets) {
 };
 
 $(function() {
-  var col, devHello, e, error1, error2, error3, error4, f64, filterObj, fixState, fuzzyState, loadArgs, looseState, openFilters, queryUrl, selector, simpleAllowedFilters, temp, val;
+  var col, devHello, e, error1, error2, error3, error4, f64, filterObj, fixState, fuzzyState, ignorePages, loadArgs, looseState, openFilters, queryUrl, ref1, selector, simpleAllowedFilters, temp, val;
   devHello = "****************************************************************************\nHello developer!\nIf you're looking for hints on our API information, this site is open-source\nand released under the GPL. Just click on the GitHub link on the bottom of\nthe page, or check out LINK_TO_ORG_REPO\n****************************************************************************";
   console.log(devHello);
+  ignorePages = ["admin-login.php", "admin-page.html", "admin-page.php"];
+  if (ref1 = uri.o.attr("file"), indexOf.call(ignorePages, ref1) >= 0) {
+    return false;
+  }
   animateLoad();
   window.addEventListener("popstate", function(e) {
     var error1, loadArgs, temp;
@@ -3347,8 +3433,8 @@ $(function() {
       temp = loadArgs.split("&")[0];
       safariSearchArgHelper(temp);
       (fixState = function() {
-        var error3, ref1;
-        if ((typeof Polymer !== "undefined" && Polymer !== null ? (ref1 = Polymer.Base) != null ? ref1.$$ : void 0 : void 0) != null) {
+        var error3, ref2;
+        if ((typeof Polymer !== "undefined" && Polymer !== null ? (ref2 = Polymer.Base) != null ? ref2.$$ : void 0 : void 0) != null) {
           if (!isNull(Polymer.Base.$$("#loose"))) {
             delay(250, function() {
               if (looseState) {
@@ -3449,8 +3535,8 @@ $(function() {
     stopLoad();
     $("#search").attr("disabled", false);
     return (fixState = function() {
-      var error5, ref1;
-      if ((typeof Polymer !== "undefined" && Polymer !== null ? (ref1 = Polymer.Base) != null ? ref1.$$ : void 0 : void 0) != null) {
+      var error5, ref2;
+      if ((typeof Polymer !== "undefined" && Polymer !== null ? (ref2 = Polymer.Base) != null ? ref2.$$ : void 0 : void 0) != null) {
         if (!isNull(Polymer.Base.$$("#loose"))) {
           delay(250, function() {
             d$("#loose").attr("checked", "checked");

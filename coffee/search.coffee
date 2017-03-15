@@ -607,7 +607,7 @@ formatSearchResults = (result, container = searchParams.targetContainer, callbac
   false
 
 
-parseTaxonYear = (taxonYearString,strict = true) ->
+parseTaxonYear = (taxonYearString, strict = true) ->
   ###
   # Take the (theoretically nicely JSON-encoded) taxon year/authority
   # string and turn it into a canonical object for the modal dialog to use
@@ -617,15 +617,21 @@ parseTaxonYear = (taxonYearString,strict = true) ->
   catch e
     # attempt to fix it
     console.warn("There was an error parsing '#{taxonYearString}', attempting to fix - ",e.message)
-    split = taxonYearString.split(":")
-    year = split[1].slice(split[1].search('"')+1,-2)
-    # console.log("Examining #{year}")
-    year = year.replace(/"/g,"'")
-    split[1] = "\"#{year}\"}"
-    taxonYearString = split.join(":")
-    # console.log("Reconstructed #{taxonYearString}")
     try
-      d = JSON.parse(taxonYearString)
+      split = taxonYearString.split(":")
+      year = split[1].slice(split[1].search('"')+1,-2)
+      # console.log("Examining #{year}")
+      year = year.replace(/"/g,"'")
+      split[1] = "\"#{year}\"}"
+      taxonYearString = split.join(":")
+      # console.log("Reconstructed #{taxonYearString}")
+      try
+        d = JSON.parse(taxonYearString)
+      catch e
+        if strict
+          return false
+        else
+          return taxonYearString
     catch e
       if strict
         return false
@@ -1838,6 +1844,13 @@ $ ->
   ****************************************************************************
   """
   console.log(devHello)
+  ignorePages = [
+    "admin-login.php"
+    "admin-page.html"
+    "admin-page.php"
+    ]
+  if uri.o.attr("file") in ignorePages
+    return false
   # Do bindings
   # console.log("Doing onloads ...")
   animateLoad()

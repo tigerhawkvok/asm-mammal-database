@@ -39,7 +39,7 @@
     "tag": "v1.3.1",
     "commit": "41e0aa61c11b6330fda02053c01495530abb4127"
   },
-  "_source": "https://github.com/polymerelements/marked-element.git",
+  "_source": "git://github.com/polymerelements/marked-element.git",
   "_target": "^1.0.0",
   "_originalSource": "polymerelements/marked-element"
 }

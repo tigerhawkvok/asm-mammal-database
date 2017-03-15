@@ -19,6 +19,9 @@ loadAdminUi = ->
     verifyLoginCredentials (data) ->
       # Post verification
       cookieName = "#{uri.domain}_name"
+      cookieFullName = "#{uri.domain}_fullname"
+      adminParams.cookieName = cookieName
+      adminParams.cookieFullName = cookieFullName
       mainHtml = """
       <h3 class="col-xs-12">
         Welcome, #{$.cookie(cookieName)}
@@ -198,27 +201,192 @@ renderAdminSearchResults = (containerSelector = "#search-results") ->
 
 
 
+fetchEditorDropdownContent = (column = "simple_linnean_goup", columnLabel, updateDom = true, localSave = true) ->
+  ###
+  # Ping the server for a list of unique entries for a given column
+  ###
+  unless typeof _asm?.dropdownPopulation is "object"
+    unless typeof _asm is "object"
+      window._asm = new Object()
+    _asm.dropdownPopulation = new Object()
+  colIdLabel = column.replace /\_/g, "-"
+  if isNull columnLabel
+    columnLabel = column.replace(/\_/g, " ").toTitleCase()
+  # Prepopulate for an instant result if needed
+  _asm.dropdownPopulation[column] =
+    html: """<paper-input label="#{columnLabel}" id="edit-#{colIdLabel}" name="edit-#{colIdLabel}" class="#{column}" floatingLabel></paper-input>"""
+  # Actually do the lookup
+  $.get searchParams.targetApi, "get_unique=true&col=#{column}", "json"
+  .done (result) ->
+    if result.status isnt true
+      console.warn "Didn't get a valid set of values for column '#{column}': #{result.error}"
+      return false
+    # Build the HTML
+    valueArray = Object.toArray result.values
+    listHtml = ""
+    for value in valueArray
+      listHtml += """
+      <paper-item data-value="#{value}" data-column="#{column}">#{value}</paper-item>\n
+      """
+    html = """
+    <section class="row filled-editor-dropdown">
+    <div class="col-xs-9">
+      <paper-dropdown-menu label="#{columnLabel}" id="edit-#{colIdLabel}" name="edit-#{colIdLabel}" class="#{column}" data-column="#{column}">
+        <paper-listbox class="dropdown-content">
+          #{listHtml}
+        </paper-listbox>
+      </paper-dropdown-menu>
+    </div>
+    <div class="col-xs-3">
+      <paper-icon-button class="add-col-value" data-column=#{column} icon="icons:add-circle" title="Add new #{columnLabel}" data-toggle="tooltip"></paper-icon-button>
+    </div>
+    </section>
+    """
+    # Set the local value
+    if localSave
+      _asm.dropdownPopulation[column] =
+        values: valueArray
+        html: html
+        selector: "#edit-#{colIdLabel}"
+    if updateDom
+      # Try to update the DOM object
+      selector = "#edit-#{colIdLabel}"
+      if $(selector).exists()
+        $(selector).replaceWith html
+    false
+  .fail (result, error) ->
+    console.warn "Unable to get dropdown content for '#{column}'"
+    console.warn result, error
+    _asm.dropdownPopulation[column] =
+      html: """<paper-input label="#{columnLabel}" id="edit-#{colIdLabel}" name="edit-#{colIdLabel}" class="#{column}" floatingLabel></paper-input>"""
+  false
+
+
+newColumnHelper = (selector = ".add-col-value") ->
+  $(selector).unbind()
+  _asm._addColumnDialog = (el) ->
+    targetColumn = $(el).attr "data-column"
+    if isNull targetColumn
+      console.error "Unable to show dialog -- invalud column designator"
+      return false
+    console.debug "Add column fired -- target is #{targetColumn}"
+    # Create the column dialog
+    $("paper-dialog#add-column-value").remove()
+    html = """
+    <paper-dialog id="add-column-value" data-column="#{targetColumn}" modal>
+      <h2>Add New <code>#{targetColumn.replace /[\_-]/g, " "}</code> Value</h2>
+      <paper-dialog-scrollable>
+        <paper-input class="new-col-value" label="Data Value" floatingLabel autofocus></paper-input>
+      </paper-dialog-scrollable>
+      <div class="buttons">
+        <paper-button dialog-dismiss>Cancel</paper-button>
+        <paper-button class="add-value">Add</paper-button>
+      </div>
+    </paper-dialog>
+    """
+    $("body").append html
+    _asm._saveNewCol = ->
+      newValue = $("#add-column-value paper-input.new-col-value").val()
+      console.log "Going to test and add '#{newValue}'"
+      # validate the new value
+      # Make sure it's not a duplicate
+      if newValue in _asm.dropdownPopulation[targetColumn].values
+        # Set an error
+        console.warn "Invalid value: already exists"
+        p$("#add-column-value paper-input.new-col-value").errorMessage = "This value already exists"
+        p$("#add-column-value paper-input.new-col-value").invalid = true
+        p$("#add-column-value").refit()
+        return false
+      # Append the paper-item to the listbox contents
+      item = document.createElement "paper-item"
+      item.setAttribute "data-value", newValue
+      item.setAttribute "data-column", targetColumn
+      item.textContent = newValue
+      listHtml = """
+      <paper-item data-value="#{newValue}" data-column="#{targetColumn}">#{newValue}</paper-item>\n
+      """
+      _asm.dropdownPopulation[targetColumn].values.push newValue
+      # Sort the array
+      _asm.dropdownPopulation[targetColumn].values.sort()
+      listbox = p$("paper-dropdown-menu[data-column='#{targetColumn}'] paper-listbox")
+      Polymer.dom(listbox).appendChild item
+      # # Replace the listbox contents
+      # listHtml = ""
+      # for value in _asm.dropdownPopulation[targetColumn].values
+      #   listHtml += """
+      #   <paper-item data-value="#{value}" data-column="#{targetColumn}">#{value}</paper-item>\n
+      #   """
+      # html = $(_asm.dropdownPopulation[targetColumn].html)
+      # console.debug "Original", html
+      # html2 = html.find("paper-listbox").html listHtml
+      # console.debug "Going to replace with", html
+      # console.debug "ht2", html2
+      # console.debug listHtml
+      # $("paper-dropdown-menu[data-column='#{targetColumn}']").parents("section.filled-editor-dropdown").replaceWith html
+      # Select it
+      delay 250, ->
+        $("paper-dropdown-menu[data-column='#{targetColumn}']").polymerSelected newValue, true
+        p$("#add-column-value").close()
+      false
+    $("#add-column-value paper-button.add-value").click ->
+      try
+        _asm._saveNewCol.debounce 50
+      catch
+        console.warn "Couldn't debounce save new col call"
+        stopLoadError "There was a problem saving this data"
+      false
+    $("#add-column-value paper-input").keyup (e) ->
+      kc = if e.keyCode then e.keyCode else e.which
+      if kc is 13
+        try
+          _asm._saveNewCol.debounce 50
+        catch
+          console.warn "Couldn't debounce save new col call"
+          stopLoadError "There was a problem saving this data"
+      false
+    p$("#add-column-value").open()
+    false
+  $(selector).click ->
+    console.debug "Add column clicked"
+    _asm._addColumnDialog.debounce 50, null, null, this
+    false
+
+
+
+prefetchEditorDropdowns = ->
+  needCols =
+    major_type: "Clade (eg., boreoeutheria)"
+    major_subtype: "Sub-Clade (eg., euarchontoglires)"
+    linnean_order: null
+    linnean_family: null
+    simple_linnean_group: "Common Group (eg., metatheria)"
+    simple_linnean_subgroup: "Common type (eg., bat)"
+  for col, label of needCols
+    fetchEditorDropdownContent col, label
+  false
+
+window.prefetchEditorDropdowns = prefetchEditorDropdowns
+
 loadModalTaxonEditor = (extraHtml = "", affirmativeText = "Save") ->
   ###
   # Load a modal taxon editor
   ###
   #  | <a href="#" "onclick='window.open(this.href); return false;' onkeypress='window.open(this.href); return false;'">Syntax Cheat Sheet</a>
+  today = new Date()
+  prettyDate = today.toISOString().split("T")[0]
   editHtml = """
   <paper-input label="Genus" id="edit-genus" name="edit-genus" class="genus" floatingLabel></paper-input>
   <paper-input label="Species" id="edit-species" name="edit-species" class="species" floatingLabel></paper-input>
   <paper-input label="Subspecies" id="edit-subspecies" name="edit-subspecies" class="subspecies" floatingLabel></paper-input>
-  <iron-label>
-    Alien species?
-    <paper-toggle-button id="is-alien"  checked="false"></paper-toggle-button>
-  </iron-label>
   <paper-input label="Common Name" id="edit-common-name" name="edit-common-name"  class="common_name" floatingLabel></paper-input>
   <paper-input label="Deprecated Scientific Names" id="edit-deprecated-scientific" name="edit-depreated-scientific" floatingLabel aria-describedby="deprecatedHelp"></paper-input>
     <span class="help-block" id="deprecatedHelp">List names here in the form <span class="code">"Genus species":"Authority: year","Genus species":"Authority: year",[...]</span>.<br/>There should be no spaces between the quotes and comma or colon. If there are, it may not save correctly.</span>
-  <paper-input label="Clade" class="capitalize" id="edit-major-type" name="edit-major-type" floatingLabel></paper-input>
-  <paper-input label="Subtype" class="capitalize" id="edit-major-subtype" name="edit-major-subtype" floatingLabel></paper-input>
-  <paper-input label="Minor clade / 'Family'" id="edit-minor-type" name="edit-minor-type" floatingLabel></paper-input>
-  <paper-input label="Linnean Order" id="edit-linnean-order" name="edit-linnean-order" class="linnean_order" floatingLabel></paper-input>
-  <paper-input label="Common Type (eg., 'lizard')" id="edit-major-common-type" name="edit-major-common-type" class="major_common_type" floatingLabel></paper-input>
+  #{_asm.dropdownPopulation.major_type.html}
+  #{_asm.dropdownPopulation.major_subtype.html}
+  #{_asm.dropdownPopulation.linnean_order.html}
+  #{_asm.dropdownPopulation.linnean_family.html}
+  #{_asm.dropdownPopulation.simple_linnean_group.html}
+  #{_asm.dropdownPopulation.simple_linnean_subgroup.html}
   <paper-input label="Genus authority" id="edit-genus-authority" name="edit-genus-authority" class="genus_authority" floatingLabel></paper-input>
   <paper-input label="Genus authority year" id="edit-gauthyear" name="edit-gauthyear" floatingLabel></paper-input>
   <iron-label>
@@ -232,19 +400,23 @@ loadModalTaxonEditor = (extraHtml = "", affirmativeText = "Save") ->
     <paper-toggle-button id="species-authority-parens" checked="false"></paper-toggle-button>
   </iron-label>
   <br/><br/>
+  <paper-input label="ASM ID Number" id="edit-internal-id" name="edit-internal-id" floatingLabel></paper-input>
   <iron-autogrow-textarea id="edit-notes" rows="5" aria-describedby="notes-help" placeholder="Notes">
     <textarea placeholder="Notes" id="edit-notes-textarea" name="edit-notes-textarea" aria-describedby="notes-help" rows="5"></textarea>
   </iron-autogrow-textarea>
   <span class="help-block" id="notes-help">You can write your notes in Markdown. (<a href="https://daringfireball.net/projects/markdown/syntax" "onclick='window.open(this.href); return false;' onkeypress='window.open(this.href); return false;'">Official Full Syntax Guide</a>)</span>
+  <br/><br/>
+  <paper-input label="Data Source" id="edit-source" name="edit-source" floatingLabel></paper-input>
+  <paper-input label="Data Citation" id="edit-citation" name="edit-source" floatingLabel></paper-input>
   <div id="upload-image"></div>
   <span class="help-block" id="upload-image-help">You can drag and drop an image above, or enter its server path below.</span>
   <paper-input label="Image" id="edit-image" name="edit-image" floatingLabel aria-describedby="imagehelp"></paper-input>
     <span class="help-block" id="imagehelp">The image path here should be relative to the <span class="code">public_html/</span> directory.</span>
   <paper-input label="Image Credit" id="edit-image-credit" name="edit-image-credit" floatingLabel></paper-input>
   <paper-input label="Image License" id="edit-image-license" name="edit-image-license" floatingLabel></paper-input>
-  <paper-input label="Taxon Credit" id="edit-taxon-credit" name="edit-taxon-credit" floatingLabel aria-describedby="taxon-credit-help"></paper-input>
+  <paper-input label="Taxon Credit" id="edit-taxon-credit" name="edit-taxon-credit" floatingLabel aria-describedby="taxon-credit-help" value="#{$.cookie(adminParams.cookieFullName)}"></paper-input>
     <span class="help-block" id="taxon-credit-help">This will be displayed as "Taxon information by [your entry]."</span>
-  <paper-input label="Taxon Credit Date" id="edit-taxon-credit-date" name="edit-taxon-credit-date" floatingLabel></paper-input>
+  <paper-input label="Taxon Credit Date" id="edit-taxon-credit-date" name="edit-taxon-credit-date" floatingLabel value="#{prettyDate}"></paper-input>
   #{extraHtml}
   <input type="hidden" name="edit-taxon-author" id="edit-taxon-author" value="" />
   """
@@ -264,6 +436,11 @@ loadModalTaxonEditor = (extraHtml = "", affirmativeText = "Save") ->
   if $("#modal-taxon-edit").exists()
     $("#modal-taxon-edit").remove()
   $("#search-results").after(html)
+  try
+    newColumnHelper()
+  catch e
+    console.warn "Couldn't bind columns: #{e.message}"
+    console.warn e.stack
   handleDragDropImage()
   # # Bind the autogrow
   # # https://elements.polymer-project.org/elements/iron-autogrow-textarea
@@ -445,6 +622,7 @@ lookupEditorSpecies = (taxon = undefined) ->
       # We'll always take the first result. They query should be
       # perfectly specific, so we want the closest match in case of
       # G. sp. vs. G. sp. ssp.
+      console.debug "Admin lookup rending editor UI for", result
       data = result.result[0]
       unless data?
         stopLoadError("Sorry, there was a problem parsing the information for this taxon. If it persists, you may have to fix it manually.")
@@ -475,7 +653,6 @@ lookupEditorSpecies = (taxon = undefined) ->
       toggleColumns = [
         "parens_auth_genus"
         "parens_auth_species"
-        "is_alien"
         ]
       for col, d of data
         # For each column, replace _ with - and prepend "edit"
@@ -484,16 +661,35 @@ lookupEditorSpecies = (taxon = undefined) ->
           if typeof d is "string"
             # Clean up any strings that may have random spaces.
             d = d.trim()
-        catch e
-          # Do nothing -- probably numeric, and in any case we're no
-          # worse than we started.
         if col is "id"
           $("#taxon-id").attr("value",d)
+        colAsDropdownExists = false
+        try
+          dropdownTentativeSelector = "#edit-#{col.replace /\_/g,"-"}"
+          if $(dropdownTentativeSelector).get(0).tagName.toLowerCase() is "paper-dropdown-menu"
+            colAsDropdownExists = true
+        console.debug "Col editor exists for '#{dropdownTentativeSelector}'?", colAsDropdownExists
+        if colAsDropdownExists
+          console.debug "Trying to polymer-select", d
+          $(dropdownTentativeSelector).polymerSelected d, true
+        if col is "species_authority" or col is "genus_authority"
+          unless isNull d.match /\(?\w+, ?[0-9]{4}\)?/g
+            hasParens = d.search(/\(/) >= 0 and d.search(/\)/) >= 0
+            authorityParts = d.replace(/[\(\)]/g,"").split(",")
+            d = authorityParts[0].trim()
+            year = toInt(authorityParts[1])
+            if col is "genus_authority"
+              $("#edit-gauthyear").attr("value",year)
+            if col is "species_authority"
+              $("#edit-sauthyear").attr("value",year)
+            if hasParens
+              p$("##{col.replace(/\_/g,"-")}-parens").checked = true
         if col is "authority_year"
           # Parse it out
           year = parseTaxonYear(d)
-          $("#edit-gauthyear").attr("value",year.genus)
-          $("#edit-sauthyear").attr("value",year.species)
+          if typeof year is "object"
+            $("#edit-gauthyear").attr("value",year.genus)
+            $("#edit-sauthyear").attr("value",year.species)
         else if col in toggleColumns
           # Check the paper-toggle-button
           colSplit = col.split("_")
@@ -511,6 +707,15 @@ lookupEditorSpecies = (taxon = undefined) ->
             d$("#taxon-author-last").text(d)
           whoEdited = if isNull($.cookie("#{uri.domain}_fullname")) then $.cookie("#{uri.domain}_user") else $.cookie("#{uri.domain}_fullname")
           d$("#edit-taxon-author").attr("value",whoEdited)
+        else if col is "taxon_credit"
+            fieldSelector = "#edit-#{col.replace(/_/g,"-")}"
+            p$(fieldSelector).value = $.cookie(adminParams.cookieFullName)
+        else if col is "taxon_credit_date"
+          if isNull d
+            today = new Date()
+            d = today.toISOString().split("T")[0]
+            fieldSelector = "#edit-#{col.replace(/_/g,"-")}"
+            p$(fieldSelector).value = d
         else
           fieldSelector = "#edit-#{col.replace(/_/g,"-")}"
           if col is "deprecated_scientific"
@@ -525,32 +730,27 @@ lookupEditorSpecies = (taxon = undefined) ->
           else
             width = $("#modal-taxon-edit").width() * .9
             d$(fieldSelector).css("width","#{width}px")
-            textarea = d$(fieldSelector).get(0).textarea
+            textarea = p$(fieldSelector).textarea
             $(textarea).text(d)
-            try
-              # This is different than the docs;
-              # see
-              # https://github.com/PolymerElements/iron-autogrow-textarea/issues/24
-              d$(fieldSelector).get(0)._update()
-            catch e
-              console.warn "Couldn't update the textarea! See", "https://github.com/PolymerElements/iron-autogrow-textarea/issues/24"
       # Finally, open the editor
-      modalElement = $("#modal-taxon-edit")[0]
+      modalElement = p$("#modal-taxon-edit")
       $("#modal-taxon-edit").on "iron-overlay-opened", ->
-        modalElement.fit()
-        modalElement.scrollTop = 0
-        if toFloat($(modalElement).css("top").slice(0,-2)) > $(window).height()
-          # Firefox is weird about this sometimes ...
-          # Let's add a catch-all 'top' adjustment
-          $(modalElement).css("top","12.5vh")
-        delay 250, ->
-          modalElement.fit()
-      modalElement.sizingTarget = d$("#modal-taxon-editor")[0]
+        p$("#modal-taxon-edit").refit()
+      #   modalElement.scrollTop = 0
+      #   if toFloat($(modalElement).css("top").slice(0,-2)) > $(window).height()
+      #     # Firefox is weird about this sometimes ...
+      #     # Let's add a catch-all 'top' adjustment
+      #     $(modalElement).css("top","12.5vh")
+      #   delay 250, ->
+      #     modalElement.fit()
+      # modalElement.sizingTarget = d$("#modal-taxon-editor")[0]
       safariDialogHelper("#modal-taxon-edit")
       # $("#modal-taxon-edit")[0].open()
       stopLoad()
     catch e
       stopLoadError("Unable to populate the editor for this taxon - #{e.message}")
+      console.error "Error populating the taxon popup -- #{e.message}"
+      console.warn e.stack
   .fail (result,status) ->
     stopLoadError("There was a server error populating this taxon. Please try again.")
   false
@@ -568,10 +768,11 @@ saveEditorEntry = (performMode = "save") ->
     "subspecies"
     "common-name"
     "major-type"
-    "major-common-type"
     "major-subtype"
-    "minor-type"
     "linnean-order"
+    "linnean-family"
+    "simple-linnean-group"
+    "simple-linnean-subgroup"
     "genus-authority"
     "species-authority"
     "notes"
@@ -581,6 +782,9 @@ saveEditorEntry = (performMode = "save") ->
     "taxon-author"
     "taxon-credit"
     "taxon-credit-date"
+    "internal_id"
+    "source"
+    "citation"
     ]
   saveObject = new Object()
   escapeCompletion = false
@@ -691,7 +895,7 @@ saveEditorEntry = (performMode = "save") ->
         auth = authorityA[0].trim()
         trimmedYearString = authorityA[1].trim()
         if trimmedYearString.search(",") isnt -1
-          throw Error("Looks like there may be an extra space, or forgotten \", near '#{trimmedYearString}'")
+          throw Error """Looks like there may be an extra space, or forgotten ", near '#{trimmedYearString}' """
         year = testAuthorityYear(trimmedYearString,true)
         console.log("Validated",auth,year)
       # Stringify it for the database saving
@@ -742,14 +946,34 @@ saveEditorEntry = (performMode = "save") ->
     # console.log(k,id)
     col = id.replace(/-/g,"_")
     unless col is "notes"
-      val = d$("#edit-#{id}").val().trim()
+      colAsDropdownExists = false
+      try
+        dropdownTentativeSelector = "#edit-#{col.replace /\_/g,"-"}"
+        if $(dropdownTentativeSelector).get(0).tagName.toLowerCase() is "paper-dropdown-menu"
+          colAsDropdownExists = true
+      console.debug "Col editor exists for '#{dropdownTentativeSelector}'?", colAsDropdownExists
+      if colAsDropdownExists
+        val = $(dropdownTentativeSelector).polymerSelected()
+      else
+        try
+          val = d$("#edit-#{id}").val().trim()
+        catch
+          val = ""
+          err =  "Unable to get value for #{id}"
+          console.warn err
+          toastStatusMessage err
     else
       val = d$("#edit-notes").get(0).textarea.value
     unless col in keepCase
       # We want these to be as literally typed, rather than
       # smart-formatted.
       # Deprecated scientifics are already taken care of.
-      val = val.toLowerCase()
+      try
+        val = val.toLowerCase()
+      catch e
+        console.warn "Column '#{col}' threw error for value '#{val}': #{e.message}"
+        if isNull val
+          val = ""
     ## Do the input validation
     switch id
       when "genus", "species", "subspecies"
@@ -783,7 +1007,14 @@ saveEditorEntry = (performMode = "save") ->
             spilloverError = "This cannot be empty if an image is provided"
           if selectorSample is "#edit-taxon-credit-date"
             # We have a taxon credit, need a date for it
-            spilloverError = "If you have a taxon credit, it also needs a date"
+            parsedDate = new Date(val)
+            if parsedDate is "Invalid Date"
+              spilloverError = "We couldn't understand your date format. Please try again."
+              val = null
+            else
+              val = parsedDate.toISOString().split("T")[0]
+              $(selectorSample).attr "value", val
+              spilloverError = "If you have a taxon credit, it also needs a date"
           if isNull(val)
             d$("#edit-#{id}")
             .attr("error-message",spilloverError)
@@ -803,7 +1034,6 @@ saveEditorEntry = (performMode = "save") ->
   # The parens checks
   saveObject.parens_auth_genus = d$("#genus-authority-parens").polymerChecked()
   saveObject.parens_auth_species = d$("#species-authority-parens").polymerChecked()
-  saveObject.is_alien = d$("#is-alien").polymerChecked()
   if performMode is "save"
     unless isNumber(saveObject.id)
       animateLoad()
@@ -924,7 +1154,7 @@ handleDragDropImage = (uploadTargetSelector = "#upload-image", callback) ->
         toastStatusMessage("Your upload completed, but we couldn't post-process it.")
       false
   # Load dependencies
-  loadJS("bower_components/JavaScript-MD5/js/md5.min.js")
+  loadJS "bower_components/JavaScript-MD5/js/md5.min.js"
   loadJS "bower_components/dropzone/dist/min/dropzone.min.js", ->
     # Dropzone has been loaded!
     # Add the CSS
@@ -985,4 +1215,6 @@ $ ->
       openTab(adminParams.adminPageUrl)
   loadJS "bower_components/bootstrap/dist/js/bootstrap.min.js", ->
     $("[data-toggle='tooltip']").tooltip()
+  try
+    prefetchEditorDropdowns()
   # The rest of the onload for the admin has been moved to the core.coffee file.

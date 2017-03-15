@@ -106,6 +106,9 @@ function checkColumnExists($column_list)
 if(boolstr($_REQUEST["missing"]) || boolstr($_REQUEST["fetch_missing"])) {
     returnAjax(getTaxonIucnData($_REQUEST));
 }
+if(boolstr($_REQUEST["get_unique"])) {
+    returnAjax(getUniqueVals($_REQUEST["col"]));
+}
 
 /*****************************
  * Setup flags
@@ -895,56 +898,87 @@ function getTaxonIucnData($taxonBase) {
     return $taxon;
 }
 
-
-
-    if(sizeof($result["result"]) <= 5) {
-        foreach($result["result"] as $i => $taxon) {
-            # Check for important empty fields ....
-            $doIucn = false;
-            foreach($iucnCanProvide as $field=>$iucnField) {
-                if(empty($taxon[$field]) && isset($taxon[$field])) {
-                    $doIucn = true;
-                    break;
-                }
-            }
     
-            if ($doIucn === true) {
-                # IUCN returns an empty result unless "%20" is used to separate the
-                # genus and species
-                $nameTarget = $taxon["genus"] . "%20" . $taxon["species"];
-                try {
-                    $iucnRawResponse = do_post_request($apiTarget.$nameTarget, $args);
-                    $iucnResponse = json_decode($iucnRawResponse["response"], true);
-                } catch (Exception $e) {
-                    continue;
-                }
-                $iucnTaxon = $iucnResponse["result"][0];    
-                $flagSave = false;
-                foreach($iucnCanProvide as $field=>$iucnField) {
-                    if(empty($taxon[$field]) && !empty($iucnTaxon[$iucnField])) {
-                        $taxon[$field] = $iucnTaxon[$iucnField];
-                        # Save the field to the database ....
-                        $flagSave = true;
-                    }
-                }
-                if($flagSave) {
-                    global $db;
-                    $ref = array();
-                    $ref["id"] = $taxon["id"];
-                    unset($taxon["id"]);
-                    $saveResult = $db->updateEntry($taxon, $ref);
-                    $taxon["saveResult"] = $saveResult;
-                }
-                $taxon["iucn"] = $iucnTaxon;
-                unset($taxon["id"]);
-                $result["result"][$i] = $taxon;
-                continue;
+function getUniqueVals($column) {
+    /***
+     *
+     ***/
+    if(checkColumnExists($column) === true) {
+        global $db;
+        $query = "SELECT DISTINCT ".$column." FROM ".$db->getTable();        
+        $r = mysqli_query($db->getLink(), $query);
+        if($r === false) {
+            return array(
+                "status" => false,
+                "error" => mysqli_error($db->getLink()),
+            );
+        }
+        $valArray = array();
+        while($row = mysqli_fetch_row($r)) {
+            if(!empty($row[0])) $valArray[] = $row[0];
+        }
+        return array(
+            "status" => true,
+            "values" => $valArray,
+        );
+    } else {
+        return array(
+            "status" => false,
+            "error" => "INVALID_COLUMN",
+        );
+    }
+}
+
+
+if(sizeof($result["result"]) <= 5) {
+    foreach($result["result"] as $i => $taxon) {
+        # Check for important empty fields ....
+        $doIucn = false;
+        foreach($iucnCanProvide as $field=>$iucnField) {
+            if(empty($taxon[$field]) && isset($taxon[$field])) {
+                $doIucn = true;
+                break;
             }
         }
-        $result["do_client_update"] = false;
-    } else {
-        $result["do_client_update"] = true;
+        
+        if ($doIucn === true) {
+            # IUCN returns an empty result unless "%20" is used to separate the
+            # genus and species
+            $nameTarget = $taxon["genus"] . "%20" . $taxon["species"];
+            try {
+                $iucnRawResponse = do_post_request($apiTarget.$nameTarget, $args);
+                $iucnResponse = json_decode($iucnRawResponse["response"], true);
+            } catch (Exception $e) {
+                continue;
+            }
+            $iucnTaxon = $iucnResponse["result"][0];    
+            $flagSave = false;
+            foreach($iucnCanProvide as $field=>$iucnField) {
+                if(empty($taxon[$field]) && !empty($iucnTaxon[$iucnField])) {
+                    $taxon[$field] = $iucnTaxon[$iucnField];
+                    # Save the field to the database ....
+                    $flagSave = true;
+                }
+            }
+            if($flagSave) {
+                global $db;
+                $ref = array();
+                $ref["id"] = $taxon["id"];
+                unset($taxon["id"]);
+                $saveResult = $db->updateEntry($taxon, $ref);
+                $taxon["saveResult"] = $saveResult;
+            }
+            $taxon["iucn"] = $iucnTaxon;
+            unset($taxon["id"]);
+            $result["result"][$i] = $taxon;
+            continue;
+        }
     }
+    $result["do_client_update"] = false;
+} else {
+    $result["do_client_update"] = true;
+}
+
 
 
 # $as_include isn't specified, so if it is, it's from a parent file

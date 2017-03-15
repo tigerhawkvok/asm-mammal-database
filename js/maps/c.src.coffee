@@ -279,27 +279,61 @@ jQuery.fn.selectText = function(){
 
 jQuery.fn.exists = -> jQuery(this).length > 0
 
-jQuery.fn.polymerSelected = (setSelected = undefined, attrLookup = "attrForSelected") ->
+jQuery.fn.polymerSelected = (setSelected = undefined, attrLookup = "attrForSelected", dropdownSelector = "paper-listbox", childElement = "paper-item", ignoreCase = true) ->
   ###
   # See
   # https://elements.polymer-project.org/elements/paper-menu
   # https://elements.polymer-project.org/elements/paper-radio-group
   #
+  # @param setSelected ->
   # @param attrLookup is based on
   # https://elements.polymer-project.org/elements/iron-selector?active=Polymer.IronSelectableBehavior
+  # @param childElement
+  # @param ignoreCase -> match lower case trimmed values
   ###
+  dropdownId = $(this).attr "id"
+  if isNull dropdownId
+    console.error "Your parent dropdown (eg, paper-dropdown-menu) must have a unique ID"
+    return false
+  dropdownUniqueSelector = "##{dropdownId} #{dropdownSelector}"
   unless attrLookup is true
-    attr = $(this).attr(attrLookup)
+    attr = $(dropdownUniqueSelector).attr(attrLookup)
+    if isNull attr
+      attr = true
   else
     # If we pass the flag true, we get the label instead
     attr = true
   if setSelected?
-    if not isBool(setSelected)
+    selector = dropdownUniqueSelector
+    if not isBool(setSelected) and not isNull setSelected
       try
-        $(this).get(0).select(setSelected)
+        if attr is true
+          for item in $(this).find childElement
+            text = if ignoreCase then $(item).text().toLowerCase().trim() else $(item).text()
+            selectedMatch = if ignoreCase then setSelected.toLowerCase().trim() else setSelected
+            if text is selectedMatch
+              index = $(item).index()
+              break
+          # Set the index
+          if isNull index
+            console.error "Unable to find an index for #{childElement} with text '#{setSelected}' (ignore case: #{ignoreCase})"
+            return false
+          try
+            p$(selector).select index
+          catch e
+            p$(selector).selected = index
+          if p$(selector).selected isnt index
+            doNothing()
+        else
+          try
+            p$(selector).select setSelected
+          catch
+            p$(selector).selected = setSelected
+        return true
       catch e
+        console.error "Unable to set selected '#{setSelected}': #{e.message}"
         return false
-    else
+    else if isBool setSelected
       $(this).parent().children().removeAttribute("aria-selected")
       $(this).parent().children().removeAttribute("active")
       $(this).parent().children().removeClass("iron-selected")
@@ -311,15 +345,24 @@ jQuery.fn.polymerSelected = (setSelected = undefined, attrLookup = "attrForSelec
   else
     val = undefined
     try
-      val = $(this).get(0).selected
+      try
+        val = p$(this).selected
+      if isNull val
+        val = p$(dropdownUniqueSelector).selected
       if isNumber(val) and not isNull(attr)
-        itemSelector = $(this).find("paper-item")[toInt(val)]
+        itemSelector = $(this).find(childElement)[toInt(val)]
         unless attr is true
           val = $(itemSelector).attr(attr)
         else
           # Fetch the label
           val = $(itemSelector).text()
+      else
+        console.debug "isNumber(val)", isNumber val, val
+        console.debug "isNull attr", isNull attr, attr
     catch e
+      console.error "Couldn't find selected: #{e.message}"
+      console.warn e.stack
+      console.debug "Selector", dropdownUniqueSelector
       return false
     if val is "null" or not val?
       val = undefined
@@ -395,7 +438,7 @@ Function::debounce = (threshold = 300, execAsap = false, timeout = window.deboun
       clearTimeout timeout
       delete core.debouncers[key]
     func.apply(func, args) unless execAsap
-    console.info("Debounce applied")
+    console.debug "Debounce executed for #{key}"
   if timeout?
     try
       clearTimeout timeout
@@ -403,10 +446,10 @@ Function::debounce = (threshold = 300, execAsap = false, timeout = window.deboun
       # just do nothing
   if execAsap
     func.apply(obj, args)
-    console.log("Executed #{key} immediately")
+    console.debug "Executed #{key} immediately"
     return false
   if key?
-    console.log "Debouncing '#{key}' for #{threshold} ms"
+    console.debug "Debouncing '#{key}' for #{threshold} ms"
     core.debouncers[key] = delay threshold, ->
       delayed()
   else
@@ -1110,6 +1153,7 @@ getMaxZ = ->
   Math.max.apply null, mapFunction()
 
 browserBeware = ->
+  return false # for now
   unless Browsers?.hasCheckedBrowser?
     unless Browsers?
       window.Browsers = new Object()
@@ -1557,8 +1601,15 @@ formatSearchResults = (result, container = searchParams.targetContainer, callbac
   ###
   # Take a result object from the server's lookup, and format it to
   # display search results.
+  #
+  # By default, this will try to render the results off-thread with a
+  # service worker for the best client performance, but it will fall
+  # back on to an on-thread renderer if no service worker exists.
+  #
   # See
-  # http://mammaldiversity.org/cndb/commonnames_api.php?q=batrachoseps+attenuatus&loose=true
+  #
+  # http://mammaldiversity.org/api.php?q=ursus+arctos&loose=true
+  #
   # for a sample search result return.
   ###
   start = Date.now()
@@ -1677,7 +1728,9 @@ formatSearchResults = (result, container = searchParams.targetContainer, callbac
           loopCleanup()
         worker.postMessage postMessageContent
       catch
-        # No web worker
+        ###############################
+        # No web worker! Fallback
+        ###############################
         console.log "Starting loop with i = #{i}, renderChunk = #{renderChunk}, data length = #{data.length}", firstIteration, finalIteration
         for row in data
           ++totalLoops
@@ -1828,7 +1881,7 @@ formatSearchResults = (result, container = searchParams.targetContainer, callbac
           elapsed = Date.now() - start
           console.log "Finished rendering list in #{elapsed}ms"
           console.debug "Executed #{totalLoops} loops"
-          if elapsed > 3000
+          if elapsed > 3000 and not wasOffThread
             console.warn "Warning: Took greater than 3 seconds to render!"
           stopLoad()
           if typeof callback is "function"
@@ -1847,7 +1900,7 @@ formatSearchResults = (result, container = searchParams.targetContainer, callbac
   false
 
 
-parseTaxonYear = (taxonYearString,strict = true) ->
+parseTaxonYear = (taxonYearString, strict = true) ->
   ###
   # Take the (theoretically nicely JSON-encoded) taxon year/authority
   # string and turn it into a canonical object for the modal dialog to use
@@ -1857,15 +1910,21 @@ parseTaxonYear = (taxonYearString,strict = true) ->
   catch e
     # attempt to fix it
     console.warn("There was an error parsing '#{taxonYearString}', attempting to fix - ",e.message)
-    split = taxonYearString.split(":")
-    year = split[1].slice(split[1].search('"')+1,-2)
-    # console.log("Examining #{year}")
-    year = year.replace(/"/g,"'")
-    split[1] = "\"#{year}\"}"
-    taxonYearString = split.join(":")
-    # console.log("Reconstructed #{taxonYearString}")
     try
-      d = JSON.parse(taxonYearString)
+      split = taxonYearString.split(":")
+      year = split[1].slice(split[1].search('"')+1,-2)
+      # console.log("Examining #{year}")
+      year = year.replace(/"/g,"'")
+      split[1] = "\"#{year}\"}"
+      taxonYearString = split.join(":")
+      # console.log("Reconstructed #{taxonYearString}")
+      try
+        d = JSON.parse(taxonYearString)
+      catch e
+        if strict
+          return false
+        else
+          return taxonYearString
     catch e
       if strict
         return false
@@ -3078,6 +3137,13 @@ $ ->
   ****************************************************************************
   """
   console.log(devHello)
+  ignorePages = [
+    "admin-login.php"
+    "admin-page.html"
+    "admin-page.php"
+    ]
+  if uri.o.attr("file") in ignorePages
+    return false
   # Do bindings
   # console.log("Doing onloads ...")
   animateLoad()

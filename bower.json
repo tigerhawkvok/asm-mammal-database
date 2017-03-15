@@ -16,10 +16,6 @@
     "tests"
   ],
   "dependencies": {
-    "iron-elements": "PolymerElements/iron-elements#^1.0.0",
-    "paper-elements": "PolymerElements/paper-elements#^1.0.1",
-    "gold-elements": "PolymerElements/gold-elements#^1.0.0",
-    "polymer": "Polymer/polymer#^1.0.0",
     "bootstrap": "~3.3.5",
     "imagelightbox": "git://github.com/rejas/imagelightbox.git#~0.3.2",
     "layzr": "git://github.com/callmecavs/layzr.js.git",
@@ -34,9 +30,18 @@
     "markdown": "~0.5.0",
     "dropzone": "~4.0.1",
     "JavaScript-MD5": "~1.1.0",
-    "google-map": "GoogleWebComponents/google-map#^1.2.0"
-  },
-  "resolutions": {
-    "web-animations-js": "^2.2.0"
+    "google-map": "GoogleWebComponents/google-map#^1.2.0",
+    "paper-dropdown-menu": "PolymerElements/paper-dropdown-menu#^1.5.0",
+    "paper-listbox": "PolymerElements/paper-listbox#^1.1.2",
+    "iron-elements": "PolymerElements/iron-elements#^1.0.10",
+    "paper-elements": "PolymerElements/paper-elements#^1.0.7",
+    "paper-ui-elements": "PolymerElements/paper-ui-elements",
+    "iron-input-elements": "PolymerElements/iron-input-elements",
+    "iron-behaviors-collection": "PolymerElements/iron-behaviors-collection",
+    "gold-elements": "PolymerElements/gold-elements#^1.0.1",
+    "data-elements": "PolymerElements/data-elements",
+    "layout-elements": "PolymerElements/layout-elements",
+    "app-elements": "PolymerElements/app-elements#^0.10.1",
+    "platinum-elements": "PolymerElements/platinum-elements#^2.0.0"
   }
 }

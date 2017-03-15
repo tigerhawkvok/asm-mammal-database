@@ -279,27 +279,61 @@ jQuery.fn.selectText = function(){
 
 jQuery.fn.exists = -> jQuery(this).length > 0
 
-jQuery.fn.polymerSelected = (setSelected = undefined, attrLookup = "attrForSelected") ->
+jQuery.fn.polymerSelected = (setSelected = undefined, attrLookup = "attrForSelected", dropdownSelector = "paper-listbox", childElement = "paper-item", ignoreCase = true) ->
   ###
   # See
   # https://elements.polymer-project.org/elements/paper-menu
   # https://elements.polymer-project.org/elements/paper-radio-group
   #
+  # @param setSelected ->
   # @param attrLookup is based on
   # https://elements.polymer-project.org/elements/iron-selector?active=Polymer.IronSelectableBehavior
+  # @param childElement
+  # @param ignoreCase -> match lower case trimmed values
   ###
+  dropdownId = $(this).attr "id"
+  if isNull dropdownId
+    console.error "Your parent dropdown (eg, paper-dropdown-menu) must have a unique ID"
+    return false
+  dropdownUniqueSelector = "##{dropdownId} #{dropdownSelector}"
   unless attrLookup is true
-    attr = $(this).attr(attrLookup)
+    attr = $(dropdownUniqueSelector).attr(attrLookup)
+    if isNull attr
+      attr = true
   else
     # If we pass the flag true, we get the label instead
     attr = true
   if setSelected?
-    if not isBool(setSelected)
+    selector = dropdownUniqueSelector
+    if not isBool(setSelected) and not isNull setSelected
       try
-        $(this).get(0).select(setSelected)
+        if attr is true
+          for item in $(this).find childElement
+            text = if ignoreCase then $(item).text().toLowerCase().trim() else $(item).text()
+            selectedMatch = if ignoreCase then setSelected.toLowerCase().trim() else setSelected
+            if text is selectedMatch
+              index = $(item).index()
+              break
+          # Set the index
+          if isNull index
+            console.error "Unable to find an index for #{childElement} with text '#{setSelected}' (ignore case: #{ignoreCase})"
+            return false
+          try
+            p$(selector).select index
+          catch e
+            p$(selector).selected = index
+          if p$(selector).selected isnt index
+            doNothing()
+        else
+          try
+            p$(selector).select setSelected
+          catch
+            p$(selector).selected = setSelected
+        return true
       catch e
+        console.error "Unable to set selected '#{setSelected}': #{e.message}"
         return false
-    else
+    else if isBool setSelected
       $(this).parent().children().removeAttribute("aria-selected")
       $(this).parent().children().removeAttribute("active")
       $(this).parent().children().removeClass("iron-selected")
@@ -311,15 +345,24 @@ jQuery.fn.polymerSelected = (setSelected = undefined, attrLookup = "attrForSelec
   else
     val = undefined
     try
-      val = $(this).get(0).selected
+      try
+        val = p$(this).selected
+      if isNull val
+        val = p$(dropdownUniqueSelector).selected
       if isNumber(val) and not isNull(attr)
-        itemSelector = $(this).find("paper-item")[toInt(val)]
+        itemSelector = $(this).find(childElement)[toInt(val)]
         unless attr is true
           val = $(itemSelector).attr(attr)
         else
           # Fetch the label
           val = $(itemSelector).text()
+      else
+        console.debug "isNumber(val)", isNumber val, val
+        console.debug "isNull attr", isNull attr, attr
     catch e
+      console.error "Couldn't find selected: #{e.message}"
+      console.warn e.stack
+      console.debug "Selector", dropdownUniqueSelector
       return false
     if val is "null" or not val?
       val = undefined
@@ -395,7 +438,7 @@ Function::debounce = (threshold = 300, execAsap = false, timeout = window.deboun
       clearTimeout timeout
       delete core.debouncers[key]
     func.apply(func, args) unless execAsap
-    console.info("Debounce applied")
+    console.debug "Debounce executed for #{key}"
   if timeout?
     try
       clearTimeout timeout
@@ -403,10 +446,10 @@ Function::debounce = (threshold = 300, execAsap = false, timeout = window.deboun
       # just do nothing
   if execAsap
     func.apply(obj, args)
-    console.log("Executed #{key} immediately")
+    console.debug "Executed #{key} immediately"
     return false
   if key?
-    console.log "Debouncing '#{key}' for #{threshold} ms"
+    console.debug "Debouncing '#{key}' for #{threshold} ms"
     core.debouncers[key] = delay threshold, ->
       delayed()
   else
@@ -1110,6 +1153,7 @@ getMaxZ = ->
   Math.max.apply null, mapFunction()
 
 browserBeware = ->
+  return false # for now
   unless Browsers?.hasCheckedBrowser?
     unless Browsers?
       window.Browsers = new Object()

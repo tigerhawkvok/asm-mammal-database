@@ -196,12 +196,12 @@ paper-dialog-scrollable {
 
 
 #modal-taxon, #modal-taxon-edit {
-    position:fixed !important;
-    max-height:75vh; // For mobile
-    top: 12.5vh;
-    @media(max-width: @screen-sm-max) {
-        top: 6.5vh;
-    }
+    // position:fixed !important;
+    // max-height:75vh; // For mobile
+    // top: 12.5vh;
+    // @media(max-width: @screen-sm-max) {
+    //     top: 6.5vh;
+    // }
     paper-dialog-scrollable#modal-taxon-editor {
         max-height: 66vh;
         overflow-y: scroll;
@@ -451,8 +451,15 @@ copyright-statement {
   color: #737373;
 }
 
-#modal-taxon-editor paper-input {
-    display:block;
+#modal-taxon-editor {
+    .filled-editor-dropdown {
+        paper-dropdown-menu {
+            width: 90%;
+        }
+    }
+    paper-input {
+        display:block;
+    }
 }
 
 paper-toast, paper-spinner {

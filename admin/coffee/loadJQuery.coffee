@@ -3,13 +3,13 @@
 # Put any functions you want to load at the very end in a public function named loadLast().
 ###
 
-jqueryVersion = "2.1.4"
+jqueryVersion = "2.2.4"
 jq_paths = [
         "ajax.googleapis.com/ajax/libs/jquery/#{jqueryVersion}/jquery.min.js"
         "ajax.aspnetcdn.com/ajax/jQuery/jquery-#{jqueryVersion}.min.js"
         "https://code.jquery.com/jquery-#{jqueryVersion}.min.js"
         "cdnjs.cloudflare.com/ajax/libs/jquery/#{jqueryVersion}/jquery.min.js"
-        "/bower_components/jquery/dist/jquery.min.js"
+        "bower_components/jquery/dist/jquery.min.js"
     ]
 
 

@@ -1,7 +1,7 @@
 <?php
 
 /***********************************************************
- * ASM Species database  database API target
+ * ASM Species database API target
  *
  * Find the full API description here:
  *
@@ -15,9 +15,13 @@
  * @param string include (comma-seperated values)
  * @param string type
  * @param JSON filter
+ * @param boolean dwc_only
  *
  * Initial version by Philip Kahn
- * Started July 2014
+ * Started January 2017
+ * Forked from
+ * https://github.com/SSARHERPS/SSAR-species-database/blob/v1.2.5/commonnames_api.php
+ *
  * https://github.com/tigerhawkvok/asm-mammal-database
  **********************************************************/
 

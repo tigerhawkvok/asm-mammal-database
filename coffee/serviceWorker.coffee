@@ -79,17 +79,18 @@ renderDataArray = (data = dataArray, firstIteration = true, renderChunk = 100) -
               col = split.join(":")
               # console.log("Reconstructed #{col}")
               d = JSON.parse(col)
-              genus = Object.keys(d)[0]
-              species = d[genus]
-              if toInt(row.parens_auth_genus).toBool()
-                genus = "(#{genus})"
-              if toInt(row.parens_auth_species).toBool()
-                species = "(#{species})"
-              col = "G: #{genus}<br/>S: #{species}"
             catch e
               # Render as-is
               console.error("There was an error parsing '#{col}'",e.message)
               d = col
+          try
+            genus = Object.keys(d)[0]
+            species = d[genus]
+            if toInt(row.parens_auth_genus).toBool()
+              genus = "(#{genus})"
+            if toInt(row.parens_auth_species).toBool()
+              species = "(#{species})"
+            col = "G: #{genus}<br/>S: #{species}"
         else
           d = col
       if k is "image"

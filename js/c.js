@@ -1,4 +1,4 @@
-var _metaStatus, activityIndicatorOff, activityIndicatorOn, animateLoad, bindClickTargets, bindClicks, bindDismissalRemoval, bindPaperMenuButton, browserBeware, byteCount, checkFileVersion, checkLaggedUpdate, checkTaxonNear, clearSearch, deEscape, deepJQuery, delay, doCORSget, doFontExceptions, doNothing, domainPlaceholder, downloadCSVList, downloadHTMLList, eutheriaFilterHelper, fetchMajorMinorGroups, foo, formatAlien, formatScientificNames, formatSearchResults, getElementHtml, getFilters, getLocation, getMaxZ, goTo, insertCORSWorkaround, insertModalImage, interval, isArray, isBlank, isBool, isEmpty, isJson, isNull, isNumber, isNumeric, lightboxImages, loadJS, mapNewWindows, modalTaxon, openLink, openTab, overlayOff, overlayOn, p$, parseTaxonYear, performSearch, prepURI, randomInt, ref, roundNumber, roundNumberSigfig, safariDialogHelper, safariSearchArgHelper, searchParams, setHistory, setupServiceWorker, showBadSearchErrorMessage, showDownloadChooser, smartCalPhotosLink, smartReptileDatabaseLink, smartUpperCasing, sortResults, stopLoad, stopLoadError, toFloat, toInt, toObject, toastStatusMessage, uri,
+var _metaStatus, activityIndicatorOff, activityIndicatorOn, animateLoad, bindClickTargets, bindClicks, bindDismissalRemoval, bindPaperMenuButton, browserBeware, byteCount, checkFileVersion, checkLaggedUpdate, checkTaxonNear, clearSearch, deEscape, deepJQuery, delay, doCORSget, doFontExceptions, doNothing, domainPlaceholder, downloadCSVList, downloadHTMLList, eutheriaFilterHelper, fetchMajorMinorGroups, foo, formatAlien, formatScientificNames, formatSearchResults, getElementHtml, getFilters, getLocation, getMaxZ, goTo, insertCORSWorkaround, insertModalImage, interval, isArray, isBlank, isBool, isEmpty, isJson, isNull, isNumber, isNumeric, lightboxImages, loadJS, mapNewWindows, modalTaxon, openLink, openTab, overlayOff, overlayOn, p$, parseTaxonYear, performSearch, prepURI, randomInt, ref, roundNumber, roundNumberSigfig, safariDialogHelper, safariSearchArgHelper, searchParams, setHistory, setupServiceWorker, showBadSearchErrorMessage, showDownloadChooser, smartUpperCasing, sortResults, stopLoad, stopLoadError, toFloat, toInt, toObject, toastStatusMessage, uri,
   slice = [].slice,
   indexOf = [].indexOf || function(item) { for (var i = 0, l = this.length; i < l; i++) { if (i in this && this[i] === item) return i; } return -1; };
 
@@ -2044,7 +2044,7 @@ formatSearchResults = function(result, container, callback) {
   }
   colClass = null;
   bootstrapColCount = 0;
-  dontShowColumns = ["id", "minor_type", "notes", "major_type", "taxon_author", "taxon_credit", "image_license", "image_credit", "taxon_credit_date", "parens_auth_genus", "parens_auth_species", "is_alien", "internal_id", "source", "deprecated_scientific", "canonical_sciname", "simple_linnean_group", "iucn"];
+  dontShowColumns = ["id", "minor_type", "notes", "major_type", "taxon_author", "taxon_credit", "image_license", "image_credit", "taxon_credit_date", "parens_auth_genus", "parens_auth_species", "is_alien", "internal_id", "source", "deprecated_scientific", "canonical_sciname", "simple_linnean_group", "iucn", "dwc", "entry"];
   externalCounter = 0;
   renderTimeout = delay(5000, function() {
     stopLoadError("There was a problem parsing the search results.");
@@ -2189,21 +2189,23 @@ formatSearchResults = function(result, container, callback) {
                     split[1] = "\"" + year + "\"}";
                     col = split.join(":");
                     d = JSON.parse(col);
-                    genus = Object.keys(d)[0];
-                    species = d[genus];
-                    if (toInt(row.parens_auth_genus).toBool()) {
-                      genus = "(" + genus + ")";
-                    }
-                    if (toInt(row.parens_auth_species).toBool()) {
-                      species = "(" + species + ")";
-                    }
-                    col = "G: " + genus + "<br/>S: " + species;
                   } catch (error3) {
                     e = error3;
                     console.error("There was an error parsing '" + col + "'", e.message);
                     d = col;
                   }
                 }
+                try {
+                  genus = Object.keys(d)[0];
+                  species = d[genus];
+                  if (toInt(row.parens_auth_genus).toBool()) {
+                    genus = "(" + genus + ")";
+                  }
+                  if (toInt(row.parens_auth_species).toBool()) {
+                    species = "(" + species + ")";
+                  }
+                  col = "G: " + genus + "<br/>S: " + species;
+                } catch (undefined) {}
               } else {
                 d = col;
               }
@@ -2627,96 +2629,6 @@ insertModalImage = function(imageObject, taxon, callback) {
   return false;
 };
 
-smartReptileDatabaseLink = function() {
-
-  /*
-   * We're going to check the remote for synonyms, and fix links
-   * After
-   * https://github.com/SSARHERPS/SSAR-species-database/issues/77
-   */
-  var args, humanTaxon, taxon, taxonArray, taxonString, url;
-  url = "http://reptile-database.reptarium.cz/interfaces/services/check-taxon";
-  taxon = _asm.activeTaxon;
-  taxonArray = [taxon.genus, taxon.species];
-  if (taxon.subspecies != null) {
-    taxonArray.push(taxon.subspecies);
-  }
-  taxonString = taxonArray.join("+");
-  humanTaxon = taxonArray.join(" ");
-  humanTaxon = humanTaxon.slice(0, 1).toUpperCase() + humanTaxon.slice(1);
-  args = "taxon=" + taxonString;
-  $.get(url, args, "json").done(function(result) {
-    var alternateTaxa, alternateTaxonArray, alternateTaxonString, button, buttonText, data, outboundLink;
-    if (result.response === "VALID") {
-      console.info("_" + humanTaxon + "_ is the consensus taxon with Reptile Database");
-      return true;
-    }
-    if (result.response === "SYNONYM") {
-      alternateTaxa = result.VALID[0];
-      alternateTaxonString = alternateTaxa.toLowerCase().replace(/\s/mg, "+");
-      alternateTaxonArray = alternateTaxa.split(/\s/);
-      data = {
-        genus: alternateTaxonArray[0],
-        species: alternateTaxonArray[1]
-      };
-      buttonText = "Reptile Database";
-      button = "<paper-button id='modal-alt-linkout' class=\"hidden-xs\">" + buttonText + "</paper-button>";
-      outboundLink = _asm.affiliateQueryUrl.reptileDatabase + "?genus=" + data.genus + "&species=" + data.species;
-      if (outboundLink != null) {
-        $("#modal-alt-linkout").replaceWith(button);
-        $("#modal-alt-linkout").click(function() {
-          return openTab(outboundLink);
-        });
-      }
-      console.info("Reptile Database uses recognizes _" + humanTaxon + "_ as _" + alternateTaxa + "_");
-      return smartCalPhotosLink(data);
-    } else {
-      d$("#modal-alt-linkout").remove();
-      return console.warn("Reptile Database couldn't find this taxon at all!");
-    }
-  }).fail(function() {
-    console.warn("Unable to check the taxon on Reptile Database!");
-    return false;
-  });
-  return false;
-};
-
-smartCalPhotosLink = function(overrideTaxon) {
-
-  /*
-   * Called from smartReptileDatabaseLink()
-   * If there were no Cal Photos hits, try
-   * the reptile database genus/species with the
-   * SSAR species as the subspecies
-   */
-  var calPhotosTaxon, postImageInsertion, taxonArray;
-  calPhotosTaxon = {
-    genus: overrideTaxon.genus,
-    species: overrideTaxon.species,
-    subspecies: _asm.activeTaxon.species
-  };
-  taxonArray = [calPhotosTaxon.genus, calPhotosTaxon.species];
-  if (calPhotosTaxon.subspecies != null) {
-    taxonArray.push(calPhotosTaxon.subspecies);
-  }
-  if (d$(".modal-img-container").exists()) {
-    console.info("CalPhotos agrees with SSAR");
-    return true;
-  }
-  postImageInsertion = function() {
-    var humanTaxon;
-    humanTaxon = taxonArray.join(" ");
-    humanTaxon = humanTaxon.slice(0, 1).toUpperCase() + humanTaxon.slice(1);
-    console.info("CalPhotos agrees with Reptile Database, so we're linking to _" + humanTaxon + "_ for CalPhotos");
-    $("#modal-calphotos-linkout").unbind().click(function() {
-      return openTab(_asm.affiliateQueryUrl.calPhotos + "?rel-taxon=contains&where-taxon=" + (taxonArray.join("+")));
-    });
-    return false;
-  };
-  insertModalImage(_asm.taxonImage, calPhotosTaxon, postImageInsertion);
-  return false;
-};
-
 modalTaxon = function(taxon) {
   var html;
   if (taxon == null) {
@@ -2738,7 +2650,7 @@ modalTaxon = function(taxon) {
     $("body").append(html);
   }
   $.get(searchParams.targetApi, "q=" + taxon, "json").done(function(result) {
-    var button, buttonText, commonType, data, deprecatedHtml, e, error1, error2, error3, genusAuthBlock, humanTaxon, i, minorTypeHtml, notes, outboundLink, ref1, sn, speciesAuthBlock, taxonArray, taxonCreditDate, year, yearHtml;
+    var buttonText, commonType, data, deprecatedHtml, e, error1, error2, error3, genusAuthBlock, humanTaxon, i, minorTypeHtml, notes, outboundLink, sn, speciesAuthBlock, taxonArray, taxonCreditDate, year, yearHtml;
     data = result.result[0];
     if (data == null) {
       toastStatusMessage("There was an error fetching the entry details. Please try again later.");
@@ -2820,15 +2732,6 @@ modalTaxon = function(taxon) {
       species: taxonArray[1],
       subspecies: taxonArray[2]
     };
-    if ((ref1 = data.linnean_order.toLowerCase()) === "caudata" || ref1 === "anura" || ref1 === "gymnophiona") {
-      buttonText = "AmphibiaWeb";
-      outboundLink = _asm.affiliateQueryUrl.amphibiaWeb + "?where-genus=" + data.genus + "&where-species=" + data.species;
-    } else if (!isNull(data.linnean_order)) {
-      buttonText = "Reptile Database";
-      button = "<paper-button id='modal-alt-linkout' class=\"hidden-xs\">" + buttonText + "</paper-button>";
-      outboundLink = _asm.affiliateQueryUrl.reptileDatabase + "?genus=" + data.genus + "&species=" + data.species;
-      smartReptileDatabaseLink();
-    }
     if (outboundLink != null) {
       $("#modal-alt-linkout").replaceWith(button);
       $("#modal-alt-linkout").click(function() {

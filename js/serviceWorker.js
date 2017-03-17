@@ -1003,21 +1003,23 @@ renderDataArray = function(data, firstIteration, renderChunk) {
               split[1] = "\"" + year + "\"}";
               col = split.join(":");
               d = JSON.parse(col);
-              genus = Object.keys(d)[0];
-              species = d[genus];
-              if (toInt(row.parens_auth_genus).toBool()) {
-                genus = "(" + genus + ")";
-              }
-              if (toInt(row.parens_auth_species).toBool()) {
-                species = "(" + species + ")";
-              }
-              col = "G: " + genus + "<br/>S: " + species;
             } catch (error2) {
               e = error2;
               console.error("There was an error parsing '" + col + "'", e.message);
               d = col;
             }
           }
+          try {
+            genus = Object.keys(d)[0];
+            species = d[genus];
+            if (toInt(row.parens_auth_genus).toBool()) {
+              genus = "(" + genus + ")";
+            }
+            if (toInt(row.parens_auth_species).toBool()) {
+              species = "(" + species + ")";
+            }
+            col = "G: " + genus + "<br/>S: " + species;
+          } catch (undefined) {}
         } else {
           d = col;
         }

@@ -415,7 +415,8 @@ loadModalTaxonEditor = (extraHtml = "", affirmativeText = "Save") ->
   <iron-autogrow-textarea id="edit-notes" rows="5" aria-describedby="notes-help" placeholder="Notes">
     <textarea placeholder="Notes" id="edit-notes-textarea" name="edit-notes-textarea" aria-describedby="notes-help" rows="5"></textarea>
   </iron-autogrow-textarea>
-  <iron-autogrow-textarea id="edit-entry" rows="5" aria-describedby="entry-help" placeholder="Entry">
+  <br/>
+  <iron-autogrow-textarea id="edit-entry" rows="5" aria-describedby="notes-help" placeholder="Entry">
     <textarea placeholder="Entry" id="edit-entry-textarea" name="edit-entry-textarea" aria-describedby="entry-help" rows="5"></textarea>
   </iron-autogrow-textarea>
   <paper-input label="Data Source" id="edit-source" name="edit-source" floatingLabel></paper-input>
@@ -737,13 +738,17 @@ lookupEditorSpecies = (taxon = undefined) ->
             d = d.replace(/}/,"")
             if d is '""'
               d = ""
-          if col isnt "notes"
+          textAreas = [
+            "notes"
+            "entry"
+            ]
+          unless col in textAreas
             d$(fieldSelector).attr("value",d)
           else
             width = $("#modal-taxon-edit").width() * .9
             d$(fieldSelector).css("width","#{width}px")
             textarea = p$(fieldSelector).textarea
-            $(textarea).text(d)
+            $(textarea).text(d.unescape())
       # Finally, open the editor
       modalElement = p$("#modal-taxon-edit")
       $("#modal-taxon-edit").on "iron-overlay-opened", ->
@@ -788,6 +793,7 @@ saveEditorEntry = (performMode = "save") ->
     "genus-authority"
     "species-authority"
     "notes"
+    "entry"
     "image"
     "image-credit"
     "image-license"
@@ -1049,6 +1055,7 @@ saveEditorEntry = (performMode = "save") ->
   # The parens checks
   saveObject.parens_auth_genus = d$("#genus-authority-parens").polymerChecked()
   saveObject.parens_auth_species = d$("#species-authority-parens").polymerChecked()
+  saveObject.canonical_sciname = if isNull(saveObject.subspecies) then "#{saveObject.genus.toTitleCase()} #{saveObject.species}" else "#{saveObject.genus.toTitleCase()} #{saveObject.species} #{saveObject.subspecies}"
   # We've ended the loop! Did we hit an escape condition?
   if escapeCompletion
     animateLoad()
@@ -1094,6 +1101,8 @@ saveEditorEntry = (performMode = "save") ->
       unless isNull($("#admin-search").val())
         renderAdminSearchResults()
       stopLoad()
+      delay 250, ->
+        stopLoad()
       console.log "Save complete"
       return false
     stopLoadError result.human_error

@@ -26,9 +26,9 @@ module.exports = (grunt) ->
       options:
         stderr: false
       bower:
-        command: ["bower update"].join("&&")
-      npm:
-        command: ["npm update"].join("&&")
+        command: ["bower install", "bower update"].join("&&")
+      yarn:
+        command: ["yarn install", "yarn upgarde"].join("&&")
       movesrc:
         command: ["mv js/c.src.coffee js/maps/c.src.coffee"].join("&&")
     postcss:
@@ -187,14 +187,14 @@ module.exports = (grunt) ->
   ## Global update
   # Bower
   grunt.registerTask("updateBower","Update bower dependencies",["shell:bower"])
-  grunt.registerTask("updateNPM","Update Node dependencies",["shell:npm"])
+  grunt.registerTask("updateYarn","Update Yarn dependencies",["shell:yarn"])
   # Minify the bower stuff in case it changed
   grunt.registerTask "update","Update dependencies", ->
-    grunt.task.run("updateNPM","updateBower","minify")
+    grunt.task.run("updateYarn","updateBower","minify")
   ## Deploy
   grunt.registerTask "qbuild","CoffeeScript and CSS", ->
     # ,"vulcanize"
     grunt.task.run("phplint","compile","css")
-  grunt.registerTask "build","Compile and update, then watch", ->
+  grunt.registerTask "build","Prepare for deployment", ->
     # ,"vulcanize"
-    grunt.task.run("qbuild","minify")
+    grunt.task.run("update","qbuild","minify")

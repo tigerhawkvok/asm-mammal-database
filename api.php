@@ -459,7 +459,7 @@ function doSearch($overrideSearch = null)
                     $params["genus"] = $search;
                     $params["species"] = $search;
                     $params["subspecies"] = $search;
-                    $params["major_common_type"] = $search;
+                    $params["major_type"] = $search;
                     $params["major_subtype"] = $search;
                     $params["deprecated_scientific"] = $search;
                 }
@@ -470,28 +470,23 @@ function doSearch($overrideSearch = null)
                         $params[$db->sanitize($column)] = $search;
                     }
                 }
-                if(isset($_REQUEST['include']))
-                {
+                if(isset($_REQUEST['include'])) {
                     foreach(explode(",",$_REQUEST['include']) as $column)
                     {
                         $params[$db->sanitize($column)] = $search;
                     }
                 }
-                if(!$flag_fuzzy)
-                {
+                if(!$flag_fuzzy) {
                     $r = $db->doQuery($params,"*",$boolean_type,$loose,true,$order_by);
                     try {
-                        while($row = mysqli_fetch_assoc($r))
-                        {
+                        while($row = mysqli_fetch_assoc($r)) {
                             $result_vector[] = $row;
                         }
-                    }
-                    catch(Exception $e)
-                    {
+                    } catch(Exception $e) {
                         if(is_string($r)) $error = $r;
                         else $error = $e;
                     }
-                    if($show_debug === true) $result_vector["debug"] = $db->doQuery($params,"*",$boolean_type,$loose,true,$order_by,true);
+                       if ($show_debug === true) $result_vector["debug"] = $db->doQuery($params,"*",$boolean_type,$loose,true,$order_by,true);
                 }
                 else
                 {
@@ -832,7 +827,7 @@ $args = "token=" . $iucnToken;
 $iucnCanProvide = array(
     "common_name" => "main_common_name",
     "species_authority" => "authority",
-    
+
 );
 
 function getTaxonIucnData($taxonBase) {
@@ -863,7 +858,7 @@ function getTaxonIucnData($taxonBase) {
             break;
         }
     }
-    
+
     if ($doIucn === true) {
         # IUCN returns an empty result unless "%20" is used to separate the
         # genus and species
@@ -873,7 +868,7 @@ function getTaxonIucnData($taxonBase) {
             $iucnResponse = json_decode($iucnRawResponse["response"], true);
         } catch (Exception $e) {
         }
-        $iucnTaxon = $iucnResponse["result"][0];    
+        $iucnTaxon = $iucnResponse["result"][0];
         $flagSave = false;
         foreach($iucnCanProvide as $field=>$iucnField) {
             if(empty($taxon[$field]) && !empty($iucnTaxon[$iucnField])) {
@@ -894,18 +889,18 @@ function getTaxonIucnData($taxonBase) {
         $taxon["iucn"] = $iucnTaxon;
         unset($taxon["id"]);
     }
-    
+
     return $taxon;
 }
 
-    
+
 function getUniqueVals($column) {
     /***
      *
      ***/
     if(checkColumnExists($column) === true) {
         global $db;
-        $query = "SELECT DISTINCT ".$column." FROM ".$db->getTable();        
+        $query = "SELECT DISTINCT ".$column." FROM ".$db->getTable();
         $r = mysqli_query($db->getLink(), $query);
         if($r === false) {
             return array(
@@ -940,7 +935,7 @@ if(sizeof($result["result"]) <= 5) {
                 break;
             }
         }
-        
+
         if ($doIucn === true) {
             # IUCN returns an empty result unless "%20" is used to separate the
             # genus and species
@@ -951,7 +946,7 @@ if(sizeof($result["result"]) <= 5) {
             } catch (Exception $e) {
                 continue;
             }
-            $iucnTaxon = $iucnResponse["result"][0];    
+            $iucnTaxon = $iucnResponse["result"][0];
             $flagSave = false;
             foreach($iucnCanProvide as $field=>$iucnField) {
                 if(empty($taxon[$field]) && !empty($iucnTaxon[$iucnField])) {
@@ -980,6 +975,59 @@ if(sizeof($result["result"]) <= 5) {
 }
 
 
+
+# DarwinCore mapping
+# http://rs.tdwg.org/dwc/terms/
+$dwcResultMap = array(
+    "subspecies" => "subspecificEpithet",
+    "species" => "specificEpithet",
+    "canonical_sciname" => "scientificName",
+    "citation" => "namePublishedIn",
+    "common_name" => "vernacularName",
+);
+
+$higherClassificationMap = array(
+    "simple_linnean_group" => "cohort",
+    "major_type" => "magnaorder",
+    "major_subtype" => "superorder",
+);
+
+
+$dwcTotal = array();
+
+foreach($result["result"] as $i=>$taxon) {
+    $dwcResult = array();
+    $higherClassification = array();
+    foreach($taxon as $key=>$value) {
+        if(array_key_exists($key, $dwcResultMap)) {
+            $dwcResult[$dwcResultMap[$key]] = $value;
+        }
+        if(array_key_exists($key, $higherClassificationMap) && !empty($value)) {
+            $higherClassification[$higherClassificationMap[$key]] = $value;
+        }
+    }
+    $list = implode("|", $higherClassification);
+    $higherClassification["list"] = $list;
+    $dwcResult["higherClassification"] = $higherClassification;
+    $years = json_decode($taxon["authority_year"], true);
+    $genusYear = key($years);
+    $speciesYear = current($years);
+    $genus = empty($genusYear) ? $taxon["genus_authority"] : $taxon["genus_authority"] . ", " . $genusYear;
+    $species = empty($speciesYear) ? $taxon["species_authority"] : $taxon["species_authority"] . ", " . $speciesYear;
+    $genus = toBool($taxon["parens_auth_genus"]) ? "($genus)" : $genus;
+    $species = toBool($taxon["parens_auth_species"]) ? "($species)" : $species;
+    $dwcResult["scientificNameAuthorship"] = array(
+        "genus" => $genus,
+        "species" => $species,
+    );
+    $dwcResult["taxonRank"] = "species";
+    $dwcResult["taxonomicStatus"] = "accepted";
+    $dwcResult["dcterms:bibliographicCitation"] = $taxon["canonical_sciname"]." (ASM Species Account Database #".$taxon["internal_id"].") fetched ".date(DATE_ISO8601);
+    $result["result"][$i]["dwc"] = $dwcResult;
+    $dwcTotal[] = $dwcResult;
+}
+
+if(toBool($_REQUEST["dwc_only"])) $result["result"] = $dwcTotal;
 
 # $as_include isn't specified, so if it is, it's from a parent file
 if($as_include !== true) returnAjax($result);

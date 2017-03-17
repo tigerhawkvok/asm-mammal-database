@@ -984,6 +984,7 @@ if(sizeof($result["result"]) <= 5) {
 # http://rs.tdwg.org/dwc/terms/
 $dwcResultMap = array(
     "subspecies" => "subspecificEpithet",
+    "genus" => "genus",
     "species" => "specificEpithet",
     "canonical_sciname" => "scientificName",
     "citation" => "namePublishedIn",

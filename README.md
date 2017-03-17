@@ -110,7 +110,7 @@ The JSON result gives the following parameters:
 
     If the `dwc_only` flag is set, only the contents of the key `dwc` are returned per taxon.
 
-    A sample DarwinCore response might look like
+    A sample DarwinCore-formatted response (either as a subkey `dwc` or the replacement with `dwc_only`)might look like
 
     ```json
     {
@@ -118,6 +118,7 @@ The JSON result gives the following parameters:
       "subspecificEpithet": "",
       "order": "perissodactyla",
       "specificEpithet": "bicornis",
+      "genus": "diceros",
       "vernacularName": "Black Rhinoceros",
       "family": "rhinocerotidae",
       "namePublishedIn": "",

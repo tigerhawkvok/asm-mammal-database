@@ -109,6 +109,35 @@ The JSON result gives the following parameters:
     ```
 
     If the `dwc_only` flag is set, only the contents of the key `dwc` are returned per taxon.
+
+    A sample DarwinCore response might look like
+
+    ```json
+    {
+      "scientificName": "Diceros bicornis",
+      "subspecificEpithet": "",
+      "order": "perissodactyla",
+      "specificEpithet": "bicornis",
+      "vernacularName": "Black Rhinoceros",
+      "family": "rhinocerotidae",
+      "namePublishedIn": "",
+      "higherClassification": {
+        "cohort": "eutheria",
+        "magnaorder": "boreoeutheria",
+        "superorder": "laurasiatheria",
+        "list": "eutheria|boreoeutheria|laurasiatheria"
+      },
+      "scientificNameAuthorship": {
+        "genus": "",
+        "species": "(Linnaeus, 1758)"
+      },
+      "taxonRank": "species",
+      "class": "mammalia",
+      "taxonomicStatus": "accepted",
+      "dcterms:bibliographicCitation": "Diceros bicornis (ASM Species Account Database #6557) fetched 2017-03-17T15:48:30-0700"
+    }
+    ```
+
 5. `count`: The number of results
 6. `method`: The way the search was executed
 7. `query`: The requested search

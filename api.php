@@ -988,6 +988,8 @@ $dwcResultMap = array(
     "canonical_sciname" => "scientificName",
     "citation" => "namePublishedIn",
     "common_name" => "vernacularName",
+    "linnean_order" => "order",
+    "linnean_family" => "family",
 );
 
 $higherClassificationMap = array(
@@ -1010,6 +1012,8 @@ foreach($result["result"] as $i=>$taxon) {
             $higherClassification[$higherClassificationMap[$key]] = $value;
         }
     }
+    # Lucky us, it's alphabetical
+    ksort($higherClassification);
     $list = implode("|", $higherClassification);
     $higherClassification["list"] = $list;
     $dwcResult["higherClassification"] = $higherClassification;
@@ -1025,6 +1029,7 @@ foreach($result["result"] as $i=>$taxon) {
         "species" => $species,
     );
     $dwcResult["taxonRank"] = "species";
+    $dwcResult["class"] = "mammalia";
     $dwcResult["taxonomicStatus"] = "accepted";
     $dwcResult["dcterms:bibliographicCitation"] = $taxon["canonical_sciname"]." (ASM Species Account Database #".$taxon["internal_id"].") fetched ".date(DATE_ISO8601);
     $result["result"][$i]["dwc"] = $dwcResult;

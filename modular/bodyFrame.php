@@ -5,7 +5,7 @@ $bodyOpen = "  <body fullbleed vertical layout class='container-fluid'>
       <div class=\"logo-container col-xs-2\">
         <div class=\"square-object\">
           <div class=\"square tile\">
-            <img src=\"assets/favicon512.png\" alt=\"ASM logo\" class=\"content click\" data-href=\"http://mammology.org/\" data-newtab=\"true\"/>
+            <img src=\"assets/favicon512.png\" alt=\"ASM logo\" class=\"content click\" data-href=\"http://mammology.org/\" data-newtab=\"true\" title='Visit Mammalogy.org' data-toggle='tooltip' data-placement='bottom'/>
           </div>
           </div>
           </div>
@@ -19,5 +19,5 @@ $bodyOpen = "  <body fullbleed vertical layout class='container-fluid'>
           </p>
           </header>
 <main class='row'>";
-$bodyClose = "</main>".get_include_contents(dirname(__FILE__) . "/footer.php");
+$bodyClose = "\n\t\t</main>\n\n".get_include_contents(dirname(__FILE__) . "/footer.php")."\n\n\t</body>";
 ?>

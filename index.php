@@ -26,25 +26,10 @@
 
 
   </head>
-  <body class="container-fluid">
-    <header id="header-bar" class="fixed-bar clearfix row">
-      <div class="logo-container col-xs-2">
-        <div class="square-object">
-          <div class="square tile">
-            <img src="assets/favicon512.png" alt="ASM logo" class="content click" data-href="http://mammology.org/" data-newtab="true"/>
-          </div>
-        </div>
-      </div>
-      <p class="col-xs-10 text-right">
-        <span class="logged-in-values" hidden>
-          Logged in as <span class="fill-user-fullname header-bar-user-name"></span>
-        </span>
-        <paper-icon-button icon="icons:dashboard" class="click logged-in-values" data-href="https://mammaldiversity.org/admin-page.html" data-toggle="tooltip" title="Administration Dashboard" data-placement="bottom" hidden> </paper-icon-button>
-        <paper-icon-button icon='icons:settings-applications' class="click logged-in-values" data-href="https://mammaldiversity.org/admin" data-toggle="tooltip" title="Account Settings" data-placement="bottom" hidden></paper-icon-button>
-        <paper-icon-button icon="icons:home" class="click" data-href="https://mammaldiversity.org" data-toggle="tooltip" title="Home" data-placement="bottom"></paper-icon-button>
-      </p>
-    </header>
-    <main class="row">
+  <?php
+    require_once dirname(__FILE__)."/modular/bodyFrame.php";
+    echo $bodyOpen;
+    ?>
       <h1 id="title" class="col-xs-12">
         <span class="hidden-xs"><a href="https://mammaldiversity.org" class="newwindow"><img src="assets/logo.svg" alt="ASM logo" id="title-logo"/></a></span>
         ASM Species <span class="hidden-xs hidden-sm">Account</span> Database
@@ -96,7 +81,7 @@
                   <paper-item data-type="any" selected>All</paper-item>
                   <?php
                     try {
-                    echo "<!--".print_r($groups, true)."-->\n\n";
+                    #echo "<!--".print_r($groups, true)."-->\n\n";
                     foreach($groups["major"] as $major) {
                     echo "<paper-item data-type='$major'>".ucwords($major)."</paper-item>\n";
                     }
@@ -143,21 +128,7 @@
           </div>
         </div>
       </section>
-    </main>
-    <footer class="row  hidden-xs">
-      <div class="col-lg-7 col-sm-6">
-        <copyright-statement copyrightStart="2017">American Society of Mammalogists</copyright-statement>
-      </div>
-      <div class="col-sm-2" id="git-footer">
-        <paper-icon-button icon="icons:cloud-download" class="click" data-function="showDownloadChooser" data-toggle="tooltip" title="Download the complete list (HTML or CSV)"></paper-icon-button>
-        <paper-icon-button icon="glyphicon-social:github" class="click" data-url="https://github.com/tigerhawkvok/asm-mammal-database" data-toggle="tooltip" title="Visit us on GitHub"></paper-icon-button>
-      </div>
-      <div class="col-lg-1 col-sm-2" id="bug-footer">
-        <paper-icon-button icon="icons:bug-report" class="click" data-url="https://github.com/tigerhawkvok/asm-mammal-database/issues/new" data-toggle="tooltip" title="Report a bug"></paper-icon-button>
-      </div>
-      <div class="col-sm-2" id="polymer-footer">
-        Written with <paper-icon-button icon="icons:polymer" class="click" data-url="https://www.polymer-project.org"></paper-icon-button>
-      </div>
-    </footer>
-  </body>
+      <?php
+        echo $bodyClose;
+        ?>
 </html>

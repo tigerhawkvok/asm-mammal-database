@@ -330,7 +330,7 @@ if (!function_exists('do_post_request')) {
                 ),
             );
             $method = "simple_fgc";
-            $postArgs = implode("&", $data);
+            $postArgs = http_build_query($data);
             $getContentsUrl = $bareUrl . "?" . $postArgs;
             $simpleCtx = stream_context_create($simpleOptions);
             $response = file_get_contents($getContentsUrl, false, $simpleCtx);

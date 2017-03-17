@@ -178,7 +178,7 @@ paper-dialog-scrollable {
 }
 
 // General
-
+@body-header-offset: 3em;
 header#header-bar {
     position: fixed;
     margin-top: calc(0 - @body-padding);
@@ -191,9 +191,52 @@ header#header-bar {
     paper-icon-button {
         color: #fff;
     }
-    
+
     & + main {
-        margin-top: 3em;
+        margin-top: @body-header-offset;
+        padding-bottom: @body-header-offset;
+    }
+}
+
+.person {
+    .capitalize;
+}
+
+.vertical-center-children {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+main {
+    .species-title {
+        #species-authority-citation {
+            font-size: 50%;
+            font-weight: 300;
+            .text-muted;
+        }
+
+        & + .species-common {
+            .capitalize;
+            margin-top: -.25em;
+            text-indent: 1rem;
+        }
+    }
+
+    #images-block {
+        picture, img {
+            max-height: 40vh;
+        }
+        div.no-image {
+            width: calc(30vh ~"*" 4/3); // Make it look like a 4:3 image
+            height: 30vh;
+            .center-block;
+            border: 1px solid black;
+            box-shadow: 2px 2px 4px #000;
+            box-shadow: 2px 2px 4px rgba(0,0,0,.3);
+            background: #fefefe;
+            .vertical-center-children;
+        }
     }
 }
 
@@ -583,6 +626,12 @@ iron-label + paper-icon-button, label + paper-icon-button {
 
 h3 + marked-element {
     padding-left: 1rem;
+}
+
+figure {
+    figcaption {
+        .text-muted;
+    }
 }
 
 // @import "combinator.less";

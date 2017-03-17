@@ -6832,6 +6832,49 @@ header#header-bar paper-icon-button {
 }
 header#header-bar + main {
   margin-top: 3em;
+  padding-bottom: 3em;
+}
+.person {
+  text-transform: capitalize;
+}
+.vertical-center-children {
+  display: -ms-flexbox;
+  display: flex;
+  -ms-flex-pack: center;
+      justify-content: center;
+  -ms-flex-align: center;
+      align-items: center;
+}
+main .species-title #species-authority-citation {
+  font-size: 50%;
+  font-weight: 300;
+  color: #777777;
+}
+main .species-title + .species-common {
+  text-transform: capitalize;
+  margin-top: -0.25em;
+  text-indent: 1rem;
+}
+main #images-block picture,
+main #images-block img {
+  max-height: 40vh;
+}
+main #images-block div.no-image {
+  width: calc(30vh * 1.33333333);
+  height: 30vh;
+  display: block;
+  margin-left: auto;
+  margin-right: auto;
+  border: 1px solid black;
+  box-shadow: 2px 2px 4px #000;
+  box-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+  background: #fefefe;
+  display: -ms-flexbox;
+  display: flex;
+  -ms-flex-pack: center;
+      justify-content: center;
+  -ms-flex-align: center;
+      align-items: center;
 }
 .toggle-container paper-icon-button {
   margin-top: calc(-0.5em - 5px);
@@ -7140,4 +7183,7 @@ label + paper-icon-button {
 }
 h3 + marked-element {
   padding-left: 1rem;
+}
+figure figcaption {
+  color: #777777;
 }

@@ -47,7 +47,7 @@ function buildHeader($pageTitle, $prerender, $prefetch) {
 
 function getBody($content) {
     include "modular/bodyFrame.php";
-    $html = $bodyOpen . $content . $bodyClose;
+    $html = $bodyOpen . $content . $bodyClose . "\n</html>";
     return $html;
 }
 
@@ -287,7 +287,35 @@ if(empty($speciesRow["common_name"])) {
     }
 }
 
-$entryTitle = "<h1 class='species-title col-xs-12'>".getCanonicalSpecies($speciesRow)."</h1><h2 class='species-common capitalize col-xs-12'>".$speciesRow["common_name"]."</h2>\n\n";
+$nameCitation = "";
+$citationYears = json_decode($speciesRow["authority_year"], true);
+if(!empty($speciesRow["genus_authority"])) {
+    if(!empty($citationYears)) {
+        $citation = $speciesRow["genus_authority"]." ".key($citationYears);
+        if(toBool($speciesRow["parens_auth_genus"])) $citation = "($citation)";
+    } else {
+        $citation = "";
+    }
+    $nameCitation = "<span class='genus'>".$speciesRow["genus"]."</span>, <span class='citation person'>".$citation."</span>; ";
+}
+if(!empty($speciesRow["species_authority"])) {
+    if(!empty($citationYears)) {
+        $citation = $speciesRow["species_authority"]." ".current($citationYears);
+        if(toBool($speciesRow["parens_auth_species"])) $citation = "($citation)";
+    } else {
+        $citation = "";
+    }
+    if(!empty($citation)) {
+        $nameCitation .= "<span class='species'>".$speciesRow["species"]."</span>, <span class='citation person'>".$citation."</span>";
+    } else {
+        # What if we got it from the IUCN?
+        if(empty($nameCitation)) {
+            $nameCitation = "<span class='sciname'>".getCanonicalSpecies($speciesRow)."</span>, <span class='citation person iucn-citation'>".$speciesRow["species_authority"]."</span>";
+        }
+    }
+}
+
+$entryTitle = "<h1 class='species-title col-xs-12'>".getCanonicalSpecies($speciesRow)." <small id='species-authority-citation' class='text-muted'>$nameCitation</small></h1><h2 class='species-common col-xs-12'>".$speciesRow["common_name"]."</h2>\n\n";
 
 # Taxonomy notes
 $englishMap = array(
@@ -304,16 +332,176 @@ $taxonomyNotes = "<section id='taxonomy' class='col-xs-12'>
 # Any aside / note for this species.
 $entryNote = empty($speciesRow["notes"]) ? "" : "<section id='species-note' class='col-xs-12'><h3>Taxon Notes</h3><marked-element><div class='markdown-html'></div><script type='text/markdown'>".$speciesRow["notes"]."</script></marked-element></section>\n\n"; #"<section id='species-note' class='col-xs-12'><marked-element><div class='markdown-html'></div><script type='text/markdown'>".$speciesRow["notes"]."</script></marked-element></section>\n\n";
 
+
+/***********************************************************************************
+ * Images!
+ ***********************************************************************************/
 ## Build an image carousel
 # The initial large image should be the one under 'image'
 # Others should be linked ones from 'image_resources'
 
+$mammalDomain = "http://www.mammalogy.org";
+if(empty($speciesRow["image"])) {
+    # Get a picture from the Mammalogy database
+    try {
+        include_once dirname(__FILE__) . "/phpquery/phpQuery/phpQuery.php";
+        if(!class_exists("phpQuery")) throw(new Exception("BadPHPQuery"));
+        $url = $mammalDomain . "/search/asm_custom_search/" . urlencode(getCanonicalSpecies($speciesRow));
+        $images = "<section id='images-block' class='text-center col-xs-12'><!-- Image from search $url -->";
+        $html = file_get_contents($url);
+        phpQuery::newDocumentHTML($html);
+        $imgElement = pq("#imageLibraryContent #current_image img");
+        $imgRelPath = $imgElement->attr("src");
+        if(!empty($imgRelPath)) {
+        #if(false) {
+            $imgPath = $mammalDomain . $imgRelPath;
+            $imgHtml = "<img src='$imgPath' />";
+            $captionDescription = trim(pq("#imageLibraryContent #image-description")->text());
+                $captionDescription = substr($captionDescription, -1) == "." ? $captionDescription : $captionDescription . ".";
+            $caption = $captionDescription . " Image credit " . pq("#imageLibraryContent #image-photographer")->text() . " " . pq("#imageLibraryContent #image-date")->text() . ".";
+            $figure = "
+<figure class='from-mammalogyorg center-block text-center'>
+<picture>
+$imgHtml
+</picture>
+<figcaption>
+$caption
+</figcaption>
+</figure>
+";
+            $images .= $figure;
+        } else {
+            # We couldn't find a picture in the mammal library. Try
+            # iNaturalist.
+            #
+            # Sample:
+            # https://www.inaturalist.org/observations.json?taxon_name=ursus+arctos&quality_grade=research&photo_license=any&iconic_taxa[]=Mammalia&has[]=photos
+            $endpoint = "https://www.inaturalist.org/observations.json";
+            $postArgs = array(
+                "taxon_name" => urlencode(getCanonicalSpecies($speciesRow)),
+                "quality_grade" => "research",
+                "photo_license" => "any",
+                "iconic_taxa[]" => "Mammalia",
+                "has[]" => "photos",
+            );
+            $result = do_post_request($endpoint, $postArgs, "GET");
+            $response = json_decode($result["response"], true );
+            $images .= "<!-- Pinging iNat: ".$endpoint."?".http_build_query($postArgs)." \n\n Got back from args: ".print_r($postArgs, true)."-->";#" \n\n Result: ".print_r($response, true)." -->";
+            $inat = 0;
+            if(sizeof($response) > 0) {
+                shuffle($response);
+                $useObservation = $response[0];
+                # First, we have to check that there was a match, and
+                # iNat didn't return an unhelpful blob
+                $obsTaxon = explode(" ",$useObservation["taxon"]["name"]);
+                $refMatchGenus = strlen(substr($speciesRow["genus"], 0, -3)) < 3 ? $speciesRow["genus"] : substr($speciesRow["genus"], 0, -3);
+                $refMatchSpecies = strlen(substr($speciesRow["species"], 0, -3)) < 3 ? $speciesRow["species"] : substr($speciesRow["species"], 0, -3);
+                $obsMatchGenus = strlen(substr($obsTaxon[0], 0, -3)) < 3 ? strtolower($obsTaxon[0]) : substr(strtolower($obsTaxon[0]), 0, -3);
+                $obsMatchSpecies = strlen(substr($obsTaxon[1], 0, -3)) < 3 ? $obsTaxon[1] : substr($obsTaxon[1], 0, -3);
+                if($refMatchGenus == $obsMatchGenus || $refMatchSpecies == $obsMatchSpecies) {
+                #if(false) {
+                    $images .= "\n\n\n<!-- Using observation ".print_r($useObservation, true)." -->\n\n\n";
+                    $time = empty($useObservation["time_observed_at_utc"]) ? $useObservation["created_at_utc"] : $useObservation["time_observed_at_utc"];
+                    $date = strftime("%d %B %Y", strtotime($time));
+                    $photoObj = $useObservation["photos"];
+                    // loop?
+                    $photo = $photoObj[0];
+                    $imageCredit = "Image credit ".$photo["attribution"]." on ". $date . " (<a href='".$useObservation["uri"]."' class='newwindow'>via iNaturalist</a>)";
+                    $captionDescription = trim($useObservation["description"]);
+                    if(!empty($captionDescription)) {
+                        $captionDescription = substr($captionDescription, -1) == "." ? $captionDescription : $captionDescription . ".";
+                    }
+                    $caption = $captionDescription . " ".$imageCredit;
+                    $imgHtml = "<img src='".$photo["small_url"]."'/>";
+                    $figure = "
+<figure class='from-inaturalist center-block text-center'>
+<picture>
+<source
+sizes='(max-width: 480px) 25vw, (max-width: 768px) 33vw, (max-width: 1024px) 35w, (min-width: 1025px) 40w'
+srcset='".$photo["thumb_url"]." 100w,
+".$photo["small_url"]." 240w,
+".$photo["medium_url"]." 500w,
+".$photo["large_url"]." 1024w'
+/>
+$imgHtml
+</picture>
+<figcaption>
+$caption
+</figcaption>
+</figure>
+";
+                    $images .= $figure;
+                    $inat++;
+                } else {
+                    $images .= "\n\n<!-- iNat returned non-matching taxa: checked ".$useObservation["taxon"]["name"]." => $refMatchGenus/$obsMatchGenus|$refMatchSpecies/$obsMatchSpecies -->\n\n";
+                }
+            }
+            if($inat == 0) {
+                # iNaturalist failed us too.
+                # Last attempt: calPhotos
+                # Queries of format: http://calphotos.berkeley.edu/cgi/img_query?getthumbinfo=1&num=all&taxon=ursus+arctos&format=xml
+                $endpoint = "http://calphotos.berkeley.edu/cgi/img_query";
+                $postArgs = array(
+                    "getthumbinfo" => 1,
+                    "cconly" => 1,
+                    "num" => "all",
+                    "taxon" => getCanonicalSpecies($speciesRow),
+                    "format" => "xml",
+                );
+                $dest = $endpoint."?".http_build_query($postArgs);
+                $xmlContent = file_get_contents($dest);
+                $xml = new Xml();
+                $xml->setXml($xmlContent);
+                $imgArr = $xml->getAllTagContents("enlarge_jpeg_url");
+                if(sizeof($imgArr) > 0) {
+                    $copyrightArr = $xml->getAllTagContents("copyright");
+                    $licenseArr = $xml->getAllTagContents("license");
+                    $enlarge_urlArr = $xml->getAllTagContents("enlarge_url");
+                    $images .= "\n\n<!-- Calphotos via $dest : \n\n\n".print_r($imgArr, true)." -->\n\n";
+                    $key = array_rand($imgArr);
+                    $img = $imgArr[$key];
+                    $copyright = $copyrightArr[$key];
+                    $license = $licenseArr[$key];
+                    $enlarge_url = $enlarge_urlArr[$key];
+                    $imgHtml = "<img src='$img' />";
+                    $caption = "Image credit " . $copyright . " " . $license . " (via <a href='$enlarge_url' class='newwindow'>CalPhotos</a>).";
+                    $figure = "
+<figure class='from-mammalogyorg center-block text-center'>
+<picture>
+$imgHtml
+</picture>
+<figcaption>
+$caption
+</figcaption>
+</figure>
+";
+                    $images .= $figure;
+                } else {
+                    $images .= "<div class='no-image'><p class='text-muted'><em>Sorry, we have no images for this taxon</em></p></div>";
+                }
+            }
+        }
+        $images .= "</section>";
+    } catch (Exception $e) {
+        $images = "<!-- System had exception ".$e->getMessage()." making image block -->";
+    }
+
+
+} else {
+
 $images = "";
+
+}
+
+/***********************************************************************************
+ * Wrap up the entry
+ ***********************************************************************************/
 
 $speciesRow["entry"] = empty($speciesRow["entry"]) ? "No entry exists for this taxon." : $speciesRow["entry"];
 
 # The main entry.
-$primaryEntry = "<section id='species-account' class='col-xs-12 col-md-10 col-lg-6 col-md-offset-2 col-lg-offset-3'><h3>Taxon Entry</h3><marked-element><div class='markdown-html'></div><script type='text/markdown'>".$speciesRow["entry"]."</script></marked-element></section>\n\n";
+#  col-md-10 col-lg-6 col-md-offset-2 col-lg-offset-3
+$primaryEntry = "<section id='species-account' class='col-xs-12'><h3>Taxon Entry</h3><marked-element><div class='markdown-html'></div><script type='text/markdown'>".$speciesRow["entry"]."</script></marked-element></section>\n\n";
 
 # Credits
 $creditTime = strtotime($speciesRow["taxon_credit_date"]);

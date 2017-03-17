@@ -1,0 +1,28 @@
+{
+    "name":"pherum/phpquery",
+    "type":"library",
+    "description":"phpquery",
+    "version":"0.9.7",
+    "keywords":[],
+    "homepage":"http://code.google.com/p/phpquery/",
+    "license":"MIT",
+    "authors":[
+        {
+            "name":"Tobiasz Cudnik",
+            "email":"tobiasz.cudnik@gmail.com",
+            "homepage":"https://github.com/TobiaszCudnik",
+            "role":"Developer"
+        },
+        {
+            "name":"didier Belot",
+            "role":"Packager"
+        },
+        {
+            "name":"Greg Payne",
+            "role":"Packager"
+        }
+    ],
+    "autoload":{
+        "classmap": ["phpQuery/"]
+    }
+}

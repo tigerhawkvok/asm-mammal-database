@@ -419,12 +419,39 @@ jQuery.fn.polymerSelected = function(setSelected, attrLookup, dropdownSelector, 
    * @param childElement
    * @param ignoreCase -> match lower case trimmed values
    */
+  if (!$(this).exists()) {
+    console.error("Nonexistant element");
+    return false;
+  }
   dropdownId = $(this).attr("id");
   if (isNull(dropdownId)) {
     console.error("Your parent dropdown (eg, paper-dropdown-menu) must have a unique ID");
     return false;
   }
   dropdownUniqueSelector = "#" + dropdownId + " " + dropdownSelector;
+  try {
+    if (dropdownSelector === $(this).get(0).tagName.toLowerCase()) {
+      dropdownUniqueSelector = this;
+    }
+  } catch (undefined) {}
+  if (!$(dropdownUniqueSelector).exists()) {
+    dropdownSelector = "paper-menu";
+    dropdownUniqueSelector = "#" + dropdownId + " " + dropdownSelector;
+    try {
+      if (dropdownSelector === $(this).get(0).tagName.toLowerCase()) {
+        dropdownUniqueSelector = this;
+      }
+    } catch (undefined) {}
+    if (!$(dropdownUniqueSelector).exists()) {
+      try {
+        if (!isNull(p$(this).value)) {
+          return p$(this).value;
+        }
+      } catch (undefined) {}
+      console.error("Can't identify the dropdown selector for this dropdown list '" + dropdownId + "'", dropdownUniqueSelector);
+      return false;
+    }
+  }
   if (attrLookup !== true) {
     attr = $(dropdownUniqueSelector).attr(attrLookup);
     if (isNull(attr)) {
@@ -515,6 +542,9 @@ jQuery.fn.polymerSelected = function(setSelected, attrLookup, dropdownSelector, 
     if (val === "null" || (val == null)) {
       val = void 0;
     }
+    try {
+      val = val.trim();
+    } catch (undefined) {}
     return val;
   }
 };
@@ -1595,7 +1625,7 @@ doNothing = function() {
 };
 
 $(function() {
-  var e, error1, error2;
+  var e, error1, error2, len, m, md, mdText, ref1;
   formatScientificNames();
   bindClicks();
   mapNewWindows();
@@ -1617,6 +1647,9 @@ $(function() {
   } catch (error2) {
     e = error2;
     getLocation();
+    loadJS("js/admin.min.js", function() {
+      return verifyLoginCredentials();
+    });
     loadJS("js/jquery.cookie.min.js", function() {
       var html;
       if ($.cookie("asmherps_user") != null) {
@@ -1627,6 +1660,17 @@ $(function() {
       return false;
     });
   }
+  try {
+    ref1 = $("marked-element");
+    for (m = 0, len = ref1.length; m < len; m++) {
+      md = ref1[m];
+      mdText = $(md).find("script").text();
+      if (!isNull(mdText)) {
+        console.debug("Rendering markdown of", mdText);
+        p$(md).markdown = mdText;
+      }
+    }
+  } catch (undefined) {}
   browserBeware();
   return checkFileVersion();
 });
@@ -1677,7 +1721,7 @@ fetchMajorMinorGroups = function(scientific, callback) {
     }
     return false;
   };
-  if (typeof _asm.mammalGroupsBase === "object") {
+  if (typeof _asm.mammalGroupsBase === "object" && typeof _asm.major === "object") {
     if (!isArray(_asm.mammalGroupsBase)) {
       _asm.mammalGroupsBase = Object.toArray(_asm.mammalGroupsBase);
     }
@@ -1928,12 +1972,16 @@ getFilters = function(selector, booleanType) {
    */
   filterList = new Object();
   $(selector).each(function() {
-    var col, val;
+    var col, error1, val;
     col = $(this).attr("data-column");
     if (col == null) {
       return true;
     }
-    val = $(this).polymerSelected();
+    try {
+      val = $(this).polymerSelected();
+    } catch (error1) {
+      return true;
+    }
     if (val === "any" || val === "all" || val === "*") {
       return true;
     }
@@ -3338,6 +3386,7 @@ bindPaperMenuButton = function(selector, unbindTargets) {
    * https://github.com/polymerelements/paper-menu-button
    * https://elements.polymer-project.org/elements/paper-menu-button
    */
+  return false;
   ref1 = $(selector);
   for (m = 0, len = ref1.length; m < len; m++) {
     dropdown = ref1[m];

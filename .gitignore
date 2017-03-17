@@ -62,3 +62,4 @@ pdf/pdf-gen/*.pdf
 /keyrings/live/pubring.kbx~
 /keyrings/live/secring.gpg
 *.pyc
+*.pdnBak

@@ -50,8 +50,8 @@ loadAdminUi = ->
       <form id="admin-search-form" onsubmit="event.preventDefault()" class="row">
         <div>
           <paper-input label="Search for species" id="admin-search" name="admin-search" required autofocus floatingLabel class="col-xs-7 col-sm-8"></paper-input>
-          <paper-fab id="do-admin-search" icon="search" raisedButton class="materialblue"></paper-fab>
-          <paper-fab id="do-admin-add" icon="add" raisedButton class="materialblue"></paper-fab>
+          <paper-fab id="do-admin-search" icon="search" raisedButton class="asm-blue"></paper-fab>
+          <paper-fab id="do-admin-add" icon="add" raisedButton class="asm-blue"></paper-fab>
         </div>
       </form>
       <div id='search-results' class="row"></div>
@@ -91,12 +91,20 @@ verifyLoginCredentials = (callback) ->
   .done (result) ->
     console.log "Server called back from login credential verification", result
     if result.status is true
-      callback(result)
+      $(".logged-in-values").removeAttr "hidden"
+      cookieFullName = "#{uri.domain}_fullname"
+      $("header .fill-user-fullname").text $.cookie cookieFullName
+      if typeof callback is "function"
+        callback(result)
     else
-      unless isNull result.login_url
-        goTo(result.login_url)
+      $(".logged-in-values").remove()
+      if typeof callback is "function"
+        unless isNull result.login_url
+          goTo(result.login_url)
+        else
+          $("main #main-body").html("<div class='bs-callout-danger bs-callout col-xs-12'><h4>Couldn't verify login</h4><p>There's currently a server problem. Try back again soon.</p><p>The server said:</p><code>#{result.error}</code></div>")
       else
-        $("main #main-body").html("<div class='bs-callout-danger bs-callout col-xs-12'><h4>Couldn't verify login</h4><p>There's currently a server problem. Try back again soon.</p><p>The server said:</p><code>#{result.error}</code></div>")
+        console.log "Login credentials checked -- not logged in"
   .fail (result,status) ->
     # Throw up some warning here
     $("main #main-body").html("<div class='bs-callout-danger bs-callout col-xs-12'><h4>Couldn't verify login</h4><p>There's currently a server problem. Try back again soon.</p></div>")
@@ -401,11 +409,15 @@ loadModalTaxonEditor = (extraHtml = "", affirmativeText = "Save") ->
   </iron-label>
   <br/><br/>
   <paper-input label="ASM ID Number" id="edit-internal-id" name="edit-internal-id" floatingLabel></paper-input>
+  <br/>
+  <span class="help-block" id="notes-help">You can write your notes and entry in Markdown. (<a href="https://daringfireball.net/projects/markdown/syntax" "onclick='window.open(this.href); return false;' onkeypress='window.open(this.href); return false;'">Official Full Syntax Guide</a>)</span>
+  <br/><br/>
   <iron-autogrow-textarea id="edit-notes" rows="5" aria-describedby="notes-help" placeholder="Notes">
     <textarea placeholder="Notes" id="edit-notes-textarea" name="edit-notes-textarea" aria-describedby="notes-help" rows="5"></textarea>
   </iron-autogrow-textarea>
-  <span class="help-block" id="notes-help">You can write your notes in Markdown. (<a href="https://daringfireball.net/projects/markdown/syntax" "onclick='window.open(this.href); return false;' onkeypress='window.open(this.href); return false;'">Official Full Syntax Guide</a>)</span>
-  <br/><br/>
+  <iron-autogrow-textarea id="edit-entry" rows="5" aria-describedby="entry-help" placeholder="Entry">
+    <textarea placeholder="Entry" id="edit-entry-textarea" name="edit-entry-textarea" aria-describedby="entry-help" rows="5"></textarea>
+  </iron-autogrow-textarea>
   <paper-input label="Data Source" id="edit-source" name="edit-source" floatingLabel></paper-input>
   <paper-input label="Data Citation" id="edit-citation" name="edit-source" floatingLabel></paper-input>
   <div id="upload-image"></div>
@@ -782,7 +794,7 @@ saveEditorEntry = (performMode = "save") ->
     "taxon-author"
     "taxon-credit"
     "taxon-credit-date"
-    "internal_id"
+    "internal-id"
     "source"
     "citation"
     ]
@@ -845,7 +857,7 @@ saveEditorEntry = (performMode = "save") ->
       # If there were any error strings assigned, display an error.
       if error?
         escapeCompletion = true
-        console.warn("#{authYearDeepInputSelector} failed its validity checks for #{yearString}!")
+        console.warn "#{authYearDeepInputSelector} failed its validity checks for `#{yearString}`!"
         unless directYear
           # Populate the paper-input errors
           # See
@@ -944,11 +956,16 @@ saveEditorEntry = (performMode = "save") ->
     requiredNotEmpty.push("taxon-credit-date")
   for k, id of examineIds
     # console.log(k,id)
-    col = id.replace(/-/g,"_")
+    try
+      col = id.replace(/-/g,"_")
+    catch
+      console.warn "Unable to test against id '#{id}'"
+      continue
+    testSelector = "#edit-#{col.replace /\_/img,"-"}"
     unless col is "notes"
       colAsDropdownExists = false
       try
-        dropdownTentativeSelector = "#edit-#{col.replace /\_/g,"-"}"
+        dropdownTentativeSelector = testSelector
         if $(dropdownTentativeSelector).get(0).tagName.toLowerCase() is "paper-dropdown-menu"
           colAsDropdownExists = true
       console.debug "Col editor exists for '#{dropdownTentativeSelector}'?", colAsDropdownExists
@@ -957,10 +974,10 @@ saveEditorEntry = (performMode = "save") ->
       else
         try
           val = d$("#edit-#{id}").val().trim()
-        catch
+        catch e
           val = ""
           err =  "Unable to get value for #{id}"
-          console.warn err
+          console.warn "#{err}: #{e.message}"
           toastStatusMessage err
     else
       val = d$("#edit-notes").get(0).textarea.value
@@ -969,6 +986,11 @@ saveEditorEntry = (performMode = "save") ->
       # smart-formatted.
       # Deprecated scientifics are already taken care of.
       try
+        if isNumber val
+          if val is toInt(val).toString()
+            val = toInt val
+          else if vale is toFloat(val).toString()
+            val = toFloat val
         val = val.toLowerCase()
       catch e
         console.warn "Column '#{col}' threw error for value '#{val}': #{e.message}"
@@ -1022,6 +1044,11 @@ saveEditorEntry = (performMode = "save") ->
             escapeCompletion = true
     # Finally, tack it on to the saveObject
     saveObject[col] = val
+  # Some other save object items...
+  saveObject.id = toInt d$("#taxon-id").val()
+  # The parens checks
+  saveObject.parens_auth_genus = d$("#genus-authority-parens").polymerChecked()
+  saveObject.parens_auth_species = d$("#species-authority-parens").polymerChecked()
   # We've ended the loop! Did we hit an escape condition?
   if escapeCompletion
     animateLoad()
@@ -1029,11 +1056,8 @@ saveEditorEntry = (performMode = "save") ->
     completionErrorMessage ?= "There was a problem with your entry. Please correct your entry and try again."
     stopLoadError(completionErrorMessage)
     console.error(consoleError)
+    console.warn "Save object so far:", saveObject
     return true
-  saveObject.id = d$("#taxon-id").val()
-  # The parens checks
-  saveObject.parens_auth_genus = d$("#genus-authority-parens").polymerChecked()
-  saveObject.parens_auth_species = d$("#species-authority-parens").polymerChecked()
   if performMode is "save"
     unless isNumber(saveObject.id)
       animateLoad()
@@ -1064,14 +1088,15 @@ saveEditorEntry = (performMode = "save") ->
     if result.status is true
       console.log("Server returned",result)
       if escapeCompletion
-        console.error("Warning! The item saved, even though it wasn't supposed to.")
+        stopLoadError "Warning! The item saved, even though it wasn't supposed to."
         return false
       d$("#modal-taxon-edit").get(0).close()
       unless isNull($("#admin-search").val())
         renderAdminSearchResults()
+      stopLoad()
+      console.log "Save complete"
       return false
-    stopLoadError()
-    toastStatusMessage(result.human_error)
+    stopLoadError result.human_error
     console.error(result.error)
     console.warn("Server returned",result)
     console.warn("We sent","#{uri.urlString}#{adminParams.apiTarget}?#{args}")

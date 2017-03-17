@@ -6817,6 +6817,22 @@ paper-dialog-scrollable {
 html >>> paper-dialog-scrollable {
   padding: 1rem !important;
 }
+header#header-bar {
+  position: fixed;
+  margin-top: calc(-1rem);
+  color: #fff;
+  background: #446f74;
+  box-shadow: 3px 3px 3px #000;
+  box-shadow: 3px 3px 3px rgba(0, 0, 0, 0.3);
+  width: 100%;
+  z-index: 999;
+}
+header#header-bar paper-icon-button {
+  color: #fff;
+}
+header#header-bar + main {
+  margin-top: 3em;
+}
 .toggle-container paper-icon-button {
   margin-top: calc(-0.5em - 5px);
 }
@@ -6884,6 +6900,7 @@ footer {
 header .logo-container {
   width: 16.66666667%;
   float: left !important;
+  margin-top: .5em;
 }
 header .logo-container img {
   max-height: 2em;
@@ -7007,6 +7024,10 @@ paper-icon-button {
   border-radius: 3px;
   width: 80%;
 }
+.bs-callout.center-block {
+  margin-left: auto !important;
+  margin-right: auto !important;
+}
 .bs-callout-info {
   border-left-color: #5bc0de;
 }
@@ -7095,6 +7116,7 @@ paper-spinner {
   width: 50%;
   margin: 0;
   left: 25%;
+  z-index: 9999;
 }
 @media (max-width: 767px) {
   #outdated-warning {
@@ -7115,4 +7137,7 @@ label + paper-icon-button {
 }
 #taxonomy .common-taxonomy {
   color: #777777;
+}
+h3 + marked-element {
+  padding-left: 1rem;
 }

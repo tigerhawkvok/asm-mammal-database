@@ -287,7 +287,7 @@ if(empty($speciesRow["common_name"])) {
     }
 }
 
-$entryTitle = "<h1 class='species-title col-xs-12'>".getCanonicalSpecies($speciesRow)."</h1><h2 class='species-common col-xs-offset-1 col-xs-11'>".$speciesRow["common_name"]."</h2>";
+$entryTitle = "<h1 class='species-title col-xs-12'>".getCanonicalSpecies($speciesRow)."</h1><h2 class='species-common capitalize col-xs-12'>".$speciesRow["common_name"]."</h2>\n\n";
 
 # Taxonomy notes
 $englishMap = array(
@@ -299,10 +299,10 @@ $taxonomyNotes = "<section id='taxonomy' class='col-xs-12'>
 <section class='scientific-taxonomy'><span class='clade'>".$speciesRow["simple_linnean_group"]."</span> &#187; <span class='clade'>".$speciesRow["linnean_order"]."</clade> &#187; <span class='clade'>".$speciesRow["linnean_family"]."</span></section>
 
 <section class='common-taxonomy'>".$englishMap[$speciesRow["simple_linnean_group"]]." &#187; ".$speciesRow["simple_linnean_subgroup"]."</section>
-</section>";
+</section>\n\n";
 
 # Any aside / note for this species.
-$entryNote = empty($speciesRow["entry"]) ? "" : "<section id='species-note' class='col-xs-12'><marked-element><div class='markdown-html'></div><script type='text/markdown'>".$speciesRow["notes"]."</script></marked-element></section></section>";
+$entryNote = empty($speciesRow["notes"]) ? "" : "<section id='species-note' class='col-xs-12'><h3>Taxon Notes</h3><marked-element><div class='markdown-html'></div><script type='text/markdown'>".$speciesRow["notes"]."</script></marked-element></section>\n\n"; #"<section id='species-note' class='col-xs-12'><marked-element><div class='markdown-html'></div><script type='text/markdown'>".$speciesRow["notes"]."</script></marked-element></section>\n\n";
 
 ## Build an image carousel
 # The initial large image should be the one under 'image'
@@ -310,18 +310,22 @@ $entryNote = empty($speciesRow["entry"]) ? "" : "<section id='species-note' clas
 
 $images = "";
 
+$speciesRow["entry"] = empty($speciesRow["entry"]) ? "No entry exists for this taxon." : $speciesRow["entry"];
 
 # The main entry.
-$primaryEntry = "<section id='species-account' class='col-xs-12 col-md-10 col-lg-6 col-md-offset-2 col-lg-offset-3'><marked-element><div class='markdown-html'></div><script type='text/markdown'>".$speciesRow["entry"]."</script></marked-element></section>";
+$primaryEntry = "<section id='species-account' class='col-xs-12 col-md-10 col-lg-6 col-md-offset-2 col-lg-offset-3'><h3>Taxon Entry</h3><marked-element><div class='markdown-html'></div><script type='text/markdown'>".$speciesRow["entry"]."</script></marked-element></section>\n\n";
 
 # Credits
-$creditTime = intval($speciesRow["taxon_credit_date"]);
+$creditTime = strtotime($speciesRow["taxon_credit_date"]);
+if($creditTime === false) $creditTime = intval($speciesRow["taxon_credit_date"]);
 if(!is_numeric($creditTime) || $creditTime == 0) {
     $creditTime = time();
 }
-$creditAuthor = empty($speciesRow["taxon_author"]) ? "your local ASM server" : $speciesRow["taxon_author"];
-$credit = empty($speciesRow["taxon_credit"]) ? "Entry by ".$creditAuthor." on ".strftime("%d %B %Y", $creditTime) : $speciesRow["taxon_credit"];
-$entryCredits = "<section id='entry-credits' class='col-xs-12 small'><p>".$credit."</p></section>";
+
+
+$creditAuthor = empty($speciesRow["taxon_author"]) ? "your local ASM server" : $speciesRow["taxon_credit"];
+$credit = "Entry by ".$creditAuthor." on ".strftime("%d %B %Y", $creditTime);
+$entryCredits = "<section id='entry-credits' class='col-xs-12 small'><p>".$credit."</p></section>\n\n";
 
 $content = $entryTitle . $images . $taxonomyNotes. $entryNote . $primaryEntry . $entryCredits;
 

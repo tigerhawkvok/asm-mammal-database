@@ -27,9 +27,26 @@
 
   </head>
   <body class="container-fluid">
+    <header id="header-bar" class="fixed-bar clearfix row">
+      <div class="logo-container col-xs-2">
+        <div class="square-object">
+          <div class="square tile">
+            <img src="assets/favicon512.png" alt="ASM logo" class="content click" data-href="http://mammology.org/" data-newtab="true"/>
+          </div>
+        </div>
+      </div>
+      <p class="col-xs-10 text-right">
+        <span class="logged-in-values" hidden>
+          Logged in as <span class="fill-user-fullname header-bar-user-name"></span>
+        </span>
+        <paper-icon-button icon="icons:dashboard" class="click logged-in-values" data-href="https://mammaldiversity.org/admin-page.html" data-toggle="tooltip" title="Administration Dashboard" data-placement="bottom" hidden> </paper-icon-button>
+        <paper-icon-button icon='icons:settings-applications' class="click logged-in-values" data-href="https://mammaldiversity.org/admin" data-toggle="tooltip" title="Account Settings" data-placement="bottom" hidden></paper-icon-button>
+        <paper-icon-button icon="icons:home" class="click" data-href="https://mammaldiversity.org" data-toggle="tooltip" title="Home" data-placement="bottom"></paper-icon-button>
+      </p>
+    </header>
     <main class="row">
       <h1 id="title" class="col-xs-12">
-        <span class="hidden-xs"><a href="https://mammaldiversity.org" class="newwindow"><img src="assets/logo.svg" alt="SSAR logo" id="title-logo"/></a></span>
+        <span class="hidden-xs"><a href="https://mammaldiversity.org" class="newwindow"><img src="assets/logo.svg" alt="ASM logo" id="title-logo"/></a></span>
         ASM Species <span class="hidden-xs hidden-sm">Account</span> Database
       </h1>
       <form id="search_form" onsubmit="event.preventDefault()" class="col-xs-12">
@@ -46,14 +63,14 @@
           <section id="search-options-container" class="row">
             <div class="col-md-3 col-xs-6 toggle-container">
               <div class="row">
-                <label for="loose" class="col-xs-3">Loose</label> 
+                <label for="loose" class="col-xs-3">Loose</label>
                 <paper-icon-button icon="info-outline" data-toggle="tooltip" title="Check this to do a partial-string search, rather than a strict exact match." class="col-xs-3"></paper-icon-button>
                 <paper-toggle-button id="loose" class="col-xs-4"></paper-toggle-button>
                </div>
             </div>
             <div class="col-md-3 col-xs-6 toggle-container">
               <div class="row">
-              <label for="fuzzy" class="col-xs-3">Fuzzy</label>  
+              <label for="fuzzy" class="col-xs-3">Fuzzy</label>
               <paper-icon-button icon="info-outline" data-toggle="tooltip" title="Check this to do a 'close match' search. Check this if you're unsure of your spelling or only have part of the name, for example." class="col-xs-3"></paper-icon-button>
               <paper-toggle-button id="fuzzy" class="col-xs-4"></paper-toggle-button>
               </div>
@@ -63,7 +80,7 @@
                    AND/OR, and then to walk through the filters and append the object to the query. -->
               <div class="row">
                 <div class="toggle-container col-xs-6 col-md-2">
-                  <label for="use-scientific" class="">Scientific</label>  
+                  <label for="use-scientific" class="">Scientific</label>
                   <paper-toggle-button id="use-scientific" class="" checked></paper-toggle-button>
                 </div>
               <?php

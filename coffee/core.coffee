@@ -291,11 +291,30 @@ jQuery.fn.polymerSelected = (setSelected = undefined, attrLookup = "attrForSelec
   # @param childElement
   # @param ignoreCase -> match lower case trimmed values
   ###
+  unless $(this).exists()
+    console.error "Nonexistant element"
+    return false
   dropdownId = $(this).attr "id"
   if isNull dropdownId
     console.error "Your parent dropdown (eg, paper-dropdown-menu) must have a unique ID"
     return false
   dropdownUniqueSelector = "##{dropdownId} #{dropdownSelector}"
+  try
+    if dropdownSelector is $(this).get(0).tagName.toLowerCase()
+      dropdownUniqueSelector = this
+  unless $(dropdownUniqueSelector).exists()
+    dropdownSelector = "paper-menu"
+    dropdownUniqueSelector = "##{dropdownId} #{dropdownSelector}"
+    try
+      if dropdownSelector is $(this).get(0).tagName.toLowerCase()
+        dropdownUniqueSelector = this
+    unless $(dropdownUniqueSelector).exists()
+      try
+        # Maybe it's a generic input element
+        unless isNull p$(this).value
+          return p$(this).value
+      console.error "Can't identify the dropdown selector for this dropdown list '#{dropdownId}'", dropdownUniqueSelector
+      return false
   unless attrLookup is true
     attr = $(dropdownUniqueSelector).attr(attrLookup)
     if isNull attr
@@ -366,6 +385,8 @@ jQuery.fn.polymerSelected = (setSelected = undefined, attrLookup = "attrForSelec
       return false
     if val is "null" or not val?
       val = undefined
+    try
+      val = val.trim()
     val
 
 jQuery.fn.polymerChecked = (setChecked = undefined) ->
@@ -1276,6 +1297,8 @@ $ ->
     # If we're not in admin, get the location
     getLocation()
     # However, we can lazy-load to see if the user is an admin
+    loadJS "js/admin.min.js", ->
+      verifyLoginCredentials()
     loadJS "js/jquery.cookie.min.js", ->
       # Now see if the user is an admin
       if $.cookie("asmherps_user")?
@@ -1288,5 +1311,11 @@ $ ->
         bindClicks("#goto-admin")
         # $("#goto-admin").tooltip()
       false
+  try
+    for md in $("marked-element")
+      mdText = $(md).find("script").text()
+      unless isNull mdText
+        console.debug "Rendering markdown of", mdText
+        p$(md).markdown = mdText
   browserBeware()
   checkFileVersion()

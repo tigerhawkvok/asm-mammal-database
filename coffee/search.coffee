@@ -43,7 +43,7 @@ fetchMajorMinorGroups = (scientific = null, callback) ->
     if typeof callback is "function"
       callback()
     false
-  if typeof _asm.mammalGroupsBase is "object"
+  if typeof _asm.mammalGroupsBase is "object" and typeof _asm.major is "object"
     unless isArray _asm.mammalGroupsBase
       _asm.mammalGroupsBase = Object.toArray _asm.mammalGroupsBase
     renderItemsList()
@@ -278,7 +278,10 @@ getFilters = (selector = ".cndb-filter", booleanType = "AND") ->
     if not col?
       # Skip this iteration
       return true
-    val = $(this).polymerSelected()
+    try
+      val = $(this).polymerSelected()
+    catch
+      return true
     if val is "any" or val is "all" or val is "*"
       # Wildcard filter -- just don't give anything
       # Go to the next iteration
@@ -1818,6 +1821,7 @@ bindPaperMenuButton = (selector = "paper-menu-button", unbindTargets = true) ->
   # https://github.com/polymerelements/paper-menu-button
   # https://elements.polymer-project.org/elements/paper-menu-button
   ###
+  return false
   for dropdown in $(selector)
     menu = $(dropdown).find("paper-menu")
     if unbindTargets

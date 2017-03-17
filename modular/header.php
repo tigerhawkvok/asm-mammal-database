@@ -85,6 +85,8 @@
 <link rel="import" href="bower_components/paper-icon-button/paper-icon-button.html"/>
 <link rel="import" href="bower_components/paper-fab/paper-fab.html"/>
 <link rel="import" href="bower_components/paper-item/paper-item.html"/>
+<link rel="import" href="bower_components/paper-icon-button/paper-icon-button.html"/>
+<link rel="import" href="bower_components/marked-element/marked-element.html"/>
 
 <link rel="import" href="bower_components/neon-animation/neon-animation.html"/>
 

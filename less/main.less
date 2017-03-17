@@ -16,8 +16,9 @@
 @font-family-serif: "Roboto Slab", Droid, Cambria, Georgia, "Times New Roman", Times, serif;
 @font-family-monospace: "Droid Sans Mono", Menlo, Monaco, Consolas, "Courier New", monospace;
 
+@body-padding: 1rem;
 body {
-    padding:1rem;
+    padding: @body-padding;
 }
 
 
@@ -176,6 +177,27 @@ paper-dialog-scrollable {
     }
 }
 
+// General
+
+header#header-bar {
+    position: fixed;
+    margin-top: calc(0 - @body-padding);
+    color: #fff;
+    background: @asm-blue-light;
+    box-shadow: 3px 3px 3px #000;
+    box-shadow: 3px 3px 3px rgba(0,0,0,.3);
+    width: 100%;
+    z-index: 999;
+    paper-icon-button {
+        color: #fff;
+    }
+    
+    & + main {
+        margin-top: 3em;
+    }
+}
+
+
 
 
 // Search page
@@ -272,6 +294,7 @@ header {
     .logo-container {
         .col-xs-2;
         .pull-left;
+        margin-top: .5em;
         img {
             max-height: 2em;
             max-width: 2em;
@@ -411,6 +434,12 @@ paper-icon-button {
   border-radius: 3px;
   width:80%;
 }
+
+.bs-callout.center-block {
+    margin-left: auto !important;
+    margin-right: auto !important;
+}
+
 .bs-callout-info {
   border-left-color: @bs-info;
 }
@@ -511,6 +540,7 @@ paper-toast, paper-spinner {
     width:50%;
     margin:0;
     left:25%;
+    z-index: 9999;
 }
 
 @media (max-width: 767px) {
@@ -549,6 +579,10 @@ iron-label + paper-icon-button, label + paper-icon-button {
     .common-taxonomy {
         .text-muted;
     }
+}
+
+h3 + marked-element {
+    padding-left: 1rem;
 }
 
 // @import "combinator.less";

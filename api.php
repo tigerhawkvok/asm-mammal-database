@@ -1033,6 +1033,14 @@ foreach($result["result"] as $i=>$taxon) {
     $dwcResult["class"] = "mammalia";
     $dwcResult["taxonomicStatus"] = "accepted";
     $dwcResult["dcterms:bibliographicCitation"] = $taxon["canonical_sciname"]." (ASM Species Account Database #".$taxon["internal_id"].") fetched ".date(DATE_ISO8601);
+    $dwcResult["dcterms:language"] = "en";
+    $creditTime = strtotime($speciesRow["taxon_credit_date"]);
+    if($creditTime === false) $creditTime = intval($speciesRow["taxon_credit_date"]);
+    if(!is_numeric($creditTime) || $creditTime == 0) {
+        $creditTime = time();
+    }
+    $dwcResult["dcterms:modified"] = date(DATE_ISO8601,$creditTime);
+    $dwcResult["dcterms:license"] = "https://creativecommons.org/licenses/by-nc/4.0/legalcode";
     $result["result"][$i]["dwc"] = $dwcResult;
     $dwcTotal[] = $dwcResult;
 }

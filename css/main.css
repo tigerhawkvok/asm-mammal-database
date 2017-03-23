@@ -6887,6 +6887,10 @@ main #images-block div.no-image {
   max-height: 66vh;
   overflow-y: scroll;
 }
+#modal-taxon paper-dialog-scrollable#modal-taxon-editor div.scrollable,
+#modal-taxon-edit paper-dialog-scrollable#modal-taxon-editor div.scrollable {
+  max-height: none !important;
+}
 paper-dialog#modal-taxon .buttons,
 paper-dialog#modal-taxon-edit .buttons {
   background: #fff;

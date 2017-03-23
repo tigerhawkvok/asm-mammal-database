@@ -387,6 +387,7 @@ loadModalTaxonEditor = (extraHtml = "", affirmativeText = "Save") ->
   <paper-input label="Species" id="edit-species" name="edit-species" class="species" floatingLabel></paper-input>
   <paper-input label="Subspecies" id="edit-subspecies" name="edit-subspecies" class="subspecies" floatingLabel></paper-input>
   <paper-input label="Common Name" id="edit-common-name" name="edit-common-name"  class="common_name" floatingLabel></paper-input>
+  <paper-input label="Common Name Source" id="edit-common-name-source" name="edit-common-name-source"  class="common_name_source" floatingLabel readonly></paper-input>
   <paper-input label="Deprecated Scientific Names" id="edit-deprecated-scientific" name="edit-depreated-scientific" floatingLabel aria-describedby="deprecatedHelp"></paper-input>
     <span class="help-block" id="deprecatedHelp">List names here in the form <span class="code">"Genus species":"Authority: year","Genus species":"Authority: year",[...]</span>.<br/>There should be no spaces between the quotes and comma or colon. If there are, it may not save correctly.</span>
   #{_asm.dropdownPopulation.major_type.html}
@@ -412,13 +413,21 @@ loadModalTaxonEditor = (extraHtml = "", affirmativeText = "Save") ->
   <br/>
   <span class="help-block" id="notes-help">You can write your notes and entry in Markdown. (<a href="https://daringfireball.net/projects/markdown/syntax" "onclick='window.open(this.href); return false;' onkeypress='window.open(this.href); return false;'">Official Full Syntax Guide</a>)</span>
   <br/><br/>
-  <iron-autogrow-textarea id="edit-notes" rows="5" aria-describedby="notes-help" placeholder="Notes">
+  <h3 class='text-muted'>Taxon Notes <small>(optional)</small></h3>
+  <iron-autogrow-textarea id="edit-notes" rows="5" aria-describedby="notes-help" placeholder="Notes" class="markdown-region"  data-md-field="notes-markdown-preview">
     <textarea placeholder="Notes" id="edit-notes-textarea" name="edit-notes-textarea" aria-describedby="notes-help" rows="5"></textarea>
   </iron-autogrow-textarea>
-  <br/>
-  <iron-autogrow-textarea id="edit-entry" rows="5" aria-describedby="notes-help" placeholder="Entry">
+  <marked-element id="notes-markdown-preview" class="markdown-preview">
+    <div class="markdown-html"></div>
+  </marked-element>
+  <br/><br/>
+  <h3 class='text-muted'>Main Taxon Entry</h3>
+  <iron-autogrow-textarea id="edit-entry" rows="5" aria-describedby="notes-help" placeholder="Entry" class="markdown-region" data-md-field="entry-markdown-preview">
     <textarea placeholder="Entry" id="edit-entry-textarea" name="edit-entry-textarea" aria-describedby="entry-help" rows="5"></textarea>
   </iron-autogrow-textarea>
+  <marked-element id="entry-markdown-preview" class="markdown-preview">
+    <div class="markdown-html"></div>
+  </marked-element>
   <paper-input label="Data Source" id="edit-source" name="edit-source" floatingLabel></paper-input>
   <paper-input label="Data Citation" id="edit-citation" name="edit-source" floatingLabel></paper-input>
   <div id="upload-image"></div>
@@ -753,16 +762,32 @@ lookupEditorSpecies = (taxon = undefined) ->
       modalElement = p$("#modal-taxon-edit")
       $("#modal-taxon-edit").on "iron-overlay-opened", ->
         p$("#modal-taxon-edit").refit()
-      #   modalElement.scrollTop = 0
-      #   if toFloat($(modalElement).css("top").slice(0,-2)) > $(window).height()
-      #     # Firefox is weird about this sometimes ...
-      #     # Let's add a catch-all 'top' adjustment
-      #     $(modalElement).css("top","12.5vh")
-      #   delay 250, ->
-      #     modalElement.fit()
-      # modalElement.sizingTarget = d$("#modal-taxon-editor")[0]
+        # Bind the common name source field
+        origCommonName = p$("#edit-common-name").value
+        $("#edit-common-name").keyup ->
+          console.debug "Common name field edited!"
+          if p$(this).value isnt origCommonName
+            name = $.cookie adminParams.cookieFullName
+            userValue = "user:#{name}"
+          else
+            userValue = "iucn"
+          p$("#edit-common-name-source").value = userValue
+          false
+        # Fill the markdown previews
+        entry = $(p$("#edit-entry").textarea).val()
+        notes = $(p$("#edit-notes").textarea).val()
+        p$("#entry-markdown-preview").markdown = entry
+        p$("#notes-markdown-preview").markdown = notes
+        for region in $(".markdown-region")
+          $(p$(region).textarea).keyup ->
+            md = $(this).val()
+            target = $(this).parents("iron-autogrow-textarea").attr "data-md-field"
+            try
+              p$("##{target}").markdown = md
+              console.debug "Wrote markdown to target '##{target}'"
+            catch e
+              console.warn "Can't update preview for target '##{target}'", $(this).get(0), md
       safariDialogHelper("#modal-taxon-edit")
-      # $("#modal-taxon-edit")[0].open()
       stopLoad()
     catch e
       stopLoadError("Unable to populate the editor for this taxon - #{e.message}")
@@ -968,16 +993,21 @@ saveEditorEntry = (performMode = "save") ->
       console.warn "Unable to test against id '#{id}'"
       continue
     testSelector = "#edit-#{col.replace /\_/img,"-"}"
-    unless col is "notes"
-      colAsDropdownExists = false
+    # Check it
+    colAsDropdownExists = false
+    try
+      dropdownTentativeSelector = testSelector
+      if $(dropdownTentativeSelector).get(0).tagName.toLowerCase() is "paper-dropdown-menu"
+        colAsDropdownExists = true
+    console.debug "Col editor exists for '#{dropdownTentativeSelector}'?", colAsDropdownExists
+    if colAsDropdownExists
+      val = $(dropdownTentativeSelector).polymerSelected()
+    else
+      isTextArea = false
       try
-        dropdownTentativeSelector = testSelector
-        if $(dropdownTentativeSelector).get(0).tagName.toLowerCase() is "paper-dropdown-menu"
-          colAsDropdownExists = true
-      console.debug "Col editor exists for '#{dropdownTentativeSelector}'?", colAsDropdownExists
-      if colAsDropdownExists
-        val = $(dropdownTentativeSelector).polymerSelected()
-      else
+        if $("#edit-#{id}").get(0).tagName.toLowerCase() is "iron-autogrow-textarea"
+          isTextArea = true
+      unless isTextArea
         try
           val = d$("#edit-#{id}").val().trim()
         catch e
@@ -985,8 +1015,12 @@ saveEditorEntry = (performMode = "save") ->
           err =  "Unable to get value for #{id}"
           console.warn "#{err}: #{e.message}"
           toastStatusMessage err
-    else
-      val = d$("#edit-notes").get(0).textarea.value
+      else
+        val = p$("#edit-#{id}").value
+        if isNull val
+          val = $(p$("#edit-#{id}").textarea).val()
+        try
+          val = val.trim()
     unless col in keepCase
       # We want these to be as literally typed, rather than
       # smart-formatted.

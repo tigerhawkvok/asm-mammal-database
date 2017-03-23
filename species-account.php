@@ -11,7 +11,7 @@ require_once dirname(__FILE__) . "/core/core.php";
 
 $db = new DBHelper($default_database,$default_sql_user,$default_sql_password,$default_sql_url,$default_table,$db_cols);
 
-
+if(isset($_SERVER['QUERY_STRING'])) parse_str($_SERVER['QUERY_STRING'],$_REQUEST);
 # Check the species being looked up
 
 $lookupId = null;
@@ -354,13 +354,13 @@ if(empty($speciesRow["image"])) {
         phpQuery::newDocumentHTML($html);
         $imgElement = pq("#imageLibraryContent #current_image img");
         $imgRelPath = $imgElement->attr("src");
-        if(!empty($imgRelPath)) {
+        if(!empty($imgRelPath) && !toBool($_REQUEST["skip_mil"])) {
         #if(false) {
             $imgPath = $mammalDomain . $imgRelPath;
             $imgHtml = "<img src='$imgPath' />";
             $captionDescription = trim(pq("#imageLibraryContent #image-description")->text());
                 $captionDescription = substr($captionDescription, -1) == "." ? $captionDescription : $captionDescription . ".";
-            $caption = $captionDescription . " Image credit " . pq("#imageLibraryContent #image-photographer")->text() . " " . pq("#imageLibraryContent #image-date")->text() . ".";
+            $caption = "<span class='caption-description'>".$captionDescription . " Image credit " . pq("#imageLibraryContent #image-photographer")->text() . " " . pq("#imageLibraryContent #image-date")->text() . ".</span>";
             $figure = "
 <figure class='from-mammalogyorg center-block text-center'>
 <picture>
@@ -388,9 +388,22 @@ $caption
             );
             $result = do_post_request($endpoint, $postArgs, "GET");
             $response = json_decode($result["response"], true );
-            $images .= "<!-- Pinging iNat: ".$endpoint."?".http_build_query($postArgs)." \n\n Got back from args: ".print_r($postArgs, true)."-->";#" \n\n Result: ".print_r($response, true)." -->";
+            $textArgs = http_build_query($postArgs);
+            # Some stupid replacements
+            $search = array(
+                "%2B",
+                "%5B",
+                "%5D",
+            );
+            $replace = array(
+                "+",
+                "[",
+                "]",
+            );
+            $textArgs = str_replace($search, $replace, $textArgs);
+            $images .= "<!-- Pinging iNat: ".$endpoint."?".$textArgs." \n\n Got back from args: ".print_r($postArgs, true)."-->";#" \n\n Result: ".print_r($response, true)." -->";
             $inat = 0;
-            if(sizeof($response) > 0) {
+            if(sizeof($response) > 0 && !toBool($_REQUEST["skip_inat"])) {
                 shuffle($response);
                 $useObservation = $response[0];
                 # First, we have to check that there was a match, and
@@ -413,10 +426,11 @@ $caption
                     if(!empty($captionDescription)) {
                         $captionDescription = substr($captionDescription, -1) == "." ? $captionDescription : $captionDescription . ".";
                     }
-                    $caption = $captionDescription . " ".$imageCredit;
+                    $caption = "<span class='caption-description'>".$captionDescription . "</span> ".$imageCredit;
                     $imgHtml = "<img src='".$photo["small_url"]."'/>";
                     $figure = "
 <figure class='from-inaturalist center-block text-center'>
+<p class='picture-label'>".getCanonicalSpecies($speciesRow)."</p>
 <picture>
 <source
 sizes='(max-width: 480px) 25vw, (max-width: 768px) 33vw, (max-width: 1024px) 35w, (min-width: 1025px) 40w'
@@ -455,7 +469,7 @@ $caption
                 $xml = new Xml();
                 $xml->setXml($xmlContent);
                 $imgArr = $xml->getAllTagContents("enlarge_jpeg_url");
-                if(sizeof($imgArr) > 0) {
+                if(sizeof($imgArr) > 0 && !toBool($_REQUEST["skip_calphotos"])) {
                     $copyrightArr = $xml->getAllTagContents("copyright");
                     $licenseArr = $xml->getAllTagContents("license");
                     $enlarge_urlArr = $xml->getAllTagContents("enlarge_url");
@@ -466,9 +480,10 @@ $caption
                     $license = $licenseArr[$key];
                     $enlarge_url = $enlarge_urlArr[$key];
                     $imgHtml = "<img src='$img' />";
-                    $caption = "Image credit " . $copyright . " " . $license . " (via <a href='$enlarge_url' class='newwindow'>CalPhotos</a>).";
+                    $caption = "<span class='caption-description'>Image credit " . $copyright . " " . $license . "</span> (via <a href='$enlarge_url' class='newwindow'>CalPhotos</a>).";
                     $figure = "
-<figure class='from-mammalogyorg center-block text-center'>
+<figure class='from-calphotos center-block text-center'>
+<p class='picture-label'>".getCanonicalSpecies($speciesRow)."</p>
 <picture>
 $imgHtml
 </picture>

@@ -1319,6 +1319,10 @@ $ ->
         p$(md).markdown = mdText
   browserBeware()
   checkFileVersion()
+  try
+    for caption in $("figcaption .caption-description")
+      captionValue = $(caption).text().unescape()
+      $(caption).text captionValue
 
 searchParams = new Object()
 searchParams.targetApi = "api.php"

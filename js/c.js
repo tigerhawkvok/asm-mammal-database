@@ -1625,7 +1625,7 @@ doNothing = function() {
 };
 
 $(function() {
-  var e, error1, error2, len, m, md, mdText, ref1;
+  var caption, captionValue, e, error1, error2, len, len1, m, md, mdText, o, ref1, ref2, results;
   formatScientificNames();
   bindClicks();
   mapNewWindows();
@@ -1672,7 +1672,17 @@ $(function() {
     }
   } catch (undefined) {}
   browserBeware();
-  return checkFileVersion();
+  checkFileVersion();
+  try {
+    ref2 = $("figcaption .caption-description");
+    results = [];
+    for (o = 0, len1 = ref2.length; o < len1; o++) {
+      caption = ref2[o];
+      captionValue = $(caption).text().unescape();
+      results.push($(caption).text(captionValue));
+    }
+    return results;
+  } catch (undefined) {}
 });
 
 searchParams = new Object();

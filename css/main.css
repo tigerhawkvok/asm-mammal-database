@@ -7188,6 +7188,19 @@ label + paper-icon-button {
 h3 + marked-element {
   padding-left: 1rem;
 }
+figure {
+  position: relative;
+}
+figure .picture-label {
+  position: absolute;
+  left: 50%;
+  text-shadow: 3px 3px 2px rgba(0, 0, 0, 0.5);
+  color: white;
+  font-weight: 500;
+  text-outline: 1px solid #000;
+  font-size: 2em;
+  font-style: italic;
+}
 figure figcaption {
   color: #777777;
 }

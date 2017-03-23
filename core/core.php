@@ -304,9 +304,9 @@ if (!function_exists('do_post_request')) {
          ***/
         $bareUrl = $url;
         $url = urlencode($url);
-        
+
         if(!is_array($data)) $data = array($data);
-        
+
         $params = array('http' => array(
             'method' => $method,
             'content' => http_build_query($data),
@@ -331,6 +331,18 @@ if (!function_exists('do_post_request')) {
             );
             $method = "simple_fgc";
             $postArgs = http_build_query($data);
+            # Some stupid replacements
+            $search = array(
+                "%2B",
+                "%5B",
+                "%5D",
+            );
+            $replace = array(
+                "+",
+                "[",
+                "]",
+            );
+            $postArgs = str_replace($search, $replace, $postArgs);
             $getContentsUrl = $bareUrl . "?" . $postArgs;
             $simpleCtx = stream_context_create($simpleOptions);
             $response = file_get_contents($getContentsUrl, false, $simpleCtx);
@@ -358,7 +370,7 @@ if (!function_exists('do_post_request')) {
                     curl_setopt( $ch, CURLOPT_FOLLOWLOCATION, 1);
                     curl_setopt( $ch, CURLOPT_HEADER, 0);
                     curl_setopt( $ch, CURLOPT_RETURNTRANSFER, 1);
-                    
+
                     $method = "curl";
                     $response = curl_exec( $ch );
                     if($response === false || empty($response)) throw new Exception("CURL failure: ".curl_error($ch));

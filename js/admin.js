@@ -639,7 +639,7 @@ lookupEditorSpecies = function(taxon) {
           $(dropdownTentativeSelector).polymerSelected(d, true);
         }
         if (col === "species_authority" || col === "genus_authority") {
-          if (!isNull(d.match(/\(?\w+, ?[0-9]{4}\)?/g))) {
+          if (!isNull(d.match(/\(? *([\w\. \[\]]+), *([0-9]{4}) *\)?/g))) {
             hasParens = d.search(/\(/) >= 0 && d.search(/\)/) >= 0;
             authorityParts = d.replace(/[\(\)]/g, "").split(",");
             d = authorityParts[0].trim();

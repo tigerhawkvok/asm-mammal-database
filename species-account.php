@@ -288,30 +288,66 @@ if(empty($speciesRow["common_name"])) {
 }
 
 # Citations
-# See admin.coffee for an example of how to do this
-# EG:
-# https://github.com/tigerhawkvok/asm-mammal-database/blob/v0.5.6-prealpha/coffee/admin.coffee#L688-L699
+
+$hasWellFormattedSpeciesCitation = preg_match('/\(? *([\w\. \[\]]+), *([0-9]{4}) *\)?/im', $speciesRow["species_authority"]);
+
+if(empty($speciesRow["genus_authority"]) && $hasWellFormattedSpeciesCitation) {
+    /***
+     * See admin.coffee for an example of how to do this
+     *
+     * EG:
+     * https://github.com/tigerhawkvok/asm-mammal-database/blob/v0.5.6-prealpha/coffee/admin.coffee#L688-L699
+     *
+     * May need to do this in case we picked up the authority from the
+     * IUCN, but it hasn't been edited
+     ***/
+    $authority = preg_replace('/\(? *([\w\. \[\]]+), *([0-9]{4}) *\)?/im', '$1', $speciesRow["species_authority"]);
+    $authorityYear = preg_replace('/\(? *([\w\. \[\]]+), *([0-9]{4}) *\)?/im', '$2', $speciesRow["species_authority"]);
+    $speciesRow["authority_year"] = json_encode(array(
+        $authorityYear => $authorityYear,
+    ));
+    $parensState = preg_match('/\( *([\w\. \[\]]+), *([0-9]{4}) *\)/im', $speciesRow["species_authority"]) ? true:false;
+    $speciesRow["genus_authority"] = $authority;
+    $speciesRow["species_authority"] = $authority;
+    $speciesRow["parens_auth_genus"] = $parensState;
+    $speciesRow["parens_auth_species"] = $parensState;
+    $iucnCitation = "iucn-citation iucn-citation-parsed";
+    # Update the entry
+    $updateArray = array(
+        "genus_authority" => $speciesRow["genus_authority"],
+        "species_authority" => $speciesRow["species_authority"],
+        "authority_year" => $speciesRow["authority_year"],
+        "parens_auth_genus" => $speciesRow["parens_auth_genus"],
+        "parens_auth_species" => $speciesRow["parens_auth_species"],
+    );
+    $ref = array(
+        "id" => $speciesRow["id"],
+    );
+    $db->updateEntry($updateArray, $ref);
+} else {
+    $iucnCitation = "";
+}
 
 $nameCitation = "";
 $citationYears = json_decode($speciesRow["authority_year"], true);
 if(!empty($speciesRow["genus_authority"])) {
     if(!empty($citationYears)) {
-        $citation = $speciesRow["genus_authority"]." ".key($citationYears);
+        $citation = $speciesRow["genus_authority"].", ".key($citationYears);
         if(toBool($speciesRow["parens_auth_genus"])) $citation = "($citation)";
     } else {
         $citation = "";
     }
-    $nameCitation = "<span class='genus'>".$speciesRow["genus"]."</span>, <span class='citation person'>".$citation."</span>; ";
+    $nameCitation = "<span class='genus'>".$speciesRow["genus"]."</span>, <span class='citation person $iucnCitation'>".$citation."</span>; ";
 }
 if(!empty($speciesRow["species_authority"])) {
     if(!empty($citationYears)) {
-        $citation = $speciesRow["species_authority"]." ".current($citationYears);
+        $citation = $speciesRow["species_authority"].", ".current($citationYears);
         if(toBool($speciesRow["parens_auth_species"])) $citation = "($citation)";
     } else {
         $citation = "";
     }
     if(!empty($citation)) {
-        $nameCitation .= "<span class='species'>".$speciesRow["species"]."</span>, <span class='citation person'>".$citation."</span>";
+        $nameCitation .= "<span class='species'>".$speciesRow["species"]."</span>, <span class='citation person $iucnCitation'>".$citation."</span>";
     } else {
         # What if we got it from the IUCN?
         if(empty($nameCitation)) {

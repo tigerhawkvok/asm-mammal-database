@@ -662,9 +662,8 @@ Function.prototype.debounce = function() {
       delete core.debouncers[key];
     }
     if (!execAsap) {
-      func.apply(func, args);
+      return func.apply(func, args);
     }
-    return console.debug("Debounce executed for " + key);
   };
   if (timeout != null) {
     try {
@@ -679,12 +678,10 @@ Function.prototype.debounce = function() {
     return false;
   }
   if (key != null) {
-    console.debug("Debouncing '" + key + "' for " + threshold + " ms");
     return core.debouncers[key] = delay(threshold, function() {
       return delayed();
     });
   } else {
-    console.log("Delaying '" + key + "' for GLOBAL " + threshold + " ms");
     return window.debounce_timer = delay(threshold, function() {
       return delayed();
     });
@@ -739,13 +736,13 @@ loadJS = function(src, callback, doCallbackOnError) {
             return callback();
           } catch (error2) {
             e = error2;
-            return console.error("Postload callback error - " + e.message);
+            return console.error("Postload callback error for '" + src + "' - " + e.message);
           }
         }
       }
     } catch (error3) {
       e = error3;
-      return console.error("Onload error - " + e.message);
+      return console.error("Onload error for '" + src + "' - " + e.message);
     }
   };
   errorFunction = function() {
@@ -1625,7 +1622,7 @@ doNothing = function() {
 };
 
 $(function() {
-  var caption, captionValue, e, error1, error2, len, len1, m, md, mdText, o, ref1, ref2, results;
+  var caption, captionValue, e, error1, error2, len, len1, m, md, mdText, o, offsetImageLabel, ref1, ref2;
   formatScientificNames();
   bindClicks();
   mapNewWindows();
@@ -1666,7 +1663,6 @@ $(function() {
       md = ref1[m];
       mdText = $(md).find("script").text();
       if (!isNull(mdText)) {
-        console.debug("Rendering markdown of", mdText);
         p$(md).markdown = mdText;
       }
     }
@@ -1675,13 +1671,37 @@ $(function() {
   checkFileVersion();
   try {
     ref2 = $("figcaption .caption-description");
-    results = [];
     for (o = 0, len1 = ref2.length; o < len1; o++) {
       caption = ref2[o];
       captionValue = $(caption).text().unescape();
-      results.push($(caption).text(captionValue));
+      $(caption).text(captionValue);
     }
-    return results;
+  } catch (undefined) {}
+  try {
+    return (offsetImageLabel = function(iter) {
+      var imageWidth;
+      if (!$("figure picture").exists()) {
+        console.log("No image on page");
+        return false;
+      }
+      imageWidth = $("figure picture").width();
+      if (isNull(imageWidth, true)) {
+        ++iter;
+        if (iter >= 10) {
+          console.log("Never saw a bigger image width");
+          return false;
+        }
+        delay(100, function() {
+          return offsetImageLabel(iter);
+        });
+        return false;
+      }
+      if (iter > 0) {
+        console.warn("Took " + (iter * 100) + "ms to reposition image!");
+      }
+      $("figure p.picture-label").css("left", "calc(50% - (" + imageWidth + "px/2)*.95)");
+      return false;
+    })(0);
   } catch (undefined) {}
 });
 
@@ -1716,16 +1736,22 @@ fetchMajorMinorGroups = function(scientific, callback) {
     }
     column = scientific ? "linnean_family" : "simple_linnean_subgroup";
     buttonHtml = "<paper-menu-button id=\"simple-linnean-groups\" class=\"col-xs-6 col-md-4\">\n  <paper-button class=\"dropdown-trigger\"><iron-icon icon=\"icons:filter-list\"></iron-icon><span id=\"filter-what\" class=\"dropdown-label\"></span></paper-button>\n  <paper-menu label=\"Group\" data-column=\"simple_linnean_group\" class=\"cndb-filter dropdown-content\" id=\"linnean\" name=\"type\" attrForSelected=\"data-type\" selected=\"0\">\n    " + menuItems + "\n  </paper-menu>\n</paper-menu-button>";
-    $("#simple-linnean-groups").replaceWith(buttonHtml);
-    $("#simple-linnean-groups").on("iron-select", function() {
-      var type;
-      type = $(p$("#simple-linnean-groups paper-menu").selectedItem).text();
-      return $("#simple-linnean-groups span.dropdown-label").text(type);
-    });
-    type = $(p$("#simple-linnean-groups paper-menu").selectedItem).text();
-    $("#simple-linnean-groups span.dropdown-label").text(type);
+    if ($("#simple-linnean-groups").exists()) {
+      $("#simple-linnean-groups").replaceWith(buttonHtml);
+      $("#simple-linnean-groups").on("iron-select", function() {
+        var type;
+        type = $(p$("#simple-linnean-groups paper-menu").selectedItem).text();
+        return $("#simple-linnean-groups span.dropdown-label").text(type);
+      });
+      try {
+        type = $(p$("#simple-linnean-groups paper-menu").selectedItem).text();
+        $("#simple-linnean-groups span.dropdown-label").text(type);
+      } catch (undefined) {}
+    }
     eutheriaFilterHelper(true);
-    console.log("Replaced menu items with", menuItems);
+    if ($("#simple-linnean-groups").exists()) {
+      console.log("Replaced menu items with", menuItems);
+    }
     if (typeof callback === "function") {
       callback();
     }
@@ -1746,7 +1772,7 @@ fetchMajorMinorGroups = function(scientific, callback) {
       }
     }
     $.get(searchParams.apiPath, "fetch-groups=true&scientific=" + scientific).done(function(result) {
-      console.log("Group fetch got", result);
+      console.log("Group fetch for dropdown got", result);
       if (result.status !== true) {
         return false;
       }

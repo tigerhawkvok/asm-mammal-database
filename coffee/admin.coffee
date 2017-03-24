@@ -93,7 +93,7 @@ verifyLoginCredentials = (callback) ->
   args = "hash=#{hash}&secret=#{secret}&dblink=#{link}"
   $.post adminParams.loginApiTarget, args, "json"
   .done (result) ->
-    console.log "Server called back from login credential verification", result
+    # console.log "Server called back from login credential verification", result
     if result.status is true
       $(".logged-in-values").removeAttr "hidden"
       cookieFullName = "#{uri.domain}_fullname"

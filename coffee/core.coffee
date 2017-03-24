@@ -459,7 +459,7 @@ Function::debounce = (threshold = 300, execAsap = false, timeout = window.deboun
       clearTimeout timeout
       delete core.debouncers[key]
     func.apply(func, args) unless execAsap
-    console.debug "Debounce executed for #{key}"
+    # console.debug "Debounce executed for #{key}"
   if timeout?
     try
       clearTimeout timeout
@@ -470,11 +470,11 @@ Function::debounce = (threshold = 300, execAsap = false, timeout = window.deboun
     console.debug "Executed #{key} immediately"
     return false
   if key?
-    console.debug "Debouncing '#{key}' for #{threshold} ms"
+    #console.debug "Debouncing '#{key}' for #{threshold} ms"
     core.debouncers[key] = delay threshold, ->
       delayed()
   else
-    console.log "Delaying '#{key}' for GLOBAL #{threshold} ms"
+    # console.log "Delaying '#{key}' for GLOBAL #{threshold} ms"
     window.debounce_timer = delay threshold, ->
       delayed()
 
@@ -518,9 +518,9 @@ loadJS = (src, callback = new Object(), doCallbackOnError = true) ->
           try
             callback()
           catch e
-            console.error "Postload callback error - #{e.message}"
+            console.error "Postload callback error for '#{src}' - #{e.message}"
     catch e
-      console.error "Onload error - #{e.message}"
+      console.error "Onload error for '#{src}' - #{e.message}"
   # Error function
   errorFunction = ->
     console.warn "There may have been a problem loading #{src}"
@@ -1315,7 +1315,7 @@ $ ->
     for md in $("marked-element")
       mdText = $(md).find("script").text()
       unless isNull mdText
-        console.debug "Rendering markdown of", mdText
+        # console.debug "Rendering markdown of", mdText
         p$(md).markdown = mdText
   browserBeware()
   checkFileVersion()
@@ -1323,3 +1323,22 @@ $ ->
     for caption in $("figcaption .caption-description")
       captionValue = $(caption).text().unescape()
       $(caption).text captionValue
+  try
+    do offsetImageLabel = (iter = 0) ->
+      unless $("figure picture").exists()
+        console.log "No image on page"
+        return false
+      imageWidth = $("figure picture").width()
+      if isNull imageWidth, true
+        ++iter
+        if iter >= 10
+          console.log "Never saw a bigger image width"
+          return false
+        delay 100, ->
+          offsetImageLabel iter
+        return false
+      # console.log "Display image width", imageWidth
+      if iter > 0
+        console.warn "Took #{iter * 100}ms to reposition image!"
+      $("figure p.picture-label").css "left", "calc(50% - (#{imageWidth}px/2)*.95)"
+      false

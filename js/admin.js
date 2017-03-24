@@ -79,14 +79,19 @@ verifyLoginCredentials = function(callback) {
    * could force the local JS check to succeed.
    * SECURE AUTHENTICATION MUST BE WHOLLY SERVER SIDE.
    */
-  var args, hash, link, secret;
-  hash = $.cookie(uri.domain + "_auth");
-  secret = $.cookie(uri.domain + "_secret");
-  link = $.cookie(uri.domain + "_link");
+  var args, e, error1, hash, link, secret;
+  try {
+    hash = $.cookie(uri.domain + "_auth");
+    secret = $.cookie(uri.domain + "_secret");
+    link = $.cookie(uri.domain + "_link");
+  } catch (error1) {
+    e = error1;
+    console.warn("Unable to verify login credentials: " + e.message);
+    console.debug(e.stack);
+  }
   args = "hash=" + hash + "&secret=" + secret + "&dblink=" + link;
   $.post(adminParams.loginApiTarget, args, "json").done(function(result) {
     var cookieFullName;
-    console.log("Server called back from login credential verification", result);
     if (result.status === true) {
       $(".logged-in-values").removeAttr("hidden");
       cookieFullName = uri.domain + "_fullname";

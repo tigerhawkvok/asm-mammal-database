@@ -330,7 +330,7 @@ $englishMap = array(
 $subTaxa = !empty($speciesRow["major_type"]) ? "<span class='clade' data-linnean-level='magnaorder'>".$speciesRow["major_type"]."</span> &#187; " : "";
 $subTaxa .= !empty($speciesRow["major_subtype"]) ? "<span class='clade' data-linnean-level-level='superorder'>".$speciesRow["major_subtype"]."</span> &#187; " : "";
 $taxonomyNotes = "<section id='taxonomy' class='col-xs-12'>
-<section class='scientific-taxonomy'><span class='clade' data-linnean-level='cohort'>".$speciesRow["simple_linnean_group"]."</span> &#187; $subTaxa <span class='clade' data-linnean-level='order'>".$speciesRow["linnean_order"]."</clade> &#187; <span class='clade' data-linnean-level='family'>".$speciesRow["linnean_family"]."</span></section>
+<section class='scientific-taxonomy'><span class='clade' data-linnean-level='cohort'>".$speciesRow["simple_linnean_group"]."</span> &#187; $subTaxa <span class='clade' data-linnean-level='order'>".$speciesRow["linnean_order"]."</span> &#187; <span class='clade' data-linnean-level='family'>".$speciesRow["linnean_family"]."</span></section>
 
 <section class='common-taxonomy'>".$englishMap[$speciesRow["simple_linnean_group"]]." &#187; ".$speciesRow["simple_linnean_subgroup"]."</section>
 </section>\n\n";
@@ -361,7 +361,11 @@ if(empty($speciesRow["image"])) {
         if(!empty($imgRelPath) && !toBool($_REQUEST["skip_mil"])) {
         #if(false) {
             $imgPath = $mammalDomain . $imgRelPath;
-            $imgHtml = "<img src='$imgPath' />";
+            $imgObj = new ImageFunctions($imgPath, true, "species_photos");
+            $width = $imgObj->getWidth();
+            $localPath = $imgObj->getImagePath();
+            $images .= "<!-- Fetched width $width -->";
+            $imgHtml = "<img src='$localPath' />";
             $captionDescription = trim(pq("#imageLibraryContent #image-description")->text());
                 $captionDescription = substr($captionDescription, -1) == "." ? $captionDescription : $captionDescription . ".";
             $caption = "<span class='caption-description'>".$captionDescription . " Image credit " . pq("#imageLibraryContent #image-photographer")->text() . " " . pq("#imageLibraryContent #image-date")->text() . ".</span>";

@@ -83,9 +83,13 @@ verifyLoginCredentials = (callback) ->
   # could force the local JS check to succeed.
   # SECURE AUTHENTICATION MUST BE WHOLLY SERVER SIDE.
   ###
-  hash = $.cookie("#{uri.domain}_auth")
-  secret = $.cookie("#{uri.domain}_secret")
-  link = $.cookie("#{uri.domain}_link")
+  try
+    hash = $.cookie("#{uri.domain}_auth")
+    secret = $.cookie("#{uri.domain}_secret")
+    link = $.cookie("#{uri.domain}_link")
+  catch e
+    console.warn "Unable to verify login credentials: #{e.message}"
+    console.debug e.stack
   args = "hash=#{hash}&secret=#{secret}&dblink=#{link}"
   $.post adminParams.loginApiTarget, args, "json"
   .done (result) ->

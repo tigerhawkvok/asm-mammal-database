@@ -493,61 +493,45 @@ class ImageFunctions
      *
      ***/
 
-    public function __construct($imgUrl = null)
-    {
+    public function __construct($imgUrl = null, $fromUrl = false, $fromUrlWritePath = "images") {
+        if($fromUrl) {
+            if(substr($fromUrlWritePath, -1) == "/") {
+                $fromUrlWritePath = substr($fromUrlWritePath, 0, -1);
+            }
+            $relWritePath = dirname(__FILE__) . "/../" . $fromUrlWritePath;
+            $rawImg = file_get_contents($imgUrl);
+            $fileParts = explode(".", basename($imgUrl));
+            $ext = array_pop($fileParts);
+            $localImage = md5($imgUrl) . "." . $ext;
+            $fileWrite = $relWritePath . "/" . $localImage;
+            if(!file_exists($fileWrite)) {
+                file_put_contents($fileWrite, $rawImg);
+            }
+            $imgUrl = $fileWrite;
+            $this->imgPath = $fromUrlWritePath . "/" . $localImage;
+        } else {
+            $this->imgPath = $imgUrl;
+        }
+
         $this->img = $imgUrl;
     }
 
-    private static function notfound()
-    {
+    private static function notfound() {
         throw new Exception('Not Found Exception');
     }
 
-    public static function randomRotate($min, $max)
-    {
-        /***
-         * Return a random CSS rotation transformation, in the
-         * positive or negative direction. If the random angle is
-         * odd, the direction is negative; otherwise, the direction
-         * is positive.
-         *
-         * @param float $min The minimum rotation in degrees
-         * @param float $max The maximum rotation in degrees
-         *
-         * @return string CSS to be applied to the image, with
-         *   appropriate vendor prefixes.
-         ***/
-        $angle = rand($min, $max);
-        if (rand(0, 100) % 2) {
-            $angle = '-'.$angle;
-        }
-
-        return 'transform:rotate('.$angle.'deg);-moz-transform:rotate('.$angle.'deg);-webkit-transform:rotate('.$angle.'deg);';
+    public function getImagePath() {
+        return $this->imgPath;
     }
-
-    public static function randomImage($dir = 'assets/images', $extension = 'jpg')
-    {
-        /***
-         * Fetch a random image from a directory
-         *
-         * @param string $dir A direcotry path
-         * @param string $extension An extension to filter with (as
-         *   dirListPHP's filter parameter)
-         *
-         * @return bool|string A path to a random image matching those
-         *   criteria, or false if no matching items found.
-         ***/
-        $images = dirListPHP($dir, '.'.$extension);
-        if ($images === false) {
-            return false;
-        }
-        $item = rand(0, count($images) - 1);
-
-        return $dir.'/'.$images[$item];
+    
+    public function getPath() {
+        # Alias
+        return $this->getImage();
     }
+    
 
-
-    protected function getImage($imgFile) {
+    
+    protected function getImage() {
         if (function_exists(get_magic_quotes_gpc) && get_magic_quotes_gpc()) {
             $image = stripslashes($this->img);
         } else {
@@ -575,6 +559,47 @@ class ImageFunctions
         }
 
         return file_exists($image);
+    }
+    
+    public static function randomRotate($min, $max) {
+        /***
+         * Return a random CSS rotation transformation, in the
+         * positive or negative direction. If the random angle is
+         * odd, the direction is negative; otherwise, the direction
+         * is positive.
+         *
+         * @param float $min The minimum rotation in degrees
+         * @param float $max The maximum rotation in degrees
+         *
+         * @return string CSS to be applied to the image, with
+         *   appropriate vendor prefixes.
+         ***/
+        $angle = rand($min, $max);
+        if (rand(0, 100) % 2) {
+            $angle = '-'.$angle;
+        }
+
+        return 'transform:rotate('.$angle.'deg);-moz-transform:rotate('.$angle.'deg);-webkit-transform:rotate('.$angle.'deg);';
+    }
+
+    public static function randomImage($dir = 'assets/images', $extension = 'jpg') {
+        /***
+         * Fetch a random image from a directory
+         *
+         * @param string $dir A direcotry path
+         * @param string $extension An extension to filter with (as
+         *   dirListPHP's filter parameter)
+         *
+         * @return bool|string A path to a random image matching those
+         *   criteria, or false if no matching items found.
+         ***/
+        $images = dirListPHP($dir, '.'.$extension);
+        if ($images === false) {
+            return false;
+        }
+        $item = rand(0, count($images) - 1);
+
+        return $dir.'/'.$images[$item];
     }
 
     public function getImageDimensions() {

@@ -7204,11 +7204,15 @@ figure .picture-label {
   left: 50%;
   text-shadow: 2px 2px 3px rgba(0, 0, 0, 0.75);
   color: white;
-  font-weight: 500;
+  font-weight: 700;
   -webkit-text-stroke: 1px #000;
   text-stroke: 1px #000;
+  text-align: left;
   font-size: 2em;
-  font-style: italic;
+}
+figure .picture-label.extended-attribution {
+  font-size: 1.5em;
+  line-height: 1.21428571;
 }
 figure figcaption {
   color: #777777;

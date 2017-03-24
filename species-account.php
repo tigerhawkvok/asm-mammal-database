@@ -388,6 +388,11 @@ $entryNote = empty($speciesRow["notes"]) ? "" : "<section id='species-note' clas
 # Others should be linked ones from 'image_resources'
 
 $mammalDomain = "http://www.mammalogy.org";
+if(toBool($_REQUEST["extended_attribution"])) {
+    $pictureLabel = "<p class='picture-label extended-attribution'>Family <span class='sciname linnean_family'>".$speciesRow["linnean_family"]."</span><br/><span class='sciname'>".getCanonicalSpecies($speciesRow)."</span><br/>";
+} else {
+    $pictureLabel = "<p class='picture-label'><span class='sciname'>".getCanonicalSpecies($speciesRow)."</span></p>";    
+}
 if(empty($speciesRow["image"])) {
     # Get a picture from the Mammalogy database
     try {
@@ -477,9 +482,17 @@ $caption
                     }
                     $caption = "<span class='caption-description'>".$captionDescription . "</span> ".$imageCredit;
                     $imgHtml = "<img src='".$photo["small_url"]."'/>";
+                    if(toBool($_REQUEST["extended_attribution"])) {
+                        $remove = array(
+                            "&copy;",
+                            "&amp;copy;",
+                        );
+                        $attributionLabel = "<small>".str_replace($remove, "", $photo["attribution"])."</small><br/><small>iNaturalist</small>";
+                        $pictureLabel .= $attributionLabel . "</p>";
+                    }
                     $figure = "
 <figure class='from-inaturalist center-block text-center'>
-<p class='picture-label'>".getCanonicalSpecies($speciesRow)."</p>
+$pictureLabel
 <picture>
 <source
 sizes='(max-width: 480px) 25vw, (max-width: 768px) 33vw, (max-width: 1024px) 35w, (min-width: 1025px) 40w'
@@ -530,9 +543,17 @@ $caption
                     $enlarge_url = $enlarge_urlArr[$key];
                     $imgHtml = "<img src='$img' />";
                     $caption = "<span class='caption-description'>Image credit " . $copyright . " " . $license . "</span> (via <a href='$enlarge_url' class='newwindow'>CalPhotos</a>).";
+                    if(toBool($_REQUEST["extended_attribution"])) {
+                        $remove = array(
+                            "&copy;",
+                            "&amp;copy;",
+                        );
+                        $attributionLabel = "<small>".str_replace($remove, "", $copyright)."</small><br/><small>CalPhotos</small>";
+                        $pictureLabel .= $attributionLabel . "</p>";
+                    }
                     $figure = "
 <figure class='from-calphotos center-block text-center'>
-<p class='picture-label'>".getCanonicalSpecies($speciesRow)."</p>
+$pictureLabel
 <picture>
 $imgHtml
 </picture>

@@ -60,7 +60,7 @@ fetchMajorMinorGroups = (scientific = null, callback) ->
         scientific = true
     $.get searchParams.apiPath, "fetch-groups=true&scientific=#{scientific}"
     .done (result) ->
-      console.log "Group fetch for dropdown got", result
+      # console.log "Group fetch for dropdown got", result
       if result.status isnt true
         return false
       _asm.mammalGroupsBase = Object.toArray result.minor

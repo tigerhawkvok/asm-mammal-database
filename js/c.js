@@ -1772,7 +1772,6 @@ fetchMajorMinorGroups = function(scientific, callback) {
       }
     }
     $.get(searchParams.apiPath, "fetch-groups=true&scientific=" + scientific).done(function(result) {
-      console.log("Group fetch for dropdown got", result);
       if (result.status !== true) {
         return false;
       }

@@ -699,6 +699,7 @@ lookupEditorSpecies = (taxon = undefined) ->
           console.debug "Trying to polymer-select", d
           $(dropdownTentativeSelector).polymerSelected d, true
         if col is "species_authority" or col is "genus_authority"
+          # Check if the authority is in full format, eg, "(Linnaeus, 1758)"
           unless isNull d.match /\(?\w+, ?[0-9]{4}\)?/g
             hasParens = d.search(/\(/) >= 0 and d.search(/\)/) >= 0
             authorityParts = d.replace(/[\(\)]/g,"").split(",")

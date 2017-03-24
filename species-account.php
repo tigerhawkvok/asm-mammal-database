@@ -287,6 +287,11 @@ if(empty($speciesRow["common_name"])) {
     }
 }
 
+# Citations
+# See admin.coffee for an example of how to do this
+# EG:
+# https://github.com/tigerhawkvok/asm-mammal-database/blob/v0.5.6-prealpha/coffee/admin.coffee#L688-L699
+
 $nameCitation = "";
 $citationYears = json_decode($speciesRow["authority_year"], true);
 if(!empty($speciesRow["genus_authority"])) {

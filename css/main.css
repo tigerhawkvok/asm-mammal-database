@@ -6855,6 +6855,14 @@ main .species-title + .species-common {
   margin-top: -0.25em;
   text-indent: 1rem;
 }
+main .species-title + .species-common > .title-glyphicon {
+  margin-left: 1rem;
+  font-size: 14px;
+  text-indent: 0;
+}
+main .species-title + .species-common .tooltip {
+  text-indent: 0;
+}
 main #images-block picture,
 main #images-block img {
   max-height: 40vh;

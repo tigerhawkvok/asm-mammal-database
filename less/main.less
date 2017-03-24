@@ -220,6 +220,15 @@ main {
             .capitalize;
             margin-top: -.25em;
             text-indent: 1rem;
+            
+            & > .title-glyphicon {
+                margin-left: 1rem;
+                font-size: @font-size-base;
+                text-indent: 0;
+            }
+            .tooltip {
+                text-indent: 0;
+            }
         }
     }
 
@@ -270,7 +279,7 @@ main {
     paper-dialog-scrollable#modal-taxon-editor {
         max-height: 66vh;
         overflow-y: scroll;
-        
+
         div.scrollable {
             max-height: none !important;
         }

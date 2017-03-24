@@ -315,7 +315,11 @@ if(!empty($speciesRow["species_authority"])) {
     }
 }
 
-$entryTitle = "<h1 class='species-title col-xs-12'>".getCanonicalSpecies($speciesRow)." <small id='species-authority-citation' class='text-muted'>$nameCitation</small></h1><h2 class='species-common col-xs-12'>".$speciesRow["common_name"]."</h2>\n\n";
+$tooltipTitle = strtolower($speciesRow["common_name_source"]) == "iucn" ? "IUCN":"ASM";
+$tooltipTitle = "Common name via " . $tooltipTitle;
+$commonNameTooltip = " <span class='glyphicon glyphicon-info-sign title-glyphicon' data-toggle='tooltip' title='$tooltipTitle' data-placement='right'></span>";
+
+$entryTitle = "<h1 class='species-title col-xs-12'>".getCanonicalSpecies($speciesRow)." <small id='species-authority-citation' class='text-muted'>$nameCitation</small></h1><h2 class='species-common col-xs-12'>".$speciesRow["common_name"].$commonNameTooltip."</h2>\n\n";
 
 # Taxonomy notes
 $englishMap = array(

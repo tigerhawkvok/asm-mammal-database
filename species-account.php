@@ -393,13 +393,14 @@ if(toBool($_REQUEST["extended_attribution"])) {
 } else {
     $pictureLabel = "<p class='picture-label'><span class='sciname'>".getCanonicalSpecies($speciesRow)."</span></p>";    
 }
+$images = "<section id='images-block' class='text-center col-xs-12'>";
 if(empty($speciesRow["image"])) {
     # Get a picture from the Mammalogy database
     try {
         include_once dirname(__FILE__) . "/phpquery/phpQuery/phpQuery.php";
         if(!class_exists("phpQuery")) throw(new Exception("BadPHPQuery"));
         $url = $mammalDomain . "/search/asm_custom_search/" . urlencode(getCanonicalSpecies($speciesRow));
-        $images = "<section id='images-block' class='text-center col-xs-12'><!-- Image from search $url -->";
+        $images .= "<!-- Image from search $url -->";
         $html = file_get_contents($url);
         phpQuery::newDocumentHTML($html);
         $imgElement = pq("#imageLibraryContent #current_image img");
@@ -429,7 +430,7 @@ if(empty($speciesRow["image"])) {
                 "id" => $speciesRow["id"],
             );
             $db->updateEntry($updateArray, $ref);
-            $caption = "<span class='caption-description'>".$captionDescription . " Image credit " . $imageCredit . "</span>  <a href='https://creativecommons.org/licenses/by-nc/4.0/legalcode' class='newwindow'>CC BY-NC 4.0</a>";
+            $caption = "<span class='caption-description'>".$captionDescription . " Image credit " . $imageCredit . "</span>.  <a href='https://creativecommons.org/licenses/by-nc/4.0/legalcode' class='newwindow'>CC BY-NC 4.0</a>";
             $figure = "
 <figure class='from-mammalogyorg center-block text-center'>
 <picture>
@@ -583,9 +584,8 @@ $caption
                 }
             }
         }
-        $images .= "</section>";
     } catch (Exception $e) {
-        $images = "<!-- System had exception ".$e->getMessage()." making image block -->";
+        $images = "<section><!-- System had exception ".$e->getMessage()." making image block -->";
     }
 
 
@@ -594,9 +594,9 @@ $caption
     $imageLicense = "<a href='".current($license)."'>".key($license)."</a>";
     $imageCredit = $speciesRow["image_credit"];
     $imageCredit = substr($imageCredit, -1) == "." ? $imageCredit : $imageCredit . ".";
-    $imageCaption = "<span class='caption-description'>".$speciesRow["image_caption"]."</span> <span class='caption-credit'>" . $imageCredit . "</a> ".$imageLicense;
+    $imageCaption = "<span class='caption-description'>".$speciesRow["image_caption"]."</span> <span class='caption-credit'>" . $imageCredit . "</span> ".$imageLicense;
     $imgHtml = "<img src='".$speciesRow["image"]."' alt='' />";
-    $images = "
+    $images .= "
 <figure class='from-sadb center-block text-center'>
 <picture>
 $imgHtml
@@ -608,6 +608,7 @@ $imageCaption
 ";
 
 }
+$images .= "</section>";
 
 /***********************************************************************************
  * Wrap up the entry

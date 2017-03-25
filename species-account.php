@@ -433,7 +433,7 @@ if(empty($speciesRow["image"])) {
             $caption = "<span class='caption-description'>".$captionDescription . " Image credit " . $imageCredit . "</span>.  <a href='https://creativecommons.org/licenses/by-nc/4.0/legalcode' class='newwindow'>CC BY-NC 4.0</a>";
             $figure = "
 <figure class='from-mammalogyorg center-block text-center'>
-<picture>
+<picture class='lightboximage'>
 $imgHtml
 </picture>
 <figcaption>
@@ -598,7 +598,7 @@ $caption
     $imgHtml = "<img src='".$speciesRow["image"]."' alt='' />";
     $images .= "
 <figure class='from-sadb center-block text-center'>
-<picture>
+<picture class='lightboximage'>
 $imgHtml
 </picture>
 <figcaption>

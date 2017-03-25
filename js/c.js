@@ -1287,8 +1287,8 @@ lightboxImages = function(selector, lookDeeply) {
    * If the image has it, wrap it in an anchor and bind;
    * otherwise just apply to the selector.
    *
-   * Plays nice with layzr.js
-   * https://callmecavs.github.io/layzr.js/
+   * Requires ImageLightbox
+   * https://github.com/rejas/imagelightbox
    */
   options = {
     onStart: function() {
@@ -1309,39 +1309,49 @@ lightboxImages = function(selector, lookDeeply) {
     quitOnImgClick: true
   };
   jqo = lookDeeply ? d$(selector) : $(selector);
-  return jqo.click(function(e) {
-    var error1;
-    try {
-      $(this).imageLightbox(options).startImageLightbox();
-      e.preventDefault();
-      e.stopPropagation();
-      return console.warn("Event propagation was stopped when clicking on this.");
-    } catch (error1) {
-      e = error1;
-      return console.error("Unable to lightbox this image!");
-    }
-  }).each(function() {
-    var e, error1, imgUrl, tagHtml;
-    try {
-      if ($(this).prop("tagName").toLowerCase() === "img" && $(this).parent().prop("tagName").toLowerCase() !== "a") {
-        tagHtml = $(this).removeClass("lightboximage").prop("outerHTML");
-        imgUrl = (function() {
-          switch (false) {
-            case !!isNull($(this).attr("data-layzr-retina")):
-              return $(this).attr("data-layzr-retina");
-            case !!isNull($(this).attr("data-layzr")):
-              return $(this).attr("data-layzr");
-            default:
-              return $(this).attr("src");
-          }
-        }).call(this);
-        return $(this).replaceWith("<a href='" + imgUrl + "' class='lightboximage'>" + tagHtml + "</a>");
+  loadJS("bower_components/imagelightbox/dist/imagelightbox.min.js", function() {
+    jqo.click(function(e) {
+      var error1;
+      try {
+        e.preventDefault();
+        e.stopPropagation();
+        $(this).imageLightbox(options).startImageLightbox();
+        return console.warn("Event propagation was stopped when clicking on this.");
+      } catch (error1) {
+        e = error1;
+        return console.error("Unable to lightbox this image!");
       }
-    } catch (error1) {
-      e = error1;
-      return console.warn("Couldn't parse through the elements");
-    }
+    }).each(function() {
+      var e, error1, imgUrl, tagHtml;
+      console.log("Using selectors '" + selector + "' / '" + this + "' for lightboximages");
+      try {
+        if (($(this).prop("tagName").toLowerCase() === "img" || $(this).prop("tagName").toLowerCase() === "picture") && $(this).parent().prop("tagName").toLowerCase() !== "a") {
+          tagHtml = $(this).removeClass("lightboximage").prop("outerHTML");
+          imgUrl = (function() {
+            switch (false) {
+              case !!isNull($(this).attr("data-layzr-retina")):
+                return $(this).attr("data-layzr-retina");
+              case !!isNull($(this).attr("data-layzr")):
+                return $(this).attr("data-layzr");
+              case !!isNull($(this).attr("data-lightbox-image")):
+                return $(this).attr("data-lightbox-image");
+              case !!isNull($(this).attr("src")):
+                return $(this).attr("src");
+              default:
+                return $(this).find("img").attr("src");
+            }
+          }).call(this);
+          $(this).replaceWith("<a href='" + imgUrl + "' class='lightboximage'>" + tagHtml + "</a>");
+          return $("a[href='" + imgUrl + "']").imageLightbox(options);
+        }
+      } catch (error1) {
+        e = error1;
+        return console.log("Couldn't parse through the elements");
+      }
+    });
+    return console.info("Lightboxed the following:", jqo);
   });
+  return false;
 };
 
 activityIndicatorOn = function() {
@@ -1700,6 +1710,7 @@ $(function() {
         console.warn("Took " + (iter * 100) + "ms to reposition image!");
       }
       $("figure p.picture-label").css("left", "calc(50% - (" + imageWidth + "px/2)*.95)");
+      lightboxImages();
       return false;
     })(0);
   } catch (undefined) {}

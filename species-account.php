@@ -413,8 +413,23 @@ if(empty($speciesRow["image"])) {
             $images .= "<!-- Fetched width $width -->";
             $imgHtml = "<img src='$localPath' />";
             $captionDescription = trim(pq("#imageLibraryContent #image-description")->text());
-                $captionDescription = substr($captionDescription, -1) == "." ? $captionDescription : $captionDescription . ".";
-            $caption = "<span class='caption-description'>".$captionDescription . " Image credit " . pq("#imageLibraryContent #image-photographer")->text() . " " . pq("#imageLibraryContent #image-date")->text() . ".</span>";
+            $captionDescription = substr($captionDescription, -1) == "." ? $captionDescription : $captionDescription . ".";
+            $imageCredit = pq("#imageLibraryContent #image-photographer")->text() . " " . pq("#imageLibraryContent #image-date")->text();
+            # Update the entry
+            $license = array(
+                "CC BY-NC 4.0" => "https://creativecommons.org/licenses/by-nc/4.0/legalcode",
+            );
+            $updateArray = array(
+                "image" => $localPath,
+                "image_caption" => $captionDescription,
+                "image_credit" => $imageCredit,
+                "image_license" => json_encode($license),
+            );
+            $ref = array(
+                "id" => $speciesRow["id"],
+            );
+            $db->updateEntry($updateArray, $ref);
+            $caption = "<span class='caption-description'>".$captionDescription . " Image credit " . $imageCredit . "</span>  <a href='https://creativecommons.org/licenses/by-nc/4.0/legalcode' class='newwindow'>CC BY-NC 4.0</a>";
             $figure = "
 <figure class='from-mammalogyorg center-block text-center'>
 <picture>
@@ -575,8 +590,22 @@ $caption
 
 
 } else {
-
-$images = "";
+    $license = json_decode($speciesRow["image_license"], true);
+    $imageLicense = "<a href='".current($license)."'>".key($license)."</a>";
+    $imageCredit = $speciesRow["image_credit"];
+    $imageCredit = substr($imageCredit, -1) == "." ? $imageCredit : $imageCredit . ".";
+    $imageCaption = "<span class='caption-description'>".$speciesRow["image_caption"]."</span> <span class='caption-credit'>" . $imageCredit . "</a> ".$imageLicense;
+    $imgHtml = "<img src='".$speciesRow["image"]."' alt='' />";
+    $images = "
+<figure class='from-sadb center-block text-center'>
+<picture>
+$imgHtml
+</picture>
+<figcaption>
+$imageCaption
+</figcaption>
+</figure>
+";
 
 }
 

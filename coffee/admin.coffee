@@ -496,8 +496,8 @@ loadModalTaxonEditor = (extraHtml = "", affirmativeText = "Save") ->
     </div>
   </section>
   <paper-input label="Taxon Credit" id="edit-taxon-credit" name="edit-taxon-credit" floatingLabel aria-describedby="taxon-credit-help" value="#{$.cookie(adminParams.cookieFullName)}"></paper-input>
-    <span class="help-block" id="taxon-credit-help">This will be displayed as "Taxon information by [your entry]."</span>
   <paper-input label="Taxon Credit Date" id="edit-taxon-credit-date" name="edit-taxon-credit-date" floatingLabel value="#{prettyDate}"></paper-input>
+  <span class="help-block" id="taxon-credit-help">This will be displayed as "Entry by <span class='taxon-credit-preview'></span> on <span class='taxon-credit-date-preview'></span>."</span>
   #{extraHtml}
   <input type="hidden" name="edit-taxon-author" id="edit-taxon-author" value="" />
   """
@@ -879,6 +879,25 @@ lookupEditorSpecies = (taxon = undefined) ->
           false
         try
           _asm.updateImageField(p$("#edit-image"))
+        # Credit preview thigns
+        nameFill = (el) ->
+          name = p$(el).value
+          $("#taxon-credit-help .taxon-credit-preview").text name
+          name
+        dateFill = (el) ->
+          dateEntry = p$(el).value
+          dateObj = new Date(dateEntry)
+          dateString = "#{dateObj.getUTCDate()} #{dateMonthToString dateObj.getUTCMonth()} #{dateObj.getUTCFullYear()}"
+          $("#taxon-credit-help .taxon-credit-date-preview").text dateString
+          dateString
+        $("#edit-taxon-credit").keyup ->
+          nameFill this
+          false
+        $("#edit-taxon-credit-date").keyup ->
+          dateFill this
+          false
+        nameFill p$("#edit-taxon-credit")
+        dateFill p$("#edit-taxon-credit-date")
         # Fill the markdown previews
         entry = $(p$("#edit-entry").textarea).val()
         notes = $(p$("#edit-notes").textarea).val()

@@ -322,6 +322,10 @@ licenseHelper = (selector = "#edit-image-license-dialog") ->
         console.warn "Couldn't debounce save new col call"
         stopLoadError "There was a problem saving this data"
       false
+    $("#set-license-value").on "iron-overlay-opened", ->
+      p$(this).refit()
+      delay 100, =>
+        p$(this).refit()
     p$("#set-license-value").open()
     false
   $(selector).click ->
@@ -488,7 +492,7 @@ loadModalTaxonEditor = (extraHtml = "", affirmativeText = "Save") ->
       <paper-input label="Image License" id="edit-image-license" name="edit-image-license" data-license-name="" data-license-url="" floatingLabel readonly></paper-input>
     </div>
     <div class="col-xs-3">
-      <paper-icon-button icon="icons:create" id="edit-image-license-dialog" data-license-name="" data-license-url="" data-column="image_license"></paper-icon-button>
+      <paper-icon-button icon="icons:create" id="edit-image-license-dialog" data-license-name="" data-license-url="" data-column="image_license" data-toggle='tooltip' title="Edit License"></paper-icon-button>
     </div>
   </section>
   <paper-input label="Taxon Credit" id="edit-taxon-credit" name="edit-taxon-credit" floatingLabel aria-describedby="taxon-credit-help" value="#{$.cookie(adminParams.cookieFullName)}"></paper-input>

@@ -6890,6 +6890,9 @@ main #images-block div.no-image {
 #eutheria-extra {
   display: inline-block;
 }
+paper-dialog#set-license-value {
+  width: 85vw;
+}
 #modal-taxon paper-dialog-scrollable#modal-taxon-editor,
 #modal-taxon-edit paper-dialog-scrollable#modal-taxon-editor {
   max-height: 66vh;

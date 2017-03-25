@@ -590,8 +590,9 @@ $caption
 
 
 } else {
-    $license = json_decode($speciesRow["image_license"], true);
-    $imageLicense = "<a href='".current($license)."'>".key($license)."</a>";
+    $licenseJson = urldecode(htmlspecialchars_decode($speciesRow["image_license"]));
+    $license = json_decode($licenseJson, true);
+    $imageLicense = "<a href='".current($license)."' class='newwindow'>".key($license)."</a>";
     $imageCredit = $speciesRow["image_credit"];
     $imageCredit = substr($imageCredit, -1) == "." ? $imageCredit : $imageCredit . ".";
     $imageCaption = "<span class='caption-description'>".$speciesRow["image_caption"]."</span> <span class='caption-credit'>" . $imageCredit . "</span> ".$imageLicense;

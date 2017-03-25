@@ -459,7 +459,7 @@ Function::debounce = (threshold = 300, execAsap = false, timeout = window.deboun
       clearTimeout timeout
       delete core.debouncers[key]
     func.apply(func, args) unless execAsap
-    console.debug "Debounce executed for #{key}"
+    # console.debug "Debounce executed for #{key}"
   if timeout?
     try
       clearTimeout timeout
@@ -470,11 +470,11 @@ Function::debounce = (threshold = 300, execAsap = false, timeout = window.deboun
     console.debug "Executed #{key} immediately"
     return false
   if key?
-    console.debug "Debouncing '#{key}' for #{threshold} ms"
+    #console.debug "Debouncing '#{key}' for #{threshold} ms"
     core.debouncers[key] = delay threshold, ->
       delayed()
   else
-    console.log "Delaying '#{key}' for GLOBAL #{threshold} ms"
+    # console.log "Delaying '#{key}' for GLOBAL #{threshold} ms"
     window.debounce_timer = delay threshold, ->
       delayed()
 
@@ -518,9 +518,9 @@ loadJS = (src, callback = new Object(), doCallbackOnError = true) ->
           try
             callback()
           catch e
-            console.error "Postload callback error - #{e.message}"
+            console.error "Postload callback error for '#{src}' - #{e.message}"
     catch e
-      console.error "Onload error - #{e.message}"
+      console.error "Onload error for '#{src}' - #{e.message}"
   # Error function
   errorFunction = ->
     console.warn "There may have been a problem loading #{src}"
@@ -1008,7 +1008,6 @@ window.d$ = (selector) ->
   deepJQuery(selector)
 
 
-
 lightboxImages = (selector = ".lightboximage", lookDeeply = false) ->
   ###
   # Lightbox images with this selector
@@ -1016,8 +1015,8 @@ lightboxImages = (selector = ".lightboximage", lookDeeply = false) ->
   # If the image has it, wrap it in an anchor and bind;
   # otherwise just apply to the selector.
   #
-  # Plays nice with layzr.js
-  # https://callmecavs.github.io/layzr.js/
+  # Requires ImageLightbox
+  # https://github.com/rejas/imagelightbox
   ###
   # The options!
   options =
@@ -1033,33 +1032,44 @@ lightboxImages = (selector = ".lightboximage", lookDeeply = false) ->
       allowedTypes: 'png|jpg|jpeg|gif|bmp|webp'
       quitOnDocClick: true
       quitOnImgClick: true
+  _asm.lightbox =
+    options: options
   jqo = if lookDeeply then d$(selector) else $(selector)
-  jqo
-  .click (e) ->
-    try
-      $(this).imageLightbox(options).startImageLightbox()
-      # We want to stop the events propogating up for these
-      e.preventDefault()
-      e.stopPropagation()
-      console.warn("Event propagation was stopped when clicking on this.")
-    catch e
-      console.error("Unable to lightbox this image!")
-  # Set up the items
-  .each ->
-    # console.log("Using selectors '#{selector}' / '#{this}' for lightboximages")
-    try
-      if $(this).prop("tagName").toLowerCase() is "img" and $(this).parent().prop("tagName").toLowerCase() isnt "a"
-        tagHtml = $(this).removeClass("lightboximage").prop("outerHTML")
-        imgUrl = switch
-          when not isNull($(this).attr("data-layzr-retina"))
-            $(this).attr("data-layzr-retina")
-          when not isNull($(this).attr("data-layzr"))
-            $(this).attr("data-layzr")
-          else
-            $(this).attr("src")
-        $(this).replaceWith("<a href='#{imgUrl}' class='lightboximage'>#{tagHtml}</a>")
-    catch e
-      console.warn("Couldn't parse through the elements")
+  loadJS "bower_components/imagelightbox/dist/imagelightbox.min.js", ->
+    jqo
+    .click (e) ->
+      try
+        # We want to stop the events propogating up for these
+        e.preventDefault()
+        e.stopPropagation()
+        $(this).imageLightbox(options).startImageLightbox()
+        console.warn("Event propagation was stopped when clicking on this.")
+      catch e
+        console.error("Unable to lightbox this image!")
+    # Set up the items
+    .each ->
+      console.log("Using selectors '#{selector}' / '#{this}' for lightboximages")
+      try
+        if ($(this).prop("tagName").toLowerCase() is "img" or $(this).prop("tagName").toLowerCase() is "picture")and $(this).parent().prop("tagName").toLowerCase() isnt "a"
+          tagHtml = $(this).removeClass("lightboximage").prop("outerHTML")
+          imgUrl = switch
+            when not isNull $(this).attr("data-layzr-retina")
+              $(this).attr "data-layzr-retina"
+            when not isNull $(this).attr("data-layzr")
+              $(this).attr "data-layzr"
+            when not isNull $(this).attr("data-lightbox-image")
+              $(this).attr "data-lightbox-image"
+            when not isNull $(this).attr("src")
+              $(this).attr "src"
+            else
+              $(this).find("img").attr "src"
+          $(this).replaceWith("<a href='#{imgUrl}' data-lightbox='#{imgUrl}' class='lightboximage'>#{tagHtml}</a>")
+          $("a[href='#{imgUrl}']").imageLightbox(options)
+        # Otherwise, we shouldn't need to do anything
+      catch e
+        console.log("Couldn't parse through the elements")
+    console.info "Lightboxed the following:", jqo
+  false
 
 
 
@@ -1113,6 +1123,30 @@ getLocation = (callback = undefined) ->
     console.warn("This browser doesn't support geolocation!")
     if callback?
       callback(false)
+
+
+
+dateMonthToString = (month) ->
+  conversionObj =
+    0: "January"
+    1: "February"
+    2: "March"
+    3: "April"
+    4: "May"
+    5: "June"
+    6: "July"
+    7: "August"
+    8: "September"
+    9: "October"
+    10: "November"
+    11: "December"
+  try
+    rv = conversionObj[month]
+  catch
+    rv = month
+  rv
+
+
 
 bindClickTargets = ->
   bindClicks()
@@ -1315,7 +1349,31 @@ $ ->
     for md in $("marked-element")
       mdText = $(md).find("script").text()
       unless isNull mdText
-        console.debug "Rendering markdown of", mdText
+        # console.debug "Rendering markdown of", mdText
         p$(md).markdown = mdText
   browserBeware()
   checkFileVersion()
+  try
+    for caption in $("figcaption .caption-description")
+      captionValue = $(caption).text().unescape()
+      $(caption).text captionValue
+  try
+    do offsetImageLabel = (iter = 0) ->
+      unless $("figure picture").exists()
+        console.log "No image on page"
+        return false
+      imageWidth = $("figure picture").width()
+      if isNull imageWidth, true
+        ++iter
+        if iter >= 10
+          console.log "Never saw a bigger image width"
+          return false
+        delay 100, ->
+          offsetImageLabel iter
+        return false
+      # console.log "Display image width", imageWidth
+      if iter > 0
+        console.warn "Took #{iter * 100}ms to reposition image!"
+      $("figure p.picture-label").css "left", "calc(50% - (#{imageWidth}px/2)*.95)"
+      lightboxImages()
+      false

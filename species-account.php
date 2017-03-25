@@ -11,7 +11,7 @@ require_once dirname(__FILE__) . "/core/core.php";
 
 $db = new DBHelper($default_database,$default_sql_user,$default_sql_password,$default_sql_url,$default_table,$db_cols);
 
-
+if(isset($_SERVER['QUERY_STRING'])) parse_str($_SERVER['QUERY_STRING'],$_REQUEST);
 # Check the species being looked up
 
 $lookupId = null;
@@ -287,26 +287,67 @@ if(empty($speciesRow["common_name"])) {
     }
 }
 
+# Citations
+
+$hasWellFormattedSpeciesCitation = preg_match('/\(? *([\w\. \[\]]+), *([0-9]{4}) *\)?/im', $speciesRow["species_authority"]);
+
+if(empty($speciesRow["genus_authority"]) && $hasWellFormattedSpeciesCitation) {
+    /***
+     * See admin.coffee for an example of how to do this
+     *
+     * EG:
+     * https://github.com/tigerhawkvok/asm-mammal-database/blob/v0.5.6-prealpha/coffee/admin.coffee#L688-L699
+     *
+     * May need to do this in case we picked up the authority from the
+     * IUCN, but it hasn't been edited
+     ***/
+    $authority = preg_replace('/\(? *([\w\. \[\]]+), *([0-9]{4}) *\)?/im', '$1', $speciesRow["species_authority"]);
+    $authorityYear = preg_replace('/\(? *([\w\. \[\]]+), *([0-9]{4}) *\)?/im', '$2', $speciesRow["species_authority"]);
+    $speciesRow["authority_year"] = json_encode(array(
+        $authorityYear => $authorityYear,
+    ));
+    $parensState = preg_match('/\( *([\w\. \[\]]+), *([0-9]{4}) *\)/im', $speciesRow["species_authority"]) ? true:false;
+    $speciesRow["genus_authority"] = $authority;
+    $speciesRow["species_authority"] = $authority;
+    $speciesRow["parens_auth_genus"] = $parensState;
+    $speciesRow["parens_auth_species"] = $parensState;
+    $iucnCitation = "iucn-citation iucn-citation-parsed";
+    # Update the entry
+    $updateArray = array(
+        "genus_authority" => $speciesRow["genus_authority"],
+        "species_authority" => $speciesRow["species_authority"],
+        "authority_year" => $speciesRow["authority_year"],
+        "parens_auth_genus" => $speciesRow["parens_auth_genus"],
+        "parens_auth_species" => $speciesRow["parens_auth_species"],
+    );
+    $ref = array(
+        "id" => $speciesRow["id"],
+    );
+    $db->updateEntry($updateArray, $ref);
+} else {
+    $iucnCitation = "";
+}
+
 $nameCitation = "";
 $citationYears = json_decode($speciesRow["authority_year"], true);
 if(!empty($speciesRow["genus_authority"])) {
     if(!empty($citationYears)) {
-        $citation = $speciesRow["genus_authority"]." ".key($citationYears);
+        $citation = $speciesRow["genus_authority"].", ".key($citationYears);
         if(toBool($speciesRow["parens_auth_genus"])) $citation = "($citation)";
     } else {
         $citation = "";
     }
-    $nameCitation = "<span class='genus'>".$speciesRow["genus"]."</span>, <span class='citation person'>".$citation."</span>; ";
+    $nameCitation = "<span class='genus'>".$speciesRow["genus"]."</span>, <span class='citation person $iucnCitation'>".$citation."</span>; ";
 }
 if(!empty($speciesRow["species_authority"])) {
     if(!empty($citationYears)) {
-        $citation = $speciesRow["species_authority"]." ".current($citationYears);
+        $citation = $speciesRow["species_authority"].", ".current($citationYears);
         if(toBool($speciesRow["parens_auth_species"])) $citation = "($citation)";
     } else {
         $citation = "";
     }
     if(!empty($citation)) {
-        $nameCitation .= "<span class='species'>".$speciesRow["species"]."</span>, <span class='citation person'>".$citation."</span>";
+        $nameCitation .= "<span class='species'>".$speciesRow["species"]."</span>, <span class='citation person $iucnCitation'>".$citation."</span>";
     } else {
         # What if we got it from the IUCN?
         if(empty($nameCitation)) {
@@ -315,7 +356,11 @@ if(!empty($speciesRow["species_authority"])) {
     }
 }
 
-$entryTitle = "<h1 class='species-title col-xs-12'>".getCanonicalSpecies($speciesRow)." <small id='species-authority-citation' class='text-muted'>$nameCitation</small></h1><h2 class='species-common col-xs-12'>".$speciesRow["common_name"]."</h2>\n\n";
+$tooltipTitle = strtolower($speciesRow["common_name_source"]) == "iucn" ? "IUCN":"ASM";
+$tooltipTitle = "Common name via " . $tooltipTitle;
+$commonNameTooltip = " <span class='glyphicon glyphicon-info-sign title-glyphicon' data-toggle='tooltip' title='$tooltipTitle' data-placement='right'></span>";
+
+$entryTitle = "<h1 class='species-title col-xs-12'>".getCanonicalSpecies($speciesRow)." <small id='species-authority-citation' class='text-muted'>$nameCitation</small></h1><h2 class='species-common col-xs-12'>".$speciesRow["common_name"].$commonNameTooltip."</h2>\n\n";
 
 # Taxonomy notes
 $englishMap = array(
@@ -326,7 +371,7 @@ $englishMap = array(
 $subTaxa = !empty($speciesRow["major_type"]) ? "<span class='clade' data-linnean-level='magnaorder'>".$speciesRow["major_type"]."</span> &#187; " : "";
 $subTaxa .= !empty($speciesRow["major_subtype"]) ? "<span class='clade' data-linnean-level-level='superorder'>".$speciesRow["major_subtype"]."</span> &#187; " : "";
 $taxonomyNotes = "<section id='taxonomy' class='col-xs-12'>
-<section class='scientific-taxonomy'><span class='clade' data-linnean-level='cohort'>".$speciesRow["simple_linnean_group"]."</span> &#187; $subTaxa <span class='clade' data-linnean-level='order'>".$speciesRow["linnean_order"]."</clade> &#187; <span class='clade' data-linnean-level='family'>".$speciesRow["linnean_family"]."</span></section>
+<section class='scientific-taxonomy'><span class='clade' data-linnean-level='cohort'>".$speciesRow["simple_linnean_group"]."</span> &#187; $subTaxa <span class='clade' data-linnean-level='order'>".$speciesRow["linnean_order"]."</span> &#187; <span class='clade' data-linnean-level='family'>".$speciesRow["linnean_family"]."</span></section>
 
 <section class='common-taxonomy'>".$englishMap[$speciesRow["simple_linnean_group"]]." &#187; ".$speciesRow["simple_linnean_subgroup"]."</section>
 </section>\n\n";
@@ -343,27 +388,52 @@ $entryNote = empty($speciesRow["notes"]) ? "" : "<section id='species-note' clas
 # Others should be linked ones from 'image_resources'
 
 $mammalDomain = "http://www.mammalogy.org";
+if(toBool($_REQUEST["extended_attribution"])) {
+    $pictureLabel = "<p class='picture-label extended-attribution'>Family <span class='sciname linnean_family'>".$speciesRow["linnean_family"]."</span><br/><span class='sciname'>".getCanonicalSpecies($speciesRow)."</span><br/>";
+} else {
+    $pictureLabel = "<p class='picture-label'><span class='sciname'>".getCanonicalSpecies($speciesRow)."</span></p>";    
+}
+$images = "<section id='images-block' class='text-center col-xs-12'>";
 if(empty($speciesRow["image"])) {
     # Get a picture from the Mammalogy database
     try {
         include_once dirname(__FILE__) . "/phpquery/phpQuery/phpQuery.php";
         if(!class_exists("phpQuery")) throw(new Exception("BadPHPQuery"));
         $url = $mammalDomain . "/search/asm_custom_search/" . urlencode(getCanonicalSpecies($speciesRow));
-        $images = "<section id='images-block' class='text-center col-xs-12'><!-- Image from search $url -->";
+        $images .= "<!-- Image from search $url -->";
         $html = file_get_contents($url);
         phpQuery::newDocumentHTML($html);
         $imgElement = pq("#imageLibraryContent #current_image img");
         $imgRelPath = $imgElement->attr("src");
-        if(!empty($imgRelPath)) {
+        if(!empty($imgRelPath) && !toBool($_REQUEST["skip_mil"])) {
         #if(false) {
             $imgPath = $mammalDomain . $imgRelPath;
-            $imgHtml = "<img src='$imgPath' />";
+            $imgObj = new ImageFunctions($imgPath, true, "species_photos");
+            $width = $imgObj->getWidth();
+            $localPath = $imgObj->getImagePath();
+            $images .= "<!-- Fetched width $width -->";
+            $imgHtml = "<img src='$localPath' />";
             $captionDescription = trim(pq("#imageLibraryContent #image-description")->text());
-                $captionDescription = substr($captionDescription, -1) == "." ? $captionDescription : $captionDescription . ".";
-            $caption = $captionDescription . " Image credit " . pq("#imageLibraryContent #image-photographer")->text() . " " . pq("#imageLibraryContent #image-date")->text() . ".";
+            $captionDescription = substr($captionDescription, -1) == "." ? $captionDescription : $captionDescription . ".";
+            $imageCredit = pq("#imageLibraryContent #image-photographer")->text() . " " . pq("#imageLibraryContent #image-date")->text();
+            # Update the entry
+            $license = array(
+                "CC BY-NC 4.0" => "https://creativecommons.org/licenses/by-nc/4.0/legalcode",
+            );
+            $updateArray = array(
+                "image" => $localPath,
+                "image_caption" => $captionDescription,
+                "image_credit" => $imageCredit,
+                "image_license" => json_encode($license),
+            );
+            $ref = array(
+                "id" => $speciesRow["id"],
+            );
+            $db->updateEntry($updateArray, $ref);
+            $caption = "<span class='caption-description'>".$captionDescription . " Image credit " . $imageCredit . "</span>.  <a href='https://creativecommons.org/licenses/by-nc/4.0/legalcode' class='newwindow'>CC BY-NC 4.0</a>";
             $figure = "
 <figure class='from-mammalogyorg center-block text-center'>
-<picture>
+<picture class='lightboximage'>
 $imgHtml
 </picture>
 <figcaption>
@@ -388,9 +458,22 @@ $caption
             );
             $result = do_post_request($endpoint, $postArgs, "GET");
             $response = json_decode($result["response"], true );
-            $images .= "<!-- Pinging iNat: ".$endpoint."?".http_build_query($postArgs)." \n\n Got back from args: ".print_r($postArgs, true)."-->";#" \n\n Result: ".print_r($response, true)." -->";
+            $textArgs = http_build_query($postArgs);
+            # Some stupid replacements
+            $search = array(
+                "%2B",
+                "%5B",
+                "%5D",
+            );
+            $replace = array(
+                "+",
+                "[",
+                "]",
+            );
+            $textArgs = str_replace($search, $replace, $textArgs);
+            $images .= "<!-- Pinging iNat: ".$endpoint."?".$textArgs." \n\n Got back from args: ".print_r($postArgs, true)."-->";#" \n\n Result: ".print_r($response, true)." -->";
             $inat = 0;
-            if(sizeof($response) > 0) {
+            if(sizeof($response) > 0 && !toBool($_REQUEST["skip_inat"])) {
                 shuffle($response);
                 $useObservation = $response[0];
                 # First, we have to check that there was a match, and
@@ -413,11 +496,20 @@ $caption
                     if(!empty($captionDescription)) {
                         $captionDescription = substr($captionDescription, -1) == "." ? $captionDescription : $captionDescription . ".";
                     }
-                    $caption = $captionDescription . " ".$imageCredit;
+                    $caption = "<span class='caption-description'>".$captionDescription . "</span> ".$imageCredit;
                     $imgHtml = "<img src='".$photo["small_url"]."'/>";
+                    if(toBool($_REQUEST["extended_attribution"])) {
+                        $remove = array(
+                            "&copy;",
+                            "&amp;copy;",
+                        );
+                        $attributionLabel = "<small>".str_replace($remove, "", $photo["attribution"])."</small><br/><small>iNaturalist</small>";
+                        $pictureLabel .= $attributionLabel . "</p>";
+                    }
                     $figure = "
 <figure class='from-inaturalist center-block text-center'>
-<picture>
+$pictureLabel
+<picture class='lightboximage' data-lightbox-image='".$photo["large_url"]."'>
 <source
 sizes='(max-width: 480px) 25vw, (max-width: 768px) 33vw, (max-width: 1024px) 35w, (min-width: 1025px) 40w'
 srcset='".$photo["thumb_url"]." 100w,
@@ -455,7 +547,7 @@ $caption
                 $xml = new Xml();
                 $xml->setXml($xmlContent);
                 $imgArr = $xml->getAllTagContents("enlarge_jpeg_url");
-                if(sizeof($imgArr) > 0) {
+                if(sizeof($imgArr) > 0 && !toBool($_REQUEST["skip_calphotos"])) {
                     $copyrightArr = $xml->getAllTagContents("copyright");
                     $licenseArr = $xml->getAllTagContents("license");
                     $enlarge_urlArr = $xml->getAllTagContents("enlarge_url");
@@ -466,10 +558,19 @@ $caption
                     $license = $licenseArr[$key];
                     $enlarge_url = $enlarge_urlArr[$key];
                     $imgHtml = "<img src='$img' />";
-                    $caption = "Image credit " . $copyright . " " . $license . " (via <a href='$enlarge_url' class='newwindow'>CalPhotos</a>).";
+                    $caption = "<span class='caption-description'>Image credit " . $copyright . " " . $license . "</span> (via <a href='$enlarge_url' class='newwindow'>CalPhotos</a>).";
+                    if(toBool($_REQUEST["extended_attribution"])) {
+                        $remove = array(
+                            "&copy;",
+                            "&amp;copy;",
+                        );
+                        $attributionLabel = "<small>".str_replace($remove, "", $copyright)."</small><br/><small>CalPhotos</small>";
+                        $pictureLabel .= $attributionLabel . "</p>";
+                    }
                     $figure = "
-<figure class='from-mammalogyorg center-block text-center'>
-<picture>
+<figure class='from-calphotos center-block text-center'>
+$pictureLabel
+<picture class='lightboximage'>
 $imgHtml
 </picture>
 <figcaption>
@@ -483,17 +584,32 @@ $caption
                 }
             }
         }
-        $images .= "</section>";
     } catch (Exception $e) {
-        $images = "<!-- System had exception ".$e->getMessage()." making image block -->";
+        $images = "<section><!-- System had exception ".$e->getMessage()." making image block -->";
     }
 
 
 } else {
-
-$images = "";
+    $licenseJson = urldecode(htmlspecialchars_decode($speciesRow["image_license"]));
+    $license = json_decode($licenseJson, true);
+    $imageLicense = "<a href='".current($license)."' class='newwindow'>".key($license)."</a>";
+    $imageCredit = $speciesRow["image_credit"];
+    $imageCredit = substr($imageCredit, -1) == "." ? $imageCredit : $imageCredit . ".";
+    $imageCaption = "<span class='caption-description'>".$speciesRow["image_caption"]."</span> <span class='caption-credit'>" . $imageCredit . "</span> ".$imageLicense;
+    $imgHtml = "<img src='".$speciesRow["image"]."' alt='' />";
+    $images .= "
+<figure class='from-sadb center-block text-center'>
+<picture class='lightboximage'>
+$imgHtml
+</picture>
+<figcaption>
+$imageCaption
+</figcaption>
+</figure>
+";
 
 }
+$images .= "</section>";
 
 /***********************************************************************************
  * Wrap up the entry

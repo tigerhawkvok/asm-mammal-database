@@ -30,7 +30,7 @@ module.exports = (grunt) ->
       yarn:
         command: ["yarn install", "yarn upgarde"].join("&&")
       movesrc:
-        command: ["mv js/c.src.coffee js/maps/c.src.coffee"].join("&&")
+        command: ["cp js/c.src.coffee js/maps/c.src.coffee"].join("&&")
     postcss:
       options:
         processors: [

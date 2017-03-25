@@ -83,13 +83,17 @@ verifyLoginCredentials = (callback) ->
   # could force the local JS check to succeed.
   # SECURE AUTHENTICATION MUST BE WHOLLY SERVER SIDE.
   ###
-  hash = $.cookie("#{uri.domain}_auth")
-  secret = $.cookie("#{uri.domain}_secret")
-  link = $.cookie("#{uri.domain}_link")
+  try
+    hash = $.cookie("#{uri.domain}_auth")
+    secret = $.cookie("#{uri.domain}_secret")
+    link = $.cookie("#{uri.domain}_link")
+  catch e
+    console.warn "Unable to verify login credentials: #{e.message}"
+    console.debug e.stack
   args = "hash=#{hash}&secret=#{secret}&dblink=#{link}"
   $.post adminParams.loginApiTarget, args, "json"
   .done (result) ->
-    console.log "Server called back from login credential verification", result
+    # console.log "Server called back from login credential verification", result
     if result.status is true
       $(".logged-in-values").removeAttr "hidden"
       cookieFullName = "#{uri.domain}_fullname"
@@ -270,6 +274,66 @@ fetchEditorDropdownContent = (column = "simple_linnean_goup", columnLabel, updat
   false
 
 
+
+licenseHelper = (selector = "#edit-image-license-dialog") ->
+  ###
+  # License filler
+  ###
+  $(selector).unbind()
+  _asm._setLicenseDialog = (el) ->
+    targetColumn = $(el).attr "data-column"
+    if isNull targetColumn
+      console.error "Unable to show dialog -- invalud column designator"
+      return false
+    console.debug "Add column fired -- target is #{targetColumn}"
+    # Create the column dialog
+    $("paper-dialog#set-license-value").remove()
+    currentLicenseName = $(selector).attr "data-license-name"
+    currentLicenseUrl = $(selector).attr "data-license-url"
+    html = """
+    <paper-dialog id="set-license-value" data-column="#{targetColumn}" modal>
+      <h2>Set License</h2>
+      <paper-dialog-scrollable>
+        <paper-input class="new-license-name" label="License Name" floatingLabel autofocus value="#{currentLicenseName}"></paper-input>
+        <paper-input class="new-license-url" label="License URL" floatingLabel value="#{currentLicenseUrl}"></paper-input>
+      </paper-dialog-scrollable>
+      <div class="buttons">
+        <paper-button dialog-dismiss>Cancel</paper-button>
+        <paper-button class="add-value">Set</paper-button>
+      </div>
+    </paper-dialog>
+    """
+    $("body").append html
+    _asm._updateLicense = ->
+      $("paper-icon-button#edit-image-license-dialog")
+      .attr "data-license-name", p$("paper-input.new-license-name").value
+      .attr "data-license-url", p$("paper-input.new-license-url").value
+      text = "#{p$("paper-input.new-license-name").value} @ #{p$("paper-input.new-license-url").value}"
+      p$("#edit-image-license").value = text
+      $("#edit-image-license")
+      .attr "data-license-name", p$("paper-input.new-license-name").value
+      .attr "data-license-url", p$("paper-input.new-license-url").value
+      p$("#set-license-value").close()
+      false
+    $("#set-license-value paper-button.add-value").click ->
+      try
+        _asm._updateLicense.debounce 50
+      catch
+        console.warn "Couldn't debounce save new col call"
+        stopLoadError "There was a problem saving this data"
+      false
+    $("#set-license-value").on "iron-overlay-opened", ->
+      p$(this).refit()
+      delay 100, =>
+        p$(this).refit()
+    p$("#set-license-value").open()
+    false
+  $(selector).click ->
+    console.debug "Set License clicked"
+    _asm._setLicenseDialog.debounce 50, null, null, this
+    false
+
+
 newColumnHelper = (selector = ".add-col-value") ->
   $(selector).unbind()
   _asm._addColumnDialog = (el) ->
@@ -318,19 +382,6 @@ newColumnHelper = (selector = ".add-col-value") ->
       _asm.dropdownPopulation[targetColumn].values.sort()
       listbox = p$("paper-dropdown-menu[data-column='#{targetColumn}'] paper-listbox")
       Polymer.dom(listbox).appendChild item
-      # # Replace the listbox contents
-      # listHtml = ""
-      # for value in _asm.dropdownPopulation[targetColumn].values
-      #   listHtml += """
-      #   <paper-item data-value="#{value}" data-column="#{targetColumn}">#{value}</paper-item>\n
-      #   """
-      # html = $(_asm.dropdownPopulation[targetColumn].html)
-      # console.debug "Original", html
-      # html2 = html.find("paper-listbox").html listHtml
-      # console.debug "Going to replace with", html
-      # console.debug "ht2", html2
-      # console.debug listHtml
-      # $("paper-dropdown-menu[data-column='#{targetColumn}']").parents("section.filled-editor-dropdown").replaceWith html
       # Select it
       delay 250, ->
         $("paper-dropdown-menu[data-column='#{targetColumn}']").polymerSelected newValue, true
@@ -434,11 +485,19 @@ loadModalTaxonEditor = (extraHtml = "", affirmativeText = "Save") ->
   <span class="help-block" id="upload-image-help">You can drag and drop an image above, or enter its server path below.</span>
   <paper-input label="Image" id="edit-image" name="edit-image" floatingLabel aria-describedby="imagehelp"></paper-input>
     <span class="help-block" id="imagehelp">The image path here should be relative to the <span class="code">public_html/</span> directory.</span>
+  <paper-input label="Image Caption" id="edit-image-caption" name="edit-image-caption" floatingLabel></paper-input>
   <paper-input label="Image Credit" id="edit-image-credit" name="edit-image-credit" floatingLabel></paper-input>
-  <paper-input label="Image License" id="edit-image-license" name="edit-image-license" floatingLabel></paper-input>
+  <section class="row license-region">
+    <div class="col-xs-9">
+      <paper-input label="Image License" id="edit-image-license" name="edit-image-license" data-license-name="" data-license-url="" floatingLabel readonly></paper-input>
+    </div>
+    <div class="col-xs-3">
+      <paper-icon-button icon="icons:create" id="edit-image-license-dialog" data-license-name="" data-license-url="" data-column="image_license" data-toggle='tooltip' title="Edit License"></paper-icon-button>
+    </div>
+  </section>
   <paper-input label="Taxon Credit" id="edit-taxon-credit" name="edit-taxon-credit" floatingLabel aria-describedby="taxon-credit-help" value="#{$.cookie(adminParams.cookieFullName)}"></paper-input>
-    <span class="help-block" id="taxon-credit-help">This will be displayed as "Taxon information by [your entry]."</span>
   <paper-input label="Taxon Credit Date" id="edit-taxon-credit-date" name="edit-taxon-credit-date" floatingLabel value="#{prettyDate}"></paper-input>
+  <span class="help-block" id="taxon-credit-help">This will be displayed as "Entry by <span class='taxon-credit-preview'></span> on <span class='taxon-credit-date-preview'></span>."</span>
   #{extraHtml}
   <input type="hidden" name="edit-taxon-author" id="edit-taxon-author" value="" />
   """
@@ -462,6 +521,11 @@ loadModalTaxonEditor = (extraHtml = "", affirmativeText = "Save") ->
     newColumnHelper()
   catch e
     console.warn "Couldn't bind columns: #{e.message}"
+    console.warn e.stack
+  try
+    licenseHelper()
+  catch e
+    console.warn "Couldn't set license helper: #{e.message}"
     console.warn e.stack
   handleDragDropImage()
   # # Bind the autogrow
@@ -695,7 +759,8 @@ lookupEditorSpecies = (taxon = undefined) ->
           console.debug "Trying to polymer-select", d
           $(dropdownTentativeSelector).polymerSelected d, true
         if col is "species_authority" or col is "genus_authority"
-          unless isNull d.match /\(?\w+, ?[0-9]{4}\)?/g
+          # Check if the authority is in full format, eg, "(Linnaeus, 1758)"
+          unless isNull d.match /\(? *([\w\. \[\]]+), *([0-9]{4}) *\)?/g
             hasParens = d.search(/\(/) >= 0 and d.search(/\)/) >= 0
             authorityParts = d.replace(/[\(\)]/g,"").split(",")
             d = authorityParts[0].trim()
@@ -732,6 +797,22 @@ lookupEditorSpecies = (taxon = undefined) ->
         else if col is "taxon_credit"
             fieldSelector = "#edit-#{col.replace(/_/g,"-")}"
             p$(fieldSelector).value = $.cookie(adminParams.cookieFullName)
+        else if col is "image_license"
+          jstr = d.unescape()
+          try
+            j = JSON.parse jstr
+            for license, licenseUrl of j
+              $("#edit-image-license-dialog")
+              .attr "data-license-name", license
+              .attr "data-license-url", licenseUrl
+              $("#edit-image-license")
+              .attr "data-license-name", license
+              .attr "data-license-url", licenseUrl
+              d = "#{license} @ #{licenseUrl}"
+              break
+          catch
+            d = jstr
+          p$("#edit-image-license").value = d
         else if col is "taxon_credit_date"
           if isNull d
             today = new Date()
@@ -773,6 +854,50 @@ lookupEditorSpecies = (taxon = undefined) ->
             userValue = "iucn"
           p$("#edit-common-name-source").value = userValue
           false
+        _asm.updateImageField = (el) ->
+          path = p$(el).value
+          console.log "Should render preview image of ", path
+          if $("#preview-main-image").exists()
+            $("#preview-main-image").remove()
+          previewImageHtml = """
+          <img id="preview-main-image" class='preview-image' src="#{path}" />
+          """
+          $("#imagehelp").after previewImageHtml
+          false
+        $("#edit-image")
+        .on "focus", ->
+          el = this
+          _asm.updateImageField.debounce null, null, null, el
+          false
+        .on "blur", ->
+          el = this
+          _asm.updateImageField.debounce null, null, null, el
+          false
+        .on "keyup", ->
+          el = this
+          _asm.updateImageField.debounce null, null, null, el
+          false
+        try
+          _asm.updateImageField(p$("#edit-image"))
+        # Credit preview thigns
+        nameFill = (el) ->
+          name = p$(el).value
+          $("#taxon-credit-help .taxon-credit-preview").text name
+          name
+        dateFill = (el) ->
+          dateEntry = p$(el).value
+          dateObj = new Date(dateEntry)
+          dateString = "#{dateObj.getUTCDate()} #{dateMonthToString dateObj.getUTCMonth()} #{dateObj.getUTCFullYear()}"
+          $("#taxon-credit-help .taxon-credit-date-preview").text dateString
+          dateString
+        $("#edit-taxon-credit").keyup ->
+          nameFill this
+          false
+        $("#edit-taxon-credit-date").keyup ->
+          dateFill this
+          false
+        nameFill p$("#edit-taxon-credit")
+        dateFill p$("#edit-taxon-credit-date")
         # Fill the markdown previews
         entry = $(p$("#edit-entry").textarea).val()
         notes = $(p$("#edit-notes").textarea).val()
@@ -1003,24 +1128,31 @@ saveEditorEntry = (performMode = "save") ->
     if colAsDropdownExists
       val = $(dropdownTentativeSelector).polymerSelected()
     else
-      isTextArea = false
-      try
-        if $("#edit-#{id}").get(0).tagName.toLowerCase() is "iron-autogrow-textarea"
-          isTextArea = true
-      unless isTextArea
-        try
-          val = d$("#edit-#{id}").val().trim()
-        catch e
-          val = ""
-          err =  "Unable to get value for #{id}"
-          console.warn "#{err}: #{e.message}"
-          toastStatusMessage err
+      if col is "image_license"
+        valJson = new Object()
+        licenseName = $("#edit-image-license").attr "data-license-name"
+        licenseUrl = $("#edit-image-license").attr "data-license-url"
+        valJson[licenseName] = licenseUrl
+        val = JSON.stringify valJson
       else
-        val = p$("#edit-#{id}").value
-        if isNull val
-          val = $(p$("#edit-#{id}").textarea).val()
+        isTextArea = false
         try
-          val = val.trim()
+          if $("#edit-#{id}").get(0).tagName.toLowerCase() is "iron-autogrow-textarea"
+            isTextArea = true
+        unless isTextArea
+          try
+            val = d$("#edit-#{id}").val().trim()
+          catch e
+            val = ""
+            err =  "Unable to get value for #{id}"
+            console.warn "#{err}: #{e.message}"
+            toastStatusMessage err
+        else
+          val = p$("#edit-#{id}").value
+          if isNull val
+            val = $(p$("#edit-#{id}").textarea).val()
+          try
+            val = val.trim()
     unless col in keepCase
       # We want these to be as literally typed, rather than
       # smart-formatted.

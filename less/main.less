@@ -220,6 +220,15 @@ main {
             .capitalize;
             margin-top: -.25em;
             text-indent: 1rem;
+
+            & > .title-glyphicon {
+                margin-left: 1rem;
+                font-size: @font-size-base;
+                text-indent: 0;
+            }
+            .tooltip {
+                text-indent: 0;
+            }
         }
     }
 
@@ -260,6 +269,10 @@ main {
 // Admin page
 
 
+paper-dialog#set-license-value {
+    width: 85vw;
+}
+
 #modal-taxon, #modal-taxon-edit {
     // position:fixed !important;
     // max-height:75vh; // For mobile
@@ -270,9 +283,16 @@ main {
     paper-dialog-scrollable#modal-taxon-editor {
         max-height: 66vh;
         overflow-y: scroll;
-        
+
         div.scrollable {
             max-height: none !important;
+            
+            .preview-image {
+                max-height: 30vh;
+                .center-block;
+                .text-center;
+            }
+            
         }
     }
 }
@@ -633,6 +653,27 @@ h3 + marked-element {
 }
 
 figure {
+    position: relative;
+    .picture-label {
+        position: absolute;
+        left: 50%;
+        text-shadow: 2px 2px 3px rgba(0,0,0,.75);
+        color: white;
+        font-weight: 700;
+        // Text-stroke isn't auo-prefixed by autoprefixer
+        // See:
+        // https://github.com/postcss/autoprefixer/issues/533
+        // http://caniuse.com/#feat=text-stroke
+        // https://developer.mozilla.org/en-US/docs/Web/CSS/-webkit-text-stroke
+        -webkit-text-stroke: 1px #000;
+        text-stroke: 1px #000;
+        .text-left;
+        font-size: 2em;
+        &.extended-attribution {
+            font-size: 1.5em;
+            line-height: @line-height-base * .85;
+        }
+    }
     figcaption {
         .text-muted;
     }

@@ -6855,6 +6855,14 @@ main .species-title + .species-common {
   margin-top: -0.25em;
   text-indent: 1rem;
 }
+main .species-title + .species-common > .title-glyphicon {
+  margin-left: 1rem;
+  font-size: 14px;
+  text-indent: 0;
+}
+main .species-title + .species-common .tooltip {
+  text-indent: 0;
+}
 main #images-block picture,
 main #images-block img {
   max-height: 40vh;
@@ -6882,6 +6890,9 @@ main #images-block div.no-image {
 #eutheria-extra {
   display: inline-block;
 }
+paper-dialog#set-license-value {
+  width: 85vw;
+}
 #modal-taxon paper-dialog-scrollable#modal-taxon-editor,
 #modal-taxon-edit paper-dialog-scrollable#modal-taxon-editor {
   max-height: 66vh;
@@ -6890,6 +6901,14 @@ main #images-block div.no-image {
 #modal-taxon paper-dialog-scrollable#modal-taxon-editor div.scrollable,
 #modal-taxon-edit paper-dialog-scrollable#modal-taxon-editor div.scrollable {
   max-height: none !important;
+}
+#modal-taxon paper-dialog-scrollable#modal-taxon-editor div.scrollable .preview-image,
+#modal-taxon-edit paper-dialog-scrollable#modal-taxon-editor div.scrollable .preview-image {
+  max-height: 30vh;
+  display: block;
+  margin-left: auto;
+  margin-right: auto;
+  text-align: center;
 }
 paper-dialog#modal-taxon .buttons,
 paper-dialog#modal-taxon-edit .buttons {
@@ -7187,6 +7206,24 @@ label + paper-icon-button {
 }
 h3 + marked-element {
   padding-left: 1rem;
+}
+figure {
+  position: relative;
+}
+figure .picture-label {
+  position: absolute;
+  left: 50%;
+  text-shadow: 2px 2px 3px rgba(0, 0, 0, 0.75);
+  color: white;
+  font-weight: 700;
+  -webkit-text-stroke: 1px #000;
+  text-stroke: 1px #000;
+  text-align: left;
+  font-size: 2em;
+}
+figure .picture-label.extended-attribution {
+  font-size: 1.5em;
+  line-height: 1.21428571;
 }
 figure figcaption {
   color: #777777;

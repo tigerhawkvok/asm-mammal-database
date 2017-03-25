@@ -1,4 +1,4 @@
-var _metaStatus, activityIndicatorOff, activityIndicatorOn, animateLoad, bindClickTargets, bindClicks, bindDismissalRemoval, bindPaperMenuButton, browserBeware, byteCount, checkFileVersion, checkLaggedUpdate, checkTaxonNear, clearSearch, deEscape, deepJQuery, delay, doCORSget, doFontExceptions, doNothing, domainPlaceholder, downloadCSVList, downloadHTMLList, eutheriaFilterHelper, fetchMajorMinorGroups, foo, formatAlien, formatScientificNames, formatSearchResults, getElementHtml, getFilters, getLocation, getMaxZ, goTo, insertCORSWorkaround, insertModalImage, interval, isArray, isBlank, isBool, isEmpty, isJson, isNull, isNumber, isNumeric, lightboxImages, loadJS, mapNewWindows, modalTaxon, openLink, openTab, overlayOff, overlayOn, p$, parseTaxonYear, performSearch, prepURI, randomInt, ref, roundNumber, roundNumberSigfig, safariDialogHelper, safariSearchArgHelper, searchParams, setHistory, setupServiceWorker, showBadSearchErrorMessage, showDownloadChooser, smartUpperCasing, sortResults, stopLoad, stopLoadError, toFloat, toInt, toObject, toastStatusMessage, uri,
+var _metaStatus, activityIndicatorOff, activityIndicatorOn, animateLoad, bindClickTargets, bindClicks, bindDismissalRemoval, bindPaperMenuButton, browserBeware, byteCount, checkFileVersion, checkLaggedUpdate, checkTaxonNear, clearSearch, dateMonthToString, deEscape, deepJQuery, delay, doCORSget, doFontExceptions, doNothing, domainPlaceholder, downloadCSVList, downloadHTMLList, eutheriaFilterHelper, fetchMajorMinorGroups, foo, formatAlien, formatScientificNames, formatSearchResults, getElementHtml, getFilters, getLocation, getMaxZ, goTo, insertCORSWorkaround, insertModalImage, interval, isArray, isBlank, isBool, isEmpty, isJson, isNull, isNumber, isNumeric, lightboxImages, loadJS, mapNewWindows, modalTaxon, openLink, openTab, overlayOff, overlayOn, p$, parseTaxonYear, performSearch, prepURI, randomInt, ref, roundNumber, roundNumberSigfig, safariDialogHelper, safariSearchArgHelper, searchParams, setHistory, setupServiceWorker, showBadSearchErrorMessage, showDownloadChooser, smartUpperCasing, sortResults, stopLoad, stopLoadError, toFloat, toInt, toObject, toastStatusMessage, uri,
   slice = [].slice,
   indexOf = [].indexOf || function(item) { for (var i = 0, l = this.length; i < l; i++) { if (i in this && this[i] === item) return i; } return -1; };
 
@@ -662,9 +662,8 @@ Function.prototype.debounce = function() {
       delete core.debouncers[key];
     }
     if (!execAsap) {
-      func.apply(func, args);
+      return func.apply(func, args);
     }
-    return console.debug("Debounce executed for " + key);
   };
   if (timeout != null) {
     try {
@@ -679,12 +678,10 @@ Function.prototype.debounce = function() {
     return false;
   }
   if (key != null) {
-    console.debug("Debouncing '" + key + "' for " + threshold + " ms");
     return core.debouncers[key] = delay(threshold, function() {
       return delayed();
     });
   } else {
-    console.log("Delaying '" + key + "' for GLOBAL " + threshold + " ms");
     return window.debounce_timer = delay(threshold, function() {
       return delayed();
     });
@@ -739,13 +736,13 @@ loadJS = function(src, callback, doCallbackOnError) {
             return callback();
           } catch (error2) {
             e = error2;
-            return console.error("Postload callback error - " + e.message);
+            return console.error("Postload callback error for '" + src + "' - " + e.message);
           }
         }
       }
     } catch (error3) {
       e = error3;
-      return console.error("Onload error - " + e.message);
+      return console.error("Onload error for '" + src + "' - " + e.message);
     }
   };
   errorFunction = function() {
@@ -1290,8 +1287,8 @@ lightboxImages = function(selector, lookDeeply) {
    * If the image has it, wrap it in an anchor and bind;
    * otherwise just apply to the selector.
    *
-   * Plays nice with layzr.js
-   * https://callmecavs.github.io/layzr.js/
+   * Requires ImageLightbox
+   * https://github.com/rejas/imagelightbox
    */
   options = {
     onStart: function() {
@@ -1311,40 +1308,53 @@ lightboxImages = function(selector, lookDeeply) {
     quitOnDocClick: true,
     quitOnImgClick: true
   };
+  _asm.lightbox = {
+    options: options
+  };
   jqo = lookDeeply ? d$(selector) : $(selector);
-  return jqo.click(function(e) {
-    var error1;
-    try {
-      $(this).imageLightbox(options).startImageLightbox();
-      e.preventDefault();
-      e.stopPropagation();
-      return console.warn("Event propagation was stopped when clicking on this.");
-    } catch (error1) {
-      e = error1;
-      return console.error("Unable to lightbox this image!");
-    }
-  }).each(function() {
-    var e, error1, imgUrl, tagHtml;
-    try {
-      if ($(this).prop("tagName").toLowerCase() === "img" && $(this).parent().prop("tagName").toLowerCase() !== "a") {
-        tagHtml = $(this).removeClass("lightboximage").prop("outerHTML");
-        imgUrl = (function() {
-          switch (false) {
-            case !!isNull($(this).attr("data-layzr-retina")):
-              return $(this).attr("data-layzr-retina");
-            case !!isNull($(this).attr("data-layzr")):
-              return $(this).attr("data-layzr");
-            default:
-              return $(this).attr("src");
-          }
-        }).call(this);
-        return $(this).replaceWith("<a href='" + imgUrl + "' class='lightboximage'>" + tagHtml + "</a>");
+  loadJS("bower_components/imagelightbox/dist/imagelightbox.min.js", function() {
+    jqo.click(function(e) {
+      var error1;
+      try {
+        e.preventDefault();
+        e.stopPropagation();
+        $(this).imageLightbox(options).startImageLightbox();
+        return console.warn("Event propagation was stopped when clicking on this.");
+      } catch (error1) {
+        e = error1;
+        return console.error("Unable to lightbox this image!");
       }
-    } catch (error1) {
-      e = error1;
-      return console.warn("Couldn't parse through the elements");
-    }
+    }).each(function() {
+      var e, error1, imgUrl, tagHtml;
+      console.log("Using selectors '" + selector + "' / '" + this + "' for lightboximages");
+      try {
+        if (($(this).prop("tagName").toLowerCase() === "img" || $(this).prop("tagName").toLowerCase() === "picture") && $(this).parent().prop("tagName").toLowerCase() !== "a") {
+          tagHtml = $(this).removeClass("lightboximage").prop("outerHTML");
+          imgUrl = (function() {
+            switch (false) {
+              case !!isNull($(this).attr("data-layzr-retina")):
+                return $(this).attr("data-layzr-retina");
+              case !!isNull($(this).attr("data-layzr")):
+                return $(this).attr("data-layzr");
+              case !!isNull($(this).attr("data-lightbox-image")):
+                return $(this).attr("data-lightbox-image");
+              case !!isNull($(this).attr("src")):
+                return $(this).attr("src");
+              default:
+                return $(this).find("img").attr("src");
+            }
+          }).call(this);
+          $(this).replaceWith("<a href='" + imgUrl + "' data-lightbox='" + imgUrl + "' class='lightboximage'>" + tagHtml + "</a>");
+          return $("a[href='" + imgUrl + "']").imageLightbox(options);
+        }
+      } catch (error1) {
+        e = error1;
+        return console.log("Couldn't parse through the elements");
+      }
+    });
+    return console.info("Lightboxed the following:", jqo);
   });
+  return false;
 };
 
 activityIndicatorOn = function() {
@@ -1425,6 +1435,30 @@ getLocation = function(callback) {
       return callback(false);
     }
   }
+};
+
+dateMonthToString = function(month) {
+  var conversionObj, error1, rv;
+  conversionObj = {
+    0: "January",
+    1: "February",
+    2: "March",
+    3: "April",
+    4: "May",
+    5: "June",
+    6: "July",
+    7: "August",
+    8: "September",
+    9: "October",
+    10: "November",
+    11: "December"
+  };
+  try {
+    rv = conversionObj[month];
+  } catch (error1) {
+    rv = month;
+  }
+  return rv;
 };
 
 bindClickTargets = function() {
@@ -1625,7 +1659,7 @@ doNothing = function() {
 };
 
 $(function() {
-  var e, error1, error2, len, m, md, mdText, ref1;
+  var caption, captionValue, e, error1, error2, len, len1, m, md, mdText, o, offsetImageLabel, ref1, ref2;
   formatScientificNames();
   bindClicks();
   mapNewWindows();
@@ -1666,13 +1700,47 @@ $(function() {
       md = ref1[m];
       mdText = $(md).find("script").text();
       if (!isNull(mdText)) {
-        console.debug("Rendering markdown of", mdText);
         p$(md).markdown = mdText;
       }
     }
   } catch (undefined) {}
   browserBeware();
-  return checkFileVersion();
+  checkFileVersion();
+  try {
+    ref2 = $("figcaption .caption-description");
+    for (o = 0, len1 = ref2.length; o < len1; o++) {
+      caption = ref2[o];
+      captionValue = $(caption).text().unescape();
+      $(caption).text(captionValue);
+    }
+  } catch (undefined) {}
+  try {
+    return (offsetImageLabel = function(iter) {
+      var imageWidth;
+      if (!$("figure picture").exists()) {
+        console.log("No image on page");
+        return false;
+      }
+      imageWidth = $("figure picture").width();
+      if (isNull(imageWidth, true)) {
+        ++iter;
+        if (iter >= 10) {
+          console.log("Never saw a bigger image width");
+          return false;
+        }
+        delay(100, function() {
+          return offsetImageLabel(iter);
+        });
+        return false;
+      }
+      if (iter > 0) {
+        console.warn("Took " + (iter * 100) + "ms to reposition image!");
+      }
+      $("figure p.picture-label").css("left", "calc(50% - (" + imageWidth + "px/2)*.95)");
+      lightboxImages();
+      return false;
+    })(0);
+  } catch (undefined) {}
 });
 
 searchParams = new Object();
@@ -1706,16 +1774,22 @@ fetchMajorMinorGroups = function(scientific, callback) {
     }
     column = scientific ? "linnean_family" : "simple_linnean_subgroup";
     buttonHtml = "<paper-menu-button id=\"simple-linnean-groups\" class=\"col-xs-6 col-md-4\">\n  <paper-button class=\"dropdown-trigger\"><iron-icon icon=\"icons:filter-list\"></iron-icon><span id=\"filter-what\" class=\"dropdown-label\"></span></paper-button>\n  <paper-menu label=\"Group\" data-column=\"simple_linnean_group\" class=\"cndb-filter dropdown-content\" id=\"linnean\" name=\"type\" attrForSelected=\"data-type\" selected=\"0\">\n    " + menuItems + "\n  </paper-menu>\n</paper-menu-button>";
-    $("#simple-linnean-groups").replaceWith(buttonHtml);
-    $("#simple-linnean-groups").on("iron-select", function() {
-      var type;
-      type = $(p$("#simple-linnean-groups paper-menu").selectedItem).text();
-      return $("#simple-linnean-groups span.dropdown-label").text(type);
-    });
-    type = $(p$("#simple-linnean-groups paper-menu").selectedItem).text();
-    $("#simple-linnean-groups span.dropdown-label").text(type);
+    if ($("#simple-linnean-groups").exists()) {
+      $("#simple-linnean-groups").replaceWith(buttonHtml);
+      $("#simple-linnean-groups").on("iron-select", function() {
+        var type;
+        type = $(p$("#simple-linnean-groups paper-menu").selectedItem).text();
+        return $("#simple-linnean-groups span.dropdown-label").text(type);
+      });
+      try {
+        type = $(p$("#simple-linnean-groups paper-menu").selectedItem).text();
+        $("#simple-linnean-groups span.dropdown-label").text(type);
+      } catch (undefined) {}
+    }
     eutheriaFilterHelper(true);
-    console.log("Replaced menu items with", menuItems);
+    if ($("#simple-linnean-groups").exists()) {
+      console.log("Replaced menu items with", menuItems);
+    }
     if (typeof callback === "function") {
       callback();
     }
@@ -1736,7 +1810,6 @@ fetchMajorMinorGroups = function(scientific, callback) {
       }
     }
     $.get(searchParams.apiPath, "fetch-groups=true&scientific=" + scientific).done(function(result) {
-      console.log("Group fetch got", result);
       if (result.status !== true) {
         return false;
       }

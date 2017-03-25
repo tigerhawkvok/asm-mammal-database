@@ -31,15 +31,18 @@ fetchMajorMinorGroups = (scientific = null, callback) ->
               </paper-menu>
             </paper-menu-button>
     """
-    $("#simple-linnean-groups").replaceWith buttonHtml
-    $("#simple-linnean-groups")
-    .on "iron-select", ->
-      type = $(p$("#simple-linnean-groups paper-menu").selectedItem).text()
-      $("#simple-linnean-groups span.dropdown-label").text type
-    type = $(p$("#simple-linnean-groups paper-menu").selectedItem).text()
-    $("#simple-linnean-groups span.dropdown-label").text type
+    if $("#simple-linnean-groups").exists()
+      $("#simple-linnean-groups").replaceWith buttonHtml
+      $("#simple-linnean-groups")
+      .on "iron-select", ->
+        type = $(p$("#simple-linnean-groups paper-menu").selectedItem).text()
+        $("#simple-linnean-groups span.dropdown-label").text type
+      try
+        type = $(p$("#simple-linnean-groups paper-menu").selectedItem).text()
+        $("#simple-linnean-groups span.dropdown-label").text type
     eutheriaFilterHelper(true)
-    console.log "Replaced menu items with", menuItems
+    if $("#simple-linnean-groups").exists()
+      console.log "Replaced menu items with", menuItems
     if typeof callback is "function"
       callback()
     false
@@ -57,7 +60,7 @@ fetchMajorMinorGroups = (scientific = null, callback) ->
         scientific = true
     $.get searchParams.apiPath, "fetch-groups=true&scientific=#{scientific}"
     .done (result) ->
-      console.log "Group fetch got", result
+      # console.log "Group fetch for dropdown got", result
       if result.status isnt true
         return false
       _asm.mammalGroupsBase = Object.toArray result.minor

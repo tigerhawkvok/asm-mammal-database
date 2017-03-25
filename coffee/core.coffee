@@ -1032,6 +1032,8 @@ lightboxImages = (selector = ".lightboximage", lookDeeply = false) ->
       allowedTypes: 'png|jpg|jpeg|gif|bmp|webp'
       quitOnDocClick: true
       quitOnImgClick: true
+  _asm.lightbox =
+    options: options
   jqo = if lookDeeply then d$(selector) else $(selector)
   loadJS "bower_components/imagelightbox/dist/imagelightbox.min.js", ->
     jqo
@@ -1061,7 +1063,7 @@ lightboxImages = (selector = ".lightboximage", lookDeeply = false) ->
               $(this).attr "src"
             else
               $(this).find("img").attr "src"
-          $(this).replaceWith("<a href='#{imgUrl}' class='lightboximage'>#{tagHtml}</a>")
+          $(this).replaceWith("<a href='#{imgUrl}' data-lightbox='#{imgUrl}' class='lightboximage'>#{tagHtml}</a>")
           $("a[href='#{imgUrl}']").imageLightbox(options)
         # Otherwise, we shouldn't need to do anything
       catch e

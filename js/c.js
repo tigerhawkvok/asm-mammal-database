@@ -1308,6 +1308,9 @@ lightboxImages = function(selector, lookDeeply) {
     quitOnDocClick: true,
     quitOnImgClick: true
   };
+  _asm.lightbox = {
+    options: options
+  };
   jqo = lookDeeply ? d$(selector) : $(selector);
   loadJS("bower_components/imagelightbox/dist/imagelightbox.min.js", function() {
     jqo.click(function(e) {
@@ -1341,7 +1344,7 @@ lightboxImages = function(selector, lookDeeply) {
                 return $(this).find("img").attr("src");
             }
           }).call(this);
-          $(this).replaceWith("<a href='" + imgUrl + "' class='lightboximage'>" + tagHtml + "</a>");
+          $(this).replaceWith("<a href='" + imgUrl + "' data-lightbox='" + imgUrl + "' class='lightboximage'>" + tagHtml + "</a>");
           return $("a[href='" + imgUrl + "']").imageLightbox(options);
         }
       } catch (error1) {

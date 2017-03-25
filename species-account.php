@@ -509,7 +509,7 @@ $caption
                     $figure = "
 <figure class='from-inaturalist center-block text-center'>
 $pictureLabel
-<picture>
+<picture class='lightboximage' data-lightbox-image='".$photo["large_url"]."'>
 <source
 sizes='(max-width: 480px) 25vw, (max-width: 768px) 33vw, (max-width: 1024px) 35w, (min-width: 1025px) 40w'
 srcset='".$photo["thumb_url"]." 100w,
@@ -570,7 +570,7 @@ $caption
                     $figure = "
 <figure class='from-calphotos center-block text-center'>
 $pictureLabel
-<picture>
+<picture class='lightboximage'>
 $imgHtml
 </picture>
 <figcaption>

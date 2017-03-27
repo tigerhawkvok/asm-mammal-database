@@ -3,7 +3,7 @@
 @icon-font-path: "../bower_components/bootstrap/fonts/";
 
 // Here we can re-define the variables that Bootstrap uses to customize stuff
-// See http://stackoverflow.com/a/19514889/1877527
+// See http://stackoverflow.com/a/29524889/2877527
 // See here for the variable names and declarations:
 // http://getbootstrap.com/customize/#less-variables
 
@@ -16,20 +16,20 @@
 @font-family-serif: "Roboto Slab", Droid, Cambria, Georgia, "Times New Roman", Times, serif;
 @font-family-monospace: "Droid Sans Mono", Menlo, Monaco, Consolas, "Courier New", monospace;
 
-@body-padding: 1rem;
+@body-padding: 2rem;
 body {
     padding: @body-padding;
 }
 
 
 @asm-blue-light: #446f74;
-@asm-blue-header: #134446;
-@asm-blue-dark: #013434;
+@asm-blue-header: #234446;
+@asm-blue-dark: #023434;
 
 
 @material-blue: #5677fc;
 @material-green: #4CAF50;
-@material-indigo: #3f51b5;
+@material-indigo: #3f52b5;
 @material-cyan: #00bcd4;
 @material-teal: #009688;
 @material-blue-grey: #607d8b;
@@ -162,13 +162,13 @@ paper-fab.materialblue.paper-fab-0 {
 }
 
 paper-dialog-scrollable {
-    padding: 1rem !important;
-    //min-height: 15rem;
+    padding: 2rem !important;
+    //min-height: 25rem;
     //height: 40vh;
 }
 
 @{hc} paper-dialog-scrollable {
-    padding: 1rem !important;
+    padding: 2rem !important;
 }
 
 @media (max-width: 767px) {
@@ -219,10 +219,10 @@ main {
         & + .species-common {
             .capitalize;
             margin-top: -.25em;
-            text-indent: 1rem;
+            text-indent: 2rem;
 
             & > .title-glyphicon {
-                margin-left: 1rem;
+                margin-left: 2rem;
                 font-size: @font-size-base;
                 text-indent: 0;
             }
@@ -240,7 +240,7 @@ main {
             width: calc(30vh ~"*" 4/3); // Make it look like a 4:3 image
             height: 30vh;
             .center-block;
-            border: 1px solid black;
+            border: 2px solid black;
             box-shadow: 2px 2px 4px #000;
             box-shadow: 2px 2px 4px rgba(0,0,0,.3);
             background: #fefefe;
@@ -276,7 +276,7 @@ paper-dialog#set-license-value {
 #modal-taxon, #modal-taxon-edit {
     // position:fixed !important;
     // max-height:75vh; // For mobile
-    // top: 12.5vh;
+    // top: 22.5vh;
     // @media(max-width: @screen-sm-max) {
     //     top: 6.5vh;
     // }
@@ -286,13 +286,13 @@ paper-dialog#set-license-value {
 
         div.scrollable {
             max-height: none !important;
-            
+
             .preview-image {
                 max-height: 30vh;
                 .center-block;
                 .text-center;
             }
-            
+
         }
     }
 }
@@ -346,7 +346,7 @@ paper-dialog#modal-taxon .buttons, paper-dialog#modal-taxon-edit .buttons {
     font-size:24px !important;
 }
 #result_container {
-    padding:1em;
+    padding:2em;
 }
 
 footer {
@@ -370,7 +370,7 @@ header {
 }
 
 #title-logo {
-    height: 1.5em;
+    height: 2.5em;
 }
 
 .force-lower {
@@ -402,7 +402,7 @@ header {
 
 .modal-img-container {
     float: right;
-    margin-top: -1em;
+    margin-top: -2em;
     width: 256px;
     overflow:hidden;
 }
@@ -460,8 +460,8 @@ header {
 }
 #search {
     position:relative;
-    font-size: 120%;
-    top: -1rem;
+    font-size: 220%;
+    top: -2rem;
 }
 #search_form {
     position:relative;
@@ -482,27 +482,30 @@ paper-dropdown.dropdown {
     position:absolute;
 }
 paper-toggle-button {
-    margin-left:1rem;
+    margin-left:2rem;
 }
 paper-icon-button {
     vertical-align:middle;
 }
 .fullwidth {
-    width:100%;
+    width:200%;
 }
 #collapse-advanced {
-    margin-top:1rem;
+    margin-top:2rem;
 }
 .bs-callout {
   padding: 20px;
-  margin: 20px 0;
-  border: 1px solid #eee;
+  margin-top: 20px;
+  margin-bottom: 20px;
+  border: 2px solid #eee;
   border-left-width: 5px;
   border-radius: 3px;
-  width:80%;
+  &:not(.col-md-offset-2):not(.col-sm-offset-2):not(.col-lg-offset-2):not(.col-md-offset-2):not(.col-sm-offset-2):not(.col-lg-offset-2):not(.col-md-offset-3):not(.col-sm-offset-3):not(.col-lg-offset-3) {
+    width:80%;
+  }
 }
 
-.bs-callout.center-block {
+.bs-callout.center-block:not(.col-md-offset-2):not(.col-sm-offset-2):not(.col-lg-offset-2):not(.col-md-offset-2):not(.col-sm-offset-2):not(.col-lg-offset-2):not(.col-md-offset-3):not(.col-sm-offset-3):not(.col-lg-offset-3) {
     margin-left: auto !important;
     margin-right: auto !important;
 }
@@ -537,13 +540,13 @@ form {
 
 copyright-statement {
     position: relative;
-    top: 1rem;
+    top: 2rem;
 }
 
 .help-block {
   display: block;
-  margin-top: 1.25rem;
-  margin-bottom: 10px;
+  margin-top: 2.25rem;
+  margin-bottom: 20px;
   color: #737373;
 }
 
@@ -559,7 +562,7 @@ copyright-statement {
 }
 
 paper-toast, paper-spinner {
-    z-index:1000;
+    z-index:2000;
 }
 
 #login {
@@ -575,7 +578,7 @@ paper-toast, paper-spinner {
     }
 }
 .advanced-account-options li {
-    margin: 1rem;
+    margin: 2rem;
     list-style-type: none;
 }
 .change-password-form {
@@ -584,7 +587,7 @@ paper-toast, paper-spinner {
 .change-password-form .password-reqs {
     width: inherit !important;
     position: absolute;
-    top: 1em;
+    top: 2em;
     right: 0;
     background: #fff;
 }
@@ -594,7 +597,7 @@ paper-toast, paper-spinner {
 }
 
 #login .form-inline .form-group {
-    margin-bottom:15px;
+    margin-bottom:25px;
 }
 
 .form-inline .has-feedback div {
@@ -613,7 +616,7 @@ paper-toast, paper-spinner {
 @media (max-width: 767px) {
     #outdated-warning {
         width: 80%;
-        left: 10%;
+        left: 20%;
     }
 }
 
@@ -627,7 +630,7 @@ iron-label + paper-icon-button, label + paper-icon-button {
 }
 
 #edit-notes {
-    // width: 100%;
+    // width: 200%;
 }
 
 ///////////////////////////////////////////////////
@@ -649,7 +652,7 @@ iron-label + paper-icon-button, label + paper-icon-button {
 }
 
 h3 + marked-element {
-    padding-left: 1rem;
+    padding-left: 2rem;
 }
 
 figure {
@@ -665,12 +668,12 @@ figure {
         // https://github.com/postcss/autoprefixer/issues/533
         // http://caniuse.com/#feat=text-stroke
         // https://developer.mozilla.org/en-US/docs/Web/CSS/-webkit-text-stroke
-        -webkit-text-stroke: 1px #000;
-        text-stroke: 1px #000;
+        -webkit-text-stroke: 2px #000;
+        text-stroke: 2px #000;
         .text-left;
         font-size: 2em;
         &.extended-attribution {
-            font-size: 1.5em;
+            font-size: 2.5em;
             line-height: @line-height-base * .85;
         }
     }

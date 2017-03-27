@@ -391,10 +391,10 @@ $mammalDomain = "http://www.mammalogy.org";
 if(toBool($_REQUEST["extended_attribution"])) {
     $pictureLabel = "<p class='picture-label extended-attribution'>Family <span class='sciname linnean_family'>".$speciesRow["linnean_family"]."</span><br/><span class='sciname'>".getCanonicalSpecies($speciesRow)."</span><br/>";
 } else {
-    $pictureLabel = "<p class='picture-label'><span class='sciname'>".getCanonicalSpecies($speciesRow)."</span></p>";    
+    $pictureLabel = "<p class='picture-label'><span class='sciname'>".getCanonicalSpecies($speciesRow)."</span></p>";
 }
 $images = "<section id='images-block' class='text-center col-xs-12'>";
-if(empty($speciesRow["image"])) {
+if(empty($speciesRow["image"]) || !file_exists(dirname(__FILE__)."/".$speciesRow["image"])) {
     # Get a picture from the Mammalogy database
     try {
         include_once dirname(__FILE__) . "/phpquery/phpQuery/phpQuery.php";

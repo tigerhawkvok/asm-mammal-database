@@ -1861,7 +1861,7 @@ eutheriaFilterHelper = function(skipFetch) {
           scientific = true;
         }
       }
-      column = scientific ? "linnean_family" : "simple_linnean_subgroup";
+      column = scientific ? "linnean_order" : "simple_linnean_subgroup";
       html = "<div id=\"eutheria-extra\"  class=\"col-xs-6 col-md-4\">\n    <label for=\"type\" class=\"sr-only\">Eutheria Filter</label>\n    <div class=\"row\">\n    <paper-menu-button class=\"col-xs-12\" id=\"eutheria-subfilter\">\n      <paper-button class=\"dropdown-trigger\"><iron-icon icon=\"icons:filter-list\"></iron-icon><span id=\"filter-what\" class=\"dropdown-label\"></span></paper-button>\n      <paper-menu label=\"Group\" data-column=\"" + column + "\" class=\"cndb-filter dropdown-content\" id=\"linnean-eutheria\" name=\"type\" attrForSelected=\"data-type\" selected=\"0\">\n        <paper-item data-type=\"any\" selected>All</paper-item>\n        " + mammalItems + "\n        <!-- As per flag 4 in readme -->\n      </paper-menu>\n    </paper-menu-button>\n    </div>\n  </div>";
       $("#simple-linnean-groups").after(html);
       $("#eutheria-subfilter").on("iron-select", function() {
@@ -2117,7 +2117,7 @@ formatSearchResults = function(result, container, callback) {
   }
   colClass = null;
   bootstrapColCount = 0;
-  dontShowColumns = ["id", "minor_type", "notes", "major_type", "taxon_author", "taxon_credit", "image_license", "image_credit", "taxon_credit_date", "parens_auth_genus", "parens_auth_species", "is_alien", "internal_id", "source", "deprecated_scientific", "canonical_sciname", "simple_linnean_group", "iucn", "dwc", "entry"];
+  dontShowColumns = ["id", "minor_type", "notes", "major_type", "taxon_author", "taxon_credit", "image_license", "image_credit", "taxon_credit_date", "parens_auth_genus", "parens_auth_species", "is_alien", "internal_id", "source", "deprecated_scientific", "canonical_sciname", "simple_linnean_group", "iucn", "dwc", "entry", "common_name_source"];
   externalCounter = 0;
   renderTimeout = delay(5000, function() {
     stopLoadError("There was a problem parsing the search results.");

@@ -313,7 +313,7 @@ function handleParamSearch($filter_params,$loose = false,$boolean_type = "AND", 
   $ordering = explode(",",$order_by);
   $order = " ORDER BY "."`".implode("`,`",$ordering)."`";
   $query .= $order;
-  # echo $query;
+  #echo $query;
   $l = $db->openDB();
   $r = mysqli_query($l,$query);
   if($r === false)
@@ -326,7 +326,9 @@ function handleParamSearch($filter_params,$loose = false,$boolean_type = "AND", 
     {
       $result_vector[] = $row;
     }
-  # $result_vector["query"] = $query;
+  if($show_debug === true) {
+    $result_vector["query"] = $query;
+  }
   return $result_vector;
 }
 
@@ -1039,7 +1041,7 @@ foreach($result["result"] as $i=>$taxon) {
     }
     $dwcResult["dcterms:language"] = "en";
     if(isset($taxon["taxon_credit_date"])) {
-        $creditTime = strtotime($taxon["taxon_credit_date"]);    
+        $creditTime = strtotime($taxon["taxon_credit_date"]);
         if($creditTime === false) $creditTime = intval($taxon["taxon_credit_date"]);
         if(!is_numeric($creditTime) || $creditTime == 0) {
             $creditTime = time();

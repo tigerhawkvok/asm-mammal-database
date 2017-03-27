@@ -865,7 +865,7 @@ mapNewWindows = function(stopPropagation) {
 };
 
 toastStatusMessage = function(message, className, duration, selector) {
-  var html, ref1;
+  var html, ref1, showLoader;
   if (className == null) {
     className = "";
   }
@@ -903,13 +903,32 @@ toastStatusMessage = function(message, className, duration, selector) {
     $(html).appendTo("body");
   }
   $(selector).attr("text", message).text(message).addClass(className);
-  $(selector).get(0).show();
-  return delay(duration + 500, function() {
-    $(selector).empty();
-    $(selector).removeClass(className);
-    $(selector).attr("text", "");
-    return window.metaTracker.isToasting = false;
-  });
+  (showLoader = function(i) {
+    var error, error1;
+    ++i;
+    try {
+      p$(selector).show();
+      return delay(duration + 500, function() {
+        $(selector).empty();
+        $(selector).removeClass(className);
+        $(selector).attr("text", "");
+        window.metaTracker.isToasting = false;
+        return false;
+      });
+    } catch (error1) {
+      error = error1;
+      if (i <= 50) {
+        return delay(50, function() {
+          showLoader(i);
+          return false;
+        });
+      } else {
+        console.error("Couldn't show loader: " + error.message);
+        return console.warn(error.stack);
+      }
+    }
+  })(0);
+  return false;
 };
 
 openLink = function(url) {

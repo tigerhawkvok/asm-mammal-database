@@ -1,6 +1,9 @@
 ###
 # Service worker!
 ###
+unless typeof uri is "object"
+  uri =
+    urlString: ""
 
 unless typeof _asm is "object"
   _asm =

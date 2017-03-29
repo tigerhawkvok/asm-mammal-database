@@ -319,10 +319,12 @@ licenseHelper = function(selector) {
     $("paper-dialog#set-license-value").remove();
     currentLicenseName = $(selector).attr("data-license-name");
     currentLicenseUrl = $(selector).attr("data-license-url");
-    html = "<paper-dialog id=\"set-license-value\" data-column=\"" + targetColumn + "\" modal>\n  <h2>Set License</h2>\n  <paper-dialog-scrollable>\n    <paper-input class=\"new-license-name license-field\" label=\"License Name\" floatingLabel autofocus value=\"" + currentLicenseName + "\" required></paper-input>\n    <paper-input class=\"new-license-url license-field\" label=\"License URL\" floatingLabel value=\"" + currentLicenseUrl + "\" required></paper-input>\n  </paper-dialog-scrollable>\n  <div class=\"buttons\">\n    <paper-button dialog-dismiss>Cancel</paper-button>\n    <paper-button class=\"add-value\">Set</paper-button>\n  </div>\n</paper-dialog>";
+    html = "<paper-dialog id=\"set-license-value\" data-column=\"" + targetColumn + "\" modal>\n  <h2>Set License</h2>\n  <paper-dialog-scrollable>\n    <paper-input class=\"new-license-name license-field\" label=\"License Name\" floatingLabel autofocus value=\"" + currentLicenseName + "\" required autovalidate></paper-input>\n    <paper-input class=\"new-license-url license-field\" label=\"License URL\" floatingLabel value=\"" + currentLicenseUrl + "\" required autovalidate></paper-input>\n  </paper-dialog-scrollable>\n  <div class=\"buttons\">\n    <paper-button dialog-dismiss>Cancel</paper-button>\n    <paper-button class=\"add-value\">Set</paper-button>\n  </div>\n</paper-dialog>";
     $("body").append(html);
-    urlPattern = "(https?)://(?:(?:([\\w0-9~\\-_]{2,}|[0-9]+))\\.?){2,}/?(?:[\w0-9~\\-_]*/?)*((\\.\w+)?(\\?(\\w+=\\w+&?)*)?)";
+    urlPattern = "((?:https?)://(?:(?:(?:[0-9]+\\.){3}[0-9]+|(?:[0-9a-f]+:){6,8}|(?:[\\w0-9~\\-_]{2,}\\.)+[\\w]{2,}|localhost))/?(?:[\\w0-9~\\-_]*/?)*(?:(?:\\.\\w+)?(?:\\?(?:\\w+=\\w+&?)*)?))";
     p$("paper-input.new-license-url").pattern = urlPattern;
+    p$("paper-input.new-license-url").errorMessage = "This must be a valid URL";
+    p$("paper-input.new-license-name").errorMessage = "This cannot be empty";
     _asm._updateLicense = function() {
       var text;
       $("paper-icon-button#edit-image-license-dialog").attr("data-license-name", p$("paper-input.new-license-name").value).attr("data-license-url", p$("paper-input.new-license-url").value);

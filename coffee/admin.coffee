@@ -294,8 +294,8 @@ licenseHelper = (selector = "#edit-image-license-dialog") ->
     <paper-dialog id="set-license-value" data-column="#{targetColumn}" modal>
       <h2>Set License</h2>
       <paper-dialog-scrollable>
-        <paper-input class="new-license-name" label="License Name" floatingLabel autofocus value="#{currentLicenseName}"></paper-input>
-        <paper-input class="new-license-url" label="License URL" floatingLabel value="#{currentLicenseUrl}"></paper-input>
+        <paper-input class="new-license-name license-field" label="License Name" floatingLabel autofocus value="#{currentLicenseName}" required autovalidate></paper-input>
+        <paper-input class="new-license-url license-field" label="License URL" floatingLabel value="#{currentLicenseUrl}" required autovalidate></paper-input>
       </paper-dialog-scrollable>
       <div class="buttons">
         <paper-button dialog-dismiss>Cancel</paper-button>
@@ -304,6 +304,12 @@ licenseHelper = (selector = "#edit-image-license-dialog") ->
     </paper-dialog>
     """
     $("body").append html
+    # URL matching pattern
+    # 
+    urlPattern = """((?:https?)://(?:(?:(?:[0-9]+\\.){3}[0-9]+|(?:[0-9a-f]+:){6,8}|(?:[\\w~\\-]{2,}\\.)+[\\w]{2,}|localhost))/?(?:[\\w~\\-]*/?)*(?:(?:\\.\\w+)?(?:\\?(?:\\w+=\\w+&?)*)?))(?:#[\\w~\\-]+)?"""
+    p$("paper-input.new-license-url").pattern = urlPattern
+    p$("paper-input.new-license-url").errorMessage = "This must be a valid URL"
+    p$("paper-input.new-license-name").errorMessage = "This cannot be empty"
     _asm._updateLicense = ->
       $("paper-icon-button#edit-image-license-dialog")
       .attr "data-license-name", p$("paper-input.new-license-name").value
@@ -316,6 +322,15 @@ licenseHelper = (selector = "#edit-image-license-dialog") ->
       p$("#set-license-value").close()
       false
     $("#set-license-value paper-button.add-value").click ->
+      # Are the fields valid?
+      isReady = true
+      for field in $("#set-license-value .license-field")
+        p$(field).validate()
+        if p$(field).invalid
+          isReady = false
+      unless isReady
+        return false
+      console.debug "isReady", isReady
       try
         _asm._updateLicense.debounce 50
       catch
@@ -835,6 +850,7 @@ lookupEditorSpecies = (taxon = undefined) ->
           unless col in textAreas
             d$(fieldSelector).attr("value",d)
           else
+            # Change the width of edit-notes and edit-entry
             width = $("#modal-taxon-edit").width() * .9
             d$(fieldSelector).css("width","#{width}px")
             textarea = p$(fieldSelector).textarea

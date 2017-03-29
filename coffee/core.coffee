@@ -690,14 +690,26 @@ toastStatusMessage = (message, className = "", duration = 3000, selector = "#sea
   .attr("text",message)
   .text(message)
   .addClass(className)
-  $(selector).get(0).show()
-  delay duration + 500, ->
-    # A short time after it hides, clean it up
-    $(selector).empty()
-    $(selector).removeClass(className)
-    $(selector).attr("text","")
-    window.metaTracker.isToasting = false
-
+  do showLoader = (i = 0) ->
+    ++i
+    try
+      p$(selector).show()
+      delay duration + 500, ->
+        # A short time after it hides, clean it up
+        $(selector).empty()
+        $(selector).removeClass(className)
+        $(selector).attr("text","")
+        window.metaTracker.isToasting = false
+        false
+    catch error
+      if i <= 50
+        delay 50, ->
+          showLoader i
+          false
+      else
+        console.error "Couldn't show loader: #{error.message}"
+        console.warn error.stack
+  false
 
 openLink = (url) ->
   if not url? then return false

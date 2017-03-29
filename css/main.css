@@ -6714,7 +6714,7 @@ button.close {
   left: 0;
 }
 body {
-  padding: 1rem;
+  padding: 2rem;
 }
 .sample-change-also {
   text: #F44336;
@@ -6731,18 +6731,18 @@ body {
   background: #446f74;
 }
 .asm-blue {
-  color: #134446;
+  color: #234446;
 }
 .asm-blue {
   color: white;
-  background: #134446;
+  background: #234446;
 }
 .asm-blue-dark-text {
   color: white;
-  color: #013434;
+  color: #023434;
 }
 .asm-blue-dark {
-  background: #013434;
+  background: #023434;
 }
 paper-fab.materialblue.paper-fab-0 {
   background: #5677fc;
@@ -6766,7 +6766,7 @@ paper-fab.materialblue.paper-fab-0:hover {
   color: #fff;
 }
 .materialindigo {
-  background: #3f51b5;
+  background: #3f52b5;
   color: #fff;
 }
 .extreme-danger {
@@ -6800,7 +6800,7 @@ html >>> [affirmative] {
   color: #5677fc !important;
 }
 .materialindigotext {
-  color: #3f51b5;
+  color: #3f52b5;
 }
 .materialcyantext {
   color: #00bcd4;
@@ -6812,14 +6812,14 @@ html >>> [affirmative] {
   color: #607d8b;
 }
 paper-dialog-scrollable {
-  padding: 1rem !important;
+  padding: 2rem !important;
 }
 html >>> paper-dialog-scrollable {
-  padding: 1rem !important;
+  padding: 2rem !important;
 }
 header#header-bar {
   position: fixed;
-  margin-top: calc(-1rem);
+  margin-top: calc(-2rem);
   color: #fff;
   background: #446f74;
   box-shadow: 3px 3px 3px #000;
@@ -6853,10 +6853,10 @@ main .species-title #species-authority-citation {
 main .species-title + .species-common {
   text-transform: capitalize;
   margin-top: -0.25em;
-  text-indent: 1rem;
+  text-indent: 2rem;
 }
 main .species-title + .species-common > .title-glyphicon {
-  margin-left: 1rem;
+  margin-left: 2rem;
   font-size: 14px;
   text-indent: 0;
 }
@@ -6873,7 +6873,7 @@ main #images-block div.no-image {
   display: block;
   margin-left: auto;
   margin-right: auto;
-  border: 1px solid black;
+  border: 2px solid black;
   box-shadow: 2px 2px 4px #000;
   box-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
   background: #fefefe;
@@ -6954,7 +6954,7 @@ html >>> .tooltip-container {
   font-size: 24px !important;
 }
 #result_container {
-  padding: 1em;
+  padding: 2em;
 }
 footer {
   position: fixed;
@@ -6973,7 +6973,7 @@ header .logo-container img {
   max-width: 2em;
 }
 #title-logo {
-  height: 1.5em;
+  height: 2.5em;
 }
 .force-lower {
   text-transform: lowercase !important;
@@ -6997,7 +6997,7 @@ header .logo-container img {
 }
 .modal-img-container {
   float: right;
-  margin-top: -1em;
+  margin-top: -2em;
   width: 256px;
   overflow: hidden;
 }
@@ -7049,8 +7049,8 @@ header .logo-container img {
 }
 #search {
   position: relative;
-  font-size: 120%;
-  top: -1rem;
+  font-size: 220%;
+  top: -2rem;
 }
 #search_form {
   position: relative;
@@ -7071,26 +7071,29 @@ paper-dropdown.dropdown {
   position: absolute;
 }
 paper-toggle-button {
-  margin-left: 1rem;
+  margin-left: 2rem;
 }
 paper-icon-button {
   vertical-align: middle;
 }
 .fullwidth {
-  width: 100%;
+  width: 200%;
 }
 #collapse-advanced {
-  margin-top: 1rem;
+  margin-top: 2rem;
 }
 .bs-callout {
   padding: 20px;
-  margin: 20px 0;
-  border: 1px solid #eee;
+  margin-top: 20px;
+  margin-bottom: 20px;
+  border: 2px solid #eee;
   border-left-width: 5px;
   border-radius: 3px;
+}
+.bs-callout:not(.col-md-offset-2):not(.col-sm-offset-2):not(.col-lg-offset-2):not(.col-md-offset-2):not(.col-sm-offset-2):not(.col-lg-offset-2):not(.col-md-offset-3):not(.col-sm-offset-3):not(.col-lg-offset-3) {
   width: 80%;
 }
-.bs-callout.center-block {
+.bs-callout.center-block:not(.col-md-offset-2):not(.col-sm-offset-2):not(.col-lg-offset-2):not(.col-md-offset-2):not(.col-sm-offset-2):not(.col-lg-offset-2):not(.col-md-offset-3):not(.col-sm-offset-3):not(.col-lg-offset-3) {
   margin-left: auto !important;
   margin-right: auto !important;
 }
@@ -7123,12 +7126,12 @@ form {
 }
 copyright-statement {
   position: relative;
-  top: 1rem;
+  top: 2rem;
 }
 .help-block {
   display: block;
-  margin-top: 1.25rem;
-  margin-bottom: 10px;
+  margin-top: 2.25rem;
+  margin-bottom: 20px;
   color: #737373;
 }
 #modal-taxon-editor .filled-editor-dropdown paper-dropdown-menu {
@@ -7139,7 +7142,7 @@ copyright-statement {
 }
 paper-toast,
 paper-spinner {
-  z-index: 1000;
+  z-index: 2000;
 }
 #login {
   width: inherit !important;
@@ -7153,7 +7156,7 @@ paper-spinner {
   }
 }
 .advanced-account-options li {
-  margin: 1rem;
+  margin: 2rem;
   list-style-type: none;
 }
 .change-password-form {
@@ -7162,7 +7165,7 @@ paper-spinner {
 .change-password-form .password-reqs {
   width: inherit !important;
   position: absolute;
-  top: 1em;
+  top: 2em;
   right: 0;
   background: #fff;
 }
@@ -7171,7 +7174,7 @@ paper-spinner {
   min-width: 60%;
 }
 #login .form-inline .form-group {
-  margin-bottom: 15px;
+  margin-bottom: 25px;
 }
 .form-inline .has-feedback div {
   margin-left: 0;
@@ -7187,7 +7190,7 @@ paper-spinner {
 @media (max-width: 767px) {
   #outdated-warning {
     width: 80%;
-    left: 10%;
+    left: 20%;
   }
 }
 iron-label {
@@ -7205,7 +7208,7 @@ label + paper-icon-button {
   color: #777777;
 }
 h3 + marked-element {
-  padding-left: 1rem;
+  padding-left: 2rem;
 }
 figure {
   position: relative;
@@ -7216,13 +7219,13 @@ figure .picture-label {
   text-shadow: 2px 2px 3px rgba(0, 0, 0, 0.75);
   color: white;
   font-weight: 700;
-  -webkit-text-stroke: 1px #000;
-  text-stroke: 1px #000;
+  -webkit-text-stroke: 2px #000;
+  text-stroke: 2px #000;
   text-align: left;
   font-size: 2em;
 }
 figure .picture-label.extended-attribution {
-  font-size: 1.5em;
+  font-size: 2.5em;
   line-height: 1.21428571;
 }
 figure figcaption {

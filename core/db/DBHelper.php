@@ -60,7 +60,7 @@ class DBHelper
     private function getSQLUser()
     {
         if (empty($this->SQLuser)) {
-            throw(new Exception('No user has been defined for this object.'));
+            throw(new Exception('No database user has been defined for this object.'));
         }
 
         return $this->SQLuser;
@@ -303,7 +303,7 @@ class DBHelper
             return $l;
         }
     }
-        throw(new Exception('Could not connect to database.'));
+        throw(new Exception('DATABASE_CONNECTION_FAILURE'));
     }
 
     protected function getFirstRow($query)
@@ -796,7 +796,7 @@ class DBHelper
             "status" => true,
         );
     }
-    
-    
-    
+
+
+
 }

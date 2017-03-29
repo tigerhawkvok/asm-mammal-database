@@ -1,4 +1,14 @@
 <!DOCTYPE html>
+<?php
+# $debug = true;
+
+
+if ($debug) {
+    error_reporting(E_ALL);
+    ini_set('display_errors', 1);
+    error_log('Index is running in debug mode!');
+}
+?>
 <html>
   <head>
     <?php
@@ -43,7 +53,7 @@
             <paper-fab id="do-reset-search" icon="cancel" raisedButton class="asm-blue" data-toggle="tooltip" title="Reset search" data-placement="right"></paper-fab>
           </div>
         </div>
-        <fieldset class="fullwidth">
+        <fieldset class="">
           <legend>Options</legend>
           <section id="search-options-container" class="row">
             <div class="col-md-3 col-xs-6 toggle-container">
@@ -69,10 +79,35 @@
                   <paper-toggle-button id="use-scientific" class="" checked></paper-toggle-button>
                 </div>
               <?php
+              $renderPage = true;
+              try {
                 $as_include = true;
                 include_once dirname(__FILE__)."/api.php";
                 $groups = fetchMajorMinorGroups(true);
-                echo "<script type='text/javascript'> _asm.mammalGroupsBase = ".json_encode($groups["minor"])." ; </script>"
+                echo "<script type='text/javascript'> _asm.mammalGroupsBase = ".json_encode($groups["minor"])." ; </script>";
+              } catch (Exception $e) {
+                # Do nothing
+                if ($e->getMessage() == "DATABASE_CONNECTION_FAILURE") {
+                  # Show an error message about connection
+                  require_once dirname(__FILE__)."/admin/CONFIG.php";
+                  ?>
+                </div> <!-- Ends the column --></section>
+                  <section id="error-db-connection" class="row">
+                    <div class="bs-callout bs-callout-danger col-xs-12 col-sm-8 col-md-6 col-sm-offset-2 col-md-offset-3">
+                      There was a problem communicating with the database.
+                      <br/><br/>
+                      If this problem persists, <a href="mailto:<?php echo $service_email; ?>?subject=<?php echo urlencode($e->getMessage()); ?>" class="alert-link">email <?php echo $service_email; ?></a> to report the issue, or <a href="<?php echo $gitIssueUrl; ?>" class="newwindow">report a bug on Github</a>.
+                    </div>
+                  </section>
+                  <?php
+                  $renderPage = false;
+                } else {
+                  # Show a generic "maybe error" message
+                  echo "<!-- WARNING GOT ERROR: ".$e->getMessage()." --><pre>got $default_sql_user and $default_database \n\n";
+                  throw($e);
+                }
+              }
+              if ($renderPage) {
                 ?>
               <label for="type" class="sr-only">Clade Restriction</label>
               <paper-menu-button id="simple-linnean-groups" class="col-xs-6 col-md-4">
@@ -81,13 +116,12 @@
                   <paper-item data-type="any" selected>All</paper-item>
                   <?php
                     try {
-                    #echo "<!--".print_r($groups, true)."-->\n\n";
-                    foreach($groups["major"] as $major) {
-                    echo "<paper-item data-type='$major'>".ucwords($major)."</paper-item>\n";
-                    }
+                      foreach($groups["major"] as $major) {
+                        echo "<paper-item data-type='$major'>".ucwords($major)."</paper-item>\n";
+                      }
                     } catch (Exception $e) {
-                    # Do nothing
-                    echo "<!-- ".$e->getMessage()."  -->";
+                      # Do nothing
+                      echo "<!-- ".$e->getMessage()."  -->";
                     }
                   ?>
                 </paper-menu>
@@ -111,12 +145,19 @@
               <paper-input label="Species Authority" id="species-authority-filter" name="species-authority-filter" class="cndb-filter col-md-4 col-xs-6" data-column="species_authority"></paper-input>
 
             </div>
+            <?php
+            # Ends the renderPage block -- we close before the section so that the HTML is well formatted
+            }
+          ?>
           </section>
         </fieldset>
         <input type="submit" style="display:none;" value="Search"/>
       </form>
       <paper-toast id="search-status"></paper-toast>
       <br/>
+      <?php
+      if ($renderPage) {
+        ?>
       <section id="results-section" class="col-xs-12">
         <div id="result-header-container" hidden>
           <h2>Results<span id="result-count"></span></h2>
@@ -129,6 +170,7 @@
         </div>
       </section>
       <?php
+        }
         echo $bodyClose;
-        ?>
+      ?>
 </html>

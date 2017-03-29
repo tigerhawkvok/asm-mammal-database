@@ -2,7 +2,7 @@
 /*
  * Core helpers/imports for web workers
  */
-var _asm, byteCount, dateMonthToString, deEscape, decode64, delay, downloadCSVFile, encode64, generateCSVFromResults, getLocation, goTo, isArray, isBlank, isBool, isEmpty, isJson, isNull, isNumber, jsonTo64, locationData, openLink, openTab, post64, prepURI, randomInt, randomString, renderDataArray, roundNumber, roundNumberSigfig, smartUpperCasing, toFloat, toInt, toObject, validateAWebTaxon,
+var _asm, byteCount, dateMonthToString, deEscape, decode64, delay, downloadCSVFile, encode64, generateCSVFromResults, getLocation, goTo, isArray, isBlank, isBool, isEmpty, isJson, isNull, isNumber, jsonTo64, locationData, openLink, openTab, post64, prepURI, randomInt, randomString, renderDataArray, roundNumber, roundNumberSigfig, smartUpperCasing, toFloat, toInt, toObject, uri, validateAWebTaxon,
   indexOf = [].indexOf || function(item) { for (var i = 0, l = this.length; i < l; i++) { if (i in this && this[i] === item) return i; } return -1; };
 
 locationData = new Object();
@@ -908,6 +908,12 @@ validateAWebTaxon = function(taxonObj, callback) {
 /*
  * Service worker!
  */
+
+if (typeof uri !== "object") {
+  uri = {
+    urlString: ""
+  };
+}
 
 if (typeof _asm !== "object") {
   _asm = {

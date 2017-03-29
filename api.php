@@ -31,7 +31,7 @@
 
 #$show_debug = true;
 
-require_once("CONFIG.php");
+require dirname(__FILE__)."/CONFIG.php";
 require_once(dirname(__FILE__)."/core/core.php");
 # This is a public API
 header("Access-Control-Allow-Origin: *");
@@ -313,7 +313,7 @@ function handleParamSearch($filter_params,$loose = false,$boolean_type = "AND", 
   $ordering = explode(",",$order_by);
   $order = " ORDER BY "."`".implode("`,`",$ordering)."`";
   $query .= $order;
-  # echo $query;
+  #echo $query;
   $l = $db->openDB();
   $r = mysqli_query($l,$query);
   if($r === false)
@@ -326,7 +326,9 @@ function handleParamSearch($filter_params,$loose = false,$boolean_type = "AND", 
     {
       $result_vector[] = $row;
     }
-  # $result_vector["query"] = $query;
+  if($show_debug === true) {
+    $result_vector["query"] = $query;
+  }
   return $result_vector;
 }
 
@@ -1018,28 +1020,34 @@ foreach($result["result"] as $i=>$taxon) {
     $list = implode("|", $higherClassification);
     $higherClassification["list"] = $list;
     $dwcResult["higherClassification"] = $higherClassification;
-    $years = json_decode($taxon["authority_year"], true);
-    $genusYear = key($years);
-    $speciesYear = current($years);
-    $genus = empty($genusYear) ? $taxon["genus_authority"] : $taxon["genus_authority"] . ", " . $genusYear;
-    $species = empty($speciesYear) ? $taxon["species_authority"] : $taxon["species_authority"] . ", " . $speciesYear;
-    $genus = toBool($taxon["parens_auth_genus"]) ? "($genus)" : $genus;
-    $species = toBool($taxon["parens_auth_species"]) ? "($species)" : $species;
-    $dwcResult["scientificNameAuthorship"] = array(
-        "genus" => $genus,
-        "species" => $species,
-    );
+    if(isset($taxon["species_authority"])) {
+        $years = json_decode($taxon["authority_year"], true);
+        $genusYear = key($years);
+        $speciesYear = current($years);
+        $genus = empty($genusYear) ? $taxon["genus_authority"] : $taxon["genus_authority"] . ", " . $genusYear;
+        $species = empty($speciesYear) ? $taxon["species_authority"] : $taxon["species_authority"] . ", " . $speciesYear;
+        $genus = toBool($taxon["parens_auth_genus"]) ? "($genus)" : $genus;
+        $species = toBool($taxon["parens_auth_species"]) ? "($species)" : $species;
+        $dwcResult["scientificNameAuthorship"] = array(
+            "genus" => $genus,
+            "species" => $species,
+        );
+    }
     $dwcResult["taxonRank"] = "species";
     $dwcResult["class"] = "mammalia";
     $dwcResult["taxonomicStatus"] = "accepted";
-    $dwcResult["dcterms:bibliographicCitation"] = $taxon["canonical_sciname"]." (ASM Species Account Database #".$taxon["internal_id"].") fetched ".date(DATE_ISO8601);
-    $dwcResult["dcterms:language"] = "en";
-    $creditTime = strtotime($speciesRow["taxon_credit_date"]);
-    if($creditTime === false) $creditTime = intval($speciesRow["taxon_credit_date"]);
-    if(!is_numeric($creditTime) || $creditTime == 0) {
-        $creditTime = time();
+    if(isset($taxon["canonical_sciname"])) {
+        $dwcResult["dcterms:bibliographicCitation"] = $taxon["canonical_sciname"]." (ASM Species Account Database #".$taxon["internal_id"].") fetched ".date(DATE_ISO8601);
     }
-    $dwcResult["dcterms:modified"] = date(DATE_ISO8601,$creditTime);
+    $dwcResult["dcterms:language"] = "en";
+    if(isset($taxon["taxon_credit_date"])) {
+        $creditTime = strtotime($taxon["taxon_credit_date"]);
+        if($creditTime === false) $creditTime = intval($taxon["taxon_credit_date"]);
+        if(!is_numeric($creditTime) || $creditTime == 0) {
+            $creditTime = time();
+        }
+        $dwcResult["dcterms:modified"] = date(DATE_ISO8601,$creditTime);
+    }
     $dwcResult["dcterms:license"] = "https://creativecommons.org/licenses/by-nc/4.0/legalcode";
     $result["result"][$i]["dwc"] = $dwcResult;
     $dwcTotal[] = $dwcResult;

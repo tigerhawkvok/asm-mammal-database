@@ -66,7 +66,7 @@ From there, run:
 select id, username, flag, admin_flag, su_flag from userdata;
 ```
 
-Note that the last row should have your username, and take note of the ID in the first column of that row. Then run:
+Note that the last row should have your username, and take note of the ID in the first column of that row (it should be a number, and is probably the number `3`). Then run:
 
 ```sql
 UPDATE userdata SET `flag`=1, `admin_flag`=1, `su_flag`=1 WHERE `id`=YOUR_USER_ID_NUMBER;

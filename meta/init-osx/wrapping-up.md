@@ -73,3 +73,6 @@ UPDATE userdata SET `flag`=1, `admin_flag`=1, `su_flag`=1 WHERE `id`=YOUR_USER_I
 ```
 
 That should complete successfully, after which you can just write `exit` and your user should be enabled and flagged as an administrator.
+
+
+## You're done! Enjoy!

@@ -2,7 +2,7 @@
 # Install Homebrew
 /usr/bin/ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)"
 # Install local environment
-brew install mariadb yarn git blackbox
+brew install mariadb yarn git blackbox a2enmod
 # Set up PHP
 brew tap homebrew/dupes
 brew tap homebrew/versions

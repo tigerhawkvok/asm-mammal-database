@@ -3,7 +3,7 @@
  * The main coffeescript file for administrative stuff
  * Triggered from admin-page.html
  */
-var adminParams, createDuplicateTaxon, createNewTaxon, deleteTaxon, fetchEditorDropdownContent, fillEmptyCommonName, handleDeprecatedInput, handleDragDropImage, licenseHelper, loadAdminUi, loadModalTaxonEditor, lookupEditorSpecies, newColumnHelper, prefetchEditorDropdowns, renderAdminSearchResults, renderDeprecatedFromDatabase, saveEditorEntry, verifyLoginCredentials,
+var adminParams, adminPreloadSearch, createDuplicateTaxon, createNewTaxon, deleteTaxon, fetchEditorDropdownContent, fillEmptyCommonName, handleDeprecatedInput, handleDragDropImage, licenseHelper, loadAdminUi, loadModalTaxonEditor, lookupEditorSpecies, newColumnHelper, prefetchEditorDropdowns, renderAdminSearchResults, renderDeprecatedFromDatabase, saveEditorEntry, verifyLoginCredentials,
   indexOf = [].indexOf || function(item) { for (var i = 0, l = this.length; i < l; i++) { if (i in this && this[i] === item) return i; } return -1; };
 
 adminParams = new Object();
@@ -101,7 +101,7 @@ verifyLoginCredentials = function(callback) {
       }
     } else {
       $(".logged-in-values").remove();
-      if (typeof callback === "function") {
+      if (typeof callback === "function" && _asm.inhibitRedirect !== true) {
         if (!isNull(result.login_url)) {
           return goTo(result.login_url);
         } else {
@@ -321,7 +321,7 @@ licenseHelper = function(selector) {
     currentLicenseUrl = $(selector).attr("data-license-url");
     html = "<paper-dialog id=\"set-license-value\" data-column=\"" + targetColumn + "\" modal>\n  <h2>Set License</h2>\n  <paper-dialog-scrollable>\n    <paper-input class=\"new-license-name license-field\" label=\"License Name\" floatingLabel autofocus value=\"" + currentLicenseName + "\" required autovalidate></paper-input>\n    <paper-input class=\"new-license-url license-field\" label=\"License URL\" floatingLabel value=\"" + currentLicenseUrl + "\" required autovalidate></paper-input>\n  </paper-dialog-scrollable>\n  <div class=\"buttons\">\n    <paper-button dialog-dismiss>Cancel</paper-button>\n    <paper-button class=\"add-value\">Set</paper-button>\n  </div>\n</paper-dialog>";
     $("body").append(html);
-    urlPattern = "((?:https?)://(?:(?:(?:[0-9]+\\.){3}[0-9]+|(?:[0-9a-f]+:){6,8}|(?:[\\w0-9~\\-_]{2,}\\.)+[\\w]{2,}|localhost))/?(?:[\\w0-9~\\-_]*/?)*(?:(?:\\.\\w+)?(?:\\?(?:\\w+=\\w+&?)*)?))";
+    urlPattern = "((?:https?)://(?:(?:(?:[0-9]+\\.){3}[0-9]+|(?:[0-9a-f]+:){6,8}|(?:[\\w~\\-]{2,}\\.)+[\\w]{2,}|localhost))/?(?:[\\w~\\-]*/?)*(?:(?:\\.\\w+)?(?:\\?(?:\\w+=\\w+&?)*)?))(?:#[\\w~\\-]+)?";
     p$("paper-input.new-license-url").pattern = urlPattern;
     p$("paper-input.new-license-url").errorMessage = "This must be a valid URL";
     p$("paper-input.new-license-name").errorMessage = "This cannot be empty";
@@ -1386,6 +1386,22 @@ handleDragDropImage = function(uploadTargetSelector, callback) {
     fileUploadDropzone = new Dropzone(d$(uploadTargetSelector).get(0), dropzoneConfig);
     return _asm.dropzone = fileUploadDropzone;
   });
+  return false;
+};
+
+adminPreloadSearch = function() {
+
+  /*
+   *
+   */
+  var e, error1, loadArgs;
+  uri.query = $.url().attr("fragment");
+  try {
+    loadArgs = Base64.decode(uri.query);
+  } catch (error1) {
+    e = error1;
+    loadArgs = "";
+  }
   return false;
 };
 

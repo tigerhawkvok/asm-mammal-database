@@ -335,9 +335,11 @@ formatSearchResults = (result, container = searchParams.targetContainer, callbac
   htmlHead = "<table id='#{tableId}' class='table table-striped table-hover col-md-12'>\n\t<tr class='cndb-row-headers'>"
   htmlClose = "</table>"
   # We start at 0, so we want to count one below
-  targetCount = toInt(result.count)-1
+  targetCount = result.count
   if targetCount > 150
     toastStatusMessage "We found #{result.count} results, please hang on a moment while we render them...", "", 5000
+  else
+    console.log "Not notifying of render delay, only showing #{targetCount} items"
   colClass = null
   bootstrapColCount = 0
   dontShowColumns = [
@@ -365,9 +367,10 @@ formatSearchResults = (result, container = searchParams.targetContainer, callbac
     "dwc"
     "entry"
     "common_name_source"
+    "image_caption"
     ]
   externalCounter = 0
-  renderTimeout = delay 7500, -
+  renderTimeout = delay 7500, ->
     stopLoadError "There was a problem parsing the search results."
     console.error "Couldn't finish parsing the results! Expecting #{targetCount} elements, timed out on #{externalCounter}."
     console.warn data
@@ -1433,8 +1436,9 @@ $ ->
       # Populate the result container
       console.debug "Server query got", result
       if result.status is true and result.count > 0
-        console.log("Got a valid result, formatting #{result.count} results.")
+        console.log "Got a valid result, formatting #{result.count} results."
         formatSearchResults result, undefined, ->
+          console.log "Format results finished, checking lagged update"
           checkLaggedUpdate result
         return false
       console.warn "Bad initial search"

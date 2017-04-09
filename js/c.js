@@ -2154,18 +2154,22 @@ formatSearchResults = function(result, container, callback) {
   tableId = "cndb-result-list";
   htmlHead = "<table id='" + tableId + "' class='table table-striped table-hover col-md-12'>\n\t<tr class='cndb-row-headers'>";
   htmlClose = "</table>";
-  targetCount = toInt(result.count) - 1;
+  targetCount = result.count;
   if (targetCount > 150) {
     toastStatusMessage("We found " + result.count + " results, please hang on a moment while we render them...", "", 5000);
+  } else {
+    console.log("Not notifying of render delay, only showing " + targetCount + " items");
   }
   colClass = null;
   bootstrapColCount = 0;
-  dontShowColumns = ["id", "minor_type", "notes", "major_type", "taxon_author", "taxon_credit", "image_license", "image_credit", "taxon_credit_date", "parens_auth_genus", "parens_auth_species", "is_alien", "internal_id", "source", "deprecated_scientific", "canonical_sciname", "simple_linnean_group", "iucn", "dwc", "entry", "common_name_source"];
+  dontShowColumns = ["id", "minor_type", "notes", "major_type", "taxon_author", "taxon_credit", "image_license", "image_credit", "taxon_credit_date", "parens_auth_genus", "parens_auth_species", "is_alien", "internal_id", "source", "deprecated_scientific", "canonical_sciname", "simple_linnean_group", "iucn", "dwc", "entry", "common_name_source", "image_caption"];
   externalCounter = 0;
-  renderTimeout = delay(7500, -stopLoadError("There was a problem parsing the search results."));
-  console.error("Couldn't finish parsing the results! Expecting " + targetCount + " elements, timed out on " + externalCounter + ".");
-  console.warn(data);
-  return false;
+  renderTimeout = delay(7500, function() {
+    stopLoadError("There was a problem parsing the search results.");
+    console.error("Couldn't finish parsing the results! Expecting " + targetCount + " elements, timed out on " + externalCounter + ".");
+    console.warn(data);
+    return false;
+  });
   requiredKeyOrder = ["common_name", "genus", "species"];
   delay(5, function() {
     var allColsHaveData, colHasData, dataArray, i, k, key, len, m, origData, ref1, renderDataArray, row, totalLoops, v;
@@ -3279,6 +3283,7 @@ $(function() {
       if (result.status === true && result.count > 0) {
         console.log("Got a valid result, formatting " + result.count + " results.");
         formatSearchResults(result, void 0, function() {
+          console.log("Format results finished, checking lagged update");
           return checkLaggedUpdate(result);
         });
         return false;

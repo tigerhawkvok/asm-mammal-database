@@ -6963,6 +6963,12 @@ footer {
   background: #fff;
   box-shadow: 5px 5px 8px 5px rgba(0, 0, 0, 0.5);
 }
+footer.row {
+  left: 15px;
+}
+footer copyright-statement {
+  top: 0.71428571em;
+}
 header .logo-container {
   width: 16.66666667%;
   float: left !important;

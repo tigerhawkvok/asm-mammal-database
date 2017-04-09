@@ -9,6 +9,8 @@
 require_once("CONFIG.php");
 require_once dirname(__FILE__) . "/core/core.php";
 
+$showAccountDebug = true;
+
 $db = new DBHelper($default_database,$default_sql_user,$default_sql_password,$default_sql_url,$default_table,$db_cols);
 
 if(isset($_SERVER['QUERY_STRING'])) parse_str($_SERVER['QUERY_STRING'],$_REQUEST);
@@ -635,7 +637,20 @@ $entryCredits = "<section id='entry-credits' class='col-xs-12 small'><p>".$credi
 
 $content = $entryTitle . $images . $taxonomyNotes. $entryNote . $primaryEntry . $entryCredits;
 
-$content .= "<code class='col-xs-12'>Species: ". print_r($speciesRow, true) . "</code>";
+if($showAccountDebug === true) {
+    # Debugging
+    $content .= "<code class='col-xs-12'>Species: ". print_r($speciesRow, true) . "</code>";
+}
+
+$speciesJsonArr = array(
+    "genus" => $speciesRow["genus"],
+    "species" => $speciesRow["species"],
+);
+if(!empty($speciesRow["subspecies"])) $speciesJsonArr["subspecies"] = $speciesRow["subspecies"];
+
+$speciesJson = json_encode($speciesJsonArr);
+
+$content .= "<script type='text/javascript'>window.speciesData = $speciesJson;</script>";
 
 $output .= getBody($content);
 

@@ -102,7 +102,7 @@ verifyLoginCredentials = (callback) ->
         callback(result)
     else
       $(".logged-in-values").remove()
-      if typeof callback is "function"
+      if typeof callback is "function" and _asm.inhibitRedirect isnt true
         unless isNull result.login_url
           goTo(result.login_url)
         else
@@ -305,7 +305,7 @@ licenseHelper = (selector = "#edit-image-license-dialog") ->
     """
     $("body").append html
     # URL matching pattern
-    # 
+    #
     urlPattern = """((?:https?)://(?:(?:(?:[0-9]+\\.){3}[0-9]+|(?:[0-9a-f]+:){6,8}|(?:[\\w~\\-]{2,}\\.)+[\\w]{2,}|localhost))/?(?:[\\w~\\-]*/?)*(?:(?:\\.\\w+)?(?:\\?(?:\\w+=\\w+&?)*)?))(?:#[\\w~\\-]+)?"""
     p$("paper-input.new-license-url").pattern = urlPattern
     p$("paper-input.new-license-url").errorMessage = "This must be a valid URL"
@@ -1421,6 +1421,21 @@ handleDragDropImage = (uploadTargetSelector = "#upload-image", callback) ->
     fileUploadDropzone = new Dropzone(d$(uploadTargetSelector).get(0), dropzoneConfig)
     _asm.dropzone = fileUploadDropzone
   false
+
+
+
+adminPreloadSearch = ->
+  ###
+  #
+  ###
+  uri.query = $.url().attr("fragment")
+  try
+    loadArgs = Base64.decode(uri.query)
+  catch e
+    loadArgs = ""
+  # Do the search
+  false
+
 
 
 $ ->

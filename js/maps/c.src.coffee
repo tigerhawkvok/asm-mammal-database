@@ -1319,10 +1319,18 @@ foo = ->
   toastStatusMessage("Sorry, this feature is not yet finished")
   stopLoad()
   false
-
 doNothing = ->
   # Placeholder function
   return null
+
+
+buildQuery = (obj) ->
+  queryList = new Array()
+  for k, v of obj
+    key = k.replace /[^A-Za-z\-_\[\]]/img, ""
+    queryList.push """#{key}=#{encodeURIComponent v}"""
+  queryList.join "&"
+
 
 $ ->
   formatScientificNames()
@@ -1344,7 +1352,26 @@ $ ->
     getLocation()
     # However, we can lazy-load to see if the user is an admin
     loadJS "js/admin.min.js", ->
-      verifyLoginCredentials()
+      _asm.inhibitRedirect = true
+      verifyLoginCredentials ->
+        delete _asm.inhibitRedirect
+        if uri.o.attr("file") is "species-account.php"
+          # We should put a link to this critter as an edit if we're an
+          # admin    
+          if typeof window.speciesData is "object"
+            query = buildQuery window.speciesData
+            adminFragment = "##{Base64.encode query}"
+            html = """
+            <paper-icon-button
+              class="click admin-edit-button"
+              data-href="#{uri.urlString}admin-page.html#{adminFragment}"
+              icon="icons:create"
+              >
+            </paper-icon-button>
+            """
+            # Append to the header...
+            $("header p paper-icon-button[icon='icons:home']").before html
+            bindClicks(".admin-edit-button")
     loadJS "js/jquery.cookie.min.js", ->
       # Now see if the user is an admin
       if $.cookie("asmherps_user")?
@@ -1727,9 +1754,11 @@ formatSearchResults = (result, container = searchParams.targetContainer, callbac
   htmlHead = "<table id='#{tableId}' class='table table-striped table-hover col-md-12'>\n\t<tr class='cndb-row-headers'>"
   htmlClose = "</table>"
   # We start at 0, so we want to count one below
-  targetCount = toInt(result.count)-1
+  targetCount = result.count
   if targetCount > 150
     toastStatusMessage "We found #{result.count} results, please hang on a moment while we render them...", "", 5000
+  else
+    console.log "Not notifying of render delay, only showing #{targetCount} items"
   colClass = null
   bootstrapColCount = 0
   dontShowColumns = [
@@ -1757,9 +1786,10 @@ formatSearchResults = (result, container = searchParams.targetContainer, callbac
     "dwc"
     "entry"
     "common_name_source"
+    "image_caption"
     ]
   externalCounter = 0
-  renderTimeout = delay 5000, ->
+  renderTimeout = delay 7500, ->
     stopLoadError "There was a problem parsing the search results."
     console.error "Couldn't finish parsing the results! Expecting #{targetCount} elements, timed out on #{externalCounter}."
     console.warn data
@@ -2046,48 +2076,6 @@ parseTaxonYear = (taxonYearString, strict = true) ->
   year.species = species
   return year
 
-formatAlien = (dataOrAlienBool, selector = "#is-alien-container") ->
-  ###
-  # Quick handler to determine if the taxon is alien, and if so, label
-  # it
-  #
-  # After
-  # https://github.com/SSARHERPS/SSAR-species-database/issues/51
-  # https://github.com/SSARHERPS/SSAR-species-database/issues/52
-  ###
-  if typeof dataOrAlienBool is "boolean"
-    isAlien = dataOrAlienBool
-  else if typeof dataOrAlienBool is "object"
-    isAlien = toInt(dataOrAlienBool.is_alien).toBool()
-  else
-    throw Error("Invalid data given to formatAlien()")
-  # Now that we have it, let's do the handling
-  unless isAlien
-    # We don't need to do anything else
-    d$(selector).css("display","none")
-    return false
-  # Now we deal with the real bits
-  iconHtml = """
-  <iron-icon icon="maps:flight" class="small-icon alien-speices" id="modal-alien-species" data-toggle="tooltip"></iron-icon>
-  """
-  d$(selector).html(iconHtml)
-  tooltipHint = "This species is not native"
-  tooltipHtml = """
-  <div class="tooltip fade top in right manual-placement-tooltip" role="tooltip" style="top: 6.5em; left: 4em; right:initial; display:none" id="manual-alien-tooltip">
-    <div class="tooltip-arrow" style="top:50%;left:5px"></div>
-    <div class="tooltip-inner">#{tooltipHint}</div>
-  </div>
-  """
-  d$(selector)
-  .after(tooltipHtml)
-  .mouseenter ->
-    d$("#manual-alien-tooltip").css("display","block")
-    false
-  .mouseleave ->
-    d$("#manual-alien-tooltip").css("display","none")
-    false
-  d$("#manual-location-tooltip").css("left","6em")
-  false
 
 checkTaxonNear = (taxonQuery = undefined, callback = undefined, selector = "#near-me-container") ->
   ###
@@ -2472,7 +2460,6 @@ modalTaxon = (taxon = undefined) ->
     catch e
       console.info("Unable to insert modal image! ")
     checkTaxonNear taxon, ->
-      formatAlien(data)
       stopLoad()
       modalElement = d$("#modal-taxon")[0]
       d$("#modal-taxon").on "iron-overlay-opened", ->
@@ -2567,6 +2554,356 @@ clearSearch = (partialReset = false) ->
   $("#linnean").polymerSelected("any")
   formatScientificNames()
   false
+
+
+
+safariDialogHelper = (selector = "#download-chooser", counter = 0, callback) ->
+  ###
+  # Help Safari display paper-dialogs
+  ###
+  unless typeof callback is "function"
+    callback = ->
+      bindDismissalRemoval()
+  if counter < 10
+    try
+      # Safari is stupid and like to throw an error. Presumably
+      # it's VERY slow about creating the element.
+      d$(selector).get(0).open()
+      if typeof callback is "function"
+        callback()
+      stopLoad()
+    catch e
+      # Ah, Safari threw an error. Let's delay and try up to
+      # 10x.
+      newCount = counter + 1
+      delayTimer = 250
+      delay delayTimer, ->
+        console.warn "Trying again to display dialog after #{newCount * delayTimer}ms"
+        safariDialogHelper(selector, newCount, callback)
+  else
+    stopLoadError("Unable to show dialog. Please try again.")
+
+
+safariSearchArgHelper = (value, didLateRecheck = false) ->
+  ###
+  # If the search argument has a "+" in it, remove it
+  # Then write the arg to search.
+  #
+  # Since Safari doesn't "take" it all the time, keep trying till it does.
+  ###
+  if value?
+    searchArg = value
+  else
+    searchArg = $("#search").val()
+  trimmed = false
+  if searchArg.search(/\+/) isnt -1
+    trimmed = true
+    searchArg = searchArg.replace(/\+/g," ").trim()
+    # console.log("Trimmed a plus")
+    delay 100, ->
+      safariSearchArgHelper()
+  if trimmed or value?
+    $("#search").attr("value",searchArg)
+    # console.log("Updated the search args")
+    unless didLateRecheck
+      delay 5000, ->
+        # What? Safari is VERY slow on older devices,
+        # and this check will fix them.
+        safariSearchArgHelper(undefined, true)
+  false
+
+
+insertCORSWorkaround = ->
+  unless _asm.hasShownWorkaround?
+    _asm.hasShownWorkaround = false
+  if _asm.hasShownWorkaround
+    return false
+  try
+    browsers = new WhichBrowser()
+  catch e
+    # Defer it till next time
+    return false
+  if browsers.isType("mobile")
+    # We don't need to show this at all -- no extensions!
+    _asm.hasShownWorkaround = true
+    return false
+  browserExtensionLink = switch browsers.browser.name
+    when "Chrome"
+      """
+      Install the extension "<a class='alert-link' href='https://chrome.google.com/webstore/detail/allow-control-allow-origi/nlfbmbojpeacfghkpbjhddihlkkiljbi?utm_source=chrome-app-launcher-info-dialog'>Allow-Control-Allow-Origin: *</a>", activate it on this domain, and you'll see them in your popups!
+      """
+    when "Firefox"
+      """
+      Follow the instructions <a class='alert-link' href='http://www-jo.se/f.pfleger/forcecors-workaround'>for this ForceCORS add-on</a>, or try Chrome for a simpler extension. Once you've done so, you'll see photos in your popups!
+      """
+    when "Internet Explorer"
+      """
+      Follow these <a class='alert-link' href='http://stackoverflow.com/a/20947828'>StackOverflow instructions</a> while on this site, and you'll see them in your popups!
+      """
+    else ""
+  html = """
+  <div class="alert alert-info alert-dismissible center-block fade in" role="alert">
+    <button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+    <strong>Want CalPhotos images in your species dialogs?</strong> #{browserExtensionLink}
+    We're working with CalPhotos to enable this natively, but it's a server change on their side.
+  </div>
+  """
+  $("#result_container").before(html)
+  $(".alert").alert()
+  _asm.hasShownWorkaround = true
+  false
+
+
+showBadSearchErrorMessage = (result) ->
+  try
+    sOrig = result.query.replace(/\+/g," ")
+  catch
+    sOrig = $("#search").val()
+  try
+    if result.status is true
+      if result.query_params.filter.had_filter is true
+        filterText = ""
+        i = 0
+        $.each result.query_params.filter.filter_params, (col,val) ->
+          if col isnt "BOOLEAN_TYPE"
+            if i isnt 0
+              filterText = "#{filter_text} #{result.filter.filter_params.BOOLEAN_TYPE}"
+            if isNumber(toInt(val,true))
+              val = if toInt(val) is 1 then "true" else "false"
+            filterText = "#{filterText} #{col.replace(/_/g," ")} is #{val}"
+        text = "\"#{sOrig}\" where #{filterText} returned no results."
+      else
+        text = "\"#{sOrig}\" returned no results."
+    else
+      text = result.human_error
+  catch
+    text = "Sorry, there was a problem with your search"
+  stopLoadError(text)
+
+
+
+
+bindPaperMenuButton = (selector = "paper-menu-button", unbindTargets = true) ->
+  ###
+  # Use a paper-menu-button and make the
+  # .dropdown-label gain the selected value
+  #
+  # Reference:
+  # https://github.com/polymerelements/paper-menu-button
+  # https://elements.polymer-project.org/elements/paper-menu-button
+  ###
+  return false
+  for dropdown in $(selector)
+    menu = $(dropdown).find("paper-menu")
+    if unbindTargets
+      $(menu).unbind()
+    do relabelSelectedItem = (target = menu, activeDropdown = dropdown) ->
+      # A menu item has been selected!
+      selectText = $(target).polymerSelected(null, true)
+      # console.log("iron-select fired! We fetched '#{selectText}'")
+      labelSpan = $(activeDropdown).find(".dropdown-label")
+      $(labelSpan).text(selectText)
+      $(target).polymerSelected()
+    $(menu).on "iron-select", ->
+      relabelSelectedItem this, dropdown
+  false
+
+
+$ ->
+  devHello = """
+  ****************************************************************************
+  Hello developer!
+  If you're looking for hints on our API information, this site is open-source
+  and released under the GPL. Just click on the GitHub link on the bottom of
+  the page, or check out LINK_TO_ORG_REPO
+  ****************************************************************************
+  """
+  console.log(devHello)
+  ignorePages = [
+    "admin-login.php"
+    "admin-page.html"
+    "admin-page.php"
+    ]
+  if uri.o.attr("file") in ignorePages
+    return false
+  # Do bindings
+  # console.log("Doing onloads ...")
+  animateLoad()
+  # Set up popstate
+  window.addEventListener "popstate", (e) ->
+    uri.query = $.url().attr("fragment")
+    try
+      loadArgs = Base64.decode(uri.query)
+    catch e
+      loadArgs = ""
+    #console.log("Popping state to #{loadArgs}")
+    performSearch.debounce 50, null, null, loadArgs
+    temp = loadArgs.split("&")[0]
+    $("#search").attr("value",temp)
+  ## Set events
+  $("#do-reset-search").click ->
+    clearSearch()
+  $("#search_form").submit (e) ->
+    e.preventDefault()
+    performSearch.debounce 50
+  $("#collapse-advanced").on "shown.bs.collapse", ->
+    $("#collapse-icon").attr("icon","icons:unfold-less")
+  $("#collapse-advanced").on "hidden.bs.collapse", ->
+    $("#collapse-icon").attr("icon","icons:unfold-more")
+  # Bind enter keydown
+  $("#search_form").keypress (e) ->
+    if e.which is 13 then performSearch.debounce 50
+  # Bind clicks
+  $("#do-search").click ->
+    performSearch.debounce 50
+  $("#do-search-all").click ->
+    performSearch.debounce 50, null, null, true
+  $("#linnean").on "iron-select", ->
+    # We do want to auto-trigger this when there's a search value,
+    # but not when it's empty (even though this is valid)
+    if not isNull($("#search").val()) then performSearch.debounce()
+  eutheriaFilterHelper()
+  bindPaperMenuButton()
+  # Do a fill of the result container
+  if isNull uri.query
+    loadArgs = ""
+  else
+    try
+      loadArgs = Base64.decode(uri.query)
+      queryUrl = $.url("#{searchParams.apiPath}?q=#{loadArgs}")
+      try
+        looseState = queryUrl.param("loose").toBool()
+      catch e
+        looseState = false
+      try
+        fuzzyState = queryUrl.param("fuzzy").toBool()
+      catch e
+        fuzzyState = false
+      temp = loadArgs.split("&")[0]
+      # Remove any plus signs in the query
+      safariSearchArgHelper(temp)
+      # Delay these for polyfilled element registration
+      # See
+      # https://github.com/PolymerElements/paper-toggle-button/issues/29
+      do fixState = ->
+        if Polymer?.Base?.$$?
+          unless isNull Polymer.Base.$$("#loose")
+            delay 250, ->
+              if looseState
+                d$("#loose").attr("checked", "checked")
+              if fuzzyState
+                d$("#fuzzy").attr("checked", "checked")
+            return false
+        unless _asm.stateIter?
+          _asm.stateIter = 0
+        ++_asm.stateIter
+        if _asm.stateIter > 30
+          console.warn("Couldn't attach Polymer.Base.ready")
+          return false
+        try
+          Polymer.Base.ready ->
+            # The whenReady makes the toggle work, but it won't toggle
+            # without this "real" delay
+            delay 250, ->
+              console.info "Doing a late Polymer.Base.ready call"
+              if looseState
+                d$("#loose").attr("checked", "checked")
+              if fuzzyState
+                d$("#fuzzy").attr("checked", "checked")
+              safariSearchArgHelper()
+              eutheriaFilterHelper()
+        catch
+          delay 250, ->
+            fixState()
+      # Filters
+      try
+        f64 = queryUrl.param("filter")
+        filterObj = JSON.parse(Base64.decode(f64))
+        openFilters = false
+        simpleAllowedFilters = [
+          "simple-linnean-group"
+          "simple-linnean-subgroup"
+          "linnean-family"
+          "type"
+          "BOOLEAN-TYPE"
+          ]
+        for col, val of filterObj
+          col = col.replace(/_/g,"-")
+          #selector = "##{col}-filter"
+          selector = ".cndb-filter[data-column='#{col}']"
+          unless col in simpleAllowedFilters
+            console.debug "Col '#{col}' is not a simple filter"
+            $(selector).attr("value",val)
+            openFilters = true
+          else
+            $(".cndb-filter[data-column='#{col}']").polymerSelected(val)
+        if openFilters
+          # Open up #collapse-advanced
+          $("#collapse-advanced").collapse("show")
+      catch e
+        # Do nothing
+        f64 = false
+    catch e
+      console.error("Bad argument #{uri.query} => #{loadArgs}, looseState, fuzzyState",looseState,fuzzyState,"#{searchParams.apiPath}?q=#{loadArgs}")
+      console.warn(e.message)
+      loadArgs = ""
+  # Perform the initial search
+  if not isNull(loadArgs) and loadArgs isnt "#"
+    # console.log("Doing initial search with '#{loadArgs}', hitting","#{searchParams.apiPath}?q=#{loadArgs}")
+    $.get searchParams.targetApi,"q=#{loadArgs}","json"
+    .done (result) ->
+      # Populate the result container
+      console.debug "Server query got", result
+      if result.status is true and result.count > 0
+        console.log "Got a valid result, formatting #{result.count} results."
+        formatSearchResults result, undefined, ->
+          console.log "Format results finished, checking lagged update"
+          checkLaggedUpdate result
+        return false
+      console.warn "Bad initial search"
+      showBadSearchErrorMessage.debounce null, null, null, result
+      console.error result.error
+      console.warn result
+    .fail (result,error) ->
+      console.error("There was an error loading the generic table")
+      console.warn(result,error,result.statusText)
+      error = "#{result.status} - #{result.statusText}"
+      $("#search-status").attr("text","Couldn't load table - #{error}")
+      $("#search-status")[0].show()
+      stopLoadError()
+    .always ->
+      # Anything we always want done
+      $("#search").attr("disabled",false)
+      false
+  else
+    stopLoad()
+    $("#search").attr("disabled",false)
+    # Delay this for polyfilled element registration
+    # See
+    # https://github.com/PolymerElements/paper-toggle-button/issues/29
+    do fixState = ->
+      if Polymer?.Base?.$$?
+        unless isNull Polymer.Base.$$("#loose")
+          delay 250, ->
+            d$("#loose").attr("checked", "checked")
+            eutheriaFilterHelper()
+          return false
+      unless _asm.stateIter?
+        _asm.stateIter = 0
+      ++_asm.stateIter
+      if _asm.stateIter > 30
+        console.warn("Couldn't attach Polymer.Base.ready")
+        return false
+      try
+        Polymer.Base.ready ->
+          # The whenReady makes the toggle work, but it won't toggle
+          # without this "real" delay
+          delay 250, ->
+            d$("#loose").attr("checked", "checked")
+            eutheriaFilterHelper()
+      catch
+        delay 250, ->
+          fixState()
 
 
 
@@ -2981,350 +3318,3 @@ showDownloadChooser = ->
     downloadHTMLList()
   safariDialogHelper("#download-chooser")
   false
-
-safariDialogHelper = (selector = "#download-chooser", counter = 0, callback) ->
-  ###
-  # Help Safari display paper-dialogs
-  ###
-  unless typeof callback is "function"
-    callback = ->
-      bindDismissalRemoval()
-  if counter < 10
-    try
-      # Safari is stupid and like to throw an error. Presumably
-      # it's VERY slow about creating the element.
-      d$(selector).get(0).open()
-      if typeof callback is "function"
-        callback()
-      stopLoad()
-    catch e
-      # Ah, Safari threw an error. Let's delay and try up to
-      # 10x.
-      newCount = counter + 1
-      delayTimer = 250
-      delay delayTimer, ->
-        console.warn "Trying again to display dialog after #{newCount * delayTimer}ms"
-        safariDialogHelper(selector, newCount, callback)
-  else
-    stopLoadError("Unable to show dialog. Please try again.")
-
-
-safariSearchArgHelper = (value, didLateRecheck = false) ->
-  ###
-  # If the search argument has a "+" in it, remove it
-  # Then write the arg to search.
-  #
-  # Since Safari doesn't "take" it all the time, keep trying till it does.
-  ###
-  if value?
-    searchArg = value
-  else
-    searchArg = $("#search").val()
-  trimmed = false
-  if searchArg.search(/\+/) isnt -1
-    trimmed = true
-    searchArg = searchArg.replace(/\+/g," ").trim()
-    # console.log("Trimmed a plus")
-    delay 100, ->
-      safariSearchArgHelper()
-  if trimmed or value?
-    $("#search").attr("value",searchArg)
-    # console.log("Updated the search args")
-    unless didLateRecheck
-      delay 5000, ->
-        # What? Safari is VERY slow on older devices,
-        # and this check will fix them.
-        safariSearchArgHelper(undefined, true)
-  false
-
-
-insertCORSWorkaround = ->
-  unless _asm.hasShownWorkaround?
-    _asm.hasShownWorkaround = false
-  if _asm.hasShownWorkaround
-    return false
-  try
-    browsers = new WhichBrowser()
-  catch e
-    # Defer it till next time
-    return false
-  if browsers.isType("mobile")
-    # We don't need to show this at all -- no extensions!
-    _asm.hasShownWorkaround = true
-    return false
-  browserExtensionLink = switch browsers.browser.name
-    when "Chrome"
-      """
-      Install the extension "<a class='alert-link' href='https://chrome.google.com/webstore/detail/allow-control-allow-origi/nlfbmbojpeacfghkpbjhddihlkkiljbi?utm_source=chrome-app-launcher-info-dialog'>Allow-Control-Allow-Origin: *</a>", activate it on this domain, and you'll see them in your popups!
-      """
-    when "Firefox"
-      """
-      Follow the instructions <a class='alert-link' href='http://www-jo.se/f.pfleger/forcecors-workaround'>for this ForceCORS add-on</a>, or try Chrome for a simpler extension. Once you've done so, you'll see photos in your popups!
-      """
-    when "Internet Explorer"
-      """
-      Follow these <a class='alert-link' href='http://stackoverflow.com/a/20947828'>StackOverflow instructions</a> while on this site, and you'll see them in your popups!
-      """
-    else ""
-  html = """
-  <div class="alert alert-info alert-dismissible center-block fade in" role="alert">
-    <button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button>
-    <strong>Want CalPhotos images in your species dialogs?</strong> #{browserExtensionLink}
-    We're working with CalPhotos to enable this natively, but it's a server change on their side.
-  </div>
-  """
-  $("#result_container").before(html)
-  $(".alert").alert()
-  _asm.hasShownWorkaround = true
-  false
-
-
-showBadSearchErrorMessage = (result) ->
-  try
-    sOrig = result.query.replace(/\+/g," ")
-  catch
-    sOrig = $("#search").val()
-  try
-    if result.status is true
-      if result.query_params.filter.had_filter is true
-        filterText = ""
-        i = 0
-        $.each result.query_params.filter.filter_params, (col,val) ->
-          if col isnt "BOOLEAN_TYPE"
-            if i isnt 0
-              filterText = "#{filter_text} #{result.filter.filter_params.BOOLEAN_TYPE}"
-            if isNumber(toInt(val,true))
-              val = if toInt(val) is 1 then "true" else "false"
-            filterText = "#{filterText} #{col.replace(/_/g," ")} is #{val}"
-        text = "\"#{sOrig}\" where #{filterText} returned no results."
-      else
-        text = "\"#{sOrig}\" returned no results."
-    else
-      text = result.human_error
-  catch
-    text = "Sorry, there was a problem with your search"
-  stopLoadError(text)
-
-
-
-
-bindPaperMenuButton = (selector = "paper-menu-button", unbindTargets = true) ->
-  ###
-  # Use a paper-menu-button and make the
-  # .dropdown-label gain the selected value
-  #
-  # Reference:
-  # https://github.com/polymerelements/paper-menu-button
-  # https://elements.polymer-project.org/elements/paper-menu-button
-  ###
-  return false
-  for dropdown in $(selector)
-    menu = $(dropdown).find("paper-menu")
-    if unbindTargets
-      $(menu).unbind()
-    do relabelSelectedItem = (target = menu, activeDropdown = dropdown) ->
-      # A menu item has been selected!
-      selectText = $(target).polymerSelected(null, true)
-      # console.log("iron-select fired! We fetched '#{selectText}'")
-      labelSpan = $(activeDropdown).find(".dropdown-label")
-      $(labelSpan).text(selectText)
-      $(target).polymerSelected()
-    $(menu).on "iron-select", ->
-      relabelSelectedItem this, dropdown
-  false
-
-
-$ ->
-  devHello = """
-  ****************************************************************************
-  Hello developer!
-  If you're looking for hints on our API information, this site is open-source
-  and released under the GPL. Just click on the GitHub link on the bottom of
-  the page, or check out LINK_TO_ORG_REPO
-  ****************************************************************************
-  """
-  console.log(devHello)
-  ignorePages = [
-    "admin-login.php"
-    "admin-page.html"
-    "admin-page.php"
-    ]
-  if uri.o.attr("file") in ignorePages
-    return false
-  # Do bindings
-  # console.log("Doing onloads ...")
-  animateLoad()
-  # Set up popstate
-  window.addEventListener "popstate", (e) ->
-    uri.query = $.url().attr("fragment")
-    try
-      loadArgs = Base64.decode(uri.query)
-    catch e
-      loadArgs = ""
-    #console.log("Popping state to #{loadArgs}")
-    performSearch.debounce 50, null, null, loadArgs
-    temp = loadArgs.split("&")[0]
-    $("#search").attr("value",temp)
-  ## Set events
-  $("#do-reset-search").click ->
-    clearSearch()
-  $("#search_form").submit (e) ->
-    e.preventDefault()
-    performSearch.debounce 50
-  $("#collapse-advanced").on "shown.bs.collapse", ->
-    $("#collapse-icon").attr("icon","icons:unfold-less")
-  $("#collapse-advanced").on "hidden.bs.collapse", ->
-    $("#collapse-icon").attr("icon","icons:unfold-more")
-  # Bind enter keydown
-  $("#search_form").keypress (e) ->
-    if e.which is 13 then performSearch.debounce 50
-  # Bind clicks
-  $("#do-search").click ->
-    performSearch.debounce 50
-  $("#do-search-all").click ->
-    performSearch.debounce 50, null, null, true
-  $("#linnean").on "iron-select", ->
-    # We do want to auto-trigger this when there's a search value,
-    # but not when it's empty (even though this is valid)
-    if not isNull($("#search").val()) then performSearch.debounce()
-  eutheriaFilterHelper()
-  bindPaperMenuButton()
-  # Do a fill of the result container
-  if isNull uri.query
-    loadArgs = ""
-  else
-    try
-      loadArgs = Base64.decode(uri.query)
-      queryUrl = $.url("#{searchParams.apiPath}?q=#{loadArgs}")
-      try
-        looseState = queryUrl.param("loose").toBool()
-      catch e
-        looseState = false
-      try
-        fuzzyState = queryUrl.param("fuzzy").toBool()
-      catch e
-        fuzzyState = false
-      temp = loadArgs.split("&")[0]
-      # Remove any plus signs in the query
-      safariSearchArgHelper(temp)
-      # Delay these for polyfilled element registration
-      # See
-      # https://github.com/PolymerElements/paper-toggle-button/issues/29
-      do fixState = ->
-        if Polymer?.Base?.$$?
-          unless isNull Polymer.Base.$$("#loose")
-            delay 250, ->
-              if looseState
-                d$("#loose").attr("checked", "checked")
-              if fuzzyState
-                d$("#fuzzy").attr("checked", "checked")
-            return false
-        unless _asm.stateIter?
-          _asm.stateIter = 0
-        ++_asm.stateIter
-        if _asm.stateIter > 30
-          console.warn("Couldn't attach Polymer.Base.ready")
-          return false
-        try
-          Polymer.Base.ready ->
-            # The whenReady makes the toggle work, but it won't toggle
-            # without this "real" delay
-            delay 250, ->
-              console.info "Doing a late Polymer.Base.ready call"
-              if looseState
-                d$("#loose").attr("checked", "checked")
-              if fuzzyState
-                d$("#fuzzy").attr("checked", "checked")
-              safariSearchArgHelper()
-              eutheriaFilterHelper()
-        catch
-          delay 250, ->
-            fixState()
-      # Filters
-      try
-        f64 = queryUrl.param("filter")
-        filterObj = JSON.parse(Base64.decode(f64))
-        openFilters = false
-        simpleAllowedFilters = [
-          "simple-linnean-group"
-          "simple-linnean-subgroup"
-          "linnean-family"
-          "type"
-          "BOOLEAN-TYPE"
-          ]
-        for col, val of filterObj
-          col = col.replace(/_/g,"-")
-          #selector = "##{col}-filter"
-          selector = ".cndb-filter[data-column='#{col}']"
-          unless col in simpleAllowedFilters
-            console.debug "Col '#{col}' is not a simple filter"
-            $(selector).attr("value",val)
-            openFilters = true
-          else
-            $(".cndb-filter[data-column='#{col}']").polymerSelected(val)
-        if openFilters
-          # Open up #collapse-advanced
-          $("#collapse-advanced").collapse("show")
-      catch e
-        # Do nothing
-        f64 = false
-    catch e
-      console.error("Bad argument #{uri.query} => #{loadArgs}, looseState, fuzzyState",looseState,fuzzyState,"#{searchParams.apiPath}?q=#{loadArgs}")
-      console.warn(e.message)
-      loadArgs = ""
-  # Perform the initial search
-  if not isNull(loadArgs) and loadArgs isnt "#"
-    # console.log("Doing initial search with '#{loadArgs}', hitting","#{searchParams.apiPath}?q=#{loadArgs}")
-    $.get searchParams.targetApi,"q=#{loadArgs}","json"
-    .done (result) ->
-      # Populate the result container
-      console.debug "Server query got", result
-      if result.status is true and result.count > 0
-        console.log("Got a valid result, formatting #{result.count} results.")
-        formatSearchResults result, undefined, ->
-          checkLaggedUpdate result
-        return false
-      console.warn "Bad initial search"
-      showBadSearchErrorMessage.debounce null, null, null, result
-      console.error result.error
-      console.warn result
-    .fail (result,error) ->
-      console.error("There was an error loading the generic table")
-      console.warn(result,error,result.statusText)
-      error = "#{result.status} - #{result.statusText}"
-      $("#search-status").attr("text","Couldn't load table - #{error}")
-      $("#search-status")[0].show()
-      stopLoadError()
-    .always ->
-      # Anything we always want done
-      $("#search").attr("disabled",false)
-      false
-  else
-    stopLoad()
-    $("#search").attr("disabled",false)
-    # Delay this for polyfilled element registration
-    # See
-    # https://github.com/PolymerElements/paper-toggle-button/issues/29
-    do fixState = ->
-      if Polymer?.Base?.$$?
-        unless isNull Polymer.Base.$$("#loose")
-          delay 250, ->
-            d$("#loose").attr("checked", "checked")
-            eutheriaFilterHelper()
-          return false
-      unless _asm.stateIter?
-        _asm.stateIter = 0
-      ++_asm.stateIter
-      if _asm.stateIter > 30
-        console.warn("Couldn't attach Polymer.Base.ready")
-        return false
-      try
-        Polymer.Base.ready ->
-          # The whenReady makes the toggle work, but it won't toggle
-          # without this "real" delay
-          delay 250, ->
-            d$("#loose").attr("checked", "checked")
-            eutheriaFilterHelper()
-      catch
-        delay 250, ->
-          fixState()

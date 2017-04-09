@@ -1319,10 +1319,18 @@ foo = ->
   toastStatusMessage("Sorry, this feature is not yet finished")
   stopLoad()
   false
-
 doNothing = ->
   # Placeholder function
   return null
+
+
+buildQuery = (obj) ->
+  queryList = new Array()
+  for k, v of obj
+    key = k.replace /[^A-Za-z\-_\[\]]/img, ""
+    queryList.push """#{key}=#{encodeURIComponent v}"""
+  queryList.join "&"
+
 
 $ ->
   formatScientificNames()
@@ -1344,7 +1352,26 @@ $ ->
     getLocation()
     # However, we can lazy-load to see if the user is an admin
     loadJS "js/admin.min.js", ->
-      verifyLoginCredentials()
+      _asm.inhibitRedirect = true
+      verifyLoginCredentials ->
+        delete _asm.inhibitRedirect
+        if uri.o.attr("file") is "species-account.php"
+          # We should put a link to this critter as an edit if we're an
+          # admin    
+          if typeof window.speciesData is "object"
+            query = buildQuery window.speciesData
+            adminFragment = "##{Base64.encode query}"
+            html = """
+            <paper-icon-button
+              class="click admin-edit-button"
+              data-href="#{uri.urlString}admin-page.html#{adminFragment}"
+              icon="icons:create"
+              >
+            </paper-icon-button>
+            """
+            # Append to the header...
+            $("header p paper-icon-button[icon='icons:home']").before html
+            bindClicks(".admin-edit-button")
     loadJS "js/jquery.cookie.min.js", ->
       # Now see if the user is an admin
       if $.cookie("asmherps_user")?

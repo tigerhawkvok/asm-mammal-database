@@ -1,4 +1,4 @@
-var _metaStatus, activityIndicatorOff, activityIndicatorOn, animateLoad, bindClickTargets, bindClicks, bindDismissalRemoval, bindPaperMenuButton, browserBeware, byteCount, checkFileVersion, checkLaggedUpdate, checkTaxonNear, clearSearch, dateMonthToString, deEscape, deepJQuery, delay, doCORSget, doFontExceptions, doNothing, domainPlaceholder, downloadCSVList, downloadHTMLList, eutheriaFilterHelper, fetchMajorMinorGroups, foo, formatAlien, formatScientificNames, formatSearchResults, getElementHtml, getFilters, getLocation, getMaxZ, goTo, insertCORSWorkaround, insertModalImage, interval, isArray, isBlank, isBool, isEmpty, isJson, isNull, isNumber, isNumeric, lightboxImages, loadJS, mapNewWindows, modalTaxon, openLink, openTab, overlayOff, overlayOn, p$, parseTaxonYear, performSearch, prepURI, randomInt, ref, roundNumber, roundNumberSigfig, safariDialogHelper, safariSearchArgHelper, searchParams, setHistory, setupServiceWorker, showBadSearchErrorMessage, showDownloadChooser, smartUpperCasing, sortResults, stopLoad, stopLoadError, toFloat, toInt, toObject, toastStatusMessage, uri,
+var _metaStatus, activityIndicatorOff, activityIndicatorOn, animateLoad, bindClickTargets, bindClicks, bindDismissalRemoval, bindPaperMenuButton, browserBeware, buildQuery, byteCount, checkFileVersion, checkLaggedUpdate, checkTaxonNear, clearSearch, dateMonthToString, deEscape, deepJQuery, delay, doCORSget, doFontExceptions, doNothing, domainPlaceholder, downloadCSVList, downloadHTMLList, eutheriaFilterHelper, fetchMajorMinorGroups, foo, formatScientificNames, formatSearchResults, getElementHtml, getFilters, getLocation, getMaxZ, goTo, insertCORSWorkaround, insertModalImage, interval, isArray, isBlank, isBool, isEmpty, isJson, isNull, isNumber, isNumeric, lightboxImages, loadJS, mapNewWindows, modalTaxon, openLink, openTab, overlayOff, overlayOn, p$, parseTaxonYear, performSearch, prepURI, randomInt, ref, roundNumber, roundNumberSigfig, safariDialogHelper, safariSearchArgHelper, searchParams, setHistory, setupServiceWorker, showBadSearchErrorMessage, showDownloadChooser, smartUpperCasing, sortResults, stopLoad, stopLoadError, toFloat, toInt, toObject, toastStatusMessage, uri,
   slice = [].slice,
   indexOf = [].indexOf || function(item) { for (var i = 0, l = this.length; i < l; i++) { if (i in this && this[i] === item) return i; } return -1; };
 
@@ -1677,6 +1677,17 @@ doNothing = function() {
   return null;
 };
 
+buildQuery = function(obj) {
+  var k, key, queryList, v;
+  queryList = new Array();
+  for (k in obj) {
+    v = obj[k];
+    key = k.replace(/[^A-Za-z\-_\[\]]/img, "");
+    queryList.push(key + "=" + (encodeURIComponent(v)));
+  }
+  return queryList.join("&");
+};
+
 $(function() {
   var caption, captionValue, e, error1, error2, len, len1, m, md, mdText, o, offsetImageLabel, ref1, ref2;
   formatScientificNames();
@@ -1701,7 +1712,20 @@ $(function() {
     e = error2;
     getLocation();
     loadJS("js/admin.min.js", function() {
-      return verifyLoginCredentials();
+      _asm.inhibitRedirect = true;
+      return verifyLoginCredentials(function() {
+        var adminFragment, html, query;
+        delete _asm.inhibitRedirect;
+        if (uri.o.attr("file") === "species-account.php") {
+          if (typeof window.speciesData === "object") {
+            query = buildQuery(window.speciesData);
+            adminFragment = "#" + (Base64.encode(query));
+            html = "<paper-icon-button\n  class=\"click admin-edit-button\"\n  data-href=\"" + uri.urlString + "admin-page.html" + adminFragment + "\"\n  icon=\"icons:create\"\n  >\n</paper-icon-button>";
+            $("header p paper-icon-button[icon='icons:home']").before(html);
+            return bindClicks(".admin-edit-button");
+          }
+        }
+      });
     });
     loadJS("js/jquery.cookie.min.js", function() {
       var html;
@@ -2130,15 +2154,17 @@ formatSearchResults = function(result, container, callback) {
   tableId = "cndb-result-list";
   htmlHead = "<table id='" + tableId + "' class='table table-striped table-hover col-md-12'>\n\t<tr class='cndb-row-headers'>";
   htmlClose = "</table>";
-  targetCount = toInt(result.count) - 1;
+  targetCount = result.count;
   if (targetCount > 150) {
     toastStatusMessage("We found " + result.count + " results, please hang on a moment while we render them...", "", 5000);
+  } else {
+    console.log("Not notifying of render delay, only showing " + targetCount + " items");
   }
   colClass = null;
   bootstrapColCount = 0;
-  dontShowColumns = ["id", "minor_type", "notes", "major_type", "taxon_author", "taxon_credit", "image_license", "image_credit", "taxon_credit_date", "parens_auth_genus", "parens_auth_species", "is_alien", "internal_id", "source", "deprecated_scientific", "canonical_sciname", "simple_linnean_group", "iucn", "dwc", "entry", "common_name_source"];
+  dontShowColumns = ["id", "minor_type", "notes", "major_type", "taxon_author", "taxon_credit", "image_license", "image_credit", "taxon_credit_date", "parens_auth_genus", "parens_auth_species", "is_alien", "internal_id", "source", "deprecated_scientific", "canonical_sciname", "simple_linnean_group", "iucn", "dwc", "entry", "common_name_source", "image_caption"];
   externalCounter = 0;
-  renderTimeout = delay(5000, function() {
+  renderTimeout = delay(7500, function() {
     stopLoadError("There was a problem parsing the search results.");
     console.error("Couldn't finish parsing the results! Expecting " + targetCount + " elements, timed out on " + externalCounter + ".");
     console.warn(data);
@@ -2450,46 +2476,6 @@ parseTaxonYear = function(taxonYearString, strict) {
   year.genus = genus;
   year.species = species;
   return year;
-};
-
-formatAlien = function(dataOrAlienBool, selector) {
-  var iconHtml, isAlien, tooltipHint, tooltipHtml;
-  if (selector == null) {
-    selector = "#is-alien-container";
-  }
-
-  /*
-   * Quick handler to determine if the taxon is alien, and if so, label
-   * it
-   *
-   * After
-   * https://github.com/SSARHERPS/SSAR-species-database/issues/51
-   * https://github.com/SSARHERPS/SSAR-species-database/issues/52
-   */
-  if (typeof dataOrAlienBool === "boolean") {
-    isAlien = dataOrAlienBool;
-  } else if (typeof dataOrAlienBool === "object") {
-    isAlien = toInt(dataOrAlienBool.is_alien).toBool();
-  } else {
-    throw Error("Invalid data given to formatAlien()");
-  }
-  if (!isAlien) {
-    d$(selector).css("display", "none");
-    return false;
-  }
-  iconHtml = "<iron-icon icon=\"maps:flight\" class=\"small-icon alien-speices\" id=\"modal-alien-species\" data-toggle=\"tooltip\"></iron-icon>";
-  d$(selector).html(iconHtml);
-  tooltipHint = "This species is not native";
-  tooltipHtml = "<div class=\"tooltip fade top in right manual-placement-tooltip\" role=\"tooltip\" style=\"top: 6.5em; left: 4em; right:initial; display:none\" id=\"manual-alien-tooltip\">\n  <div class=\"tooltip-arrow\" style=\"top:50%;left:5px\"></div>\n  <div class=\"tooltip-inner\">" + tooltipHint + "</div>\n</div>";
-  d$(selector).after(tooltipHtml).mouseenter(function() {
-    d$("#manual-alien-tooltip").css("display", "block");
-    return false;
-  }).mouseleave(function() {
-    d$("#manual-alien-tooltip").css("display", "none");
-    return false;
-  });
-  d$("#manual-location-tooltip").css("left", "6em");
-  return false;
 };
 
 checkTaxonNear = function(taxonQuery, callback, selector) {
@@ -2853,7 +2839,6 @@ modalTaxon = function(taxon) {
     }
     checkTaxonNear(taxon, function() {
       var modalElement;
-      formatAlien(data);
       stopLoad();
       modalElement = d$("#modal-taxon")[0];
       d$("#modal-taxon").on("iron-overlay-opened", function() {
@@ -2956,264 +2941,6 @@ clearSearch = function(partialReset) {
   $("#search").attr("value", "");
   $("#linnean").polymerSelected("any");
   formatScientificNames();
-  return false;
-};
-
-downloadCSVList = function() {
-
-  /*
-   * Download a CSV file list
-   *
-   * See
-   * https://github.com/tigerhawkvok/SSAR-species-database/issues/39
-   */
-  var adjMonth, args, d, dateString, day, month;
-  animateLoad();
-  args = "q=*";
-  d = new Date();
-  adjMonth = d.getMonth() + 1;
-  month = adjMonth.toString().length === 1 ? "0" + adjMonth : adjMonth;
-  day = d.getDate().toString().length === 1 ? "0" + (d.getDate().toString()) : d.getDate();
-  dateString = (d.getUTCFullYear()) + "-" + month + "-" + day;
-  $.get("" + searchParams.apiPath, args, "json").done(function(result) {
-    var authorityYears, col, colData, csv, csvBody, csvHeader, csvLiteralRow, csvRow, dirtyCol, dirtyColData, downloadable, e, error1, error2, genusYear, html, i, k, makeTitleCase, ref1, row, showColumn, speciesYear, tempCol, v;
-    try {
-      if (result.status !== true) {
-        throw Error("Invalid Result");
-      }
-      csvBody = "      ";
-      csvHeader = new Array();
-      showColumn = ["genus", "species", "subspecies", "common_name", "image", "image_credit", "image_license", "major_type", "major_common_type", "major_subtype", "minor_type", "linnean_order", "genus_authority", "species_authority", "deprecated_scientific", "notes", "taxon_credit", "taxon_credit_date"];
-      makeTitleCase = ["genus", "common_name", "taxon_author", "major_subtype", "linnean_order"];
-      i = 0;
-      ref1 = result.result;
-      for (k in ref1) {
-        row = ref1[k];
-        csvRow = new Array();
-        if (isNull(row.genus)) {
-          continue;
-        }
-        for (dirtyCol in row) {
-          dirtyColData = row[dirtyCol];
-          col = dirtyCol.replace(/"/g, '\"\"');
-          colData = dirtyColData.replace(/"/g, '\"\"').replace(/&#39;/g, "'");
-          if (i === 0) {
-            if (indexOf.call(showColumn, col) >= 0) {
-              csvHeader.push(col.replace(/_/g, " ").toTitleCase());
-            }
-          }
-          if (indexOf.call(showColumn, col) >= 0) {
-            if (/[a-z]+_authority/.test(col)) {
-              try {
-                authorityYears = JSON.parse(row.authority_year);
-                genusYear = "";
-                speciesYear = "";
-                for (k in authorityYears) {
-                  v = authorityYears[k];
-                  genusYear = k.replace(/"/g, '\"\"').replace(/&#39;/g, "'");
-                  speciesYear = v.replace(/"/g, '\"\"').replace(/&#39;/g, "'");
-                }
-                switch (col.split("_")[0]) {
-                  case "genus":
-                    tempCol = (colData.toTitleCase()) + " " + genusYear;
-                    if (toInt(row.parens_auth_genus).toBool()) {
-                      tempCol = "(" + tempCol + ")";
-                    }
-                    break;
-                  case "species":
-                    tempCol = (colData.toTitleCase()) + " " + speciesYear;
-                    if (toInt(row.parens_auth_species).toBool()) {
-                      tempCol = "(" + tempCol + ")";
-                    }
-                }
-                colData = tempCol;
-              } catch (error1) {
-                e = error1;
-              }
-            }
-            if (indexOf.call(makeTitleCase, col) >= 0) {
-              colData = colData.toTitleCase();
-            }
-            if (col === "image" && !isNull(colData)) {
-              colData = "http://mammaldiversity.org/cndb/" + colData;
-            }
-            csvRow.push("\"" + colData + "\"");
-          }
-        }
-        i++;
-        csvLiteralRow = csvRow.join(",");
-        csvBody += "\n" + csvLiteralRow;
-      }
-      csv = (csvHeader.join(",")) + "\n" + csvBody;
-      downloadable = "data:text/csv;charset=utf-8," + encodeURIComponent(csv);
-      html = "<paper-dialog class=\"download-file\" id=\"download-csv-file\" modal>\n  <h2>Your file is ready</h2>\n  <paper-dialog-scrollable class=\"dialog-content\">\n    <p>\n      Please note that some special characters in names may be decoded incorrectly by Microsoft Excel. If this is a problem, following the steps in <a href=\"https://github.com/SSARHERPS/SSAR-species-database/blob/master/meta/excel_unicode_readme.md\"  onclick='window.open(this.href); return false;' onkeypress='window.open(this.href); return false;'>this README <iron-icon icon=\"launch\"></iron-icon></a> to force Excel to format it correctly.\n    </p>\n    <p class=\"text-center\">\n      <a href=\"" + downloadable + "\" download=\"asm-common-names-" + dateString + ".csv\" class=\"btn btn-default\"><iron-icon icon=\"file-download\"></iron-icon> Download Now</a>\n    </p>\n  </paper-dialog-scrollable>\n  <div class=\"buttons\">\n    <paper-button dialog-dismiss>Close</paper-button>\n  </div>\n</paper-dialog>";
-      if (!$("#download-csv-file").exists()) {
-        $("body").append(html);
-      } else {
-        $("#download-csv-file").replaceWith(html);
-      }
-      $("#download-chooser").get(0).close();
-      return safariDialogHelper("#download-csv-file");
-    } catch (error2) {
-      e = error2;
-      stopLoadError("There was a problem creating the CSV file. Please try again later.");
-      console.error("Exception in downloadCSVList() - " + e.message);
-      return console.warn("Got", result, "from", searchParams.apiPath + "?" + args, result.status);
-    }
-  }).fail(function() {
-    return stopLoadError("There was a problem communicating with the server. Please try again later.");
-  });
-  return false;
-};
-
-downloadHTMLList = function() {
-
-  /*
-   * Download a HTML file list
-   *
-   * We want to set this up to look similar to the published list
-   * http://mammaldiversity.org/wp-content/uploads/2014/07/HC_39_7thEd.pdf
-   * Starting with page 11
-   *
-   * Configured Bootstrap:
-   * https://gist.github.com/e14c62a4d4eee8f40b6b
-   *
-   * Bootstrap Config Link:
-   * http://getbootstrap.com/customize/?id=e14c62a4d4eee8f40b6b
-   *
-   * See
-   * https://github.com/tigerhawkvok/SSAR-species-database/issues/40
-   */
-  var adjMonth, args, d, dateString, day, htmlBody, month;
-  animateLoad();
-  d = new Date();
-  adjMonth = d.getMonth() + 1;
-  month = adjMonth.toString().length === 1 ? "0" + adjMonth : adjMonth;
-  day = d.getDate().toString().length === 1 ? "0" + (d.getDate().toString()) : d.getDate();
-  dateString = (d.getUTCFullYear()) + "-" + month + "-" + day;
-  htmlBody = "     <!doctype html>\n     <html lang=\"en\">\n       <head>\n         <title>SSAR Common Names Checklist ver. " + dateString + "</title>\n         <meta http-equiv=\"X-UA-Compatible\" content=\"IE=edge\">\n         <meta charset=\"UTF-8\"/>\n         <meta name=\"theme-color\" content=\"#445e14\"/>\n         <meta name=\"viewport\" content=\"width=device-width, initial-scale=1\" />\n         <link href='http://fonts.googleapis.com/css?family=Droid+Serif:400,700,700italic,400italic|Roboto+Slab:400,700' rel='stylesheet' type='text/css' />\n         <style type=\"text/css\" id=\"asm-checklist-inline-stylesheet\">\n/*!\n* Bootstrap v3.3.5 (http://getbootstrap.com)\n* Copyright 2011-2015 Twitter, Inc.\n* Licensed under MIT (https://github.com/twbs/bootstrap/blob/master/LICENSE)\n*/\n\n/*!\n* Generated using the Bootstrap Customizer (http://getbootstrap.com/customize/?id=e14c62a4d4eee8f40b6b)\n* Config saved to config.json and https://gist.github.com/e14c62a4d4eee8f40b6b\n*//*!\n* Bootstrap v3.3.5 (http://getbootstrap.com)\n* Copyright 2011-2015 Twitter, Inc.\n* Licensed under MIT (https://github.com/twbs/bootstrap/blob/master/LICENSE)\n*//*! normalize.css v3.0.3 | MIT License | github.com/necolas/normalize.css */html{font-family:sans-serif;-ms-text-size-adjust:100%;-webkit-text-size-adjust:100%}body{margin:0}article,aside,details,figcaption,figure,footer,header,hgroup,main,menu,nav,section,summary{display:block}audio,canvas,progress,video{display:inline-block;vertical-align:baseline}audio:not([controls]){display:none;height:0}[hidden],template{display:none}a{background-color:transparent}a:active,a:hover{outline:0}abbr[title]{border-bottom:1px dotted}b,strong{font-weight:bold}dfn{font-style:italic}h1{font-size:2em;margin:0.67em 0}mark{background:#ff0;color:#000}small{font-size:80%}sub,sup{font-size:75%;line-height:0;position:relative;vertical-align:baseline}sup{top:-0.5em}sub{bottom:-0.25em}img{border:0}svg:not(:root){overflow:hidden}figure{margin:1em 40px}hr{-webkit-box-sizing:content-box;-moz-box-sizing:content-box;box-sizing:content-box;height:0}pre{overflow:auto}code,kbd,pre,samp{font-family:monospace, monospace;font-size:1em}button,input,optgroup,select,textarea{color:inherit;font:inherit;margin:0}button{overflow:visible}button,select{text-transform:none}button,html input[type=\"button\"],input[type=\"reset\"],input[type=\"submit\"]{-webkit-appearance:button;cursor:pointer}button[disabled],html input[disabled]{cursor:default}button::-moz-focus-inner,input::-moz-focus-inner{border:0;padding:0}input{line-height:normal}input[type=\"checkbox\"],input[type=\"radio\"]{-webkit-box-sizing:border-box;-moz-box-sizing:border-box;box-sizing:border-box;padding:0}input[type=\"number\"]::-webkit-inner-spin-button,input[type=\"number\"]::-webkit-outer-spin-button{height:auto}input[type=\"search\"]{-webkit-appearance:textfield;-webkit-box-sizing:content-box;-moz-box-sizing:content-box;box-sizing:content-box}input[type=\"search\"]::-webkit-search-cancel-button,input[type=\"search\"]::-webkit-search-decoration{-webkit-appearance:none}fieldset{border:1px solid #c0c0c0;margin:0 2px;padding:0.35em 0.625em 0.75em}legend{border:0;padding:0}textarea{overflow:auto}optgroup{font-weight:bold}table{border-collapse:collapse;border-spacing:0}td,th{padding:0}/*! Source: https://github.com/h5bp/html5-boilerplate/blob/master/src/css/main.css */@media print{*,*:before,*:after{background:transparent !important;color:#000 !important;-webkit-box-shadow:none !important;box-shadow:none !important;text-shadow:none !important}a,a:visited{text-decoration:underline}a[href]:after{content:\" (\" attr(href) \")\"}abbr[title]:after{content:\" (\" attr(title) \")\"}a[href^=\"#\"]:after,a[href^=\"javascript:\"]:after{content:\"\"}pre,blockquote{border:1px solid #999;page-break-inside:avoid}thead{display:table-header-group}tr,img{page-break-inside:avoid}img{max-width:100% !important}p,h2,h3{orphans:3;widows:3}h2,h3{page-break-after:avoid}.navbar{display:none}.btn>.caret,.dropup>.btn>.caret{border-top-color:#000 !important}.label{border:1px solid #000}.table{border-collapse:collapse !important}.table td,.table th{background-color:#fff !important}.table-bordered th,.table-bordered td{border:1px solid #ddd !important}}*{-webkit-box-sizing:border-box;-moz-box-sizing:border-box;box-sizing:border-box}*:before,*:after{-webkit-box-sizing:border-box;-moz-box-sizing:border-box;box-sizing:border-box}html{font-size:10px;-webkit-tap-highlight-color:rgba(0,0,0,0)}body{font-family:\"Roboto Slab\",\"Droid Serif\",Cambria,Georgia,\"Times New Roman\",Times,serif;font-size:14px;line-height:1.42857143;color:#333;background-color:#fff}input,button,select,textarea{font-family:inherit;font-size:inherit;line-height:inherit}a{color:#337ab7;text-decoration:none}a:hover,a:focus{color:#23527c;text-decoration:underline}a:focus{outline:thin dotted;outline:5px auto -webkit-focus-ring-color;outline-offset:-2px}figure{margin:0}img{vertical-align:middle}.img-responsive{display:block;max-width:100%;height:auto}.img-rounded{border-radius:6px}.img-thumbnail{padding:4px;line-height:1.42857143;background-color:#fff;border:1px solid #ddd;border-radius:4px;-webkit-transition:all .2s ease-in-out;-o-transition:all .2s ease-in-out;transition:all .2s ease-in-out;display:inline-block;max-width:100%;height:auto}.img-circle{border-radius:50%}hr{margin-top:20px;margin-bottom:20px;border:0;border-top:1px solid #eee}.sr-only{position:absolute;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;clip:rect(0, 0, 0, 0);border:0}.sr-only-focusable:active,.sr-only-focusable:focus{position:static;width:auto;height:auto;margin:0;overflow:visible;clip:auto}[role=\"button\"]{cursor:pointer}h1,h2,h3,h4,h5,h6,.h1,.h2,.h3,.h4,.h5,.h6{font-family:inherit;font-weight:500;line-height:1.1;color:inherit}h1 small,h2 small,h3 small,h4 small,h5 small,h6 small,.h1 small,.h2 small,.h3 small,.h4 small,.h5 small,.h6 small,h1 .small,h2 .small,h3 .small,h4 .small,h5 .small,h6 .small,.h1 .small,.h2 .small,.h3 .small,.h4 .small,.h5 .small,.h6 .small{font-weight:normal;line-height:1;color:#777}h1,.h1,h2,.h2,h3,.h3{margin-top:20px;margin-bottom:10px}h1 small,.h1 small,h2 small,.h2 small,h3 small,.h3 small,h1 .small,.h1 .small,h2 .small,.h2 .small,h3 .small,.h3 .small{font-size:65%}h4,.h4,h5,.h5,h6,.h6{margin-top:10px;margin-bottom:10px}h4 small,.h4 small,h5 small,.h5 small,h6 small,.h6 small,h4 .small,.h4 .small,h5 .small,.h5 .small,h6 .small,.h6 .small{font-size:75%}h1,.h1{font-size:36px}h2,.h2{font-size:30px}h3,.h3{font-size:24px}h4,.h4{font-size:18px}h5,.h5{font-size:14px}h6,.h6{font-size:12px}p{margin:0 0 10px}.lead{margin-bottom:20px;font-size:16px;font-weight:300;line-height:1.4}@media (min-width:768px){.lead{font-size:21px}}small,.small{font-size:85%}mark,.mark{background-color:#fcf8e3;padding:.2em}.text-left{text-align:left}.text-right{text-align:right}.text-center{text-align:center}.text-justify{text-align:justify}.text-nowrap{white-space:nowrap}.text-lowercase{text-transform:lowercase}.text-uppercase{text-transform:uppercase}.text-capitalize{text-transform:capitalize}.text-muted{color:#777}.text-primary{color:#337ab7}a.text-primary:hover,a.text-primary:focus{color:#286090}.text-success{color:#3c763d}a.text-success:hover,a.text-success:focus{color:#2b542c}.text-info{color:#31708f}a.text-info:hover,a.text-info:focus{color:#245269}.text-warning{color:#8a6d3b}a.text-warning:hover,a.text-warning:focus{color:#66512c}.text-danger{color:#a94442}a.text-danger:hover,a.text-danger:focus{color:#843534}.bg-primary{color:#fff;background-color:#337ab7}a.bg-primary:hover,a.bg-primary:focus{background-color:#286090}.bg-success{background-color:#dff0d8}a.bg-success:hover,a.bg-success:focus{background-color:#c1e2b3}.bg-info{background-color:#d9edf7}a.bg-info:hover,a.bg-info:focus{background-color:#afd9ee}.bg-warning{background-color:#fcf8e3}a.bg-warning:hover,a.bg-warning:focus{background-color:#f7ecb5}.bg-danger{background-color:#f2dede}a.bg-danger:hover,a.bg-danger:focus{background-color:#e4b9b9}.page-header{padding-bottom:9px;margin:40px 0 20px;border-bottom:1px solid #eee}ul,ol{margin-top:0;margin-bottom:10px}ul ul,ol ul,ul ol,ol ol{margin-bottom:0}.list-unstyled{padding-left:0;list-style:none}.list-inline{padding-left:0;list-style:none;margin-left:-5px}.list-inline>li{display:inline-block;padding-left:5px;padding-right:5px}dl{margin-top:0;margin-bottom:20px}dt,dd{line-height:1.42857143}dt{font-weight:bold}dd{margin-left:0}@media (min-width:768px){.dl-horizontal dt{float:left;width:160px;clear:left;text-align:right;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.dl-horizontal dd{margin-left:180px}}abbr[title],abbr[data-original-title]{cursor:help;border-bottom:1px dotted #777}.initialism{font-size:90%;text-transform:uppercase}blockquote{padding:10px 20px;margin:0 0 20px;font-size:17.5px;border-left:5px solid #eee}blockquote p:last-child,blockquote ul:last-child,blockquote ol:last-child{margin-bottom:0}blockquote footer,blockquote small,blockquote .small{display:block;font-size:80%;line-height:1.42857143;color:#777}blockquote footer:before,blockquote small:before,blockquote .small:before{content:'\x2014 \x00A0'}.blockquote-reverse,blockquote.pull-right{padding-right:15px;padding-left:0;border-right:5px solid #eee;border-left:0;text-align:right}.blockquote-reverse footer:before,blockquote.pull-right footer:before,.blockquote-reverse small:before,blockquote.pull-right small:before,.blockquote-reverse .small:before,blockquote.pull-right .small:before{content:''}.blockquote-reverse footer:after,blockquote.pull-right footer:after,.blockquote-reverse small:after,blockquote.pull-right small:after,.blockquote-reverse .small:after,blockquote.pull-right .small:after{content:'\x00A0 \x2014'}address{margin-bottom:20px;font-style:normal;line-height:1.42857143}.clearfix:before,.clearfix:after,.dl-horizontal dd:before,.dl-horizontal dd:after{content:\" \";display:table}.clearfix:after,.dl-horizontal dd:after{clear:both}.center-block{display:block;margin-left:auto;margin-right:auto}.pull-right{float:right !important}.pull-left{float:left !important}.hide{display:none !important}.show{display:block !important}.invisible{visibility:hidden}.text-hide{font:0/0 a;color:transparent;text-shadow:none;background-color:transparent;border:0}.hidden{display:none !important}.affix{position:fixed}\n          /* Manual Overrides */\n          .sciname {\n            font-style: italic;\n            }\n          .entry-sciname {\n            font-style: italic;\n            font-weight: bold;\n            }\n           body { padding: 1rem; }\n           .species-entry aside:first-child {\n             margin-top: 5rem;\n             }\n           section .entry-header {\n             text-indent: 2em;\n             }\n           .clade-declaration {\n             font-variant: small-caps;\n             border-top: 1px solid #000;\n             border-bottom: 1px solid #000;\n             page-break-before: always;\n             break-before: always;\n             }\n           .species-entry {\n             page-break-inside: avoid;\n             break-inside: avoid;\n             }\n           @media print {\n             body {\n               font-size:12px;\n               }\n             .h4 {\n               font-size: 13px;\n               }\n             @page {\n               counter-increment: page;\n               /*counter-reset: page 1;*/\n                @bottom-right {\n                 content: counter(page);\n                }\n                /* margin: 0px auto; */\n               }\n           }\n         </style>\n       </head>\n       <body>\n         <div class=\"container-fluid\">\n           <article>\n             <h1 class=\"text-center\">SSAR Common Names Checklist ver. " + dateString + "</h1>";
-  args = "q=*&order=linnean_order,genus,species,subspecies";
-  $.get("" + searchParams.apiPath, args, "json").done(function(result) {
-    var authorityYears, c, dialogHtml, downloadable, e, entryHtml, error1, error2, error3, genusAuth, genusYear, hasReadClade, hasReadGenus, htmlCredit, htmlNotes, k, oneOffHtml, ref1, ref2, ref3, row, shortGenus, speciesAuth, speciesYear, taxonCreditDate, v;
-    try {
-      if (result.status !== true) {
-        throw Error("Invalid Result");
-      }
-
-      /*
-       * Let's work with each result
-       *
-       * We're going to construct an entry for each, then go through
-       * and append that to to the text blobb htmlBody
-       */
-      hasReadGenus = new Array();
-      hasReadClade = new Array();
-      ref1 = result.result;
-      for (k in ref1) {
-        row = ref1[k];
-        if (isNull(row.genus) || isNull(row.species)) {
-          continue;
-        }
-        try {
-          authorityYears = JSON.parse(row.authority_year);
-          genusYear = "";
-          speciesYear = "";
-          for (c in authorityYears) {
-            v = authorityYears[c];
-            genusYear = c.replace(/&#39;/g, "'");
-            speciesYear = v.replace(/&#39;/g, "'");
-          }
-          genusAuth = (row.genus_authority.toTitleCase()) + " " + genusYear;
-          if (toInt(row.parens_auth_genus).toBool()) {
-            genusAuth = "(" + genusAuth + ")";
-          }
-          speciesAuth = (row.species_authority.toTitleCase()) + " " + speciesYear;
-          if (toInt(row.parens_auth_species).toBool()) {
-            speciesAuth = "(" + speciesAuth + ")";
-          }
-        } catch (error1) {
-          e = error1;
-          console.warn("There was a problem parsing the authority information for _" + row.genus + " " + row.species + " " + row.subspecies + "_ - " + e.message);
-          console.warn(e.stack);
-          console.warn("We were working with", authorityYears, genusYear, genusAuth, speciesYear, speciesAuth);
-        }
-        try {
-          htmlNotes = markdown.toHTML(row.notes);
-        } catch (error2) {
-          e = error2;
-          console.warn("Unable to parse Markdown for _" + row.genus + " " + row.species + " " + row.subspecies + "_");
-          htmlNotes = row.notes;
-        }
-        htmlCredit = "";
-        if (!(isNull(htmlNotes) || isNull(row.taxon_credit))) {
-          taxonCreditDate = "";
-          if (!isNull(row.taxon_credit_date)) {
-            taxonCreditDate = ", " + row.taxon_credit_date;
-          }
-          htmlCredit = "<p class=\"text-right small text-muted\">\n  <cite>\n    " + row.taxon_credit + taxonCreditDate + "\n  </cite>\n</p>";
-        }
-        oneOffHtml = "";
-        if (ref2 = row.linnean_order.trim(), indexOf.call(hasReadClade, ref2) < 0) {
-          oneOffHtml += "<h2 class=\"clade-declaration text-capitalize text-center\">" + row.linnean_order + " &#8212; " + row.major_common_type + "</h2>";
-          hasReadClade.push(row.linnean_order.trim());
-        }
-        if (ref3 = row.genus, indexOf.call(hasReadGenus, ref3) < 0) {
-          oneOffHtml += "<aside class=\"genus-declaration lead\">\n  <span class=\"entry-sciname text-capitalize\">" + row.genus + "</span>\n  <span class=\"entry-authority\">" + genusAuth + "</span>\n</aside>";
-          hasReadGenus.push(row.genus);
-        }
-        shortGenus = (row.genus.slice(0, 1)) + ". ";
-        entryHtml = "<section class=\"species-entry\">\n  " + oneOffHtml + "\n  <p class=\"h4 entry-header\">\n    <span class=\"entry-sciname\">\n      <span class=\"text-capitalize\">" + shortGenus + "</span> " + row.species + " " + row.subspecies + "\n    </span>\n    <span class=\"entry-authority\">\n      " + speciesAuth + "\n    </span>\n    &#8212;\n    <span class=\"common_name no-cap\">\n      " + (smartUpperCasing(row.common_name)) + "\n    </span>\n  </p>\n  <div class=\"entry-content\">\n    " + htmlNotes + "\n    " + htmlCredit + "\n  </div>\n</section>";
-        htmlBody += entryHtml;
-      }
-      htmlBody += "</article>\n</div>\n</body>\n</html>";
-      downloadable = "data:text/html;charset=utf-8," + (encodeURIComponent(htmlBody));
-      dialogHtml = "<paper-dialog  modal class=\"download-file\" id=\"download-html-file\">\n  <h2>Your file is ready</h2>\n  <paper-dialog-scrollable class=\"dialog-content\">\n    <p class=\"text-center\">\n      <a href=\"" + downloadable + "\" download=\"asm-common-names-" + dateString + ".html\" class=\"btn btn-default\"><iron-icon icon=\"file-download\"></iron-icon> Download Now</a>\n    </p>\n  </paper-dialog-scrollable>\n  <div class=\"buttons\">\n    <paper-button dialog-dismiss>Close</paper-button>\n  </div>\n</paper-dialog>";
-      if (!$("#download-html-file").exists()) {
-        $("body").append(dialogHtml);
-      } else {
-        $("#download-html-file").replaceWith(dialogHtml);
-      }
-      $("#download-chooser").get(0).close();
-      safariDialogHelper("#download-html-file");
-      return $.post("pdf/pdfwrapper.php", "html=" + (encodeURIComponent(htmlBody)), "json").done(function(result) {
-        var pdfDownloadPath;
-        console.debug("PDF result", result);
-        if (result.status) {
-          pdfDownloadPath = "" + uri.urlString + result.file;
-          console.debug(pdfDownloadPath);
-        } else {
-          console.error("Couldn't make PDF file");
-        }
-        return false;
-      }).error(function(result, status) {
-        return console.error("Wasn't able to fetch PDF");
-      });
-    } catch (error3) {
-      e = error3;
-      stopLoadError("There was a problem creating your file. Please try again later.");
-      console.error("Exception in downloadHTMLList() - " + e.message);
-      console.warn("Got", result, "from", searchParams.apiPath + "?" + args, result.status);
-      return console.warn(e.stack);
-    }
-  }).fail(function() {
-    return stopLoadError("There was a problem communicating with the server. Please try again later.");
-  });
-  return false;
-};
-
-showDownloadChooser = function() {
-  var html;
-  html = "<paper-dialog id=\"download-chooser\" modal>\n  <h2>Select Download Type</h2>\n  <paper-dialog-scrollable class=\"dialog-content\">\n    <p>\n      Once you select a file type, it will take a moment to prepare your download. Please be patient.\n    </p>\n  </paper-dialog-scrollable>\n  <div class=\"buttons\">\n    <paper-button dialog-dismiss>Cancel</paper-button>\n    <paper-button dialog-confirm id=\"initiate-csv-download\">CSV</paper-button>\n    <paper-button dialog-confirm id=\"initiate-html-download\">HTML</paper-button>\n  </div>\n</paper-dialog>";
-  if (!$("#download-chooser").exists()) {
-    $("body").append(html);
-  }
-  d$("#initiate-csv-download").click(function() {
-    return downloadCSVList();
-  });
-  d$("#initiate-html-download").click(function() {
-    return downloadHTMLList();
-  });
-  safariDialogHelper("#download-chooser");
   return false;
 };
 
@@ -3556,6 +3283,7 @@ $(function() {
       if (result.status === true && result.count > 0) {
         console.log("Got a valid result, formatting " + result.count + " results.");
         formatSearchResults(result, void 0, function() {
+          console.log("Format results finished, checking lagged update");
           return checkLaggedUpdate(result);
         });
         return false;
@@ -3612,5 +3340,263 @@ $(function() {
     })();
   }
 });
+
+downloadCSVList = function() {
+
+  /*
+   * Download a CSV file list
+   *
+   * See
+   * https://github.com/tigerhawkvok/SSAR-species-database/issues/39
+   */
+  var adjMonth, args, d, dateString, day, month;
+  animateLoad();
+  args = "q=*";
+  d = new Date();
+  adjMonth = d.getMonth() + 1;
+  month = adjMonth.toString().length === 1 ? "0" + adjMonth : adjMonth;
+  day = d.getDate().toString().length === 1 ? "0" + (d.getDate().toString()) : d.getDate();
+  dateString = (d.getUTCFullYear()) + "-" + month + "-" + day;
+  $.get("" + searchParams.apiPath, args, "json").done(function(result) {
+    var authorityYears, col, colData, csv, csvBody, csvHeader, csvLiteralRow, csvRow, dirtyCol, dirtyColData, downloadable, e, error1, error2, genusYear, html, i, k, makeTitleCase, ref1, row, showColumn, speciesYear, tempCol, v;
+    try {
+      if (result.status !== true) {
+        throw Error("Invalid Result");
+      }
+      csvBody = "      ";
+      csvHeader = new Array();
+      showColumn = ["genus", "species", "subspecies", "common_name", "image", "image_credit", "image_license", "major_type", "major_common_type", "major_subtype", "minor_type", "linnean_order", "genus_authority", "species_authority", "deprecated_scientific", "notes", "taxon_credit", "taxon_credit_date"];
+      makeTitleCase = ["genus", "common_name", "taxon_author", "major_subtype", "linnean_order"];
+      i = 0;
+      ref1 = result.result;
+      for (k in ref1) {
+        row = ref1[k];
+        csvRow = new Array();
+        if (isNull(row.genus)) {
+          continue;
+        }
+        for (dirtyCol in row) {
+          dirtyColData = row[dirtyCol];
+          col = dirtyCol.replace(/"/g, '\"\"');
+          colData = dirtyColData.replace(/"/g, '\"\"').replace(/&#39;/g, "'");
+          if (i === 0) {
+            if (indexOf.call(showColumn, col) >= 0) {
+              csvHeader.push(col.replace(/_/g, " ").toTitleCase());
+            }
+          }
+          if (indexOf.call(showColumn, col) >= 0) {
+            if (/[a-z]+_authority/.test(col)) {
+              try {
+                authorityYears = JSON.parse(row.authority_year);
+                genusYear = "";
+                speciesYear = "";
+                for (k in authorityYears) {
+                  v = authorityYears[k];
+                  genusYear = k.replace(/"/g, '\"\"').replace(/&#39;/g, "'");
+                  speciesYear = v.replace(/"/g, '\"\"').replace(/&#39;/g, "'");
+                }
+                switch (col.split("_")[0]) {
+                  case "genus":
+                    tempCol = (colData.toTitleCase()) + " " + genusYear;
+                    if (toInt(row.parens_auth_genus).toBool()) {
+                      tempCol = "(" + tempCol + ")";
+                    }
+                    break;
+                  case "species":
+                    tempCol = (colData.toTitleCase()) + " " + speciesYear;
+                    if (toInt(row.parens_auth_species).toBool()) {
+                      tempCol = "(" + tempCol + ")";
+                    }
+                }
+                colData = tempCol;
+              } catch (error1) {
+                e = error1;
+              }
+            }
+            if (indexOf.call(makeTitleCase, col) >= 0) {
+              colData = colData.toTitleCase();
+            }
+            if (col === "image" && !isNull(colData)) {
+              colData = "http://mammaldiversity.org/cndb/" + colData;
+            }
+            csvRow.push("\"" + colData + "\"");
+          }
+        }
+        i++;
+        csvLiteralRow = csvRow.join(",");
+        csvBody += "\n" + csvLiteralRow;
+      }
+      csv = (csvHeader.join(",")) + "\n" + csvBody;
+      downloadable = "data:text/csv;charset=utf-8," + encodeURIComponent(csv);
+      html = "<paper-dialog class=\"download-file\" id=\"download-csv-file\" modal>\n  <h2>Your file is ready</h2>\n  <paper-dialog-scrollable class=\"dialog-content\">\n    <p>\n      Please note that some special characters in names may be decoded incorrectly by Microsoft Excel. If this is a problem, following the steps in <a href=\"https://github.com/SSARHERPS/SSAR-species-database/blob/master/meta/excel_unicode_readme.md\"  onclick='window.open(this.href); return false;' onkeypress='window.open(this.href); return false;'>this README <iron-icon icon=\"launch\"></iron-icon></a> to force Excel to format it correctly.\n    </p>\n    <p class=\"text-center\">\n      <a href=\"" + downloadable + "\" download=\"asm-common-names-" + dateString + ".csv\" class=\"btn btn-default\"><iron-icon icon=\"file-download\"></iron-icon> Download Now</a>\n    </p>\n  </paper-dialog-scrollable>\n  <div class=\"buttons\">\n    <paper-button dialog-dismiss>Close</paper-button>\n  </div>\n</paper-dialog>";
+      if (!$("#download-csv-file").exists()) {
+        $("body").append(html);
+      } else {
+        $("#download-csv-file").replaceWith(html);
+      }
+      $("#download-chooser").get(0).close();
+      return safariDialogHelper("#download-csv-file");
+    } catch (error2) {
+      e = error2;
+      stopLoadError("There was a problem creating the CSV file. Please try again later.");
+      console.error("Exception in downloadCSVList() - " + e.message);
+      return console.warn("Got", result, "from", searchParams.apiPath + "?" + args, result.status);
+    }
+  }).fail(function() {
+    return stopLoadError("There was a problem communicating with the server. Please try again later.");
+  });
+  return false;
+};
+
+downloadHTMLList = function() {
+
+  /*
+   * Download a HTML file list
+   *
+   * We want to set this up to look similar to the published list
+   * http://mammaldiversity.org/wp-content/uploads/2014/07/HC_39_7thEd.pdf
+   * Starting with page 11
+   *
+   * Configured Bootstrap:
+   * https://gist.github.com/e14c62a4d4eee8f40b6b
+   *
+   * Bootstrap Config Link:
+   * http://getbootstrap.com/customize/?id=e14c62a4d4eee8f40b6b
+   *
+   * See
+   * https://github.com/tigerhawkvok/SSAR-species-database/issues/40
+   */
+  var adjMonth, args, d, dateString, day, htmlBody, month;
+  animateLoad();
+  d = new Date();
+  adjMonth = d.getMonth() + 1;
+  month = adjMonth.toString().length === 1 ? "0" + adjMonth : adjMonth;
+  day = d.getDate().toString().length === 1 ? "0" + (d.getDate().toString()) : d.getDate();
+  dateString = (d.getUTCFullYear()) + "-" + month + "-" + day;
+  htmlBody = "     <!doctype html>\n     <html lang=\"en\">\n       <head>\n         <title>SSAR Common Names Checklist ver. " + dateString + "</title>\n         <meta http-equiv=\"X-UA-Compatible\" content=\"IE=edge\">\n         <meta charset=\"UTF-8\"/>\n         <meta name=\"theme-color\" content=\"#445e14\"/>\n         <meta name=\"viewport\" content=\"width=device-width, initial-scale=1\" />\n         <link href='http://fonts.googleapis.com/css?family=Droid+Serif:400,700,700italic,400italic|Roboto+Slab:400,700' rel='stylesheet' type='text/css' />\n         <style type=\"text/css\" id=\"asm-checklist-inline-stylesheet\">\n/*!\n* Bootstrap v3.3.5 (http://getbootstrap.com)\n* Copyright 2011-2015 Twitter, Inc.\n* Licensed under MIT (https://github.com/twbs/bootstrap/blob/master/LICENSE)\n*/\n\n/*!\n* Generated using the Bootstrap Customizer (http://getbootstrap.com/customize/?id=e14c62a4d4eee8f40b6b)\n* Config saved to config.json and https://gist.github.com/e14c62a4d4eee8f40b6b\n*//*!\n* Bootstrap v3.3.5 (http://getbootstrap.com)\n* Copyright 2011-2015 Twitter, Inc.\n* Licensed under MIT (https://github.com/twbs/bootstrap/blob/master/LICENSE)\n*//*! normalize.css v3.0.3 | MIT License | github.com/necolas/normalize.css */html{font-family:sans-serif;-ms-text-size-adjust:100%;-webkit-text-size-adjust:100%}body{margin:0}article,aside,details,figcaption,figure,footer,header,hgroup,main,menu,nav,section,summary{display:block}audio,canvas,progress,video{display:inline-block;vertical-align:baseline}audio:not([controls]){display:none;height:0}[hidden],template{display:none}a{background-color:transparent}a:active,a:hover{outline:0}abbr[title]{border-bottom:1px dotted}b,strong{font-weight:bold}dfn{font-style:italic}h1{font-size:2em;margin:0.67em 0}mark{background:#ff0;color:#000}small{font-size:80%}sub,sup{font-size:75%;line-height:0;position:relative;vertical-align:baseline}sup{top:-0.5em}sub{bottom:-0.25em}img{border:0}svg:not(:root){overflow:hidden}figure{margin:1em 40px}hr{-webkit-box-sizing:content-box;-moz-box-sizing:content-box;box-sizing:content-box;height:0}pre{overflow:auto}code,kbd,pre,samp{font-family:monospace, monospace;font-size:1em}button,input,optgroup,select,textarea{color:inherit;font:inherit;margin:0}button{overflow:visible}button,select{text-transform:none}button,html input[type=\"button\"],input[type=\"reset\"],input[type=\"submit\"]{-webkit-appearance:button;cursor:pointer}button[disabled],html input[disabled]{cursor:default}button::-moz-focus-inner,input::-moz-focus-inner{border:0;padding:0}input{line-height:normal}input[type=\"checkbox\"],input[type=\"radio\"]{-webkit-box-sizing:border-box;-moz-box-sizing:border-box;box-sizing:border-box;padding:0}input[type=\"number\"]::-webkit-inner-spin-button,input[type=\"number\"]::-webkit-outer-spin-button{height:auto}input[type=\"search\"]{-webkit-appearance:textfield;-webkit-box-sizing:content-box;-moz-box-sizing:content-box;box-sizing:content-box}input[type=\"search\"]::-webkit-search-cancel-button,input[type=\"search\"]::-webkit-search-decoration{-webkit-appearance:none}fieldset{border:1px solid #c0c0c0;margin:0 2px;padding:0.35em 0.625em 0.75em}legend{border:0;padding:0}textarea{overflow:auto}optgroup{font-weight:bold}table{border-collapse:collapse;border-spacing:0}td,th{padding:0}/*! Source: https://github.com/h5bp/html5-boilerplate/blob/master/src/css/main.css */@media print{*,*:before,*:after{background:transparent !important;color:#000 !important;-webkit-box-shadow:none !important;box-shadow:none !important;text-shadow:none !important}a,a:visited{text-decoration:underline}a[href]:after{content:\" (\" attr(href) \")\"}abbr[title]:after{content:\" (\" attr(title) \")\"}a[href^=\"#\"]:after,a[href^=\"javascript:\"]:after{content:\"\"}pre,blockquote{border:1px solid #999;page-break-inside:avoid}thead{display:table-header-group}tr,img{page-break-inside:avoid}img{max-width:100% !important}p,h2,h3{orphans:3;widows:3}h2,h3{page-break-after:avoid}.navbar{display:none}.btn>.caret,.dropup>.btn>.caret{border-top-color:#000 !important}.label{border:1px solid #000}.table{border-collapse:collapse !important}.table td,.table th{background-color:#fff !important}.table-bordered th,.table-bordered td{border:1px solid #ddd !important}}*{-webkit-box-sizing:border-box;-moz-box-sizing:border-box;box-sizing:border-box}*:before,*:after{-webkit-box-sizing:border-box;-moz-box-sizing:border-box;box-sizing:border-box}html{font-size:10px;-webkit-tap-highlight-color:rgba(0,0,0,0)}body{font-family:\"Roboto Slab\",\"Droid Serif\",Cambria,Georgia,\"Times New Roman\",Times,serif;font-size:14px;line-height:1.42857143;color:#333;background-color:#fff}input,button,select,textarea{font-family:inherit;font-size:inherit;line-height:inherit}a{color:#337ab7;text-decoration:none}a:hover,a:focus{color:#23527c;text-decoration:underline}a:focus{outline:thin dotted;outline:5px auto -webkit-focus-ring-color;outline-offset:-2px}figure{margin:0}img{vertical-align:middle}.img-responsive{display:block;max-width:100%;height:auto}.img-rounded{border-radius:6px}.img-thumbnail{padding:4px;line-height:1.42857143;background-color:#fff;border:1px solid #ddd;border-radius:4px;-webkit-transition:all .2s ease-in-out;-o-transition:all .2s ease-in-out;transition:all .2s ease-in-out;display:inline-block;max-width:100%;height:auto}.img-circle{border-radius:50%}hr{margin-top:20px;margin-bottom:20px;border:0;border-top:1px solid #eee}.sr-only{position:absolute;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;clip:rect(0, 0, 0, 0);border:0}.sr-only-focusable:active,.sr-only-focusable:focus{position:static;width:auto;height:auto;margin:0;overflow:visible;clip:auto}[role=\"button\"]{cursor:pointer}h1,h2,h3,h4,h5,h6,.h1,.h2,.h3,.h4,.h5,.h6{font-family:inherit;font-weight:500;line-height:1.1;color:inherit}h1 small,h2 small,h3 small,h4 small,h5 small,h6 small,.h1 small,.h2 small,.h3 small,.h4 small,.h5 small,.h6 small,h1 .small,h2 .small,h3 .small,h4 .small,h5 .small,h6 .small,.h1 .small,.h2 .small,.h3 .small,.h4 .small,.h5 .small,.h6 .small{font-weight:normal;line-height:1;color:#777}h1,.h1,h2,.h2,h3,.h3{margin-top:20px;margin-bottom:10px}h1 small,.h1 small,h2 small,.h2 small,h3 small,.h3 small,h1 .small,.h1 .small,h2 .small,.h2 .small,h3 .small,.h3 .small{font-size:65%}h4,.h4,h5,.h5,h6,.h6{margin-top:10px;margin-bottom:10px}h4 small,.h4 small,h5 small,.h5 small,h6 small,.h6 small,h4 .small,.h4 .small,h5 .small,.h5 .small,h6 .small,.h6 .small{font-size:75%}h1,.h1{font-size:36px}h2,.h2{font-size:30px}h3,.h3{font-size:24px}h4,.h4{font-size:18px}h5,.h5{font-size:14px}h6,.h6{font-size:12px}p{margin:0 0 10px}.lead{margin-bottom:20px;font-size:16px;font-weight:300;line-height:1.4}@media (min-width:768px){.lead{font-size:21px}}small,.small{font-size:85%}mark,.mark{background-color:#fcf8e3;padding:.2em}.text-left{text-align:left}.text-right{text-align:right}.text-center{text-align:center}.text-justify{text-align:justify}.text-nowrap{white-space:nowrap}.text-lowercase{text-transform:lowercase}.text-uppercase{text-transform:uppercase}.text-capitalize{text-transform:capitalize}.text-muted{color:#777}.text-primary{color:#337ab7}a.text-primary:hover,a.text-primary:focus{color:#286090}.text-success{color:#3c763d}a.text-success:hover,a.text-success:focus{color:#2b542c}.text-info{color:#31708f}a.text-info:hover,a.text-info:focus{color:#245269}.text-warning{color:#8a6d3b}a.text-warning:hover,a.text-warning:focus{color:#66512c}.text-danger{color:#a94442}a.text-danger:hover,a.text-danger:focus{color:#843534}.bg-primary{color:#fff;background-color:#337ab7}a.bg-primary:hover,a.bg-primary:focus{background-color:#286090}.bg-success{background-color:#dff0d8}a.bg-success:hover,a.bg-success:focus{background-color:#c1e2b3}.bg-info{background-color:#d9edf7}a.bg-info:hover,a.bg-info:focus{background-color:#afd9ee}.bg-warning{background-color:#fcf8e3}a.bg-warning:hover,a.bg-warning:focus{background-color:#f7ecb5}.bg-danger{background-color:#f2dede}a.bg-danger:hover,a.bg-danger:focus{background-color:#e4b9b9}.page-header{padding-bottom:9px;margin:40px 0 20px;border-bottom:1px solid #eee}ul,ol{margin-top:0;margin-bottom:10px}ul ul,ol ul,ul ol,ol ol{margin-bottom:0}.list-unstyled{padding-left:0;list-style:none}.list-inline{padding-left:0;list-style:none;margin-left:-5px}.list-inline>li{display:inline-block;padding-left:5px;padding-right:5px}dl{margin-top:0;margin-bottom:20px}dt,dd{line-height:1.42857143}dt{font-weight:bold}dd{margin-left:0}@media (min-width:768px){.dl-horizontal dt{float:left;width:160px;clear:left;text-align:right;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.dl-horizontal dd{margin-left:180px}}abbr[title],abbr[data-original-title]{cursor:help;border-bottom:1px dotted #777}.initialism{font-size:90%;text-transform:uppercase}blockquote{padding:10px 20px;margin:0 0 20px;font-size:17.5px;border-left:5px solid #eee}blockquote p:last-child,blockquote ul:last-child,blockquote ol:last-child{margin-bottom:0}blockquote footer,blockquote small,blockquote .small{display:block;font-size:80%;line-height:1.42857143;color:#777}blockquote footer:before,blockquote small:before,blockquote .small:before{content:'\x2014 \x00A0'}.blockquote-reverse,blockquote.pull-right{padding-right:15px;padding-left:0;border-right:5px solid #eee;border-left:0;text-align:right}.blockquote-reverse footer:before,blockquote.pull-right footer:before,.blockquote-reverse small:before,blockquote.pull-right small:before,.blockquote-reverse .small:before,blockquote.pull-right .small:before{content:''}.blockquote-reverse footer:after,blockquote.pull-right footer:after,.blockquote-reverse small:after,blockquote.pull-right small:after,.blockquote-reverse .small:after,blockquote.pull-right .small:after{content:'\x00A0 \x2014'}address{margin-bottom:20px;font-style:normal;line-height:1.42857143}.clearfix:before,.clearfix:after,.dl-horizontal dd:before,.dl-horizontal dd:after{content:\" \";display:table}.clearfix:after,.dl-horizontal dd:after{clear:both}.center-block{display:block;margin-left:auto;margin-right:auto}.pull-right{float:right !important}.pull-left{float:left !important}.hide{display:none !important}.show{display:block !important}.invisible{visibility:hidden}.text-hide{font:0/0 a;color:transparent;text-shadow:none;background-color:transparent;border:0}.hidden{display:none !important}.affix{position:fixed}\n          /* Manual Overrides */\n          .sciname {\n            font-style: italic;\n            }\n          .entry-sciname {\n            font-style: italic;\n            font-weight: bold;\n            }\n           body { padding: 1rem; }\n           .species-entry aside:first-child {\n             margin-top: 5rem;\n             }\n           section .entry-header {\n             text-indent: 2em;\n             }\n           .clade-declaration {\n             font-variant: small-caps;\n             border-top: 1px solid #000;\n             border-bottom: 1px solid #000;\n             page-break-before: always;\n             break-before: always;\n             }\n           .species-entry {\n             page-break-inside: avoid;\n             break-inside: avoid;\n             }\n           @media print {\n             body {\n               font-size:12px;\n               }\n             .h4 {\n               font-size: 13px;\n               }\n             @page {\n               counter-increment: page;\n               /*counter-reset: page 1;*/\n                @bottom-right {\n                 content: counter(page);\n                }\n                /* margin: 0px auto; */\n               }\n           }\n         </style>\n       </head>\n       <body>\n         <div class=\"container-fluid\">\n           <article>\n             <h1 class=\"text-center\">SSAR Common Names Checklist ver. " + dateString + "</h1>";
+  args = "q=*&order=linnean_order,genus,species,subspecies";
+  $.get("" + searchParams.apiPath, args, "json").done(function(result) {
+    var authorityYears, c, dialogHtml, downloadable, e, entryHtml, error1, error2, error3, genusAuth, genusYear, hasReadClade, hasReadGenus, htmlCredit, htmlNotes, k, oneOffHtml, ref1, ref2, ref3, row, shortGenus, speciesAuth, speciesYear, taxonCreditDate, v;
+    try {
+      if (result.status !== true) {
+        throw Error("Invalid Result");
+      }
+
+      /*
+       * Let's work with each result
+       *
+       * We're going to construct an entry for each, then go through
+       * and append that to to the text blobb htmlBody
+       */
+      hasReadGenus = new Array();
+      hasReadClade = new Array();
+      ref1 = result.result;
+      for (k in ref1) {
+        row = ref1[k];
+        if (isNull(row.genus) || isNull(row.species)) {
+          continue;
+        }
+        try {
+          authorityYears = JSON.parse(row.authority_year);
+          genusYear = "";
+          speciesYear = "";
+          for (c in authorityYears) {
+            v = authorityYears[c];
+            genusYear = c.replace(/&#39;/g, "'");
+            speciesYear = v.replace(/&#39;/g, "'");
+          }
+          genusAuth = (row.genus_authority.toTitleCase()) + " " + genusYear;
+          if (toInt(row.parens_auth_genus).toBool()) {
+            genusAuth = "(" + genusAuth + ")";
+          }
+          speciesAuth = (row.species_authority.toTitleCase()) + " " + speciesYear;
+          if (toInt(row.parens_auth_species).toBool()) {
+            speciesAuth = "(" + speciesAuth + ")";
+          }
+        } catch (error1) {
+          e = error1;
+          console.warn("There was a problem parsing the authority information for _" + row.genus + " " + row.species + " " + row.subspecies + "_ - " + e.message);
+          console.warn(e.stack);
+          console.warn("We were working with", authorityYears, genusYear, genusAuth, speciesYear, speciesAuth);
+        }
+        try {
+          htmlNotes = markdown.toHTML(row.notes);
+        } catch (error2) {
+          e = error2;
+          console.warn("Unable to parse Markdown for _" + row.genus + " " + row.species + " " + row.subspecies + "_");
+          htmlNotes = row.notes;
+        }
+        htmlCredit = "";
+        if (!(isNull(htmlNotes) || isNull(row.taxon_credit))) {
+          taxonCreditDate = "";
+          if (!isNull(row.taxon_credit_date)) {
+            taxonCreditDate = ", " + row.taxon_credit_date;
+          }
+          htmlCredit = "<p class=\"text-right small text-muted\">\n  <cite>\n    " + row.taxon_credit + taxonCreditDate + "\n  </cite>\n</p>";
+        }
+        oneOffHtml = "";
+        if (ref2 = row.linnean_order.trim(), indexOf.call(hasReadClade, ref2) < 0) {
+          oneOffHtml += "<h2 class=\"clade-declaration text-capitalize text-center\">" + row.linnean_order + " &#8212; " + row.major_common_type + "</h2>";
+          hasReadClade.push(row.linnean_order.trim());
+        }
+        if (ref3 = row.genus, indexOf.call(hasReadGenus, ref3) < 0) {
+          oneOffHtml += "<aside class=\"genus-declaration lead\">\n  <span class=\"entry-sciname text-capitalize\">" + row.genus + "</span>\n  <span class=\"entry-authority\">" + genusAuth + "</span>\n</aside>";
+          hasReadGenus.push(row.genus);
+        }
+        shortGenus = (row.genus.slice(0, 1)) + ". ";
+        entryHtml = "<section class=\"species-entry\">\n  " + oneOffHtml + "\n  <p class=\"h4 entry-header\">\n    <span class=\"entry-sciname\">\n      <span class=\"text-capitalize\">" + shortGenus + "</span> " + row.species + " " + row.subspecies + "\n    </span>\n    <span class=\"entry-authority\">\n      " + speciesAuth + "\n    </span>\n    &#8212;\n    <span class=\"common_name no-cap\">\n      " + (smartUpperCasing(row.common_name)) + "\n    </span>\n  </p>\n  <div class=\"entry-content\">\n    " + htmlNotes + "\n    " + htmlCredit + "\n  </div>\n</section>";
+        htmlBody += entryHtml;
+      }
+      htmlBody += "</article>\n</div>\n</body>\n</html>";
+      downloadable = "data:text/html;charset=utf-8," + (encodeURIComponent(htmlBody));
+      dialogHtml = "<paper-dialog  modal class=\"download-file\" id=\"download-html-file\">\n  <h2>Your file is ready</h2>\n  <paper-dialog-scrollable class=\"dialog-content\">\n    <p class=\"text-center\">\n      <a href=\"" + downloadable + "\" download=\"asm-common-names-" + dateString + ".html\" class=\"btn btn-default\"><iron-icon icon=\"file-download\"></iron-icon> Download Now</a>\n    </p>\n  </paper-dialog-scrollable>\n  <div class=\"buttons\">\n    <paper-button dialog-dismiss>Close</paper-button>\n  </div>\n</paper-dialog>";
+      if (!$("#download-html-file").exists()) {
+        $("body").append(dialogHtml);
+      } else {
+        $("#download-html-file").replaceWith(dialogHtml);
+      }
+      $("#download-chooser").get(0).close();
+      safariDialogHelper("#download-html-file");
+      return $.post("pdf/pdfwrapper.php", "html=" + (encodeURIComponent(htmlBody)), "json").done(function(result) {
+        var pdfDownloadPath;
+        console.debug("PDF result", result);
+        if (result.status) {
+          pdfDownloadPath = "" + uri.urlString + result.file;
+          console.debug(pdfDownloadPath);
+        } else {
+          console.error("Couldn't make PDF file");
+        }
+        return false;
+      }).error(function(result, status) {
+        return console.error("Wasn't able to fetch PDF");
+      });
+    } catch (error3) {
+      e = error3;
+      stopLoadError("There was a problem creating your file. Please try again later.");
+      console.error("Exception in downloadHTMLList() - " + e.message);
+      console.warn("Got", result, "from", searchParams.apiPath + "?" + args, result.status);
+      return console.warn(e.stack);
+    }
+  }).fail(function() {
+    return stopLoadError("There was a problem communicating with the server. Please try again later.");
+  });
+  return false;
+};
+
+showDownloadChooser = function() {
+  var html;
+  html = "<paper-dialog id=\"download-chooser\" modal>\n  <h2>Select Download Type</h2>\n  <paper-dialog-scrollable class=\"dialog-content\">\n    <p>\n      Once you select a file type, it will take a moment to prepare your download. Please be patient.\n    </p>\n  </paper-dialog-scrollable>\n  <div class=\"buttons\">\n    <paper-button dialog-dismiss>Cancel</paper-button>\n    <paper-button dialog-confirm id=\"initiate-csv-download\">CSV</paper-button>\n    <paper-button dialog-confirm id=\"initiate-html-download\">HTML</paper-button>\n  </div>\n</paper-dialog>";
+  if (!$("#download-chooser").exists()) {
+    $("body").append(html);
+  }
+  d$("#initiate-csv-download").click(function() {
+    return downloadCSVList();
+  });
+  d$("#initiate-html-download").click(function() {
+    return downloadHTMLList();
+  });
+  safariDialogHelper("#download-chooser");
+  return false;
+};
 
 //# sourceMappingURL=maps/c.js.map

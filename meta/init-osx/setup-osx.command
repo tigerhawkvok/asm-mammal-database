@@ -7,7 +7,12 @@
 # - Git: to get the one shipped with OSX up to date
 # - blackbox: For the secrets in the repo
 # - a2enmod: So we don't have to manually edit the httpd.conf file
-brew install mariadb yarn git blackbox a2enmod
+git clone https://github.com/rudisimo/a2enmod.git
+cd a2enmod
+sudo chmod +x ./install.sh
+./install.sh
+cd ..
+brew install mariadb yarn git blackbox
 # Set up PHP7 -- PHP5 is no longer maintained
 brew tap homebrew/dupes
 brew tap homebrew/versions
@@ -17,7 +22,7 @@ brew install php70
 brew install php70-xdebug
 brew install mcrypt php70-mcrypt
 # Install the repo
-git clone git@github.com:tigerhawkvok/asm-mammal-database.git
+git clone https://github.com/tigerhawkvok/asm-mammal-database.git
 cd asm-mammal-database
 # Decrypt files
 blackbox_decrypt_all_files

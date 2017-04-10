@@ -1392,15 +1392,37 @@ handleDragDropImage = function(uploadTargetSelector, callback) {
 adminPreloadSearch = function() {
 
   /*
+   * Take a fragment with a JSON species and preload a search
    *
+   * This is in a different format from the one in the standard search;
+   * the standard search uses the verbatim entry of the user, this uses
+   * a JSON constructed by the system
    */
-  var e, error1, loadArgs;
-  uri.query = $.url().attr("fragment");
+  var fill, loadArgs;
+  try {
+    uri.query = $.url().attr("fragment");
+  } catch (undefined) {}
+  if (uri.query === "#" || isNull(uri.query)) {
+    return false;
+  }
   try {
     loadArgs = Base64.decode(uri.query);
-  } catch (error1) {
-    e = error1;
-    loadArgs = "";
+    loadArgs = JSON.parse(loadArgs);
+  } catch (undefined) {}
+  if (typeof loadArgs === "object") {
+    if (isNull(loadArgs.genus) || isNull(loadArgs.species)) {
+      console.error("Bad taxon format");
+      return false;
+    }
+    fill = loadArgs.genus + " " + loadArgs.species;
+    if (!isNull(loadArgs.subspecies)) {
+      fill += " " + loadArgs.subspecies;
+    }
+    $("#admin-search").val(fill);
+    renderAdminSearchResults();
+    return loadArgs;
+  } else {
+    console.error("Bad fragment: unable to read JSON", loadArgs);
   }
   return false;
 };
@@ -1415,7 +1437,10 @@ $(function() {
     return $("[data-toggle='tooltip']").tooltip();
   });
   try {
-    return prefetchEditorDropdowns();
+    prefetchEditorDropdowns();
+  } catch (undefined) {}
+  try {
+    return adminPreloadSearch();
   } catch (undefined) {}
 });
 

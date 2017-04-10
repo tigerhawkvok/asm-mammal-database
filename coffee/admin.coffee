@@ -1426,14 +1426,32 @@ handleDragDropImage = (uploadTargetSelector = "#upload-image", callback) ->
 
 adminPreloadSearch = ->
   ###
+  # Take a fragment with a JSON species and preload a search
   #
+  # This is in a different format from the one in the standard search;
+  # the standard search uses the verbatim entry of the user, this uses
+  # a JSON constructed by the system
   ###
-  uri.query = $.url().attr("fragment")
+  try
+    uri.query = $.url().attr("fragment")
+  if uri.query is "#" or isNull uri.query
+    return false
   try
     loadArgs = Base64.decode(uri.query)
-  catch e
-    loadArgs = ""
-  # Do the search
+    loadArgs = JSON.parse loadArgs
+  if typeof loadArgs is "object"
+    if isNull(loadArgs.genus) or isNull(loadArgs.species)
+      console.error "Bad taxon format"
+      return false
+    fill = "#{loadArgs.genus} #{loadArgs.species}"
+    unless isNull loadArgs.subspecies
+      fill += " #{loadArgs.subspecies}"
+    $("#admin-search").val fill
+    # Do the search
+    renderAdminSearchResults()
+    return loadArgs
+  else
+    console.error "Bad fragment: unable to read JSON", loadArgs
   false
 
 
@@ -1448,4 +1466,6 @@ $ ->
     $("[data-toggle='tooltip']").tooltip()
   try
     prefetchEditorDropdowns()
+  try
+    adminPreloadSearch()
   # The rest of the onload for the admin has been moved to the core.coffee file.

@@ -786,6 +786,11 @@ animateLoad = (elId = "loader", iteration = 0) ->
   catch e
     console.warn('Could not animate loader', e.message)
 
+
+startLoad = (elementId = null) ->
+  animateLoad(elementId)
+
+
 stopLoad = (elId = "loader", fadeOut = 1000, iteration = 0) ->
   if elId.slice(0,1) is "#"
     selector = elId
@@ -1203,7 +1208,7 @@ bindClicks = (selector = ".click") ->
         return url
       else
         # Check for onclick function
-        callable = $(this).attr("data-function")
+        callable = $(this).attr("data-function") ? $(this).attr("data-fn")
         if callable?
           $(this).unbind()
           # console.log("Binding #{callable}() to ##{$(this).attr("id")}")
@@ -1473,22 +1478,23 @@ $ ->
           # We should put a link to this critter as an edit if we're an
           # admin    
           if typeof window.speciesData is "object"
-            query = buildQuery window.speciesData
-            adminFragment = "##{Base64.encode query}"
-            html = """
-            <paper-icon-button
-              class="click admin-edit-button"
-              data-href="#{uri.urlString}admin-page.html#{adminFragment}"
-              icon="icons:create"
-              >
-            </paper-icon-button>
-            """
-            # Append to the header...
-            $("header p paper-icon-button[icon='icons:home']").before html
-            bindClicks(".admin-edit-button")
+            try
+              query = JSON.stringify window.speciesData
+              adminFragment = "##{Base64.encode query}"
+              html = """
+              <paper-icon-button
+                class="click admin-edit-button"
+                data-href="#{uri.urlString}admin-page.html#{adminFragment}"
+                icon="icons:create"
+                >
+              </paper-icon-button>
+              """
+              # Append to the header...
+              $("header p paper-icon-button[icon='icons:home']").before html
+              bindClicks(".admin-edit-button")
     loadJS "js/jquery.cookie.min.js", ->
       # Now see if the user is an admin
-      if $.cookie("asmherps_user")?
+      if $.cookie("#{uri.domain}_user")?
         # Someone has logged in to this device before, offer the admin
         # link.
         html = """
@@ -1496,7 +1502,7 @@ $ ->
         """
         $("#bug-footer").append(html)
         bindClicks("#goto-admin")
-        # $("#goto-admin").tooltip()
+        $("#goto-admin").tooltip()
       false
   try
     for md in $("marked-element")
@@ -2823,6 +2829,36 @@ bindPaperMenuButton = (selector = "paper-menu-button", unbindTargets = true) ->
     $(menu).on "iron-select", ->
       relabelSelectedItem this, dropdown
   false
+
+
+
+getRandomEntry = ->
+  ###
+  # Get a random taxon, and go to that page
+  ###
+  startLoad()
+  args =
+    random: true
+  $.get searchParams.apiPath, buildQuery args, "json"
+  .done (result) ->
+    if isNull(result.genus) or isNull result.species
+      stopLoadError "Unable to fetch random entry"
+    accountQuery =
+      genus: result.genus
+      species: result.species
+    unless isNull result.subspecies
+      accountQuery.subspecies = result.subspecies
+    dest = "#{uri.urlString}species-account.php?#{buildQuery accountQuery}"
+    console.log "About to go to", dest
+    goTo dest
+    stopLoad() # Just in case
+  .fail ->
+    stopLoadError "Unable to fetch random entry"
+  false
+
+
+window.getRandomEntry = getRandomEntry
+
 
 
 $ ->

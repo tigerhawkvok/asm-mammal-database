@@ -31,6 +31,8 @@ module.exports = (grunt) ->
         command: ["yarn install", "yarn upgarde"].join("&&")
       movesrc:
         command: ["cp js/c.src.coffee js/maps/c.src.coffee"].join("&&")
+      dumpver:
+        command: ["git describe --abbrev=0 > currentVersion"].join("&&")
     postcss:
       options:
         processors: [
@@ -194,7 +196,7 @@ module.exports = (grunt) ->
   ## Deploy
   grunt.registerTask "qbuild","CoffeeScript and CSS", ->
     # ,"vulcanize"
-    grunt.task.run("phplint","compile","css")
+    grunt.task.run("phplint","compile","css","shell:dumpver")
   grunt.registerTask "build","Prepare for deployment", ->
     # ,"vulcanize"
     grunt.task.run("update","qbuild","minify")

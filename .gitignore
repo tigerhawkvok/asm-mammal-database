@@ -63,3 +63,4 @@ pdf/pdf-gen/*.pdf
 /keyrings/live/secring.gpg
 *.pyc
 *.pdnBak
+currentVersion~

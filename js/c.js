@@ -1814,6 +1814,12 @@ checkLocalVersion = function() {
 
 $(function() {
   var caption, captionValue, e, error1, error2, len, len1, m, md, mdText, o, offsetImageLabel, ref1, ref2;
+  try {
+    checkLocalVersion();
+    interval(3600 * 1000, function() {
+      return checkLocalVersion();
+    });
+  } catch (undefined) {}
   formatScientificNames();
   bindClicks();
   mapNewWindows();

@@ -1443,6 +1443,10 @@ checkLocalVersion = ->
 
 
 $ ->
+  try
+    checkLocalVersion()
+    interval 3600 * 1000, ->
+      checkLocalVersion()
   formatScientificNames()
   bindClicks()
   mapNewWindows()

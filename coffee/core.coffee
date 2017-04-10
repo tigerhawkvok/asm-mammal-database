@@ -1494,15 +1494,6 @@ $ ->
               bindClicks(".admin-edit-button")
     loadJS "js/jquery.cookie.min.js", ->
       # Now see if the user is an admin
-      if $.cookie("asmherps_user")?
-        # Someone has logged in to this device before, offer the admin
-        # link.
-        html = """
-        <paper-icon-button icon="create" class="click" data-href="#{uri.urlString}admin/" data-toggle="tooltip" title="Go to administration" id="goto-admin"></paper-icon-button>
-        """
-        $("#bug-footer").append(html)
-        bindClicks("#goto-admin")
-        # $("#goto-admin").tooltip()
       false
   try
     for md in $("marked-element")

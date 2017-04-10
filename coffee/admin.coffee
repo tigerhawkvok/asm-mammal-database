@@ -1426,7 +1426,11 @@ handleDragDropImage = (uploadTargetSelector = "#upload-image", callback) ->
 
 adminPreloadSearch = ->
   ###
+  # Take a fragment with a JSON species and preload a search
   #
+  # This is in a different format from the one in the standard search;
+  # the standard search uses the verbatim entry of the user, this uses
+  # a JSON constructed by the system
   ###
   try
     uri.query = $.url().attr("fragment")

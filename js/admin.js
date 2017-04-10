@@ -1392,7 +1392,11 @@ handleDragDropImage = function(uploadTargetSelector, callback) {
 adminPreloadSearch = function() {
 
   /*
+   * Take a fragment with a JSON species and preload a search
    *
+   * This is in a different format from the one in the standard search;
+   * the standard search uses the verbatim entry of the user, this uses
+   * a JSON constructed by the system
    */
   var fill, loadArgs;
   try {

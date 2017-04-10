@@ -1868,10 +1868,11 @@ $(function() {
     });
     loadJS("js/jquery.cookie.min.js", function() {
       var html;
-      if ($.cookie("asmherps_user") != null) {
+      if ($.cookie(uri.domain + "_user") != null) {
         html = "<paper-icon-button icon=\"create\" class=\"click\" data-href=\"" + uri.urlString + "admin/\" data-toggle=\"tooltip\" title=\"Go to administration\" id=\"goto-admin\"></paper-icon-button>";
         $("#bug-footer").append(html);
         bindClicks("#goto-admin");
+        $("#goto-admin").tooltip();
       }
       return false;
     });

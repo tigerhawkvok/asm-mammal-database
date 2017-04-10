@@ -303,8 +303,8 @@ if(empty($speciesRow["genus_authority"]) && $hasWellFormattedSpeciesCitation) {
      * May need to do this in case we picked up the authority from the
      * IUCN, but it hasn't been edited
      ***/
-    $authority = preg_replace('/\(? *([\w\. \[\]]+), *([0-9]{4}) *\)?/im', '$1', $speciesRow["species_authority"]);
-    $authorityYear = preg_replace('/\(? *([\w\. \[\]]+), *([0-9]{4}) *\)?/im', '$2', $speciesRow["species_authority"]);
+    $authority = preg_replace('/\(? *(([\w\. \[\]]+(,|&|&amp;|&amp;amp;)?)+), *([0-9]{4}) *\)?/im', '$1', $speciesRow["species_authority"]);
+    $authorityYear = preg_replace('/\(? *(([\w\. \[\]]+(,|&|&amp;|&amp;amp;)?)+), *([0-9]{4}) *\)?/im', '$4', $speciesRow["species_authority"]);
     $speciesRow["authority_year"] = json_encode(array(
         $authorityYear => $authorityYear,
     ));

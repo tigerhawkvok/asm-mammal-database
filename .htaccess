@@ -12,3 +12,23 @@
 #Header set Strict-Transport-Security "max-age=31536000"
 #Header append Strict-Transport-Security includeSubDomains
 #Header append Strict-Transport-Security preload
+
+RewriteEngine On
+RewriteBase /
+
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteCond %{REQUEST_FILENAME}\.php -f
+#RewriteCond $1$2\.php -f
+#RewriteCond %{REQUEST_FILENAME}\.php ^(.*)\.php(.*)$
+#RewriteCond %{REQUEST_URI} ^(.*)/%1/(.*)/?$
+RewriteRule (.*/)?(.*)/(.*)/?$ $1$2.php?$3 [NC,QSA]
+
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteCond %{REQUEST_FILENAME}\.php -f
+RewriteCond %{REQUEST_URI}\.php ^(.*)\.php(.*)$
+RewriteRule .* %1.php?%2 [NC,QSA]
+
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteCond %{REQUEST_FILENAME}\.html -f
+RewriteCond %{REQUEST_URI}\.html ^(.*)\.html$
+RewriteRule .* %1.html [NC,QSA]

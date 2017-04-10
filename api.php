@@ -114,6 +114,14 @@ if(boolstr($_REQUEST["get_unique"])) {
     returnAjax(getUniqueVals($_REQUEST["col"]));
 }
 
+if(boolstr($_REQUEST["random"])) {
+    $query = "SELECT `genus`, `species`, `subspecies` from `".$db->getTable()."` ORDER BY RAND() LIMIT 1";
+    $result = mysqli_query($db->getLink(), $query);
+    $row = mysqli_fetch_assoc($result);
+    returnAjax($row);
+}
+
+
 /*****************************
  * Setup flags
  *****************************/

@@ -1855,11 +1855,13 @@ $(function() {
         delete _asm.inhibitRedirect;
         if (uri.o.attr("file") === "species-account.php") {
           if (typeof window.speciesData === "object") {
-            query = buildQuery(window.speciesData);
-            adminFragment = "#" + (Base64.encode(query));
-            html = "<paper-icon-button\n  class=\"click admin-edit-button\"\n  data-href=\"" + uri.urlString + "admin-page.html" + adminFragment + "\"\n  icon=\"icons:create\"\n  >\n</paper-icon-button>";
-            $("header p paper-icon-button[icon='icons:home']").before(html);
-            return bindClicks(".admin-edit-button");
+            try {
+              query = JSON.stringify(window.speciesData);
+              adminFragment = "#" + (Base64.encode(query));
+              html = "<paper-icon-button\n  class=\"click admin-edit-button\"\n  data-href=\"" + uri.urlString + "admin-page.html" + adminFragment + "\"\n  icon=\"icons:create\"\n  >\n</paper-icon-button>";
+              $("header p paper-icon-button[icon='icons:home']").before(html);
+              return bindClicks(".admin-edit-button");
+            } catch (undefined) {}
           }
         }
       });

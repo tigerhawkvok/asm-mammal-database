@@ -604,6 +604,8 @@ formatSearchResults = (result, container = searchParams.targetContainer, callbac
           if elapsed > 3000 and not wasOffThread
             console.warn "Warning: Took greater than 3 seconds to render!"
           stopLoad()
+          delay 250, ->
+            stopLoad()
           if typeof callback is "function"
             try
               callback()

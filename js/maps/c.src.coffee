@@ -793,6 +793,9 @@ stopLoad = (elId = "loader", fadeOut = 1000, iteration = 0) ->
   else
     selector = "##{elId}"
   try
+    try
+      if _metaStatus.isLoading isnt true and p$(selector).active and $(selector).isVisible()
+        _metaStatus.isLoading = true
     unless _metaStatus.isLoading
       # Wait until it's loading before executing again
       if iteration < 100
@@ -807,6 +810,8 @@ stopLoad = (elId = "loader", fadeOut = 1000, iteration = 0) ->
       $(selector).addClass("good")
       do endLoad = ->
         delay fadeOut, ->
+          try
+            p$(selector).active = false
           $(selector)
           .removeClass("good")
           .attr("active",false)
@@ -1259,6 +1264,58 @@ browserBeware = ->
       browserBeware()
 
 
+
+bsAlert = (message, type = "warning", fallbackContainer = "body", selector = "#bs-alert") ->
+  ###
+  # Pop up a status message
+  # Uses the Bootstrap alert dialog
+  #
+  # See
+  # http://getbootstrap.com/components/#alerts
+  # for available types
+  ###
+  if not $(selector).exists()
+    html = """
+    <div class="alert alert-#{type} alert-dismissable hanging-alert" role="alert" id="#{selector.slice(1)}">
+      <button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+        <div class="alert-message"></div>
+    </div>
+    """
+    topContainer = if $("main").exists() then "main" else if $("article").exists() then "article" else fallbackContainer
+    $(topContainer).prepend(html)
+  else
+    $(selector).removeClass "alert-warning alert-info alert-danger alert-success"
+    $(selector).addClass "alert-#{type}"
+  $("#{selector} .alert-message").html(message)
+  bindClicks()
+  mapNewWindows()
+  false
+
+
+animateHoverShadows = (selector = "paper-card.card-tile", defaultElevation = 2, raisedElevation = 4) ->
+  ###
+  # Set animation for paper cards to have hover shadows elevation change
+  ###
+  handlerIn = ->
+    $(this).attr "elevation", raisedElevation
+  handlerOut = ->
+    $(this).attr "elevation", defaultElevation
+  $(selector).hover handlerIn, handlerOut
+  false
+
+
+allError = (message) ->
+  ###
+  # Show all the errors
+  ###
+  stopLoadError message
+  bsAlert message, "danger"
+  console.error message
+  false
+
+
+
+
 checkFileVersion = (forceNow = false) ->
   ###
   # Check to see if the file on the server is up-to-date with what the
@@ -1330,6 +1387,59 @@ buildQuery = (obj) ->
     key = k.replace /[^A-Za-z\-_\[\]]/img, ""
     queryList.push """#{key}=#{encodeURIComponent v}"""
   queryList.join "&"
+
+
+
+
+checkLocalVersion = ->
+  if uri.o.attr("host") is "localhost"
+    # Check the last commit
+    $.get "#{uri.urlString}/currentVersion"
+    .done (result) ->
+      console.log "Got tag", result
+      version = result.replace /v(([0-9]+\.)+[0-9]+)(\-\w+)?/img, "$1"
+      versionParts = version.split "."
+      # Limited access token to only read private repo status.
+      # This token will be revoked when the repo goes public.
+      args =
+        access_token: "7a76691c6beea4d47eaaa6182a53e523c6a16a67"
+      githubApiEndpoint = "https://api.github.com/repos/tigerhawkvok/asm-mammal-database/releases"
+      $.get githubApiEndpoint, buildQuery args, "json"
+      .done (result) ->
+        console.log "Github API result:", result
+        for release in result
+          console.log "Checking release", release
+          tag = release.tag_name
+          tagVersion = tag.replace /v(([0-9]+\.)+[0-9]+)(\-\w+)?/img, "$1"
+          tagParts = tagVersion.split "."
+          i = 0
+          for part in tagParts
+            tagVersionPartNumber = toInt part
+            localVersionPartNumber = toInt versionParts[i]
+            if tagVersionPartNumber > localVersionPartNumber
+              console.warn "Notice: tag part '#{tagVersionPartNumber}' > '#{localVersionPartNumber}'", tag, version
+              html = """
+              <strong>Head's-Up:</strong> Your local version is behind the latest application release.
+              <br/><br/>
+              Open up your terminal, and in your local directory run:
+              <br/><br/>
+              <code class="center-block text-center">git pull</code>
+              <br/>
+              To get your local version up-to-date.
+              """
+              bsAlert html
+              return false
+            else if tagVersionPartNumber < localVersionPartNumber
+              # For any given part, it means this tag is irrelevant
+              break
+            ++i
+        console.debug "Your version is up-to-date"
+        false
+  else     
+    doNothing()
+  false
+
+
 
 
 $ ->
@@ -2023,6 +2133,8 @@ formatSearchResults = (result, container = searchParams.targetContainer, callbac
           if elapsed > 3000 and not wasOffThread
             console.warn "Warning: Took greater than 3 seconds to render!"
           stopLoad()
+          delay 250, ->
+            stopLoad()
           if typeof callback is "function"
             try
               callback()

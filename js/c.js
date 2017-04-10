@@ -1,4 +1,4 @@
-var _metaStatus, activityIndicatorOff, activityIndicatorOn, animateLoad, bindClickTargets, bindClicks, bindDismissalRemoval, bindPaperMenuButton, browserBeware, buildQuery, byteCount, checkFileVersion, checkLaggedUpdate, checkTaxonNear, clearSearch, dateMonthToString, deEscape, deepJQuery, delay, doCORSget, doFontExceptions, doNothing, domainPlaceholder, downloadCSVList, downloadHTMLList, eutheriaFilterHelper, fetchMajorMinorGroups, foo, formatScientificNames, formatSearchResults, getElementHtml, getFilters, getLocation, getMaxZ, goTo, insertCORSWorkaround, insertModalImage, interval, isArray, isBlank, isBool, isEmpty, isJson, isNull, isNumber, isNumeric, lightboxImages, loadJS, mapNewWindows, modalTaxon, openLink, openTab, overlayOff, overlayOn, p$, parseTaxonYear, performSearch, prepURI, randomInt, ref, roundNumber, roundNumberSigfig, safariDialogHelper, safariSearchArgHelper, searchParams, setHistory, setupServiceWorker, showBadSearchErrorMessage, showDownloadChooser, smartUpperCasing, sortResults, stopLoad, stopLoadError, toFloat, toInt, toObject, toastStatusMessage, uri,
+var _metaStatus, activityIndicatorOff, activityIndicatorOn, allError, animateHoverShadows, animateLoad, bindClickTargets, bindClicks, bindDismissalRemoval, bindPaperMenuButton, browserBeware, bsAlert, buildQuery, byteCount, checkFileVersion, checkLaggedUpdate, checkLocalVersion, checkTaxonNear, clearSearch, dateMonthToString, deEscape, deepJQuery, delay, doCORSget, doFontExceptions, doNothing, domainPlaceholder, downloadCSVList, downloadHTMLList, eutheriaFilterHelper, fetchMajorMinorGroups, foo, formatScientificNames, formatSearchResults, getElementHtml, getFilters, getLocation, getMaxZ, goTo, insertCORSWorkaround, insertModalImage, interval, isArray, isBlank, isBool, isEmpty, isJson, isNull, isNumber, isNumeric, lightboxImages, loadJS, mapNewWindows, modalTaxon, openLink, openTab, overlayOff, overlayOn, p$, parseTaxonYear, performSearch, prepURI, randomInt, ref, roundNumber, roundNumberSigfig, safariDialogHelper, safariSearchArgHelper, searchParams, setHistory, setupServiceWorker, showBadSearchErrorMessage, showDownloadChooser, smartUpperCasing, sortResults, stopLoad, stopLoadError, toFloat, toInt, toObject, toastStatusMessage, uri,
   slice = [].slice,
   indexOf = [].indexOf || function(item) { for (var i = 0, l = this.length; i < l; i++) { if (i in this && this[i] === item) return i; } return -1; };
 
@@ -1049,6 +1049,11 @@ stopLoad = function(elId, fadeOut, iteration) {
     selector = "#" + elId;
   }
   try {
+    try {
+      if (_metaStatus.isLoading !== true && p$(selector).active && $(selector).isVisible()) {
+        _metaStatus.isLoading = true;
+      }
+    } catch (undefined) {}
     if (!_metaStatus.isLoading) {
       if (iteration < 100) {
         iteration++;
@@ -1064,6 +1069,9 @@ stopLoad = function(elId, fadeOut, iteration) {
       $(selector).addClass("good");
       (endLoad = function() {
         return delay(fadeOut, function() {
+          try {
+            p$(selector).active = false;
+          } catch (undefined) {}
           $(selector).removeClass("good").attr("active", false).removeAttr("active");
           return delay(1, function() {
             var aliases, ref1;
@@ -1603,6 +1611,76 @@ browserBeware = function() {
   }
 };
 
+bsAlert = function(message, type, fallbackContainer, selector) {
+  var html, topContainer;
+  if (type == null) {
+    type = "warning";
+  }
+  if (fallbackContainer == null) {
+    fallbackContainer = "body";
+  }
+  if (selector == null) {
+    selector = "#bs-alert";
+  }
+
+  /*
+   * Pop up a status message
+   * Uses the Bootstrap alert dialog
+   *
+   * See
+   * http://getbootstrap.com/components/#alerts
+   * for available types
+   */
+  if (!$(selector).exists()) {
+    html = "<div class=\"alert alert-" + type + " alert-dismissable hanging-alert\" role=\"alert\" id=\"" + (selector.slice(1)) + "\">\n  <button type=\"button\" class=\"close\" data-dismiss=\"alert\" aria-label=\"Close\"><span aria-hidden=\"true\">&times;</span></button>\n    <div class=\"alert-message\"></div>\n</div>";
+    topContainer = $("main").exists() ? "main" : $("article").exists() ? "article" : fallbackContainer;
+    $(topContainer).prepend(html);
+  } else {
+    $(selector).removeClass("alert-warning alert-info alert-danger alert-success");
+    $(selector).addClass("alert-" + type);
+  }
+  $(selector + " .alert-message").html(message);
+  bindClicks();
+  mapNewWindows();
+  return false;
+};
+
+animateHoverShadows = function(selector, defaultElevation, raisedElevation) {
+  var handlerIn, handlerOut;
+  if (selector == null) {
+    selector = "paper-card.card-tile";
+  }
+  if (defaultElevation == null) {
+    defaultElevation = 2;
+  }
+  if (raisedElevation == null) {
+    raisedElevation = 4;
+  }
+
+  /*
+   * Set animation for paper cards to have hover shadows elevation change
+   */
+  handlerIn = function() {
+    return $(this).attr("elevation", raisedElevation);
+  };
+  handlerOut = function() {
+    return $(this).attr("elevation", defaultElevation);
+  };
+  $(selector).hover(handlerIn, handlerOut);
+  return false;
+};
+
+allError = function(message) {
+
+  /*
+   * Show all the errors
+   */
+  stopLoadError(message);
+  bsAlert(message, "danger");
+  console.error(message);
+  return false;
+};
+
 checkFileVersion = function(forceNow) {
   var checkVersion;
   if (forceNow == null) {
@@ -1686,6 +1764,52 @@ buildQuery = function(obj) {
     queryList.push(key + "=" + (encodeURIComponent(v)));
   }
   return queryList.join("&");
+};
+
+checkLocalVersion = function() {
+  if (uri.o.attr("host") === "localhost") {
+    $.get(uri.urlString + "/currentVersion").done(function(result) {
+      var args, githubApiEndpoint, version, versionParts;
+      console.log("Got tag", result);
+      version = result.replace(/v(([0-9]+\.)+[0-9]+)(\-\w+)?/img, "$1");
+      versionParts = version.split(".");
+      args = {
+        access_token: "7a76691c6beea4d47eaaa6182a53e523c6a16a67"
+      };
+      githubApiEndpoint = "https://api.github.com/repos/tigerhawkvok/asm-mammal-database/releases";
+      return $.get(githubApiEndpoint, buildQuery(args, "json")).done(function(result) {
+        var html, i, len, len1, localVersionPartNumber, m, o, part, release, tag, tagParts, tagVersion, tagVersionPartNumber;
+        console.log("Github API result:", result);
+        for (m = 0, len = result.length; m < len; m++) {
+          release = result[m];
+          console.log("Checking release", release);
+          tag = release.tag_name;
+          tagVersion = tag.replace(/v(([0-9]+\.)+[0-9]+)(\-\w+)?/img, "$1");
+          tagParts = tagVersion.split(".");
+          i = 0;
+          for (o = 0, len1 = tagParts.length; o < len1; o++) {
+            part = tagParts[o];
+            tagVersionPartNumber = toInt(part);
+            localVersionPartNumber = toInt(versionParts[i]);
+            if (tagVersionPartNumber > localVersionPartNumber) {
+              console.warn("Notice: tag part '" + tagVersionPartNumber + "' > '" + localVersionPartNumber + "'", tag, version);
+              html = "<strong>Head's-Up:</strong> Your local version is behind the latest application release.\n<br/><br/>\nOpen up your terminal, and in your local directory run:\n<br/><br/>\n<code class=\"center-block text-center\">git pull</code>\n<br/>\nTo get your local version up-to-date.";
+              bsAlert(html);
+              return false;
+            } else if (tagVersionPartNumber < localVersionPartNumber) {
+              break;
+            }
+            ++i;
+          }
+        }
+        console.debug("Your version is up-to-date");
+        return false;
+      });
+    });
+  } else {
+    doNothing();
+  }
+  return false;
 };
 
 $(function() {
@@ -2409,6 +2533,9 @@ formatSearchResults = function(result, container, callback) {
             console.warn("Warning: Took greater than 3 seconds to render!");
           }
           stopLoad();
+          delay(250, function() {
+            return stopLoad();
+          });
           if (typeof callback === "function") {
             try {
               callback();

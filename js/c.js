@@ -1,4 +1,4 @@
-var _metaStatus, activityIndicatorOff, activityIndicatorOn, allError, animateHoverShadows, animateLoad, bindClickTargets, bindClicks, bindDismissalRemoval, bindPaperMenuButton, browserBeware, bsAlert, buildQuery, byteCount, checkFileVersion, checkLaggedUpdate, checkLocalVersion, checkTaxonNear, clearSearch, dateMonthToString, deEscape, deepJQuery, delay, doCORSget, doFontExceptions, doNothing, domainPlaceholder, downloadCSVList, downloadHTMLList, eutheriaFilterHelper, fetchMajorMinorGroups, foo, formatScientificNames, formatSearchResults, getElementHtml, getFilters, getLocation, getMaxZ, goTo, insertCORSWorkaround, insertModalImage, interval, isArray, isBlank, isBool, isEmpty, isJson, isNull, isNumber, isNumeric, lightboxImages, loadJS, mapNewWindows, modalTaxon, openLink, openTab, overlayOff, overlayOn, p$, parseTaxonYear, performSearch, prepURI, randomInt, ref, roundNumber, roundNumberSigfig, safariDialogHelper, safariSearchArgHelper, searchParams, setHistory, setupServiceWorker, showBadSearchErrorMessage, showDownloadChooser, smartUpperCasing, sortResults, stopLoad, stopLoadError, toFloat, toInt, toObject, toastStatusMessage, uri,
+var _metaStatus, activityIndicatorOff, activityIndicatorOn, allError, animateHoverShadows, animateLoad, bindClickTargets, bindClicks, bindDismissalRemoval, bindPaperMenuButton, browserBeware, bsAlert, buildQuery, byteCount, checkFileVersion, checkLaggedUpdate, checkLocalVersion, checkTaxonNear, clearSearch, dateMonthToString, deEscape, deepJQuery, delay, doCORSget, doFontExceptions, doNothing, domainPlaceholder, downloadCSVList, downloadHTMLList, eutheriaFilterHelper, fetchMajorMinorGroups, foo, formatScientificNames, formatSearchResults, getElementHtml, getFilters, getLocation, getMaxZ, getRandomEntry, goTo, insertCORSWorkaround, insertModalImage, interval, isArray, isBlank, isBool, isEmpty, isJson, isNull, isNumber, isNumeric, lightboxImages, loadJS, mapNewWindows, modalTaxon, openLink, openTab, overlayOff, overlayOn, p$, parseTaxonYear, performSearch, prepURI, randomInt, ref, roundNumber, roundNumberSigfig, safariDialogHelper, safariSearchArgHelper, searchParams, setHistory, setupServiceWorker, showBadSearchErrorMessage, showDownloadChooser, smartUpperCasing, sortResults, startLoad, stopLoad, stopLoadError, toFloat, toInt, toObject, toastStatusMessage, uri,
   slice = [].slice,
   indexOf = [].indexOf || function(item) { for (var i = 0, l = this.length; i < l; i++) { if (i in this && this[i] === item) return i; } return -1; };
 
@@ -1031,6 +1031,13 @@ animateLoad = function(elId, iteration) {
   }
 };
 
+startLoad = function(elementId) {
+  if (elementId == null) {
+    elementId = null;
+  }
+  return animateLoad(elementId);
+};
+
 stopLoad = function(elId, fadeOut, iteration) {
   var e, endLoad, error1, selector;
   if (elId == null) {
@@ -1504,7 +1511,7 @@ bindClicks = function(selector) {
    * URL data-href.
    */
   $(selector).each(function() {
-    var callable, e, error1, error2, url;
+    var callable, e, error1, error2, ref1, url;
     try {
       url = $(this).attr("data-href");
       if (isNull(url)) {
@@ -1537,7 +1544,7 @@ bindClicks = function(selector) {
         });
         return url;
       } else {
-        callable = $(this).attr("data-function");
+        callable = (ref1 = $(this).attr("data-function")) != null ? ref1 : $(this).attr("data-fn");
         if (callable != null) {
           $(this).unbind();
           return $(this).click(function() {
@@ -3262,6 +3269,40 @@ bindPaperMenuButton = function(selector, unbindTargets) {
   }
   return false;
 };
+
+getRandomEntry = function() {
+
+  /*
+   * Get a random taxon, and go to that page
+   */
+  var args;
+  startLoad();
+  args = {
+    random: true
+  };
+  $.get(searchParams.apiPath, buildQuery(args, "json")).done(function(result) {
+    var accountQuery, dest;
+    if (isNull(result.genus) || isNull(result.species)) {
+      stopLoadError("Unable to fetch random entry");
+    }
+    accountQuery = {
+      genus: result.genus,
+      species: result.species
+    };
+    if (!isNull(result.subspecies)) {
+      accountQuery.subspecies = result.subspecies;
+    }
+    dest = uri.urlString + "species-account.php?" + (buildQuery(accountQuery));
+    console.log("About to go to", dest);
+    goTo(dest);
+    return stopLoad();
+  }).fail(function() {
+    return stopLoadError("Unable to fetch random entry");
+  });
+  return false;
+};
+
+window.getRandomEntry = getRandomEntry;
 
 $(function() {
   var col, devHello, e, error1, error2, error3, error4, f64, filterObj, fixState, fuzzyState, ignorePages, loadArgs, looseState, openFilters, queryUrl, ref1, selector, simpleAllowedFilters, temp, val;

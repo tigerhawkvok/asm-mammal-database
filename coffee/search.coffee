@@ -1292,6 +1292,36 @@ bindPaperMenuButton = (selector = "paper-menu-button", unbindTargets = true) ->
   false
 
 
+
+getRandomEntry = ->
+  ###
+  # Get a random taxon, and go to that page
+  ###
+  startLoad()
+  args =
+    random: true
+  $.get searchParams.apiPath, buildQuery args, "json"
+  .done (result) ->
+    if isNull(result.genus) or isNull result.species
+      stopLoadError "Unable to fetch random entry"
+    accountQuery =
+      genus: result.genus
+      species: result.species
+    unless isNull result.subspecies
+      accountQuery.subspecies = result.subspecies
+    dest = "#{uri.urlString}species-account.php?#{buildQuery accountQuery}"
+    console.log "About to go to", dest
+    goTo dest
+    stopLoad() # Just in case
+  .fail ->
+    stopLoadError "Unable to fetch random entry"
+  false
+
+
+window.getRandomEntry = getRandomEntry
+
+
+
 $ ->
   devHello = """
   ****************************************************************************

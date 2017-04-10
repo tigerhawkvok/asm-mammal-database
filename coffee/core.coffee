@@ -786,6 +786,11 @@ animateLoad = (elId = "loader", iteration = 0) ->
   catch e
     console.warn('Could not animate loader', e.message)
 
+
+startLoad = (elementId = null) ->
+  animateLoad(elementId)
+
+
 stopLoad = (elId = "loader", fadeOut = 1000, iteration = 0) ->
   if elId.slice(0,1) is "#"
     selector = elId
@@ -1203,7 +1208,7 @@ bindClicks = (selector = ".click") ->
         return url
       else
         # Check for onclick function
-        callable = $(this).attr("data-function")
+        callable = $(this).attr("data-function") ? $(this).attr("data-fn")
         if callable?
           $(this).unbind()
           # console.log("Binding #{callable}() to ##{$(this).attr("id")}")

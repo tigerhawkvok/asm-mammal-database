@@ -1,10 +1,11 @@
 <?php
 
+$lastIcon = "<paper-icon-button icon=\"glyphicon-social:playing-dice\" class=\"click\" data-fn=\"getRandomEntry\" data-toggle=\"tooltip\" title=\"Random Entry\" data-placement=\"bottom\"></paper-icon-button>";
+
 if(basename($_SERVER["PHP_SELF"]) == "index.php") {
-    # A link to a randomizer
-    $lastIcon = "<paper-icon-button icon=\"glyphicon-social:playing-dice\" class=\"click\" data-fn=\"getRandomEntry\" data-toggle=\"tooltip\" title=\"Random Entry\" data-placement=\"bottom\"></paper-icon-button>";
+    # lastIcon is fine
 } else {
-    $lastIcon = "<paper-icon-button icon=\"icons:home\" class=\"click\" data-href=\"https://mammaldiversity.org\" data-toggle=\"tooltip\" title=\"Home\" data-placement=\"bottom\"></paper-icon-button>";
+    $lastIcon .= "<paper-icon-button icon=\"icons:home\" class=\"click\" data-href=\"https://mammaldiversity.org\" data-toggle=\"tooltip\" title=\"Home\" data-placement=\"bottom\"></paper-icon-button>";
 }
 
 $bodyOpen = "  <body fullbleed vertical layout class='container-fluid'>

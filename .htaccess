@@ -1,3 +1,6 @@
+ErrorDocument 500 /500.php
+ErrorDocument 404 /404.php
+
 # log PHP errors to a file
 # php_flag log_errors on
 # php_value error_reporting 32767
@@ -17,7 +20,7 @@ RewriteEngine On
 RewriteBase /
 
 # Rewrite files
-RewriteCond %{REQUEST_URI} ^(.*/?)species-account/(?:(?:[a-zA-Z]+/){2})?((.*\.(css|png|jpg|jpeg|gif|svg|js|bmp|webm|ttf|eot|woff|html|php|map|ico))|currentVersion)
+RewriteCond %{REQUEST_URI} ^(.*/?)species-account/(?:(?:[a-zA-Z]+/){2})?((.*\.(css|png|jpg|jpeg|gif|svg|js|bmp|webm|ttf|eot|woff|html|php|map|ico))|currentVersion)$
 RewriteRule .* %1%2 [NC,L,QSA]
 
 

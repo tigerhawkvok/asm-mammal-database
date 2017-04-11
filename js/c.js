@@ -8,6 +8,10 @@ uri.o = $.url();
 
 uri.urlString = uri.o.attr('protocol') + '://' + uri.o.attr('host') + uri.o.attr("directory");
 
+try {
+  uri.urlString = uri.urlString.replace(/(.*)\/(((&?[a-zA-Z_\-]+=[a-zA-Z_\-\+0-9%=]+)+)\/?)(.*)/img, "$1/");
+} catch (undefined) {}
+
 uri.query = uri.o.attr("fragment");
 
 domainPlaceholder = uri.o.attr("host").split(".");
@@ -1775,7 +1779,7 @@ buildQuery = function(obj) {
 
 checkLocalVersion = function() {
   if (uri.o.attr("host") === "localhost") {
-    $.get(uri.urlString + "/currentVersion").done(function(result) {
+    $.get(uri.urlString + "currentVersion").done(function(result) {
       var args, githubApiEndpoint, version, versionParts;
       console.log("Got tag", result);
       version = result.replace(/v(([0-9]+\.)+[0-9]+)(\-\w+)?/img, "$1");
@@ -1799,6 +1803,7 @@ checkLocalVersion = function() {
             tagVersionPartNumber = toInt(part);
             localVersionPartNumber = toInt(versionParts[i]);
             if (tagVersionPartNumber > localVersionPartNumber) {
+              console.log("Found mismatched version at", uri.urlString + "/currentVersion");
               console.warn("Notice: tag part '" + tagVersionPartNumber + "' > '" + localVersionPartNumber + "'", tag, version);
               html = "<strong>Head's-Up:</strong> Your local version is behind the latest application release.\n<br/><br/>\nOpen up your terminal, and in your local directory run:\n<br/><br/>\n<code class=\"center-block text-center\">git pull</code>\n<br/>\nTo get your local version up-to-date.";
               bsAlert(html);
@@ -1867,13 +1872,6 @@ $(function() {
       });
     });
     loadJS("js/jquery.cookie.min.js", function() {
-      var html;
-      if ($.cookie(uri.domain + "_user") != null) {
-        html = "<paper-icon-button icon=\"create\" class=\"click\" data-href=\"" + uri.urlString + "admin/\" data-toggle=\"tooltip\" title=\"Go to administration\" id=\"goto-admin\"></paper-icon-button>";
-        $("#bug-footer").append(html);
-        bindClicks("#goto-admin");
-        $("#goto-admin").tooltip();
-      }
       return false;
     });
   }

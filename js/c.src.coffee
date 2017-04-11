@@ -1,6 +1,9 @@
 uri = new Object()
 uri.o = $.url()
 uri.urlString = uri.o.attr('protocol') + '://' + uri.o.attr('host')  + uri.o.attr("directory")
+# For mod_rewrite fanciness
+try
+  uri.urlString = uri.urlString.replace /(.*)\/(((&?[a-zA-Z_\-]+=[a-zA-Z_\-\+0-9%=]+)+)\/?)(.*)/img, "$1/"
 uri.query = uri.o.attr("fragment")
 domainPlaceholder = uri.o.attr("host").split "."
 # Now we pop off the last before taking the zero-index
@@ -1399,7 +1402,7 @@ buildQuery = (obj) ->
 checkLocalVersion = ->
   if uri.o.attr("host") is "localhost"
     # Check the last commit
-    $.get "#{uri.urlString}/currentVersion"
+    $.get "#{uri.urlString}currentVersion"
     .done (result) ->
       console.log "Got tag", result
       version = result.replace /v(([0-9]+\.)+[0-9]+)(\-\w+)?/img, "$1"
@@ -1422,6 +1425,7 @@ checkLocalVersion = ->
             tagVersionPartNumber = toInt part
             localVersionPartNumber = toInt versionParts[i]
             if tagVersionPartNumber > localVersionPartNumber
+              console.log "Found mismatched version at", "#{uri.urlString}/currentVersion"
               console.warn "Notice: tag part '#{tagVersionPartNumber}' > '#{localVersionPartNumber}'", tag, version
               html = """
               <strong>Head's-Up:</strong> Your local version is behind the latest application release.
@@ -1494,15 +1498,6 @@ $ ->
               bindClicks(".admin-edit-button")
     loadJS "js/jquery.cookie.min.js", ->
       # Now see if the user is an admin
-      if $.cookie("#{uri.domain}_user")?
-        # Someone has logged in to this device before, offer the admin
-        # link.
-        html = """
-        <paper-icon-button icon="create" class="click" data-href="#{uri.urlString}admin/" data-toggle="tooltip" title="Go to administration" id="goto-admin"></paper-icon-button>
-        """
-        $("#bug-footer").append(html)
-        bindClicks("#goto-admin")
-        $("#goto-admin").tooltip()
       false
   try
     for md in $("marked-element")

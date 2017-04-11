@@ -17,7 +17,7 @@ RewriteEngine On
 RewriteBase /
 
 # Rewrite files
-RewriteCond %{REQUEST_URI} ^(.*/?)species-account/(?:(?:[a-zA-Z]+/){2})?(.*\.(css|png|jpg|jpeg|gif|svg|js|bmp|webm|ttf|eot|woff|html|currentVersion|php|map))
+RewriteCond %{REQUEST_URI} ^(.*/?)species-account/(?:(?:[a-zA-Z]+/){2})?((.*\.(css|png|jpg|jpeg|gif|svg|js|bmp|webm|ttf|eot|woff|html|php|map|ico))|currentVersion)
 RewriteRule .* %1%2 [NC,L,QSA]
 
 

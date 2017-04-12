@@ -2,7 +2,7 @@
 <html lang="en">
   <head>
     <title>
-      HTTP 404 NOT FOUND
+      HTTP 500 INTERNAL SERVER ERROR
     </title>
     <meta charset="utf-8"/>
     <meta name="theme-color" content="#446f74"/>
@@ -156,14 +156,20 @@
         <paper-icon-button icon="glyphicon-social:playing-dice" class="click" data-fn="getRandomEntry" data-toggle="tooltip" title="Random Entry" data-placement="bottom"></paper-icon-button>
       </p>
     </header>
-    <main class='row'> 
+    <main class='row'>
   <div class="col-xs-12">
-    <img src="https://media.giphy.com/media/9J7tdYltWyXIY/giphy.gif" alt="HTTP 404 errror" />  
+    <h1>Yikes.</h1>
+    <p class="col-xs-12">
+      That's an error. Our system isn't able to handle your request.
+    </p>
+    <div class="col-xs-12 center-block text-center">
+      <!-- <img src="https://http.cat/500.jpg" alt="HTTP 500 errror" /> -->
+      <img src="https://media.giphy.com/media/1eUtlOkkugRX2/giphy.gif" alt="HTTP 500 errror" />
+    </div>
+    <p class="col-xs-12">
+      Or, in web parlance, <code>500 INTERNAL SERVER ERROR</code>
+    </p>
   </div>
-  <p class="col-xs-12">
-    Nope, nothing there. Or, in web parlance, <code>404 NOT FOUND</code>
-  </p>
-  
     </main>
 
     <footer class="row hidden-xs">

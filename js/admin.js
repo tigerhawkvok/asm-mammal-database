@@ -92,6 +92,7 @@ verifyLoginCredentials = function(callback) {
   args = "hash=" + hash + "&secret=" + secret + "&dblink=" + link;
   $.post(adminParams.loginApiTarget, args, "json").done(function(result) {
     var cookieFullName;
+    console.log("Server called back from login credential verification", result);
     if (result.status === true) {
       $(".logged-in-values").removeAttr("hidden");
       cookieFullName = uri.domain + "_fullname";

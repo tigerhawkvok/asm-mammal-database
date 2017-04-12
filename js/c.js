@@ -1778,28 +1778,47 @@ buildQuery = function(obj) {
 };
 
 checkLocalVersion = function() {
+  var len, m, part, prefixUrl, urlBase, urlBaseRaw;
   if (uri.o.attr("host") === "localhost") {
-    $.get(uri.urlString + "currentVersion").done(function(result) {
+    urlBaseRaw = uri.o.attr("directory").split("/");
+    urlBase = new Array();
+    for (m = 0, len = urlBaseRaw.length; m < len; m++) {
+      part = urlBaseRaw[m];
+      if (isNull(part)) {
+        continue;
+      }
+      urlBase.push(part);
+    }
+    if (urlBase[0].search("~") === 0) {
+      prefixUrl = uri.o.attr("protocol") + ("://localhost" + urlBase[0] + "/");
+    } else {
+      prefixUrl = uri.urlString;
+    }
+    $.get(prefixUrl + "currentVersion").done(function(result) {
       var args, githubApiEndpoint, version, versionParts;
       console.log("Got tag", result);
       version = result.replace(/v(([0-9]+\.)+[0-9]+)(\-\w+)?/img, "$1");
+      if (version.length > 128) {
+        console.error("Problem checking version file");
+        return false;
+      }
       versionParts = version.split(".");
       args = {
         access_token: "7a76691c6beea4d47eaaa6182a53e523c6a16a67"
       };
       githubApiEndpoint = "https://api.github.com/repos/tigerhawkvok/asm-mammal-database/releases";
       return $.get(githubApiEndpoint, buildQuery(args, "json")).done(function(result) {
-        var html, i, len, len1, localVersionPartNumber, m, o, part, release, tag, tagParts, tagVersion, tagVersionPartNumber;
+        var html, i, len1, len2, localVersionPartNumber, o, p, release, tag, tagParts, tagVersion, tagVersionPartNumber;
         console.log("Github API result:", result);
-        for (m = 0, len = result.length; m < len; m++) {
-          release = result[m];
+        for (o = 0, len1 = result.length; o < len1; o++) {
+          release = result[o];
           console.log("Checking release", release);
           tag = release.tag_name;
           tagVersion = tag.replace(/v(([0-9]+\.)+[0-9]+)(\-\w+)?/img, "$1");
           tagParts = tagVersion.split(".");
           i = 0;
-          for (o = 0, len1 = tagParts.length; o < len1; o++) {
-            part = tagParts[o];
+          for (p = 0, len2 = tagParts.length; p < len2; p++) {
+            part = tagParts[p];
             tagVersionPartNumber = toInt(part);
             localVersionPartNumber = toInt(versionParts[i]);
             if (tagVersionPartNumber > localVersionPartNumber) {

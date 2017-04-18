@@ -38,6 +38,7 @@ a2dismod mpm_event
 a2enmod php7.0
 a2enmod mpm-prefork
 a2enmod userdir
+a2enmod rewrite
 # Start service
 sudo apachectl -k restart
 # Scripts on OSX need the execute bit

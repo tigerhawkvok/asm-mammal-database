@@ -11,7 +11,9 @@
 
 
 
-// Main content
+/***
+ *  Basic configuration
+ ***/
 @font-family-sans-serif: Roboto, "Droid Sans", "Helvetica Neue", Helvetica, Arial, sans-serif;
 @font-family-serif: "Roboto Slab", Droid, Cambria, Georgia, "Times New Roman", Times, serif;
 @font-family-monospace: "Droid Sans Mono", Menlo, Monaco, Consolas, "Courier New", monospace;
@@ -177,7 +179,18 @@ paper-dialog-scrollable {
     }
 }
 
-// General
+
+// Error Docs
+
+.error-image {
+    .center-block;
+    .text-center;
+}
+
+
+/*****************************************
+ * General
+ *****************************************/
 @body-header-offset: 3em;
 header#header-bar {
     position: fixed;
@@ -358,7 +371,7 @@ footer {
     &.row {
         left: 15px;
     }
-    
+
     copyright-statement {
         top: @line-height-base / 2em;
     }

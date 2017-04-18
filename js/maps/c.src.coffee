@@ -1,6 +1,9 @@
 uri = new Object()
 uri.o = $.url()
 uri.urlString = uri.o.attr('protocol') + '://' + uri.o.attr('host')  + uri.o.attr("directory")
+# For mod_rewrite fanciness
+try
+  uri.urlString = uri.urlString.replace /(.*)\/(((&?[a-zA-Z_\-]+=[a-zA-Z_\-\+0-9%=]+)+)\/?)(.*)/img, "$1/"
 uri.query = uri.o.attr("fragment")
 domainPlaceholder = uri.o.attr("host").split "."
 # Now we pop off the last before taking the zero-index
@@ -1399,10 +1402,22 @@ buildQuery = (obj) ->
 checkLocalVersion = ->
   if uri.o.attr("host") is "localhost"
     # Check the last commit
-    $.get "#{uri.urlString}/currentVersion"
+    urlBaseRaw = uri.o.attr("directory").split("/")
+    urlBase = new Array()
+    for part in urlBaseRaw
+      if isNull part then continue
+      urlBase.push part
+    if urlBase[0].search("~") is 0
+      prefixUrl = uri.o.attr("protocol") + "://localhost#{urlBase[0]}/"
+    else
+      prefixUrl = uri.urlString
+    $.get "#{prefixUrl}currentVersion"
     .done (result) ->
       console.log "Got tag", result
       version = result.replace /v(([0-9]+\.)+[0-9]+)(\-\w+)?/img, "$1"
+      if version.length > 128
+        console.error "Problem checking version file"
+        return false
       versionParts = version.split "."
       # Limited access token to only read private repo status.
       # This token will be revoked when the repo goes public.
@@ -1422,6 +1437,7 @@ checkLocalVersion = ->
             tagVersionPartNumber = toInt part
             localVersionPartNumber = toInt versionParts[i]
             if tagVersionPartNumber > localVersionPartNumber
+              console.log "Found mismatched version at", "#{uri.urlString}/currentVersion"
               console.warn "Notice: tag part '#{tagVersionPartNumber}' > '#{localVersionPartNumber}'", tag, version
               html = """
               <strong>Head's-Up:</strong> Your local version is behind the latest application release.
@@ -1440,7 +1456,7 @@ checkLocalVersion = ->
             ++i
         console.debug "Your version is up-to-date"
         false
-  else     
+  else
     doNothing()
   false
 
@@ -1476,7 +1492,7 @@ $ ->
         delete _asm.inhibitRedirect
         if uri.o.attr("file") is "species-account.php"
           # We should put a link to this critter as an edit if we're an
-          # admin    
+          # admin
           if typeof window.speciesData is "object"
             try
               query = JSON.stringify window.speciesData
@@ -1494,15 +1510,6 @@ $ ->
               bindClicks(".admin-edit-button")
     loadJS "js/jquery.cookie.min.js", ->
       # Now see if the user is an admin
-      if $.cookie("#{uri.domain}_user")?
-        # Someone has logged in to this device before, offer the admin
-        # link.
-        html = """
-        <paper-icon-button icon="create" class="click" data-href="#{uri.urlString}admin/" data-toggle="tooltip" title="Go to administration" id="goto-admin"></paper-icon-button>
-        """
-        $("#bug-footer").append(html)
-        bindClicks("#goto-admin")
-        $("#goto-admin").tooltip()
       false
   try
     for md in $("marked-element")

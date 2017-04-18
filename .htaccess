@@ -1,3 +1,27 @@
+ErrorDocument 500 /500.php
+ErrorDocument 404 /404.php
+
+ErrorDocument 400 /400.php
+ErrorDocument 401 /400.php
+ErrorDocument 402 /400.php
+ErrorDocument 403 /400.php
+ErrorDocument 405 /400.php
+ErrorDocument 406 /400.php
+ErrorDocument 407 /400.php
+ErrorDocument 408 /400.php
+ErrorDocument 409 /400.php
+ErrorDocument 410 /400.php
+ErrorDocument 411 /400.php
+ErrorDocument 412 /400.php
+ErrorDocument 413 /400.php
+ErrorDocument 414 /400.php
+ErrorDocument 415 /400.php
+ErrorDocument 501 /400.php
+ErrorDocument 502 /400.php
+ErrorDocument 503 /400.php
+ErrorDocument 504 /400.php
+ErrorDocument 505 /400.php
+
 # log PHP errors to a file
 # php_flag log_errors on
 # php_value error_reporting 32767
@@ -12,3 +36,38 @@
 #Header set Strict-Transport-Security "max-age=31536000"
 #Header append Strict-Transport-Security includeSubDomains
 #Header append Strict-Transport-Security preload
+
+RewriteEngine On
+RewriteBase /
+
+# Rewrite files
+RewriteCond %{REQUEST_URI} ^(.*/?)species-account/(?:(?:[a-zA-Z]+/){2})?((.*\.(css|png|jpg|jpeg|gif|svg|js|bmp|webm|ttf|eot|woff|html|php|map|ico))|currentVersion)$
+RewriteRule .* %1%2 [NC,L,QSA]
+
+
+# Rewrite species accounts
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteCond %{REQUEST_FILENAME}\.php -f
+RewriteCond %{REQUEST_FILENAME}\.php ^(?:.*/)species-account\.php(.*)$
+RewriteCond %{REQUEST_URI} ^(.*?)species-account/(?:genus=)?([a-zA-Z]+)(?:&species=|/)([a-zA-Z]+)
+RewriteRule .* %1species-account.php?genus=%2&species=%3 [NC,QSA,L]
+
+
+# Rewrite including args
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteCond %{REQUEST_FILENAME}\.php -f
+RewriteCond %{REQUEST_FILENAME}\.php ^(?:.*/)(.*)\.php(.*)$
+RewriteCond %1:::%{REQUEST_URI} ^(.*?):::(.*/?)\1/((&?[a-zA-Z_\-]+=[a-zA-Z_\-\+0-9%=]+)+)/?
+RewriteRule .* %2%1.php?%3 [NC,L]
+
+# Rewrite for no args
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteCond %{REQUEST_FILENAME}\.php -f
+RewriteCond %{REQUEST_URI}\.php ^(.*)\.php(.*)$
+RewriteRule .* %1.php?%2 [NC,QSA,L]
+
+# Rewrite for html
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteCond %{REQUEST_FILENAME}\.html -f
+RewriteCond %{REQUEST_URI}\.html ^(.*)\.html$
+RewriteRule .* %1.html [NC,QSA,L]

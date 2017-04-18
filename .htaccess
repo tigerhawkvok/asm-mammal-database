@@ -1,6 +1,27 @@
 ErrorDocument 500 /500.php
 ErrorDocument 404 /404.php
 
+ErrorDocument 400 /400.php
+ErrorDocument 401 /400.php
+ErrorDocument 402 /400.php
+ErrorDocument 403 /400.php
+ErrorDocument 405 /400.php
+ErrorDocument 406 /400.php
+ErrorDocument 407 /400.php
+ErrorDocument 408 /400.php
+ErrorDocument 409 /400.php
+ErrorDocument 410 /400.php
+ErrorDocument 411 /400.php
+ErrorDocument 412 /400.php
+ErrorDocument 413 /400.php
+ErrorDocument 414 /400.php
+ErrorDocument 415 /400.php
+ErrorDocument 501 /400.php
+ErrorDocument 502 /400.php
+ErrorDocument 503 /400.php
+ErrorDocument 504 /400.php
+ErrorDocument 505 /400.php
+
 # log PHP errors to a file
 # php_flag log_errors on
 # php_value error_reporting 32767

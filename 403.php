@@ -3,7 +3,7 @@
   <head>
     <title>
       <?php
-      $title = "HTTP 500 INTERNAL SERVER ERROR";
+      $title = "HTTP 403 FORBIDDEN";
       echo $title;
       ?>
     </title>
@@ -17,18 +17,15 @@
     ?>
 
   <div class="col-xs-12">
-    <h1>Yikes.</h1>
-    <p class="col-xs-12">
-      That's an error. Our system isn't able to handle your request.
-    </p>
+    <h1>Not so much.</h1>
     <div class="col-xs-12 error-image">
-      <video autoplay loop poster="https://media.giphy.com/media/1eUtlOkkugRX2/200_s.gif">
-        <source src="https://media.giphy.com/media/1eUtlOkkugRX2/giphy.mp4" type="video/mp4"/>
-        <img src="https://media.giphy.com/media/1eUtlOkkugRX2/giphy.gif" />
+      <video autoplay loop poster="https://media.giphy.com/media/njYrp176NQsHS/200_s.gif">
+        <source src="https://media.giphy.com/media/njYrp176NQsHS/giphy.mp4" type="video/mp4"/>
+        <img src="https://media.giphy.com/media/njYrp176NQsHS/giphy.gif" />
       </video>
     </div>
     <p class="col-xs-12">
-      Or, in web parlance, <code>500 INTERNAL SERVER ERROR</code>
+      Or, in web parlance, <code>403 FORBIDDEN</code>
     </p>
   </div>
   <?php echo $bodyClose;

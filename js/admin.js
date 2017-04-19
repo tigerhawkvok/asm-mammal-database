@@ -542,8 +542,10 @@ validateNewTaxon = function() {
       if (invalid) {
         p$(selector).invalid = true;
         p$(selector).errorMessage = "This taxon already exists in the database";
+        p$("#save-editor").disabled = true;
       } else {
         p$(selector).invalid = false;
+        p$("#save-editor").disabled = false;
       }
     }
     return false;
@@ -589,13 +591,36 @@ validateNewTaxon = function() {
       }
     }
     taxonExistsHelper(false);
-    $.get(_asm.affiliateQueryUrl.iucnRedlist, encodeUriComponent(taxonString), "json").done(function(result) {
-      var iucnData;
-      iucnData = result.result[0];
-      if (isNull(iucnData.taxonid)) {
-        console.warn("Couldn't find IUCN entry for taxon '" + taxonString + "'");
+    args = "missing=true&genus=" + taxon.genus + "&species=" + taxon.species + "&prefetch=true";
+    $.get(searchParams.apiPath, args, "json").done(function(result) {
+      var authorityYear, commonName, error1, genusAuthority, genusAuthorityYear, iucnData, ref1, speciesAuthority, speciesAuthorityYear;
+      if (!isNumeric(result.id)) {
+        console.error("Unable to find IUCN result");
         return false;
       }
+      iucnData = result;
+      commonName = (ref1 = iucnData.main_common_name) != null ? ref1 : iucnData.common_name;
+      speciesAuthority = iucnData.species_authority;
+      genusAuthority = iucnData.genus_authority;
+      try {
+        authorityYear = JSON.parse(iucnData.authority_year);
+        genusAuthorityYear = Object.keys(authorityYear)[0];
+        speciesAuthorityYear = authorityYear[genusAuthorityYear];
+      } catch (error1) {
+        genusAuthorityYear = "";
+        speciesAuthorityYear = "";
+      }
+      p$("#edit-common-name").value = commonName;
+      p$("#edit-common-name-source").value = "iucn";
+      p$("#edit-genus-authority").value = genusAuthority;
+      p$("#edit-species-authority").value = speciesAuthority;
+      p$("#edit-gauthyear").value = genusAuthorityYear;
+      p$("#edit-sauthyear").value = speciesAuthorityYear;
+      try {
+        p$("#genus-authority-parens").checked = iucnData.parens_auth_genus.toBool();
+        p$("#species-authority-parens").checked = iucnData.parens_auth_species.toBool();
+      } catch (undefined) {}
+      console.log("Got", commonName, speciesAuthority, genusAuthority, authorityYear, genusAuthorityYear, speciesAuthorityYear);
       return false;
     });
     return false;
@@ -611,7 +636,7 @@ createNewTaxon = function() {
   /*
    * Load a blank modal taxon editor, ready to make a new one
    */
-  var whoEdited, windowHeight;
+  var error1, whoEdited, windowHeight;
   animateLoad();
   loadModalTaxonEditor("", "Create");
   d$("#editor-title").text("Create New Taxon");
@@ -625,7 +650,24 @@ createNewTaxon = function() {
   d$("#save-editor").click(function() {
     return saveEditorEntry("new");
   });
-  $("#modal-taxon-edit").get(0).open();
+  $("#modal-taxon-edit").on("iron-overlay-opened", function() {
+    var editFields, fieldLabel, len, m, selector;
+    console.log("Binding new taxon events");
+    editFields = ["genus", "species", "subspecies"];
+    for (m = 0, len = editFields.length; m < len; m++) {
+      fieldLabel = editFields[m];
+      selector = "#edit-" + fieldLabel;
+      $(selector).keyup(function() {
+        return validateNewTaxon.debounce();
+      });
+    }
+    return validateNewTaxon();
+  });
+  try {
+    p$("#modal-taxon-edit").open();
+  } catch (error1) {
+    $("#modal-taxon-edit").get(0).open();
+  }
   return stopLoad();
 };
 

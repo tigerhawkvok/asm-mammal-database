@@ -589,9 +589,10 @@ validateNewTaxon = ->
       if invalid
         p$(selector).invalid = true
         p$(selector).errorMessage = "This taxon already exists in the database"
+        p$("#save-editor").disabled = true
       else
         p$(selector).invalid = false
-
+        p$("#save-editor").disabled = false
     false
   # Check the field for the taxon name
   taxon =
@@ -618,9 +619,11 @@ validateNewTaxon = ->
           try
             if isNull(taxon.subspecies) and isNull(testTaxon.subspecificEpithet)
               console.warn "Taxon sp already exists in DB"
+              #taxonExistsHelper()
               return taxonExistsHelper()
             else if taxon.subspecies.toLowerCase() is testTaxon.subspecificEpithet.toLowerCase()
               console.warn "Taxon ssp already exists in DB"
+              #taxonExistsHelper()
               return taxonExistsHelper()
             else
               # Non-empty ssp on one, empty on another, or no match
@@ -635,14 +638,40 @@ validateNewTaxon = ->
     taxonExistsHelper false
     # Check the IUCN for its info.
     # Async ping for IUCN data
-    $.get _asm.affiliateQueryUrl.iucnRedlist, encodeUriComponent(taxonString), "json"
+    args = "missing=true&genus=#{taxon.genus}&species=#{taxon.species}&prefetch=true"
+    #$.get _asm.affiliateQueryUrl.iucnRedlist, encodeURIComponent(taxonString), "json"
+    $.get searchParams.apiPath, args, "json"
     .done (result) ->
-      iucnData = result.result[0]
-      if isNull iucnData.taxonid
-        console.warn "Couldn't find IUCN entry for taxon '#{taxonString}'"
+      unless isNumeric result.id
+        console.error "Unable to find IUCN result"
         return false
+      # iucnData = result.result[0]
+      # if isNull iucnData.taxonid
+      #   console.warn "Couldn't find IUCN entry for taxon '#{taxonString}'", iucnData
+      #   return false
+      iucnData = result
       # Fill in IUCN data
+      commonName = iucnData.main_common_name ? iucnData.common_name
+      speciesAuthority = iucnData.species_authority
+      genusAuthority = iucnData.genus_authority
+      try
+        authorityYear = JSON.parse iucnData.authority_year
+        genusAuthorityYear = Object.keys(authorityYear)[0]
+        speciesAuthorityYear = authorityYear[genusAuthorityYear]
+      catch
+        genusAuthorityYear = ""
+        speciesAuthorityYear = ""
+      p$("#edit-common-name").value = commonName
+      p$("#edit-common-name-source").value = "iucn"
+      p$("#edit-genus-authority").value = genusAuthority
+      p$("#edit-species-authority").value = speciesAuthority
+      p$("#edit-gauthyear").value = genusAuthorityYear
+      p$("#edit-sauthyear").value = speciesAuthorityYear
+      try
+        p$("#genus-authority-parens").checked = iucnData.parens_auth_genus.toBool()
+        p$("#species-authority-parens").checked = iucnData.parens_auth_species.toBool()
       # TODO
+      console.log "Got", commonName, speciesAuthority, genusAuthority, authorityYear, genusAuthorityYear, speciesAuthorityYear
       false
     false
   .fail (result, status) ->
@@ -675,8 +704,26 @@ createNewTaxon = ->
   d$("#save-editor")
   .click ->
     saveEditorEntry("new")
-  $("#modal-taxon-edit").get(0).open()
+  $("#modal-taxon-edit").on "iron-overlay-opened", ->
+    # Binding new taxon events
+    console.log "Binding new taxon events"
+    editFields = [
+      "genus"
+      "species"
+      "subspecies"
+      ]
+    for fieldLabel in editFields
+      selector = "#edit-#{fieldLabel}"
+      $(selector).keyup ->
+        validateNewTaxon.debounce()
+    validateNewTaxon()
+  try
+    p$("#modal-taxon-edit").open()
+  catch
+    $("#modal-taxon-edit").get(0).open()
   stopLoad()
+
+
 
 createDuplicateTaxon = ->
   ###

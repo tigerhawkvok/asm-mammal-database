@@ -574,6 +574,81 @@ fillEmptyCommonName = ->
 
 
 
+validateNewTaxon = ->
+  ###
+  #
+  ###
+  taxonExistsHelper = (invalid = true) ->
+    editFields = [
+      "genus"
+      "species"
+      "subspecies"
+      ]
+    for fieldLabel in editFields
+      selector = "#edit-#{fieldLabel}"
+      if invalid
+        p$(selector).invalid = true
+        p$(selector).errorMessage = "This taxon already exists in the database"
+      else
+        p$(selector).invalid = false
+
+    false
+  # Check the field for the taxon name
+  taxon =
+    genus: p$("#edit-genus").value
+    species: p$("#edit-species").value
+    subspecies: unless isNull p$("#edit-subspecies").value then p$("#edit-subspecies").value else ""
+  args = "q=#{taxon.genus}+#{taxon.species}"
+  taxonString = "#{taxon.genus} #{taxon.species}"
+  unless isNull taxon.subspecies
+    args += "+#{taxon.subspecies}"
+    taxonString += " #{taxon.subspecies}"
+  # Async ping for duplication
+  $.get searchParams.apiPath, "#{args}&dwc_only=true", "json"
+  .done (result) ->
+    if result.status isnt true
+      console.error "Problem validating taxon:", result
+      return false
+    for testTaxon in Object.toArray result.result
+      # See if the objects match up
+      if testTaxon.genus.toLowerCase() is taxon.genus.toLowerCase()
+        # Same genus
+        if testTaxon.specificEpithet.toLowerCase() is taxon.species.toLowerCase()
+          # Same species
+          try
+            if isNull(taxon.subspecies) and isNull(testTaxon.subspecificEpithet)
+              console.warn "Taxon sp already exists in DB"
+              return taxonExistsHelper()
+            else if taxon.subspecies.toLowerCase() is testTaxon.subspecificEpithet.toLowerCase()
+              console.warn "Taxon ssp already exists in DB"
+              return taxonExistsHelper()
+            else
+              # Non-empty ssp on one, empty on another, or no match
+              continue
+        else
+          # Different species
+          continue
+      else
+        # Different genera
+        continue
+    # The taxon doesn't already exist.
+    taxonExistsHelper false
+    # Check the IUCN for its info.
+    # Async ping for IUCN data
+    $.get _asm.affiliateQueryUrl.iucnRedlist, encodeUriComponent(taxonString), "json"
+    .done (result) ->
+      iucnData = result.result[0]
+      if isNull iucnData.taxonid
+        console.warn "Couldn't find IUCN entry for taxon '#{taxonString}'"
+        return false
+      # Fill in IUCN data
+      # TODO
+      false
+    false
+  .fail (result, status) ->
+    console.error "FAIL_VALIDATE"
+    false
+  false
 
 
 
@@ -628,6 +703,16 @@ createDuplicateTaxon = ->
       saveEditorEntry("new")
     delay 250, ->
       stopLoad()
+    editFields = [
+      "genus"
+      "species"
+      "subspecies"
+      ]
+    for fieldLabel in editFields
+      selector = "#edit-#{fieldLabel}"
+      $(selector).keyup ->
+        validateNewTaxon.debounce()
+    validateNewTaxon()
   catch e
     stopLoadError("Unable to duplicate taxon")
     console.error("Couldn't duplicate taxon! #{e.message}")
@@ -810,8 +895,8 @@ lookupEditorSpecies = (taxon = undefined) ->
           whoEdited = if isNull($.cookie("#{uri.domain}_fullname")) then $.cookie("#{uri.domain}_user") else $.cookie("#{uri.domain}_fullname")
           d$("#edit-taxon-author").attr("value",whoEdited)
         else if col is "taxon_credit"
-            fieldSelector = "#edit-#{col.replace(/_/g,"-")}"
-            p$(fieldSelector).value = $.cookie(adminParams.cookieFullName)
+          fieldSelector = "#edit-#{col.replace(/_/g,"-")}"
+          p$(fieldSelector).value = $.cookie(adminParams.cookieFullName)
         else if col is "image_license"
           jstr = d.unescape()
           try

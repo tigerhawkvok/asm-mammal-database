@@ -1552,7 +1552,8 @@ searchParams.apiPath = uri.urlString + searchParams.targetApi
 window._asm = new Object()
 # Base query URLs for out-of-site linkouts
 _asm.affiliateQueryUrl =
-  iucnRedlist: "http://apiv3.iucnredlist.org/api/v3/species/common_names/"
+  iucnRedlist: "http://apiv3.iucnredlist.org/api/v3/species/"
+  iucnRedlistCN: "http://apiv3.iucnredlist.org/api/v3/species/common_names/"
   iNaturalist: "https://www.inaturalist.org/taxa/search"
 
 

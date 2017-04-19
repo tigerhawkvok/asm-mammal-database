@@ -3,7 +3,7 @@
  * The main coffeescript file for administrative stuff
  * Triggered from admin-page.html
  */
-var adminParams, adminPreloadSearch, createDuplicateTaxon, createNewTaxon, deleteTaxon, fetchEditorDropdownContent, fillEmptyCommonName, handleDeprecatedInput, handleDragDropImage, licenseHelper, loadAdminUi, loadModalTaxonEditor, lookupEditorSpecies, newColumnHelper, prefetchEditorDropdowns, renderAdminSearchResults, renderDeprecatedFromDatabase, saveEditorEntry, verifyLoginCredentials,
+var adminParams, adminPreloadSearch, createDuplicateTaxon, createNewTaxon, deleteTaxon, fetchEditorDropdownContent, fillEmptyCommonName, handleDeprecatedInput, handleDragDropImage, licenseHelper, loadAdminUi, loadModalTaxonEditor, lookupEditorSpecies, newColumnHelper, prefetchEditorDropdowns, renderAdminSearchResults, renderDeprecatedFromDatabase, saveEditorEntry, validateNewTaxon, verifyLoginCredentials,
   indexOf = [].indexOf || function(item) { for (var i = 0, l = this.length; i < l; i++) { if (i in this && this[i] === item) return i; } return -1; };
 
 adminParams = new Object();
@@ -524,6 +524,88 @@ fillEmptyCommonName = function() {
   return false;
 };
 
+validateNewTaxon = function() {
+
+  /*
+   *
+   */
+  var args, taxon, taxonExistsHelper, taxonString;
+  taxonExistsHelper = function(invalid) {
+    var editFields, fieldLabel, len, m, selector;
+    if (invalid == null) {
+      invalid = true;
+    }
+    editFields = ["genus", "species", "subspecies"];
+    for (m = 0, len = editFields.length; m < len; m++) {
+      fieldLabel = editFields[m];
+      selector = "#edit-" + fieldLabel;
+      if (invalid) {
+        p$(selector).invalid = true;
+        p$(selector).errorMessage = "This taxon already exists in the database";
+      } else {
+        p$(selector).invalid = false;
+      }
+    }
+    return false;
+  };
+  taxon = {
+    genus: p$("#edit-genus").value,
+    species: p$("#edit-species").value,
+    subspecies: !isNull(p$("#edit-subspecies").value) ? p$("#edit-subspecies").value : ""
+  };
+  args = "q=" + taxon.genus + "+" + taxon.species;
+  taxonString = taxon.genus + " " + taxon.species;
+  if (!isNull(taxon.subspecies)) {
+    args += "+" + taxon.subspecies;
+    taxonString += " " + taxon.subspecies;
+  }
+  $.get(searchParams.apiPath, args + "&dwc_only=true", "json").done(function(result) {
+    var len, m, ref, testTaxon;
+    if (result.status !== true) {
+      console.error("Problem validating taxon:", result);
+      return false;
+    }
+    ref = Object.toArray(result.result);
+    for (m = 0, len = ref.length; m < len; m++) {
+      testTaxon = ref[m];
+      if (testTaxon.genus.toLowerCase() === taxon.genus.toLowerCase()) {
+        if (testTaxon.specificEpithet.toLowerCase() === taxon.species.toLowerCase()) {
+          try {
+            if (isNull(taxon.subspecies) && isNull(testTaxon.subspecificEpithet)) {
+              console.warn("Taxon sp already exists in DB");
+              return taxonExistsHelper();
+            } else if (taxon.subspecies.toLowerCase() === testTaxon.subspecificEpithet.toLowerCase()) {
+              console.warn("Taxon ssp already exists in DB");
+              return taxonExistsHelper();
+            } else {
+              continue;
+            }
+          } catch (undefined) {}
+        } else {
+          continue;
+        }
+      } else {
+        continue;
+      }
+    }
+    taxonExistsHelper(false);
+    $.get(_asm.affiliateQueryUrl.iucnRedlist, encodeUriComponent(taxonString), "json").done(function(result) {
+      var iucnData;
+      iucnData = result.result[0];
+      if (isNull(iucnData.taxonid)) {
+        console.warn("Couldn't find IUCN entry for taxon '" + taxonString + "'");
+        return false;
+      }
+      return false;
+    });
+    return false;
+  }).fail(function(result, status) {
+    console.error("FAIL_VALIDATE");
+    return false;
+  });
+  return false;
+};
+
 createNewTaxon = function() {
 
   /*
@@ -555,7 +637,7 @@ createDuplicateTaxon = function() {
    * Remove the edited notes, remove the duplicate button, and change
    * the bidings so a new entry is created.
    */
-  var e, error1, newButton;
+  var e, editFields, error1, fieldLabel, len, m, newButton, selector;
   animateLoad();
   try {
     d$("#taxon-id").remove();
@@ -570,6 +652,15 @@ createDuplicateTaxon = function() {
     delay(250, function() {
       return stopLoad();
     });
+    editFields = ["genus", "species", "subspecies"];
+    for (m = 0, len = editFields.length; m < len; m++) {
+      fieldLabel = editFields[m];
+      selector = "#edit-" + fieldLabel;
+      $(selector).keyup(function() {
+        return validateNewTaxon.debounce();
+      });
+    }
+    validateNewTaxon();
   } catch (error1) {
     e = error1;
     stopLoadError("Unable to duplicate taxon");

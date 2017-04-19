@@ -120,7 +120,7 @@ verifyLoginCredentials = function(callback) {
   return false;
 };
 
-renderAdminSearchResults = function(containerSelector) {
+renderAdminSearchResults = function(overrideSearch, containerSelector) {
   var args, b64s, newLink, s;
   if (containerSelector == null) {
     containerSelector = "#search-results";
@@ -131,8 +131,12 @@ renderAdminSearchResults = function(containerSelector) {
    */
   s = $("#admin-search").val();
   if (isNull(s)) {
-    toastStatusMessage("Please enter a search term");
-    return false;
+    if (typeof overrideSearch === "object") {
+      s = overrideSearch.genus + " " + overrideSearch.species;
+    } else {
+      toastStatusMessage("Please enter a search term");
+      return false;
+    }
   }
   animateLoad();
   $("#admin-search").blur();
@@ -1532,7 +1536,14 @@ adminPreloadSearch = function() {
    * the standard search uses the verbatim entry of the user, this uses
    * a JSON constructed by the system
    */
-  var fill, loadArgs;
+  var fill, fillTimeout, fillWhenReady, loadArgs, start;
+  if (_asm.preloaderBlocked === true) {
+    console.debug("Skipping re-running active search preload");
+    return false;
+  }
+  console.debug("Preloader firing");
+  _asm.preloaderBlocked = true;
+  start = Date.now();
   try {
     uri.query = $.url().attr("fragment");
   } catch (undefined) {}
@@ -1552,9 +1563,38 @@ adminPreloadSearch = function() {
     if (!isNull(loadArgs.subspecies)) {
       fill += " " + loadArgs.subspecies;
     }
-    $("#admin-search").val(fill);
-    renderAdminSearchResults();
-    return loadArgs;
+    fillTimeout = 10 * 1000;
+    (fillWhenReady = function() {
+      var duration, error1, error2, isAttached;
+      try {
+        isAttached = p$("#admin-search").isAttached;
+      } catch (error1) {
+        isAttached = false;
+      }
+      if ((typeof _asm !== "undefined" && _asm !== null ? _asm.polymerReady : void 0) && isAttached) {
+        try {
+          p$("#admin-search").value = fill;
+        } catch (error2) {
+          $("#admin-search").val(fill);
+        }
+        renderAdminSearchResults(loadArgs);
+        duration = Date.now() - start;
+        console.log("Search preload finished in " + duration + "ms");
+        return _asm.preloaderBlocked = false;
+      } else {
+        duration = Date.now() - start;
+        console.debug("NOT READY: Duration @ " + duration + "ms", typeof _asm !== "undefined" && _asm !== null ? _asm.polymerReady : void 0, isAttached, _asm.polymerReady && isAttached);
+        if (!(duration > fillTimeout)) {
+          return delay(100, function() {
+            return fillWhenReady();
+          });
+        } else {
+          console.error("Timeout waiting for polymerReady!! Not filling search.");
+          _asm.preloaderBlocked = false;
+          return false;
+        }
+      }
+    })();
   } else {
     console.error("Bad fragment: unable to read JSON", loadArgs);
   }
@@ -1562,6 +1602,13 @@ adminPreloadSearch = function() {
 };
 
 $(function() {
+  var error1, isAdminActive, thisUrl;
+  try {
+    thisUrl = uri.o.attr("source");
+    isAdminActive = /^https?:\/\/(?:.*?\/)+(admin-.*\.(?:php|html)|admin\/)(?:\?(?:&?[\w\-_]+=[\w+\-_%]+)+)?(?:\#\w+)?$/im.test(thisUrl);
+  } catch (error1) {
+    isAdminActive = true;
+  }
   if ($("#next").exists()) {
     $("#next").unbind().click(function() {
       return openTab(adminParams.adminPageUrl);
@@ -1570,12 +1617,16 @@ $(function() {
   loadJS("bower_components/bootstrap/dist/js/bootstrap.min.js", function() {
     return $("[data-toggle='tooltip']").tooltip();
   });
-  try {
-    prefetchEditorDropdowns();
-  } catch (undefined) {}
-  try {
-    return adminPreloadSearch();
-  } catch (undefined) {}
+  if (isAdminActive) {
+    try {
+      prefetchEditorDropdowns();
+    } catch (undefined) {}
+    try {
+      return adminPreloadSearch();
+    } catch (undefined) {}
+  } else {
+    return console.debug("Not an admin page");
+  }
 });
 
 //# sourceMappingURL=maps/admin.js.map

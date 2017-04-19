@@ -119,14 +119,17 @@ verifyLoginCredentials = (callback) ->
 
 
 
-renderAdminSearchResults = (containerSelector = "#search-results") ->
+renderAdminSearchResults = (overrideSearch, containerSelector = "#search-results") ->
   ###
   # Takes parts of performSearch() but only in the admin context
   ###
   s = $("#admin-search").val()
   if isNull(s)
-    toastStatusMessage("Please enter a search term")
-    return false
+    if typeof overrideSearch is "object"
+      s = "#{overrideSearch.genus} #{overrideSearch.species}"
+    else
+      toastStatusMessage("Please enter a search term")
+      return false
   animateLoad()
   $("#admin-search").blur()
   # Remove periods from the search
@@ -1564,6 +1567,12 @@ adminPreloadSearch = ->
   # the standard search uses the verbatim entry of the user, this uses
   # a JSON constructed by the system
   ###
+  if _asm.preloaderBlocked is true
+    console.debug "Skipping re-running active search preload"
+    return false
+  console.debug "Preloader firing"
+  _asm.preloaderBlocked = true
+  start = Date.now()
   try
     uri.query = $.url().attr("fragment")
   if uri.query is "#" or isNull uri.query
@@ -1578,10 +1587,32 @@ adminPreloadSearch = ->
     fill = "#{loadArgs.genus} #{loadArgs.species}"
     unless isNull loadArgs.subspecies
       fill += " #{loadArgs.subspecies}"
-    $("#admin-search").val fill
-    # Do the search
-    renderAdminSearchResults()
-    return loadArgs
+    fillTimeout = 10 * 1000
+    do fillWhenReady = ->
+      try
+        isAttached = p$("#admin-search").isAttached
+      catch
+        isAttached = false
+      if _asm?.polymerReady and isAttached
+        try
+          p$("#admin-search").value = fill
+        catch
+          $("#admin-search").val fill
+        # Do the search
+        renderAdminSearchResults loadArgs
+        duration = Date.now() - start
+        console.log "Search preload finished in #{duration}ms"
+        _asm.preloaderBlocked = false
+      else
+        duration = Date.now() - start
+        console.debug "NOT READY: Duration @ #{duration}ms", _asm?.polymerReady, isAttached, _asm.polymerReady and isAttached
+        unless duration > fillTimeout
+          delay 100, ->
+            fillWhenReady()
+        else
+          console.error "Timeout waiting for polymerReady!! Not filling search."
+          _asm.preloaderBlocked = false
+          return false
   else
     console.error "Bad fragment: unable to read JSON", loadArgs
   false
@@ -1589,6 +1620,12 @@ adminPreloadSearch = ->
 
 
 $ ->
+  try
+    thisUrl = uri.o.attr("source")
+    isAdminActive = /^https?:\/\/(?:.*?\/)+(admin-.*\.(?:php|html)|admin\/)(?:\?(?:&?[\w\-_]+=[\w+\-_%]+)+)?(?:\#\w+)?$/im.test thisUrl
+  catch
+    # We validate everything anyway, so run speculatively
+    isAdminActive = true
   if $("#next").exists()
     $("#next")
     .unbind()
@@ -1596,8 +1633,11 @@ $ ->
       openTab(adminParams.adminPageUrl)
   loadJS "bower_components/bootstrap/dist/js/bootstrap.min.js", ->
     $("[data-toggle='tooltip']").tooltip()
-  try
-    prefetchEditorDropdowns()
-  try
-    adminPreloadSearch()
+  if isAdminActive
+    try
+      prefetchEditorDropdowns()
+    try    
+      adminPreloadSearch()
+  else
+    console.debug "Not an admin page"
   # The rest of the onload for the admin has been moved to the core.coffee file.

@@ -316,7 +316,10 @@ jQuery.fn.polymerSelected = (setSelected = undefined, attrLookup = "attrForSelec
         # Maybe it's a generic input element
         unless isNull p$(this).value
           return p$(this).value
-      console.error "Can't identify the dropdown selector for this dropdown list '#{dropdownId}'", dropdownUniqueSelector
+        return null
+      catch
+        console.error "Can't identify the dropdown selector for this dropdown list '#{dropdownId}'", dropdownUniqueSelector, this
+      console.warn "Unable to fetch data for item", "##{dropdownId}"
       return false
   unless attrLookup is true
     attr = $(dropdownUniqueSelector).attr(attrLookup)
@@ -1282,19 +1285,42 @@ bsAlert = (message, type = "warning", fallbackContainer = "body", selector = "#b
   # http://getbootstrap.com/components/#alerts
   # for available types
   ###
-  if not $(selector).exists()
-    html = """
-    <div class="alert alert-#{type} alert-dismissable hanging-alert" role="alert" id="#{selector.slice(1)}">
-      <button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button>
-        <div class="alert-message"></div>
-    </div>
-    """
-    topContainer = if $("main").exists() then "main" else if $("article").exists() then "article" else fallbackContainer
-    $(topContainer).prepend(html)
-  else
-    $(selector).removeClass "alert-warning alert-info alert-danger alert-success"
-    $(selector).addClass "alert-#{type}"
-  $("#{selector} .alert-message").html(message)
+  try
+    if not $(selector).exists()
+      html = """
+      <div class="alert alert-#{type} alert-dismissable hanging-alert" role="alert" id="#{selector.slice(1)}">
+        <button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+          <div class="alert-message"></div>
+      </div>
+      """
+      topContainer = if $("main").exists() then "main" else if $("article").exists() then "article" else fallbackContainer
+      $(topContainer).prepend(html)
+    else
+      $(selector).removeClass "alert-warning alert-info alert-danger alert-success"
+      $(selector).addClass "alert-#{type}"
+    $("#{selector} .alert-message").html(message)
+  catch
+    # This should always work, so here's an offline fallback
+    alertContainer = document.createElement "div"
+    alertContainer.setAttribute "class", "alert alert-#{type} alert-dismissable hanging-alert"
+    alertContainer.setAttribute "role", "alert"
+    alertContainer.setAttribute "id", selector.slice(1)
+    closeButton = document.createElement "button"
+    closeButton.setAttribute "class", "close"
+    closeButton.setAttribute "data-dismiss", "alert"
+    closeButton.setAttribute "aria-label", "Close"
+    closeIcon = document.createElement "span"
+    closeIcon.setAttribute "aria-hidden", "true"
+    closeIcon.textContent = "&times;"
+    closeButton.appendChild closeIcon
+    alertContainer.appendChild closeButton
+    alertMessage = document.createElement "div"
+    alertMessage.setAttribute "class", "alert-message"
+    alertMessage.textContent = message
+    alertContainer.appendChild alertMessage
+    try
+      document.querySelector("#bs-alert").remove()
+    document.querySelector("body").appendChild alertContainer
   bindClicks()
   mapNewWindows()
   false
@@ -1461,6 +1487,11 @@ checkLocalVersion = ->
   false
 
 
+
+try
+  $()
+catch e
+  bsAlert "<strong>You're offline</strong>: We need at least enough data to load a few dependencies. Please put yourself online and try again.", "error"
 
 
 $ ->
@@ -2879,12 +2910,26 @@ $ ->
   ****************************************************************************
   """
   console.log(devHello)
+  _asm.polymerReady = false
   ignorePages = [
     "admin-login.php"
     "admin-page.html"
     "admin-page.php"
     ]
   if uri.o.attr("file") in ignorePages
+    try
+      do setupPolymerReady = ->
+        try
+          if Polymer?.Base?.$$?
+            Polymer.Base.ready ->
+              _asm.polymerReady = true
+            delay 250, ->
+              _asm.polymerReady = true
+          else
+            throw {message:"POLYMER_NOT_READY"}
+        catch
+          delay 100, ->
+            setupPolymerReady        
     return false
   # Do bindings
   # console.log("Doing onloads ...")
@@ -2927,6 +2972,19 @@ $ ->
   # Do a fill of the result container
   if isNull uri.query
     loadArgs = ""
+    try
+      do setupPolymerReady = ->
+        try
+          if Polymer?.Base?.$$?
+            Polymer.Base.ready ->
+              _asm.polymerReady = true
+            delay 250, ->
+              _asm.polymerReady = true
+          else
+            throw {message:"POLYMER_NOT_READY"}
+        catch
+          delay 100, ->
+            setupPolymerReady
   else
     try
       loadArgs = Base64.decode(uri.query)
@@ -2948,6 +3006,7 @@ $ ->
       do fixState = ->
         if Polymer?.Base?.$$?
           unless isNull Polymer.Base.$$("#loose")
+            _asm.polymerReady = true
             delay 250, ->
               if looseState
                 d$("#loose").attr("checked", "checked")
@@ -2964,6 +3023,7 @@ $ ->
           Polymer.Base.ready ->
             # The whenReady makes the toggle work, but it won't toggle
             # without this "real" delay
+            _asm.polymerReady = true
             delay 250, ->
               console.info "Doing a late Polymer.Base.ready call"
               if looseState
@@ -3013,6 +3073,7 @@ $ ->
     $.get searchParams.targetApi,"q=#{loadArgs}","json"
     .done (result) ->
       # Populate the result container
+      _asm.polymerReady = true
       console.debug "Server query got", result
       if result.status is true and result.count > 0
         console.log "Got a valid result, formatting #{result.count} results."
@@ -3044,6 +3105,7 @@ $ ->
     do fixState = ->
       if Polymer?.Base?.$$?
         unless isNull Polymer.Base.$$("#loose")
+          _asm.polymerReady = true
           delay 250, ->
             d$("#loose").attr("checked", "checked")
             eutheriaFilterHelper()
@@ -3058,6 +3120,7 @@ $ ->
         Polymer.Base.ready ->
           # The whenReady makes the toggle work, but it won't toggle
           # without this "real" delay
+          _asm.polymerReady = true
           delay 250, ->
             d$("#loose").attr("checked", "checked")
             eutheriaFilterHelper()

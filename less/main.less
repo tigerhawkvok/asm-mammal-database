@@ -343,7 +343,7 @@ paper-dialog#modal-taxon .buttons, paper-dialog#modal-taxon-edit .buttons {
 }
 
 .tooltip-container {
-    float:left;
+    //float:left;
     display:inline-block;
 }
 @{hc} .tooltip-container {
@@ -436,9 +436,6 @@ header {
         #modal-taxon();
     }
 
-    html /deep/ #modal-taxon {
-        #modal-taxon();
-    }
 }
 
 
@@ -449,9 +446,6 @@ header {
     }
 
   @{hc} .hidden-xs {
-    display: none !important;
-  }
-    html /deep/ .hidden-xs {
     display: none !important;
   }
 
@@ -554,6 +548,7 @@ paper-icon-button {
 #result_container .bs-callout {
     float:none;
 }
+
 form {
     /* margin-left:2rem; */
 }

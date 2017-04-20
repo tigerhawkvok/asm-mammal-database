@@ -1,4 +1,4 @@
-var _metaStatus, activityIndicatorOff, activityIndicatorOn, allError, animateHoverShadows, animateLoad, bindClickTargets, bindClicks, bindDismissalRemoval, bindPaperMenuButton, browserBeware, bsAlert, buildQuery, byteCount, checkFileVersion, checkLaggedUpdate, checkLocalVersion, checkTaxonNear, clearSearch, dateMonthToString, deEscape, deepJQuery, delay, doCORSget, doFontExceptions, doNothing, domainPlaceholder, downloadCSVList, downloadHTMLList, e, error1, eutheriaFilterHelper, fetchMajorMinorGroups, foo, formatScientificNames, formatSearchResults, getElementHtml, getFilters, getLocation, getMaxZ, getRandomEntry, goTo, insertCORSWorkaround, insertModalImage, interval, isArray, isBlank, isBool, isEmpty, isJson, isNull, isNumber, isNumeric, lightboxImages, loadJS, mapNewWindows, modalTaxon, openLink, openTab, overlayOff, overlayOn, p$, parseTaxonYear, performSearch, prepURI, randomInt, ref, roundNumber, roundNumberSigfig, safariDialogHelper, safariSearchArgHelper, searchParams, setHistory, setupServiceWorker, showBadSearchErrorMessage, showDownloadChooser, smartUpperCasing, sortResults, startLoad, stopLoad, stopLoadError, toFloat, toInt, toObject, toastStatusMessage, uri,
+var _metaStatus, activityIndicatorOff, activityIndicatorOn, allError, animateHoverShadows, animateLoad, bindClickTargets, bindClicks, bindDismissalRemoval, bindPaperMenuButton, browserBeware, bsAlert, buildQuery, byteCount, checkFileVersion, checkLaggedUpdate, checkLocalVersion, checkTaxonNear, clearSearch, dateMonthToString, deEscape, decode64, deepJQuery, delay, doCORSget, doFontExceptions, doNothing, domainPlaceholder, downloadCSVList, downloadHTMLList, e, encode64, error1, eutheriaFilterHelper, fetchMajorMinorGroups, foo, formatScientificNames, formatSearchResults, getElementHtml, getFilters, getLocation, getMaxZ, getRandomEntry, goTo, insertCORSWorkaround, insertModalImage, interval, isArray, isBlank, isBool, isEmpty, isJson, isNull, isNumber, isNumeric, jsonTo64, lightboxImages, loadJS, mapNewWindows, modalTaxon, openLink, openTab, overlayOff, overlayOn, p$, parseTaxonYear, performSearch, post64, prepURI, randomInt, ref, roundNumber, roundNumberSigfig, safariDialogHelper, safariSearchArgHelper, searchParams, setHistory, setupServiceWorker, showBadSearchErrorMessage, showDownloadChooser, smartUpperCasing, sortResults, startLoad, stopLoad, stopLoadError, toFloat, toInt, toObject, toastStatusMessage, uri,
   slice = [].slice,
   indexOf = [].indexOf || function(item) { for (var i = 0, l = this.length; i < l; i++) { if (i in this && this[i] === item) return i; } return -1; };
 
@@ -1868,6 +1868,60 @@ checkLocalVersion = function() {
     doNothing();
   }
   return false;
+};
+
+jsonTo64 = function(obj, encode) {
+  var encoded, objString, shadowObj;
+  if (encode == null) {
+    encode = true;
+  }
+
+  /*
+   *
+   * @param obj
+   * @param boolean encode -> URI encode base64 string
+   */
+  try {
+    shadowObj = obj.slice(0);
+    shadowObj.push("foo");
+    obj = toObject(obj);
+  } catch (undefined) {}
+  objString = JSON.stringify(obj);
+  if (encode === true) {
+    encoded = post64(objString);
+  } else {
+    encoded = encode64(encoded);
+  }
+  return encoded;
+};
+
+encode64 = function(string) {
+  var e, error1;
+  try {
+    return Base64.encode(string);
+  } catch (error1) {
+    e = error1;
+    console.warn("Bad encode string provided");
+    return string;
+  }
+};
+
+decode64 = function(string) {
+  var e, error1;
+  try {
+    return Base64.decode(string);
+  } catch (error1) {
+    e = error1;
+    console.warn("Bad decode string provided");
+    return string;
+  }
+};
+
+post64 = function(string) {
+  var p64, s64;
+  s64 = encode64(string);
+  p64 = encodeURIComponent(s64);
+  return p64;
 };
 
 try {

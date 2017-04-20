@@ -1487,6 +1487,43 @@ checkLocalVersion = ->
   false
 
 
+jsonTo64 = (obj, encode = true) ->
+  ###
+  #
+  # @param obj
+  # @param boolean encode -> URI encode base64 string
+  ###
+  try
+    shadowObj = obj.slice 0
+    shadowObj.push "foo" # Throws error on obj
+    obj = toObject obj
+  objString = JSON.stringify obj
+  if encode is true
+    encoded = post64 objString
+  else
+    encoded = encode64 encoded
+  encoded
+
+
+encode64 = (string) ->
+  try
+    Base64.encode(string)
+  catch e
+    console.warn("Bad encode string provided")
+    string
+decode64 = (string) ->
+  try
+    Base64.decode(string)
+  catch e
+    console.warn("Bad decode string provided")
+    string
+
+post64 = (string) ->
+  s64 = encode64 string
+  p64 = encodeURIComponent s64
+  p64
+
+
 
 try
   $()
@@ -1843,8 +1880,8 @@ performSearch = (stateArgs = undefined) ->
     stopLoadError()
   .always ->
     # Anything we always want done
-    b64s = Base64.encodeURI(s)
-    if s? then setHistory("#{uri.urlString}##{b64s}")
+    b64s = Base64.encodeURI s
+    if s? then setHistory "#{uri.urlString}##{b64s}"
     false
 
 getFilters = (selector = ".cndb-filter", booleanType = "AND") ->

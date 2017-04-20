@@ -218,6 +218,17 @@ renderAdminSearchResults = (overrideSearch, containerSelector = "#search-results
           taxon = $(this).attr('data-taxon')
           taxaId = $(this).attr('data-database-id')
           deleteTaxon(taxaId)
+        # Set the argument to the search result
+        try
+          taxonSplit = s.split(" ")
+          taxonObj =
+            genus: taxonSplit[0]
+            species: taxonSplit[1] ? ""
+            subspecies: taxonSplit[2] ? ""
+          fragment = jsonTo64 taxonObj
+          try
+            newPath = uri.o.attr("base") + uri.o.attr("path")
+            setHistory "#{newPath}##{fragment}"
         stopLoad()
   .fail (result,status) ->
     console.error("There was an error performing the search")
@@ -1587,14 +1598,14 @@ adminPreloadSearch = ->
   _asm.preloaderBlocked = true
   start = Date.now()
   try
-    uri.query = $.url().attr("fragment")
+    uri.query = decodeURIComponent $.url().attr("fragment")
   if uri.query is "#" or isNull uri.query
     return false
   try
     loadArgs = Base64.decode(uri.query)
     loadArgs = JSON.parse loadArgs
   if typeof loadArgs is "object"
-    if isNull(loadArgs.genus) or isNull(loadArgs.species)
+    if isNull(loadArgs.genus) or not loadArgs.species?
       console.error "Bad taxon format"
       return false
     fill = "#{loadArgs.genus} #{loadArgs.species}"
@@ -1635,7 +1646,7 @@ adminPreloadSearch = ->
 $ ->
   try
     thisUrl = uri.o.attr("source")
-    isAdminActive = /^https?:\/\/(?:.*?\/)+(admin-.*\.(?:php|html)|admin\/)(?:\?(?:&?[\w\-_]+=[\w+\-_%]+)+)?(?:\#\w+)?$/im.test thisUrl
+    isAdminActive = /^https?:\/\/(?:.*?\/)+(admin-.*\.(?:php|html)|admin\/)(?:\?(?:&?[\w\-_]+=[\w+\-_%]+)+)?(?:\#[\w\+%]+)?$/im.test thisUrl
   catch
     # We validate everything anyway, so run speculatively
     isAdminActive = true

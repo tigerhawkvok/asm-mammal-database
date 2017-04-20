@@ -147,7 +147,7 @@ renderAdminSearchResults = function(overrideSearch, containerSelector) {
   newLink = uri.urlString + "#" + b64s;
   $("#app-linkout").attr("data-url", newLink);
   return $.get(searchParams.targetApi, args, "json").done(function(result) {
-    var bootstrapColCount, col, colClass, data, html, htmlClose, htmlHead, htmlRow, i, j, k, key, l, len, m, origData, requiredKeyOrder, row, targetCount, taxonQuery;
+    var bootstrapColCount, col, colClass, data, fragment, html, htmlClose, htmlHead, htmlRow, i, j, k, key, l, len, m, newPath, origData, ref, ref1, requiredKeyOrder, row, targetCount, taxonObj, taxonQuery, taxonSplit;
     if (result.status !== true || result.count === 0) {
       stopLoadError();
       if (isNull(result.human_error)) {
@@ -237,6 +237,19 @@ renderAdminSearchResults = function(overrideSearch, containerSelector) {
           taxaId = $(this).attr('data-database-id');
           return deleteTaxon(taxaId);
         });
+        try {
+          taxonSplit = s.split(" ");
+          taxonObj = {
+            genus: taxonSplit[0],
+            species: (ref = taxonSplit[1]) != null ? ref : "",
+            subspecies: (ref1 = taxonSplit[2]) != null ? ref1 : ""
+          };
+          fragment = jsonTo64(taxonObj);
+          try {
+            newPath = uri.o.attr("base") + uri.o.attr("path");
+            setHistory(newPath + "#" + fragment);
+          } catch (undefined) {}
+        } catch (undefined) {}
         stopLoad();
       }
     }
@@ -1557,7 +1570,7 @@ adminPreloadSearch = function() {
   _asm.preloaderBlocked = true;
   start = Date.now();
   try {
-    uri.query = $.url().attr("fragment");
+    uri.query = decodeURIComponent($.url().attr("fragment"));
   } catch (undefined) {}
   if (uri.query === "#" || isNull(uri.query)) {
     return false;
@@ -1567,7 +1580,7 @@ adminPreloadSearch = function() {
     loadArgs = JSON.parse(loadArgs);
   } catch (undefined) {}
   if (typeof loadArgs === "object") {
-    if (isNull(loadArgs.genus) || isNull(loadArgs.species)) {
+    if (isNull(loadArgs.genus) || (loadArgs.species == null)) {
       console.error("Bad taxon format");
       return false;
     }
@@ -1617,7 +1630,7 @@ $(function() {
   var error1, isAdminActive, thisUrl;
   try {
     thisUrl = uri.o.attr("source");
-    isAdminActive = /^https?:\/\/(?:.*?\/)+(admin-.*\.(?:php|html)|admin\/)(?:\?(?:&?[\w\-_]+=[\w+\-_%]+)+)?(?:\#\w+)?$/im.test(thisUrl);
+    isAdminActive = /^https?:\/\/(?:.*?\/)+(admin-.*\.(?:php|html)|admin\/)(?:\?(?:&?[\w\-_]+=[\w+\-_%]+)+)?(?:\#[\w\+%]+)?$/im.test(thisUrl);
   } catch (error1) {
     isAdminActive = true;
   }

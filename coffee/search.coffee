@@ -266,8 +266,8 @@ performSearch = (stateArgs = undefined) ->
     stopLoadError()
   .always ->
     # Anything we always want done
-    b64s = Base64.encodeURI(s)
-    if s? then setHistory("#{uri.urlString}##{b64s}")
+    b64s = Base64.encodeURI s
+    if s? then setHistory "#{uri.urlString}##{b64s}"
     false
 
 getFilters = (selector = ".cndb-filter", booleanType = "AND") ->

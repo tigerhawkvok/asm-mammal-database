@@ -119,14 +119,17 @@ verifyLoginCredentials = (callback) ->
 
 
 
-renderAdminSearchResults = (containerSelector = "#search-results") ->
+renderAdminSearchResults = (overrideSearch, containerSelector = "#search-results") ->
   ###
   # Takes parts of performSearch() but only in the admin context
   ###
   s = $("#admin-search").val()
   if isNull(s)
-    toastStatusMessage("Please enter a search term")
-    return false
+    if typeof overrideSearch is "object"
+      s = "#{overrideSearch.genus} #{overrideSearch.species}"
+    else
+      toastStatusMessage("Please enter a search term")
+      return false
   animateLoad()
   $("#admin-search").blur()
   # Remove periods from the search
@@ -155,7 +158,20 @@ renderAdminSearchResults = (containerSelector = "#search-results") ->
     targetCount = toInt(result.count)-1
     colClass = null
     bootstrapColCount = 0
-    $.each data, (i,row) ->
+    # Sort the column output
+    requiredKeyOrder = [
+      "genus"
+      "species"
+      "subspecies"
+      ]
+    origData = data
+    data = new Object()
+    for i, row of origData
+      data[i] = new Object()
+      for key in requiredKeyOrder
+        data[i][key] = row[key]
+    # Render the results
+    for i, row of data
       if toInt(i) is 0
         j = 0
         htmlHead += "\n<!-- Table Headers - #{Object.size(row)} entries -->"
@@ -179,14 +195,14 @@ renderAdminSearchResults = (containerSelector = "#search-results") ->
         taxonQuery = "#{taxonQuery}+#{row.subspecies.trim()}"
       htmlRow = "\n\t<tr id='cndb-row#{i}' class='cndb-result-entry' data-taxon=\"#{taxonQuery}\">"
       l = 0
-      $.each row, (k,col) ->
-        if isNull(row.genus)
+      for k, col of row
+        if isNull row.genus
           # Next iteration
           return true
         if k is "genus" or k is "species" or k is "subspecies"
           htmlRow += "\n\t\t<td id='#{k}-#{i}' class='#{k} #{colClass}'>#{col}</td>"
         l++
-        if l is Object.size(row)
+        if l is Object.size row
           htmlRow += "\n\t\t<td id='edit-#{i}' class='edit-taxon #{colClass} text-center'><paper-icon-button icon='image:edit' class='edit' data-taxon='#{taxonQuery}'></paper-icon-button></td>"
           htmlRow += "\n\t\t<td id='delete-#{i}' class='delete-taxon #{colClass} text-center'><paper-icon-button icon='delete' class='delete-taxon-button fadebg' data-taxon='#{taxonQuery}' data-database-id='#{row.id}'></paper-icon-button></td>"
           htmlRow += "\n\t</tr>"
@@ -202,6 +218,17 @@ renderAdminSearchResults = (containerSelector = "#search-results") ->
           taxon = $(this).attr('data-taxon')
           taxaId = $(this).attr('data-database-id')
           deleteTaxon(taxaId)
+        # Set the argument to the search result
+        try
+          taxonSplit = s.split(" ")
+          taxonObj =
+            genus: taxonSplit[0]
+            species: taxonSplit[1] ? ""
+            subspecies: taxonSplit[2] ? ""
+          fragment = jsonTo64 taxonObj
+          try
+            newPath = uri.o.attr("base") + uri.o.attr("path")
+            setHistory "#{newPath}##{fragment}"
         stopLoad()
   .fail (result,status) ->
     console.error("There was an error performing the search")
@@ -574,6 +601,110 @@ fillEmptyCommonName = ->
 
 
 
+validateNewTaxon = ->
+  ###
+  #
+  ###
+  taxonExistsHelper = (invalid = true) ->
+    editFields = [
+      "genus"
+      "species"
+      "subspecies"
+      ]
+    for fieldLabel in editFields
+      selector = "#edit-#{fieldLabel}"
+      if invalid
+        p$(selector).invalid = true
+        p$(selector).errorMessage = "This taxon already exists in the database"
+        p$("#save-editor").disabled = true
+      else
+        p$(selector).invalid = false
+        p$("#save-editor").disabled = false
+    false
+  # Check the field for the taxon name
+  taxon =
+    genus: p$("#edit-genus").value
+    species: p$("#edit-species").value
+    subspecies: unless isNull p$("#edit-subspecies").value then p$("#edit-subspecies").value else ""
+  args = "q=#{taxon.genus}+#{taxon.species}"
+  taxonString = "#{taxon.genus} #{taxon.species}"
+  unless isNull taxon.subspecies
+    args += "+#{taxon.subspecies}"
+    taxonString += " #{taxon.subspecies}"
+  # Async ping for duplication
+  $.get searchParams.apiPath, "#{args}&dwc_only=true", "json"
+  .done (result) ->
+    if result.status isnt true
+      console.error "Problem validating taxon:", result
+      return false
+    for testTaxon in Object.toArray result.result
+      # See if the objects match up
+      if testTaxon.genus.toLowerCase() is taxon.genus.toLowerCase()
+        # Same genus
+        if testTaxon.specificEpithet.toLowerCase() is taxon.species.toLowerCase()
+          # Same species
+          try
+            if isNull(taxon.subspecies) and isNull(testTaxon.subspecificEpithet)
+              console.warn "Taxon sp already exists in DB"
+              #taxonExistsHelper()
+              return taxonExistsHelper()
+            else if taxon.subspecies.toLowerCase() is testTaxon.subspecificEpithet.toLowerCase()
+              console.warn "Taxon ssp already exists in DB"
+              #taxonExistsHelper()
+              return taxonExistsHelper()
+            else
+              # Non-empty ssp on one, empty on another, or no match
+              continue
+        else
+          # Different species
+          continue
+      else
+        # Different genera
+        continue
+    # The taxon doesn't already exist.
+    taxonExistsHelper false
+    # Check the IUCN for its info.
+    # Async ping for IUCN data
+    args = "missing=true&genus=#{taxon.genus}&species=#{taxon.species}&prefetch=true"
+    #$.get _asm.affiliateQueryUrl.iucnRedlist, encodeURIComponent(taxonString), "json"
+    $.get searchParams.apiPath, args, "json"
+    .done (result) ->
+      unless isNumeric result.id
+        console.error "Unable to find IUCN result"
+        return false
+      # iucnData = result.result[0]
+      # if isNull iucnData.taxonid
+      #   console.warn "Couldn't find IUCN entry for taxon '#{taxonString}'", iucnData
+      #   return false
+      iucnData = result
+      # Fill in IUCN data
+      commonName = iucnData.main_common_name ? iucnData.common_name
+      speciesAuthority = iucnData.species_authority
+      genusAuthority = iucnData.genus_authority
+      try
+        authorityYear = JSON.parse iucnData.authority_year
+        genusAuthorityYear = Object.keys(authorityYear)[0]
+        speciesAuthorityYear = authorityYear[genusAuthorityYear]
+      catch
+        genusAuthorityYear = ""
+        speciesAuthorityYear = ""
+      p$("#edit-common-name").value = commonName
+      p$("#edit-common-name-source").value = "iucn"
+      p$("#edit-genus-authority").value = genusAuthority
+      p$("#edit-species-authority").value = speciesAuthority
+      p$("#edit-gauthyear").value = genusAuthorityYear
+      p$("#edit-sauthyear").value = speciesAuthorityYear
+      try
+        p$("#genus-authority-parens").checked = iucnData.parens_auth_genus.toBool()
+        p$("#species-authority-parens").checked = iucnData.parens_auth_species.toBool()
+      # TODO
+      console.log "Got", commonName, speciesAuthority, genusAuthority, authorityYear, genusAuthorityYear, speciesAuthorityYear
+      false
+    false
+  .fail (result, status) ->
+    console.error "FAIL_VALIDATE"
+    false
+  false
 
 
 
@@ -600,8 +731,26 @@ createNewTaxon = ->
   d$("#save-editor")
   .click ->
     saveEditorEntry("new")
-  $("#modal-taxon-edit").get(0).open()
+  $("#modal-taxon-edit").on "iron-overlay-opened", ->
+    # Binding new taxon events
+    console.log "Binding new taxon events"
+    editFields = [
+      "genus"
+      "species"
+      "subspecies"
+      ]
+    for fieldLabel in editFields
+      selector = "#edit-#{fieldLabel}"
+      $(selector).keyup ->
+        validateNewTaxon.debounce()
+    validateNewTaxon()
+  try
+    p$("#modal-taxon-edit").open()
+  catch
+    $("#modal-taxon-edit").get(0).open()
   stopLoad()
+
+
 
 createDuplicateTaxon = ->
   ###
@@ -628,6 +777,16 @@ createDuplicateTaxon = ->
       saveEditorEntry("new")
     delay 250, ->
       stopLoad()
+    editFields = [
+      "genus"
+      "species"
+      "subspecies"
+      ]
+    for fieldLabel in editFields
+      selector = "#edit-#{fieldLabel}"
+      $(selector).keyup ->
+        validateNewTaxon.debounce()
+    validateNewTaxon()
   catch e
     stopLoadError("Unable to duplicate taxon")
     console.error("Couldn't duplicate taxon! #{e.message}")
@@ -810,8 +969,8 @@ lookupEditorSpecies = (taxon = undefined) ->
           whoEdited = if isNull($.cookie("#{uri.domain}_fullname")) then $.cookie("#{uri.domain}_user") else $.cookie("#{uri.domain}_fullname")
           d$("#edit-taxon-author").attr("value",whoEdited)
         else if col is "taxon_credit"
-            fieldSelector = "#edit-#{col.replace(/_/g,"-")}"
-            p$(fieldSelector).value = $.cookie(adminParams.cookieFullName)
+          fieldSelector = "#edit-#{col.replace(/_/g,"-")}"
+          p$(fieldSelector).value = $.cookie(adminParams.cookieFullName)
         else if col is "image_license"
           jstr = d.unescape()
           try
@@ -1432,24 +1591,52 @@ adminPreloadSearch = ->
   # the standard search uses the verbatim entry of the user, this uses
   # a JSON constructed by the system
   ###
+  if _asm.preloaderBlocked is true
+    console.debug "Skipping re-running active search preload"
+    return false
+  console.debug "Preloader firing"
+  _asm.preloaderBlocked = true
+  start = Date.now()
   try
-    uri.query = $.url().attr("fragment")
+    uri.query = decodeURIComponent $.url().attr("fragment")
   if uri.query is "#" or isNull uri.query
     return false
   try
     loadArgs = Base64.decode(uri.query)
     loadArgs = JSON.parse loadArgs
   if typeof loadArgs is "object"
-    if isNull(loadArgs.genus) or isNull(loadArgs.species)
+    if isNull(loadArgs.genus) or not loadArgs.species?
       console.error "Bad taxon format"
       return false
     fill = "#{loadArgs.genus} #{loadArgs.species}"
     unless isNull loadArgs.subspecies
       fill += " #{loadArgs.subspecies}"
-    $("#admin-search").val fill
-    # Do the search
-    renderAdminSearchResults()
-    return loadArgs
+    fillTimeout = 10 * 1000
+    do fillWhenReady = ->
+      try
+        isAttached = p$("#admin-search").isAttached
+      catch
+        isAttached = false
+      if _asm?.polymerReady and isAttached
+        try
+          p$("#admin-search").value = fill
+        catch
+          $("#admin-search").val fill
+        # Do the search
+        renderAdminSearchResults loadArgs
+        duration = Date.now() - start
+        console.log "Search preload finished in #{duration}ms"
+        _asm.preloaderBlocked = false
+      else
+        duration = Date.now() - start
+        console.debug "NOT READY: Duration @ #{duration}ms", _asm?.polymerReady, isAttached, _asm.polymerReady and isAttached
+        unless duration > fillTimeout
+          delay 100, ->
+            fillWhenReady()
+        else
+          console.error "Timeout waiting for polymerReady!! Not filling search."
+          _asm.preloaderBlocked = false
+          return false
   else
     console.error "Bad fragment: unable to read JSON", loadArgs
   false
@@ -1457,6 +1644,12 @@ adminPreloadSearch = ->
 
 
 $ ->
+  try
+    thisUrl = uri.o.attr("source")
+    isAdminActive = /^https?:\/\/(?:.*?\/)+(admin-.*\.(?:php|html)|admin\/)(?:\?(?:&?[\w\-_]+=[\w+\-_%]+)+)?(?:\#[\w\+%]+)?$/im.test thisUrl
+  catch
+    # We validate everything anyway, so run speculatively
+    isAdminActive = true
   if $("#next").exists()
     $("#next")
     .unbind()
@@ -1464,8 +1657,11 @@ $ ->
       openTab(adminParams.adminPageUrl)
   loadJS "bower_components/bootstrap/dist/js/bootstrap.min.js", ->
     $("[data-toggle='tooltip']").tooltip()
-  try
-    prefetchEditorDropdowns()
-  try
-    adminPreloadSearch()
+  if isAdminActive
+    try
+      prefetchEditorDropdowns()
+    try
+      adminPreloadSearch()
+  else
+    console.debug "Not an admin page"
   # The rest of the onload for the admin has been moved to the core.coffee file.

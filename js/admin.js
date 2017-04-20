@@ -3,7 +3,7 @@
  * The main coffeescript file for administrative stuff
  * Triggered from admin-page.html
  */
-var adminParams, adminPreloadSearch, createDuplicateTaxon, createNewTaxon, deleteTaxon, fetchEditorDropdownContent, fillEmptyCommonName, handleDeprecatedInput, handleDragDropImage, licenseHelper, loadAdminUi, loadModalTaxonEditor, lookupEditorSpecies, newColumnHelper, prefetchEditorDropdowns, renderAdminSearchResults, renderDeprecatedFromDatabase, saveEditorEntry, verifyLoginCredentials,
+var adminParams, adminPreloadSearch, createDuplicateTaxon, createNewTaxon, deleteTaxon, fetchEditorDropdownContent, fillEmptyCommonName, handleDeprecatedInput, handleDragDropImage, licenseHelper, loadAdminUi, loadModalTaxonEditor, lookupEditorSpecies, newColumnHelper, prefetchEditorDropdowns, renderAdminSearchResults, renderDeprecatedFromDatabase, saveEditorEntry, validateNewTaxon, verifyLoginCredentials,
   indexOf = [].indexOf || function(item) { for (var i = 0, l = this.length; i < l; i++) { if (i in this && this[i] === item) return i; } return -1; };
 
 adminParams = new Object();
@@ -120,7 +120,7 @@ verifyLoginCredentials = function(callback) {
   return false;
 };
 
-renderAdminSearchResults = function(containerSelector) {
+renderAdminSearchResults = function(overrideSearch, containerSelector) {
   var args, b64s, newLink, s;
   if (containerSelector == null) {
     containerSelector = "#search-results";
@@ -131,8 +131,12 @@ renderAdminSearchResults = function(containerSelector) {
    */
   s = $("#admin-search").val();
   if (isNull(s)) {
-    toastStatusMessage("Please enter a search term");
-    return false;
+    if (typeof overrideSearch === "object") {
+      s = overrideSearch.genus + " " + overrideSearch.species;
+    } else {
+      toastStatusMessage("Please enter a search term");
+      return false;
+    }
   }
   animateLoad();
   $("#admin-search").blur();
@@ -143,7 +147,7 @@ renderAdminSearchResults = function(containerSelector) {
   newLink = uri.urlString + "#" + b64s;
   $("#app-linkout").attr("data-url", newLink);
   return $.get(searchParams.targetApi, args, "json").done(function(result) {
-    var bootstrapColCount, colClass, data, html, htmlClose, htmlHead, targetCount;
+    var bootstrapColCount, col, colClass, data, fragment, html, htmlClose, htmlHead, htmlRow, i, j, k, key, l, len, m, newPath, origData, ref, ref1, requiredKeyOrder, row, targetCount, taxonObj, taxonQuery, taxonSplit;
     if (result.status !== true || result.count === 0) {
       stopLoadError();
       if (isNull(result.human_error)) {
@@ -160,8 +164,19 @@ renderAdminSearchResults = function(containerSelector) {
     targetCount = toInt(result.count) - 1;
     colClass = null;
     bootstrapColCount = 0;
-    return $.each(data, function(i, row) {
-      var htmlRow, j, l, taxonQuery;
+    requiredKeyOrder = ["genus", "species", "subspecies"];
+    origData = data;
+    data = new Object();
+    for (i in origData) {
+      row = origData[i];
+      data[i] = new Object();
+      for (m = 0, len = requiredKeyOrder.length; m < len; m++) {
+        key = requiredKeyOrder[m];
+        data[i][key] = row[key];
+      }
+    }
+    for (i in data) {
+      row = data[i];
       if (toInt(i) === 0) {
         j = 0;
         htmlHead += "\n<!-- Table Headers - " + (Object.size(row)) + " entries -->";
@@ -191,7 +206,8 @@ renderAdminSearchResults = function(containerSelector) {
       }
       htmlRow = "\n\t<tr id='cndb-row" + i + "' class='cndb-result-entry' data-taxon=\"" + taxonQuery + "\">";
       l = 0;
-      $.each(row, function(k, col) {
+      for (k in row) {
+        col = row[k];
         if (isNull(row.genus)) {
           return true;
         }
@@ -203,9 +219,9 @@ renderAdminSearchResults = function(containerSelector) {
           htmlRow += "\n\t\t<td id='edit-" + i + "' class='edit-taxon " + colClass + " text-center'><paper-icon-button icon='image:edit' class='edit' data-taxon='" + taxonQuery + "'></paper-icon-button></td>";
           htmlRow += "\n\t\t<td id='delete-" + i + "' class='delete-taxon " + colClass + " text-center'><paper-icon-button icon='delete' class='delete-taxon-button fadebg' data-taxon='" + taxonQuery + "' data-database-id='" + row.id + "'></paper-icon-button></td>";
           htmlRow += "\n\t</tr>";
-          return html += htmlRow;
+          html += htmlRow;
         }
-      });
+      }
       if (toInt(i) === targetCount) {
         html = htmlHead + html + htmlClose;
         $(containerSelector).html(html);
@@ -221,9 +237,22 @@ renderAdminSearchResults = function(containerSelector) {
           taxaId = $(this).attr('data-database-id');
           return deleteTaxon(taxaId);
         });
-        return stopLoad();
+        try {
+          taxonSplit = s.split(" ");
+          taxonObj = {
+            genus: taxonSplit[0],
+            species: (ref = taxonSplit[1]) != null ? ref : "",
+            subspecies: (ref1 = taxonSplit[2]) != null ? ref1 : ""
+          };
+          fragment = jsonTo64(taxonObj);
+          try {
+            newPath = uri.o.attr("base") + uri.o.attr("path");
+            setHistory(newPath + "#" + fragment);
+          } catch (undefined) {}
+        } catch (undefined) {}
+        stopLoad();
       }
-    });
+    }
   }).fail(function(result, status) {
     var error;
     console.error("There was an error performing the search");
@@ -524,12 +553,119 @@ fillEmptyCommonName = function() {
   return false;
 };
 
+validateNewTaxon = function() {
+
+  /*
+   *
+   */
+  var args, taxon, taxonExistsHelper, taxonString;
+  taxonExistsHelper = function(invalid) {
+    var editFields, fieldLabel, len, m, selector;
+    if (invalid == null) {
+      invalid = true;
+    }
+    editFields = ["genus", "species", "subspecies"];
+    for (m = 0, len = editFields.length; m < len; m++) {
+      fieldLabel = editFields[m];
+      selector = "#edit-" + fieldLabel;
+      if (invalid) {
+        p$(selector).invalid = true;
+        p$(selector).errorMessage = "This taxon already exists in the database";
+        p$("#save-editor").disabled = true;
+      } else {
+        p$(selector).invalid = false;
+        p$("#save-editor").disabled = false;
+      }
+    }
+    return false;
+  };
+  taxon = {
+    genus: p$("#edit-genus").value,
+    species: p$("#edit-species").value,
+    subspecies: !isNull(p$("#edit-subspecies").value) ? p$("#edit-subspecies").value : ""
+  };
+  args = "q=" + taxon.genus + "+" + taxon.species;
+  taxonString = taxon.genus + " " + taxon.species;
+  if (!isNull(taxon.subspecies)) {
+    args += "+" + taxon.subspecies;
+    taxonString += " " + taxon.subspecies;
+  }
+  $.get(searchParams.apiPath, args + "&dwc_only=true", "json").done(function(result) {
+    var len, m, ref, testTaxon;
+    if (result.status !== true) {
+      console.error("Problem validating taxon:", result);
+      return false;
+    }
+    ref = Object.toArray(result.result);
+    for (m = 0, len = ref.length; m < len; m++) {
+      testTaxon = ref[m];
+      if (testTaxon.genus.toLowerCase() === taxon.genus.toLowerCase()) {
+        if (testTaxon.specificEpithet.toLowerCase() === taxon.species.toLowerCase()) {
+          try {
+            if (isNull(taxon.subspecies) && isNull(testTaxon.subspecificEpithet)) {
+              console.warn("Taxon sp already exists in DB");
+              return taxonExistsHelper();
+            } else if (taxon.subspecies.toLowerCase() === testTaxon.subspecificEpithet.toLowerCase()) {
+              console.warn("Taxon ssp already exists in DB");
+              return taxonExistsHelper();
+            } else {
+              continue;
+            }
+          } catch (undefined) {}
+        } else {
+          continue;
+        }
+      } else {
+        continue;
+      }
+    }
+    taxonExistsHelper(false);
+    args = "missing=true&genus=" + taxon.genus + "&species=" + taxon.species + "&prefetch=true";
+    $.get(searchParams.apiPath, args, "json").done(function(result) {
+      var authorityYear, commonName, error1, genusAuthority, genusAuthorityYear, iucnData, ref1, speciesAuthority, speciesAuthorityYear;
+      if (!isNumeric(result.id)) {
+        console.error("Unable to find IUCN result");
+        return false;
+      }
+      iucnData = result;
+      commonName = (ref1 = iucnData.main_common_name) != null ? ref1 : iucnData.common_name;
+      speciesAuthority = iucnData.species_authority;
+      genusAuthority = iucnData.genus_authority;
+      try {
+        authorityYear = JSON.parse(iucnData.authority_year);
+        genusAuthorityYear = Object.keys(authorityYear)[0];
+        speciesAuthorityYear = authorityYear[genusAuthorityYear];
+      } catch (error1) {
+        genusAuthorityYear = "";
+        speciesAuthorityYear = "";
+      }
+      p$("#edit-common-name").value = commonName;
+      p$("#edit-common-name-source").value = "iucn";
+      p$("#edit-genus-authority").value = genusAuthority;
+      p$("#edit-species-authority").value = speciesAuthority;
+      p$("#edit-gauthyear").value = genusAuthorityYear;
+      p$("#edit-sauthyear").value = speciesAuthorityYear;
+      try {
+        p$("#genus-authority-parens").checked = iucnData.parens_auth_genus.toBool();
+        p$("#species-authority-parens").checked = iucnData.parens_auth_species.toBool();
+      } catch (undefined) {}
+      console.log("Got", commonName, speciesAuthority, genusAuthority, authorityYear, genusAuthorityYear, speciesAuthorityYear);
+      return false;
+    });
+    return false;
+  }).fail(function(result, status) {
+    console.error("FAIL_VALIDATE");
+    return false;
+  });
+  return false;
+};
+
 createNewTaxon = function() {
 
   /*
    * Load a blank modal taxon editor, ready to make a new one
    */
-  var whoEdited, windowHeight;
+  var error1, whoEdited, windowHeight;
   animateLoad();
   loadModalTaxonEditor("", "Create");
   d$("#editor-title").text("Create New Taxon");
@@ -543,7 +679,24 @@ createNewTaxon = function() {
   d$("#save-editor").click(function() {
     return saveEditorEntry("new");
   });
-  $("#modal-taxon-edit").get(0).open();
+  $("#modal-taxon-edit").on("iron-overlay-opened", function() {
+    var editFields, fieldLabel, len, m, selector;
+    console.log("Binding new taxon events");
+    editFields = ["genus", "species", "subspecies"];
+    for (m = 0, len = editFields.length; m < len; m++) {
+      fieldLabel = editFields[m];
+      selector = "#edit-" + fieldLabel;
+      $(selector).keyup(function() {
+        return validateNewTaxon.debounce();
+      });
+    }
+    return validateNewTaxon();
+  });
+  try {
+    p$("#modal-taxon-edit").open();
+  } catch (error1) {
+    $("#modal-taxon-edit").get(0).open();
+  }
   return stopLoad();
 };
 
@@ -555,7 +708,7 @@ createDuplicateTaxon = function() {
    * Remove the edited notes, remove the duplicate button, and change
    * the bidings so a new entry is created.
    */
-  var e, error1, newButton;
+  var e, editFields, error1, fieldLabel, len, m, newButton, selector;
   animateLoad();
   try {
     d$("#taxon-id").remove();
@@ -570,6 +723,15 @@ createDuplicateTaxon = function() {
     delay(250, function() {
       return stopLoad();
     });
+    editFields = ["genus", "species", "subspecies"];
+    for (m = 0, len = editFields.length; m < len; m++) {
+      fieldLabel = editFields[m];
+      selector = "#edit-" + fieldLabel;
+      $(selector).keyup(function() {
+        return validateNewTaxon.debounce();
+      });
+    }
+    validateNewTaxon();
   } catch (error1) {
     e = error1;
     stopLoadError("Unable to duplicate taxon");
@@ -1399,9 +1561,16 @@ adminPreloadSearch = function() {
    * the standard search uses the verbatim entry of the user, this uses
    * a JSON constructed by the system
    */
-  var fill, loadArgs;
+  var fill, fillTimeout, fillWhenReady, loadArgs, start;
+  if (_asm.preloaderBlocked === true) {
+    console.debug("Skipping re-running active search preload");
+    return false;
+  }
+  console.debug("Preloader firing");
+  _asm.preloaderBlocked = true;
+  start = Date.now();
   try {
-    uri.query = $.url().attr("fragment");
+    uri.query = decodeURIComponent($.url().attr("fragment"));
   } catch (undefined) {}
   if (uri.query === "#" || isNull(uri.query)) {
     return false;
@@ -1411,7 +1580,7 @@ adminPreloadSearch = function() {
     loadArgs = JSON.parse(loadArgs);
   } catch (undefined) {}
   if (typeof loadArgs === "object") {
-    if (isNull(loadArgs.genus) || isNull(loadArgs.species)) {
+    if (isNull(loadArgs.genus) || (loadArgs.species == null)) {
       console.error("Bad taxon format");
       return false;
     }
@@ -1419,9 +1588,38 @@ adminPreloadSearch = function() {
     if (!isNull(loadArgs.subspecies)) {
       fill += " " + loadArgs.subspecies;
     }
-    $("#admin-search").val(fill);
-    renderAdminSearchResults();
-    return loadArgs;
+    fillTimeout = 10 * 1000;
+    (fillWhenReady = function() {
+      var duration, error1, error2, isAttached;
+      try {
+        isAttached = p$("#admin-search").isAttached;
+      } catch (error1) {
+        isAttached = false;
+      }
+      if ((typeof _asm !== "undefined" && _asm !== null ? _asm.polymerReady : void 0) && isAttached) {
+        try {
+          p$("#admin-search").value = fill;
+        } catch (error2) {
+          $("#admin-search").val(fill);
+        }
+        renderAdminSearchResults(loadArgs);
+        duration = Date.now() - start;
+        console.log("Search preload finished in " + duration + "ms");
+        return _asm.preloaderBlocked = false;
+      } else {
+        duration = Date.now() - start;
+        console.debug("NOT READY: Duration @ " + duration + "ms", typeof _asm !== "undefined" && _asm !== null ? _asm.polymerReady : void 0, isAttached, _asm.polymerReady && isAttached);
+        if (!(duration > fillTimeout)) {
+          return delay(100, function() {
+            return fillWhenReady();
+          });
+        } else {
+          console.error("Timeout waiting for polymerReady!! Not filling search.");
+          _asm.preloaderBlocked = false;
+          return false;
+        }
+      }
+    })();
   } else {
     console.error("Bad fragment: unable to read JSON", loadArgs);
   }
@@ -1429,6 +1627,13 @@ adminPreloadSearch = function() {
 };
 
 $(function() {
+  var error1, isAdminActive, thisUrl;
+  try {
+    thisUrl = uri.o.attr("source");
+    isAdminActive = /^https?:\/\/(?:.*?\/)+(admin-.*\.(?:php|html)|admin\/)(?:\?(?:&?[\w\-_]+=[\w+\-_%]+)+)?(?:\#[\w\+%]+)?$/im.test(thisUrl);
+  } catch (error1) {
+    isAdminActive = true;
+  }
   if ($("#next").exists()) {
     $("#next").unbind().click(function() {
       return openTab(adminParams.adminPageUrl);
@@ -1437,12 +1642,16 @@ $(function() {
   loadJS("bower_components/bootstrap/dist/js/bootstrap.min.js", function() {
     return $("[data-toggle='tooltip']").tooltip();
   });
-  try {
-    prefetchEditorDropdowns();
-  } catch (undefined) {}
-  try {
-    return adminPreloadSearch();
-  } catch (undefined) {}
+  if (isAdminActive) {
+    try {
+      prefetchEditorDropdowns();
+    } catch (undefined) {}
+    try {
+      return adminPreloadSearch();
+    } catch (undefined) {}
+  } else {
+    return console.debug("Not an admin page");
+  }
 });
 
 //# sourceMappingURL=maps/admin.js.map

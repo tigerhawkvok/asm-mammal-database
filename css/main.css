@@ -6949,11 +6949,9 @@ html >>> .bad-location {
   color: #F44336;
 }
 .tooltip-container {
-  float: left;
   display: inline-block;
 }
 html >>> .tooltip-container {
-  float: left;
   display: inline-block;
 }
 .italic {
@@ -7026,9 +7024,6 @@ header .logo-container img {
   html >>> #modal-taxon {
     min-width: 50em;
   }
-  html /deep/ #modal-taxon {
-    min-width: 50em;
-  }
 }
 @media (max-width: 767px) {
   #modal-taxon {
@@ -7036,9 +7031,6 @@ header .logo-container img {
     left: -3.25vw;
   }
   html >>> .hidden-xs {
-    display: none !important;
-  }
-  html /deep/ .hidden-xs {
     display: none !important;
   }
 }

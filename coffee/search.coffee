@@ -6,7 +6,8 @@ searchParams.apiPath = uri.urlString + searchParams.targetApi
 window._asm = new Object()
 # Base query URLs for out-of-site linkouts
 _asm.affiliateQueryUrl =
-  iucnRedlist: "http://apiv3.iucnredlist.org/api/v3/species/common_names/"
+  iucnRedlist: "http://apiv3.iucnredlist.org/api/v3/species/"
+  iucnRedlistCN: "http://apiv3.iucnredlist.org/api/v3/species/common_names/"
   iNaturalist: "https://www.inaturalist.org/taxa/search"
 
 
@@ -265,8 +266,8 @@ performSearch = (stateArgs = undefined) ->
     stopLoadError()
   .always ->
     # Anything we always want done
-    b64s = Base64.encodeURI(s)
-    if s? then setHistory("#{uri.urlString}##{b64s}")
+    b64s = Base64.encodeURI s
+    if s? then setHistory "#{uri.urlString}##{b64s}"
     false
 
 getFilters = (selector = ".cndb-filter", booleanType = "AND") ->
@@ -1332,12 +1333,26 @@ $ ->
   ****************************************************************************
   """
   console.log(devHello)
+  _asm.polymerReady = false
   ignorePages = [
     "admin-login.php"
     "admin-page.html"
     "admin-page.php"
     ]
   if uri.o.attr("file") in ignorePages
+    try
+      do setupPolymerReady = ->
+        try
+          if Polymer?.Base?.$$?
+            Polymer.Base.ready ->
+              _asm.polymerReady = true
+            delay 250, ->
+              _asm.polymerReady = true
+          else
+            throw {message:"POLYMER_NOT_READY"}
+        catch
+          delay 100, ->
+            setupPolymerReady        
     return false
   # Do bindings
   # console.log("Doing onloads ...")
@@ -1380,6 +1395,19 @@ $ ->
   # Do a fill of the result container
   if isNull uri.query
     loadArgs = ""
+    try
+      do setupPolymerReady = ->
+        try
+          if Polymer?.Base?.$$?
+            Polymer.Base.ready ->
+              _asm.polymerReady = true
+            delay 250, ->
+              _asm.polymerReady = true
+          else
+            throw {message:"POLYMER_NOT_READY"}
+        catch
+          delay 100, ->
+            setupPolymerReady
   else
     try
       loadArgs = Base64.decode(uri.query)
@@ -1401,6 +1429,7 @@ $ ->
       do fixState = ->
         if Polymer?.Base?.$$?
           unless isNull Polymer.Base.$$("#loose")
+            _asm.polymerReady = true
             delay 250, ->
               if looseState
                 d$("#loose").attr("checked", "checked")
@@ -1417,6 +1446,7 @@ $ ->
           Polymer.Base.ready ->
             # The whenReady makes the toggle work, but it won't toggle
             # without this "real" delay
+            _asm.polymerReady = true
             delay 250, ->
               console.info "Doing a late Polymer.Base.ready call"
               if looseState
@@ -1466,6 +1496,7 @@ $ ->
     $.get searchParams.targetApi,"q=#{loadArgs}","json"
     .done (result) ->
       # Populate the result container
+      _asm.polymerReady = true
       console.debug "Server query got", result
       if result.status is true and result.count > 0
         console.log "Got a valid result, formatting #{result.count} results."
@@ -1497,6 +1528,7 @@ $ ->
     do fixState = ->
       if Polymer?.Base?.$$?
         unless isNull Polymer.Base.$$("#loose")
+          _asm.polymerReady = true
           delay 250, ->
             d$("#loose").attr("checked", "checked")
             eutheriaFilterHelper()
@@ -1511,6 +1543,7 @@ $ ->
         Polymer.Base.ready ->
           # The whenReady makes the toggle work, but it won't toggle
           # without this "real" delay
+          _asm.polymerReady = true
           delay 250, ->
             d$("#loose").attr("checked", "checked")
             eutheriaFilterHelper()

@@ -108,7 +108,8 @@ function checkColumnExists($column_list)
 }
 
 if(boolstr($_REQUEST["missing"]) || boolstr($_REQUEST["fetch_missing"])) {
-    returnAjax(getTaxonIucnData($_REQUEST));
+    $save = isset($_REQUEST["prefetch"]) ? boolstr($_REQUEST["prefetch"]) : false;
+    returnAjax( getTaxonIucnData($_REQUEST), $save );
 }
 if(boolstr($_REQUEST["get_unique"])) {
     returnAjax(getUniqueVals($_REQUEST["col"]));
@@ -844,7 +845,7 @@ $iucnCanProvide = array(
 
 );
 
-function getTaxonIucnData($taxonBase) {
+function getTaxonIucnData($taxonBase, $ignoreFlagSave = false) {
     if(empty($taxonBase["genus"]) || empty($taxonBase["species"])) {
         return array(
             "status" => false,
@@ -891,7 +892,7 @@ function getTaxonIucnData($taxonBase) {
                 $flagSave = true;
             }
         }
-        if($flagSave) {
+        if($flagSave && !$ignoreFlagSave) {
             $ref = array();
             $ref["id"] = $taxon["id"];
             unset($taxon["id"]);
@@ -904,6 +905,21 @@ function getTaxonIucnData($taxonBase) {
         unset($taxon["id"]);
     }
 
+    $hasWellFormattedSpeciesCitation = preg_match('/\(? *([\w\. \[\]]+), *([0-9]{4}) *\)?/im', $taxon["species_authority"]);
+    if(empty($taxon["genus_authority"]) && $hasWellFormattedSpeciesCitation) {
+
+        $authority = preg_replace('/\(? *(([\w\. \[\]]+(,|&|&amp;|&amp;amp;)?)+), *([0-9]{4}) *\)?/im', '$1', $taxon["species_authority"]);
+        $authorityYear = preg_replace('/\(? *(([\w\. \[\]]+(,|&|&amp;|&amp;amp;)?)+), *([0-9]{4}) *\)?/im', '$4', $taxon["species_authority"]);
+        $taxon["authority_year"] = json_encode(array(
+            $authorityYear => $authorityYear,
+        ));
+        $parensState = preg_match('/\( *([\w\. \[\]]+), *([0-9]{4}) *\)/im', $taxon["species_authority"]) ? true:false;
+        $taxon["genus_authority"] = $authority;
+        $taxon["species_authority"] = $authority;
+        $taxon["parens_auth_genus"] = $parensState;
+        $taxon["parens_auth_species"] = $parensState;
+    }
+    # Finalize
     return $taxon;
 }
 

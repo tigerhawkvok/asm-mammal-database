@@ -147,7 +147,7 @@ renderAdminSearchResults = function(overrideSearch, containerSelector) {
   newLink = uri.urlString + "#" + b64s;
   $("#app-linkout").attr("data-url", newLink);
   return $.get(searchParams.targetApi, args, "json").done(function(result) {
-    var bootstrapColCount, colClass, data, html, htmlClose, htmlHead, targetCount;
+    var bootstrapColCount, col, colClass, data, html, htmlClose, htmlHead, htmlRow, i, j, k, key, l, len, m, origData, requiredKeyOrder, row, targetCount, taxonQuery;
     if (result.status !== true || result.count === 0) {
       stopLoadError();
       if (isNull(result.human_error)) {
@@ -164,8 +164,19 @@ renderAdminSearchResults = function(overrideSearch, containerSelector) {
     targetCount = toInt(result.count) - 1;
     colClass = null;
     bootstrapColCount = 0;
-    return $.each(data, function(i, row) {
-      var htmlRow, j, l, taxonQuery;
+    requiredKeyOrder = ["genus", "species", "subspecies"];
+    origData = data;
+    data = new Object();
+    for (i in origData) {
+      row = origData[i];
+      data[i] = new Object();
+      for (m = 0, len = requiredKeyOrder.length; m < len; m++) {
+        key = requiredKeyOrder[m];
+        data[i][key] = row[key];
+      }
+    }
+    for (i in data) {
+      row = data[i];
       if (toInt(i) === 0) {
         j = 0;
         htmlHead += "\n<!-- Table Headers - " + (Object.size(row)) + " entries -->";
@@ -195,7 +206,8 @@ renderAdminSearchResults = function(overrideSearch, containerSelector) {
       }
       htmlRow = "\n\t<tr id='cndb-row" + i + "' class='cndb-result-entry' data-taxon=\"" + taxonQuery + "\">";
       l = 0;
-      $.each(row, function(k, col) {
+      for (k in row) {
+        col = row[k];
         if (isNull(row.genus)) {
           return true;
         }
@@ -207,9 +219,9 @@ renderAdminSearchResults = function(overrideSearch, containerSelector) {
           htmlRow += "\n\t\t<td id='edit-" + i + "' class='edit-taxon " + colClass + " text-center'><paper-icon-button icon='image:edit' class='edit' data-taxon='" + taxonQuery + "'></paper-icon-button></td>";
           htmlRow += "\n\t\t<td id='delete-" + i + "' class='delete-taxon " + colClass + " text-center'><paper-icon-button icon='delete' class='delete-taxon-button fadebg' data-taxon='" + taxonQuery + "' data-database-id='" + row.id + "'></paper-icon-button></td>";
           htmlRow += "\n\t</tr>";
-          return html += htmlRow;
+          html += htmlRow;
         }
-      });
+      }
       if (toInt(i) === targetCount) {
         html = htmlHead + html + htmlClose;
         $(containerSelector).html(html);
@@ -225,9 +237,9 @@ renderAdminSearchResults = function(overrideSearch, containerSelector) {
           taxaId = $(this).attr('data-database-id');
           return deleteTaxon(taxaId);
         });
-        return stopLoad();
+        stopLoad();
       }
-    });
+    }
   }).fail(function(result, status) {
     var error;
     console.error("There was an error performing the search");

@@ -158,7 +158,20 @@ renderAdminSearchResults = (overrideSearch, containerSelector = "#search-results
     targetCount = toInt(result.count)-1
     colClass = null
     bootstrapColCount = 0
-    $.each data, (i,row) ->
+    # Sort the column output
+    requiredKeyOrder = [
+      "genus"
+      "species"
+      "subspecies"
+      ]
+    origData = data
+    data = new Object()
+    for i, row of origData
+      data[i] = new Object()
+      for key in requiredKeyOrder
+        data[i][key] = row[key]
+    # Render the results
+    for i, row of data
       if toInt(i) is 0
         j = 0
         htmlHead += "\n<!-- Table Headers - #{Object.size(row)} entries -->"
@@ -182,14 +195,14 @@ renderAdminSearchResults = (overrideSearch, containerSelector = "#search-results
         taxonQuery = "#{taxonQuery}+#{row.subspecies.trim()}"
       htmlRow = "\n\t<tr id='cndb-row#{i}' class='cndb-result-entry' data-taxon=\"#{taxonQuery}\">"
       l = 0
-      $.each row, (k,col) ->
-        if isNull(row.genus)
+      for k, col of row
+        if isNull row.genus
           # Next iteration
           return true
         if k is "genus" or k is "species" or k is "subspecies"
           htmlRow += "\n\t\t<td id='#{k}-#{i}' class='#{k} #{colClass}'>#{col}</td>"
         l++
-        if l is Object.size(row)
+        if l is Object.size row
           htmlRow += "\n\t\t<td id='edit-#{i}' class='edit-taxon #{colClass} text-center'><paper-icon-button icon='image:edit' class='edit' data-taxon='#{taxonQuery}'></paper-icon-button></td>"
           htmlRow += "\n\t\t<td id='delete-#{i}' class='delete-taxon #{colClass} text-center'><paper-icon-button icon='delete' class='delete-taxon-button fadebg' data-taxon='#{taxonQuery}' data-database-id='#{row.id}'></paper-icon-button></td>"
           htmlRow += "\n\t</tr>"
@@ -1636,7 +1649,7 @@ $ ->
   if isAdminActive
     try
       prefetchEditorDropdowns()
-    try    
+    try
       adminPreloadSearch()
   else
     console.debug "Not an admin page"

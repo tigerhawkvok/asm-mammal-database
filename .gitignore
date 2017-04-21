@@ -64,3 +64,4 @@ pdf/pdf-gen/*.pdf
 *.pyc
 *.pdnBak
 currentVersion~
+.php_cs.cache

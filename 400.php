@@ -2,8 +2,11 @@
 <?php
 # Borrowed from
 #
-function responseCodeMessage($code) {
-    if(!is_numeric($code)) return false;
+function responseCodeMessage($code)
+{
+    if (!is_numeric($code)) {
+        return false;
+    }
     $code = intval($code);
     switch ($code) {
                     case 100: $text = 'Continue'; break;
@@ -48,13 +51,11 @@ function responseCodeMessage($code) {
                     break;
                 }
     return $text;
-
 }
     if (!function_exists('http_response_code')) {
-        function http_response_code($code = NULL) {
-
-            if ($code !== NULL) {
-
+        function http_response_code($code = null)
+        {
+            if ($code !== null) {
                 $text = responseCodeMessage($code);
 
                 $protocol = (isset($_SERVER['SERVER_PROTOCOL']) ? $_SERVER['SERVER_PROTOCOL'] : 'HTTP/1.0');
@@ -62,19 +63,16 @@ function responseCodeMessage($code) {
                 header($protocol . ' ' . $code . ' ' . $text);
 
                 $GLOBALS['http_response_code'] = $code;
-
             } else {
-
                 $code = (isset($GLOBALS['http_response_code']) ? $GLOBALS['http_response_code'] : 200);
-
             }
 
             return $code;
-
         }
     }
 
-    function getResponseCode($sayHttp = true) {
+    function getResponseCode($sayHttp = true)
+    {
         $response = http_response_code()." ".responseCodeMessage(http_response_code());
         return $sayHttp ? "HTTP $response" : $response;
     }

@@ -81,16 +81,15 @@ if ($debug) {
               <?php
               $renderPage = true;
               try {
-                $as_include = true;
-                include_once dirname(__FILE__)."/api.php";
-                $groups = fetchMajorMinorGroups(true);
-                echo "<script type='text/javascript'> _asm.mammalGroupsBase = ".json_encode($groups["minor"])." ; </script>";
+                  $as_include = true;
+                  include_once dirname(__FILE__)."/api.php";
+                  $groups = fetchMajorMinorGroups(true);
+                  echo "<script type='text/javascript'> _asm.mammalGroupsBase = ".json_encode($groups["minor"])." ; </script>";
               } catch (Exception $e) {
-                # Do nothing
+                  # Do nothing
                 if ($e->getMessage() == "DATABASE_CONNECTION_FAILURE") {
-                  # Show an error message about connection
-                  require_once dirname(__FILE__)."/admin/CONFIG.php";
-                  ?>
+                    # Show an error message about connection
+                  require_once dirname(__FILE__)."/admin/CONFIG.php"; ?>
                 </div> <!-- Ends the column --></section>
                   <section id="error-db-connection" class="row">
                     <div class="bs-callout bs-callout-danger col-xs-12 col-sm-8 col-md-6 col-sm-offset-2 col-md-offset-3">
@@ -102,13 +101,13 @@ if ($debug) {
                   <?php
                   $renderPage = false;
                 } else {
-                  # Show a generic "maybe error" message
+                    # Show a generic "maybe error" message
                   echo "<!-- WARNING GOT ERROR: ".$e->getMessage()." --><pre>got $default_sql_user and $default_database \n\n";
-                  throw($e);
+                    throw($e);
                 }
               }
               if ($renderPage) {
-                ?>
+                  ?>
               <label for="type" class="sr-only">Clade Restriction</label>
               <paper-menu-button id="simple-linnean-groups" class="col-xs-6 col-md-4">
                 <paper-button class="dropdown-trigger"><iron-icon icon="icons:filter-list"></iron-icon><span id="filter-what" class="dropdown-label"></span></paper-button>
@@ -116,14 +115,13 @@ if ($debug) {
                   <paper-item data-type="any" selected>All</paper-item>
                   <?php
                     try {
-                      foreach($groups["major"] as $major) {
-                        echo "<paper-item data-type='$major'>".ucwords($major)."</paper-item>\n";
-                      }
+                        foreach ($groups["major"] as $major) {
+                            echo "<paper-item data-type='$major'>".ucwords($major)."</paper-item>\n";
+                        }
                     } catch (Exception $e) {
-                      # Do nothing
+                        # Do nothing
                       echo "<!-- ".$e->getMessage()."  -->";
-                    }
-                  ?>
+                    } ?>
                 </paper-menu>
               </paper-menu-button>
               </div>
@@ -147,7 +145,7 @@ if ($debug) {
             </div>
             <?php
             # Ends the renderPage block -- we close before the section so that the HTML is well formatted
-            }
+              }
           ?>
           </section>
         </fieldset>
@@ -157,7 +155,7 @@ if ($debug) {
       <br/>
       <?php
       if ($renderPage) {
-        ?>
+          ?>
       <section id="results-section" class="col-xs-12">
         <div id="result-header-container" hidden>
           <h2>Results<span id="result-count"></span></h2>
@@ -170,7 +168,8 @@ if ($debug) {
         </div>
       </section>
       <?php
-        }
+
+      }
         echo $bodyClose;
       ?>
 </html>

@@ -63,6 +63,11 @@ module.exports = (grunt) ->
         dir: [
           "api.php"
           "admin-api.php"
+          "admin-login.php"
+          "index.php"
+          "species-account.php"
+          "meta.php"
+          "400.php"
           ]
       options:
         rules: "@PSR2"

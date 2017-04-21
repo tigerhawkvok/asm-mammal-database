@@ -1131,7 +1131,7 @@ saveEditorEntry = (performMode = "save") ->
     ]
   saveObject = new Object()
   escapeCompletion = false
-  d$("paper-input").removeAttr("invalid")
+  d$("paper-input").removeAttr("invalid") 
   ## Manual parses
   try
     # Authority year

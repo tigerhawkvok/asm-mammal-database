@@ -42,10 +42,8 @@ if(isset($_SERVER['QUERY_STRING'])) parse_str($_SERVER['QUERY_STRING'],$_REQUEST
 
 $start_script_timer = microtime_float();
 
-if(!function_exists('elapsed'))
-  {
-    function elapsed($start_time = null)
-    {
+if(!function_exists('elapsed')) {
+    function elapsed($start_time = null) {
       /***
        * Return the duration since the start time in
        * milliseconds.
@@ -66,51 +64,51 @@ if(!function_exists('elapsed'))
   }
 
 if(!function_exists("returnAjax")) {
-function returnAjax($data)
-{
-  /***
-   * Return the data as a JSON object
-   *
-   * @param array $data
-   *
-   ***/
-  if(!is_array($data)) $data=array($data);
-  $data["execution_time"] = elapsed();
-  header('Cache-Control: no-cache, must-revalidate');
-  header('Expires: Mon, 26 Jul 1997 05:00:00 GMT');
-  header('Content-type: application/json');
-  $json = json_encode($data,JSON_FORCE_OBJECT);
-  $replace_array = array("&quot;","&#34;");
-  print str_replace($replace_array,"\\\"",$json);
-  exit();
-} }
+    function returnAjax($data) {
+        /***
+         * Return the data as a JSON object
+         *
+         * @param array $data
+         *
+         ***/
+        if(!is_array($data)) $data=array($data);
+        $data["execution_time"] = elapsed();
+        header('Cache-Control: no-cache, must-revalidate');
+        header('Expires: Mon, 26 Jul 1997 05:00:00 GMT');
+        header('Content-type: application/json');
+        $json = json_encode($data,JSON_FORCE_OBJECT);
+        $replace_array = array("&quot;","&#34;");
+        print str_replace($replace_array,"\\\"",$json);
+        exit();
+    } 
+}
 
 
-function checkColumnExists($column_list)
-{
-  /***
-   * Check if a comma-seperated list of columns exists in the
-   * database.
-   * @param string $column_list (comma-sep)
-   * @return array
-   ***/
-  if(empty($column_list)) return true;
-  global $db;
-  $cols = $db->getCols();
-  foreach(explode(",",$column_list) as $column)
+function checkColumnExists($column_list) {
+    /***
+     * Check if a comma-seperated list of columns exists in the
+     * database.
+     * @param string $column_list (comma-sep)
+     * @return array
+     ***/
+    if(empty($column_list)) return true;
+    global $db;
+    $cols = $db->getCols();
+    foreach(explode(",",$column_list) as $column)
     {
-      if(!array_key_exists($column,$cols))
+        if(!array_key_exists($column,$cols))
         {
-          returnAjax(array("status"=>false,"error"=>"Invalid column. If it exists, it may be an illegal lookup column.","human_error"=>"Sorry, you specified a lookup criterion that doesn't exist. Please try again.","columns"=>$column_list,"bad_column"=>$column));
+            returnAjax(array("status"=>false,"error"=>"Invalid column. If it exists, it may be an illegal lookup column.","human_error"=>"Sorry, you specified a lookup criterion that doesn't exist. Please try again.","columns"=>$column_list,"bad_column"=>$column));
         }
     }
-  return true;
+    return true;
 }
 
 if(boolstr($_REQUEST["missing"]) || boolstr($_REQUEST["fetch_missing"])) {
     $save = isset($_REQUEST["prefetch"]) ? boolstr($_REQUEST["prefetch"]) : false;
     returnAjax( getTaxonIucnData($_REQUEST), $save );
 }
+
 if(boolstr($_REQUEST["get_unique"])) {
     returnAjax(getUniqueVals($_REQUEST["col"]));
 }
@@ -142,37 +140,30 @@ $params = array();
 $boolean_type = false; # This is always set by the filter
 $filter_params = null;
 $extra_deprecated_params = null;
-if(isset($_REQUEST['filter']))
-  {
+if(isset($_REQUEST['filter'])) {
     $params = smart_decode64($_REQUEST['filter']);
-    if(empty($params))
-      {
+    if(empty($params)) {
         # Not base 64 encoded
         $params_temp = json_decode($_REQUEST['filter'],true);
-        if(!empty($params_temp))
-          {
+        if(!empty($params_temp)) {
             $params = array();
-            foreach($params_temp as $col=>$lookup)
-              {
+            foreach($params_temp as $col=>$lookup) {
                   # Smart_decode takes care of this for us
                 $params[$db->sanitize(deEscape($col))] = $db->sanitize(deEscape($lookup));
               }
           }
       }
-    if(!empty($params))
-      {
+    if(!empty($params)) {
         # De-escape the columns, since they'll be checked for
         # existence anyway
         $params_temp = $params;
         $params = array();
-        foreach($params_temp as $col=>$lookup)
-          {
+        foreach($params_temp as $col=>$lookup) {
             $params[deEscape($col)] = $lookup;
           }
         $filter_params = $params;
         # Does the "BOOLEAN_TYPE" key exist?
-        if(isset($params["boolean_type"]))
-          {
+        if(isset($params["boolean_type"])) {
             $params["BOOLEAN_TYPE"] = $params["boolean_type"];
             unset($params["boolean_type"]);
           }
@@ -181,33 +172,27 @@ if(isset($_REQUEST['filter']))
         if(strtoupper($params['BOOLEAN_TYPE']) != "AND" && strtoupper($params['BOOLEAN_TYPE']) != "OR") returnAjax(array("status"=>false,"error"=>"Missing required parameter","human_error"=>"The key 'BOOLEAN_TYPE' must be either 'AND' or 'OR'.","given"=>$params));
         $boolean_type = strtoupper($params['BOOLEAN_TYPE']);
         unset($params['BOOLEAN_TYPE']);
-        if($boolean_type == "OR")
-        {
+        if($boolean_type == "OR") {
             # If the params include an authority, check the deprecated
-            if(isset($params["genus_authority"]) || isset($param["species_authority"]))
-            {
-                if(!isset($params["deprecated_scientific"]))
-                {
+            if(isset($params["genus_authority"]) || isset($param["species_authority"])) {
+                if(!isset($params["deprecated_scientific"])) {
                     $params["deprecated_scientific"] = isset($params["genus_authority"]) ? $params["genus_authority"]:$params["species_authority"];
                 }
             }
         }
-        else
-        {
+        else {
             # AND search. If the params include an authority, check the deprecated
-            if(isset($params["genus_authority"]) || isset($param["species_authority"]))
-            {
+            if(isset($params["genus_authority"]) || isset($param["species_authority"])) {
                 $deprecated_params = isset($params["genus_authority"]) ? $params["genus_authority"]:$params["species_authority"];
                 $extra_deprecated_params = "LOWER(`deprecated_scientific`) LIKE '%".$deprecated_params."%'";
             }
         }
         # Do all the columns exist?
-        foreach($params as $col=>$lookup)
-          {
+        foreach($params as $col=>$lookup) {
             checkColumnExists($col);
-          }
-      }
-  }
+        }
+    }
+}
 
 
 $search = strtolower($db->sanitize(deEscape(urldecode($_REQUEST['q']))));
@@ -252,16 +237,15 @@ function fetchMajorMinorGroups($scientific = false) {
           );
 }
 
-    /***
-     * Break out early for these special cases
-     ***/
+/***
+ * Break out early for these special cases
+ ***/
 if(toBool($_REQUEST["fetch-groups"])) {
-          returnAjax(fetchMajorMinorGroups($_REQUEST["scientific"]));
+    returnAjax(fetchMajorMinorGroups($_REQUEST["scientific"]));
 }
 
 
-function areSimilar($string1,$string2,$distance=70,$depth=3)
-{
+function areSimilar($string1,$string2,$distance=70,$depth=3) {
   /*
    * Returns a TRUE if $string2 is similar to $string1,
    * FALSE otherwise.
@@ -281,16 +265,14 @@ function areSimilar($string1,$string2,$distance=70,$depth=3)
   return false;
 }
 
-function handleParamSearch($filter_params,$loose = false,$boolean_type = "AND", $extra_params = false)
-{
+function handleParamSearch($filter_params,$loose = false,$boolean_type = "AND", $extra_params = false) {
   /***
    * Handle the searches when they're using advanced options
    *
    * @param extra_params a literal query
    * @return array the result vector
    ***/
-   if(!is_array($filter_params) || sizeof($filter_params) === 0)
-     {
+   if(!is_array($filter_params) || sizeof($filter_params) === 0) {
        global $method;
        returnAjax(array("status"=>false,"error"=>"Invalid filter","human_error"=>"You cannot perform a parameter/filter search without setting the primary filters.","method"=>$method,"given"=>$filter_params));
      }

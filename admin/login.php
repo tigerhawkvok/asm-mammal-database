@@ -9,7 +9,7 @@
 
 $debug = false;
 
-if($debug) {
+if ($debug) {
     error_reporting(E_ALL);
     ini_set("display_errors", 1);
     error_log("Login is running in debug mode!");
@@ -18,49 +18,56 @@ if($debug) {
 require_once(dirname(__FILE__).'/CONFIG.php');
 
 
-if($require_two_factor) {
+if ($require_two_factor) {
     # Implies this
     $ask_twofactor_at_signup = true;
 }
 
-if($ask_twofactor_at_signup || $ask_verify_phone_at_signup) {
+if ($ask_twofactor_at_signup || $ask_verify_phone_at_signup) {
     # Override any redirects
     $post_create_redirect = false;
 }
 
 
-if(!empty($self_referential)) {
+if (!empty($self_referential)) {
     $self_url = $self_referential;
 } else {
     $self_url = $_SERVER['PHP_SELF'];
 }
 
-if(empty($baseurl)) {
+if (empty($baseurl)) {
     $baseurl = 'http';
-    if ($_SERVER["HTTPS"] == "on") {$baseurl .= "s";}
+    if ($_SERVER["HTTPS"] == "on") {
+        $baseurl .= "s";
+    }
     $baseurl .= "://";
     $baseurl.=$_SERVER['HTTP_HOST'];
 }
 
-$base_long = str_replace("http://","",strtolower($baseurl));
-$base_long = str_replace("https://","",strtolower($base_long));
-$base_arr = explode("/",$base_long);
+$base_long = str_replace("http://", "", strtolower($baseurl));
+$base_long = str_replace("https://", "", strtolower($base_long));
+$base_arr = explode("/", $base_long);
 $base = $base_arr[0];
-$url_parts = explode(".",$base);
+$url_parts = explode(".", $base);
 $tld = array_pop($url_parts);
-if($url_parts[0] == "www") {
+if ($url_parts[0] == "www") {
     $domain = array_pop($url_parts);
+} else {
+    $domain = implode(".", $url_parts);
 }
-else $domain = implode(".",$url_parts);
 $shorturl = $domain . "." . $tld;
 
-$cookie_domain = str_replace(".","_",$domain);
+$cookie_domain = str_replace(".", "_", $domain);
 $cookielink = $domain."_link";
 $cookie_domain = empty($_COOKIE[$cookielink]) ? $cookie_domain:$domain;
 
 
-if(!is_numeric($minimum_password_length)) $minimum_password_length=8;
-if(!is_numeric($password_threshold_length)) $password_threshold_length=20;
+if (!is_numeric($minimum_password_length)) {
+    $minimum_password_length=8;
+}
+if (!is_numeric($password_threshold_length)) {
+    $password_threshold_length=20;
+}
 
 /*
  * Cookie names for tracking
@@ -86,7 +93,7 @@ $xml=new Xml;
 $user=new UserFunctions;
 
 
-if($debug) {
+if ($debug) {
     /*if($r===true) echo "<p>(Database OK)</p>";
       else echo "<p>(Database Error - ' $r ')</p>";*/
     echo "<p>Visiting $baseurl on '$shorturl' with a human domain '$domain'</p>";
@@ -95,7 +102,7 @@ if($debug) {
     $xkcd_check="Robert'); DROP TABLE Students;--"; // https://xkcd.com/327/
     echo "<p>".displayDebug(DBHelper::staticSanitize($xkcd_check))."</p>"; // This should have escaped code
     echo "<p>User Validation @ cookie key '$cookielink' => '".$_COOKIE[$cookielink]."':</p>";
-    echo displayDebug($user->validateUser($_COOKIE[$cookielink],null,null,true));
+    echo displayDebug($user->validateUser($_COOKIE[$cookielink], null, null, true));
     echo displayDebug($_COOKIE[$cookielink]);
     echo displayDebug($_COOKIE);
     echo "</div>";
@@ -103,12 +110,12 @@ if($debug) {
 
 $login_output = "";
 
-if($_REQUEST['q']=='logout') {
-    setcookie($cookieuser,false,time()-3600*24*365,'/');
-    setcookie($cookieperson,false,time()-3600*24*365,'/');
-    setcookie($cookieauth,false,time()-3600*24*365,'/');
-    setcookie($cookiekey,false,time()-3600*24*365,'/');
-    setcookie($cookiepic,false,time()-3600*24*365,'/');
+if ($_REQUEST['q']=='logout') {
+    setcookie($cookieuser, false, time()-3600*24*365, '/');
+    setcookie($cookieperson, false, time()-3600*24*365, '/');
+    setcookie($cookieauth, false, time()-3600*24*365, '/');
+    setcookie($cookiekey, false, time()-3600*24*365, '/');
+    setcookie($cookiepic, false, time()-3600*24*365, '/');
     // do JS cookie wipe too
     $deferredJS.="\n$.removeCookie('$cookieuser',{path:'/'});";
     $deferredJS.="\n$.removeCookie('$cookieperson',{path:'/'});";
@@ -134,11 +141,9 @@ var loadLast = function () {
     $login_output.="<h1>Logging out ...</h1>".$deferredScriptBlock;
 }
 
-try
-{
+try {
     $logged_in=$user->validateUser($_COOKIE[$cookielink]);
-    if(!$user->has2FA() && $require_two_factor === true && !isset($_REQUEST['2fa']) && $logged_in && $_REQUEST['q']!='logout')
-    {
+    if (!$user->has2FA() && $require_two_factor === true && !isset($_REQUEST['2fa']) && $logged_in && $_REQUEST['q']!='logout') {
         # If require two factor is on, always force it post login
         header("Refresh: 0; url=".$self_url."?2fa=t");
         $deferredJS.="\nwindow.location.href=\"".$self_url."?2fa=t\";";
@@ -158,24 +163,18 @@ try
     </small>
   </p>
 </form>";
-    try
-    {
+    try {
         $needPhone = !$user->canSMS();
         $deferredJS .= "console.log('Needs phone? ',".strbool($needPhone).",".DBHelper::staticSanitize($user->getPhone()).");\n";
         $altPhone = "<p>Congratulations! Your phone number is verified.</p>";
-    }
-    catch(Exception $e)
-    {
+    } catch (Exception $e) {
         $needPhone = false;
         $deferredJS .= "console.warn('An exception was thrown checking for SMS-ability:','".$e->getMessage()."');\n";
         $altPhone = "<p>You don't have a phone number registered with us. Please go to account settings and add a phone number.</p>";
     }
     $verifyphone_link =  $needPhone ? "<li><a href='?q=verify'>Verify Phone</a></li>":null;
     $phone_verify_form = $needPhone ? $phone_verify_template : $altPhone;
-
-}
-catch (Exception $e)
-{
+} catch (Exception $e) {
     # There have been no cookies set.
     $logged_in = false;
     $twofactor = "Please log in.";
@@ -183,13 +182,12 @@ catch (Exception $e)
 
 $login_output = "";
 
-if($_REQUEST['q']=='logout')
-{
-    setcookie($cookieuser,false,time()-3600*24*365,'/');
-    setcookie($cookieperson,false,time()-3600*24*365,'/');
-    setcookie($cookieauth,false,time()-3600*24*365,'/');
-    setcookie($cookiekey,false,time()-3600*24*365,'/');
-    setcookie($cookiepic,false,time()-3600*24*365,'/');
+if ($_REQUEST['q']=='logout') {
+    setcookie($cookieuser, false, time()-3600*24*365, '/');
+    setcookie($cookieperson, false, time()-3600*24*365, '/');
+    setcookie($cookieauth, false, time()-3600*24*365, '/');
+    setcookie($cookiekey, false, time()-3600*24*365, '/');
+    setcookie($cookiepic, false, time()-3600*24*365, '/');
     // do JS cookie wipe too
     $deferredJS.="\n$.removeCookie('$cookieuser',{path:'/'});";
     $deferredJS.="\n$.removeCookie('$cookieperson',{path:'/'});";
@@ -214,10 +212,9 @@ var loadLast = function () {
     $login_output.="<h1>Logging out ...</h1>".$deferredScriptBlock;
 }
 
-try
-{
+try {
     $logged_in=$user->validateUser($_COOKIE[$cookielink]);
-    if(!$user->has2FA() && $require_two_factor === true && !isset($_REQUEST['2fa']) && $logged_in && $_REQUEST['q']!='logout') {
+    if (!$user->has2FA() && $require_two_factor === true && !isset($_REQUEST['2fa']) && $logged_in && $_REQUEST['q']!='logout') {
         # If require two factor is on, always force it post login
         header("Refresh: 0; url=".$self_url."?2fa=t");
         $deferredJS.="\nwindow.location.href=\"".$self_url."?2fa=t\";";
@@ -241,29 +238,29 @@ try
         $needPhone = !$user->canSMS();
         $deferredJS .= "console.log('Needs phone? ',".strbool($needPhone).",".DBHelper::staticSanitize($user->getPhone()).");\n";
         $altPhone = "<p>Congratulations! Your phone number is verified.</p>";
-    } catch(Exception $e) {
+    } catch (Exception $e) {
         $needPhone = false;
         $deferredJS .= "console.warn('An exception was thrown checking for SMS-ability:','".$e->getMessage()."');\n";
         $altPhone = "<p>You don't have a phone number registered with us. Please go to account settings and add a phone number.</p>";
     }
     $verifyphone_link =  $needPhone ? "<li><a href='?q=verify'>Verify Phone</a></li>":null;
     $phone_verify_form = $needPhone ? $phone_verify_template : $altPhone;
-
 } catch (Exception $e) {
     # There have been no cookies set.
     $logged_in = false;
     $twofactor = "Please log in.";
 }
 
-if($logged_in) {
+if ($logged_in) {
     $xml->setXml($_COOKIE[$cookieperson]);
     $full_name=$xml->getTagContents("<name>");
     $first_name=$xml->getTagContents("<fname>");
     $display_name=$xml->getTagContents("<dname>");
-    if(empty($first_name)) $first_name = $_COOKIE[$cookieperson];
+    if (empty($first_name)) {
+        $first_name = $_COOKIE[$cookieperson];
+    }
 } else {
-    if($captive_login)
-    {
+    if ($captive_login) {
         header("Refresh: 0; url=$baseurl");
         $deferredJS.="\nwindow.location.href=\"$baseurl\";";
     }
@@ -273,7 +270,7 @@ if($logged_in) {
 
 try {
     $has2fa = strbool($user->has2FA());
-} catch(Exception $e) {
+} catch (Exception $e) {
     $has2fa = false;
 }
 try {
@@ -281,7 +278,7 @@ try {
     $emailVerifiedBadge = $user->isVerified() ? " <span class='glyphicon glyphicon-check text-success' data-toggle='tooltip' title='Verified Email'></span>" : " <button class='btn btn-xs btn-success verify-email'>Verify Now</button>";
     $unrestricted = $user->meetsRestrictionCriteria() ? " <span class='glyphicon glyphicon-star' data-toggle='tooltip' title='Unrestricted User'></span>" : "";
     $emailHtml .= $emailVerifiedBadge . $unrestricted . "</p>";
-    if($user->hasAlternateEmail()) {
+    if ($user->hasAlternateEmail()) {
         $alternateEmailHtml = "<p class='text-muted alternate-email' data-alternate='true' data-user='".$user->getUsername()."'>" . $user->getAlternateEmail();
         $emailVerifiedBadge = $user->isVerified(true) ? "  <span class='glyphicon glyphicon-check text-success' data-toggle='tooltip' title='Verified Email'></span>" : " <button class='btn btn-xs btn-success verify-email'>Verify Now</button>";
         $alternateEmailHtml .= $emailVerifiedBadge . " <button class='btn btn-xs btn-info' id='add-alternate'>Change</button></p>";
@@ -300,7 +297,9 @@ $alt_forms="<div id='alt_logins' class='col-xs-12'>
 </div>";
 $login_preamble = "
 	    <h2 id='title'>User Login</h2>";
-if($_REQUEST['m']=='login_error') $login_preamble.="<div class='alert alert-warning'><button type='button' class='close' data-dismiss='alert' aria-label='Close'><span aria-hidden='true'>&times;</span></button><p><strong>There was a problem setting your login credentials</strong>. Please try again.</p></div>";
+if ($_REQUEST['m']=='login_error') {
+    $login_preamble.="<div class='alert alert-warning'><button type='button' class='close' data-dismiss='alert' aria-label='Close'><span aria-hidden='true'>&times;</span></button><p><strong>There was a problem setting your login credentials</strong>. Please try again.</p></div>";
+}
 $loginform = "<script src='bower_components/bootstrap/dist/js/bootstrap.min.js' type='text/javascript' charset='utf-8'></script>
 	    <form id='login' method='post' action='?q=submitlogin' class='form-horizontal'>
             <fieldset>
@@ -323,14 +322,11 @@ $loginform_close="	      <br/>
 	    </form>$alt_forms<br/><p id='form_create_new_account'><small>Don't have an account yet? <a href='?q=create'>Create one</a>!</small></p>";
 $big_login=$login_preamble.$loginform.$loginform_close;
 $small_login=$loginform.$loginform_close;
-if($_REQUEST['q']=='submitlogin')
-{
-    if(!empty($_POST['username']) && !empty($_POST['password']))
-    {
+if ($_REQUEST['q']=='submitlogin') {
+    if (!empty($_POST['username']) && !empty($_POST['password'])) {
         $totp = empty($_POST["totp"]) ? false:$_POST["totp"];
-        $res = $user->lookupUser($_POST['username'], $_POST['password'],true,$totp);
-        if($res[0] === false && $res["totp"] === true)
-        {
+        $res = $user->lookupUser($_POST['username'], $_POST['password'], true, $totp);
+        if ($res[0] === false && $res["totp"] === true) {
             # User has two factor authentication. Prompt!
             $totpclass = $res["error"]===false ? "bg-success":"bg-danger";
             $is_encrypted = empty($res["encrypted_hash"]) || empty($res["encrypted_secret"]);
@@ -361,9 +357,7 @@ if($_REQUEST['q']=='submitlogin')
   </form>
 </section>";
             $login_output .= $totp_buffer;
-        }
-        else if($res[0] !==false)
-        {
+        } elseif ($res[0] !==false) {
             // Successful login
             $userdata=$res[1];
             $id=$userdata['id'];
@@ -375,47 +369,46 @@ if($_REQUEST['q']=='submitlogin')
             $first_name=$xml->getTagContents("<fname>");
             $display_name=$xml->getTagContents("<dname>");
             # Account for possible differnt modes of saving
-            if(empty($first_name)) $first_name = $name_block;
+            if (empty($first_name)) {
+                $first_name = $name_block;
+            }
             $login_output.="<h1 id='welcome_back'>Welcome back, ".$first_name."</h1>"; //Welcome message
 
             $cookie_result=$user->createCookieTokens($userdata);
-            if($debug)
-            {
+            if ($debug) {
                 echo "<p>Cookie Result:</p>";
                 echo displayDebug($cookie_result);
                 echo "<p>Entering cookie handling post call ...</p>";
             }
-            if(!$cookie_result['status'])
-            {
+            if (!$cookie_result['status']) {
                 echo "<div class='alert alert-warning'><button type='button' class='close' data-dismiss='alert' aria-label='Close'><span aria-hidden='true'>&times;</span></button>".$cookie_result['error']."</div>";
-                if($debug) echo "<p>Got a cookie error, see above cookie result</p>";
-            }
-            else
-            {
+                if ($debug) {
+                    echo "<p>Got a cookie error, see above cookie result</p>";
+                }
+            } else {
                 // Need access -- name (id), email. Give server access?
                 $logged_in=true;
-                if($redirect_to_home !== true && empty($redirect_url))
-                {
+                if ($redirect_to_home !== true && empty($redirect_url)) {
                     $durl = $self_url;
-                }
-                else
-                {
-                    if($redirect_to_home === true) $durl = $baseurl;
-                    else $durl = $redirect_url;
+                } else {
+                    if ($redirect_to_home === true) {
+                        $durl = $baseurl;
+                    } else {
+                        $durl = $redirect_url;
+                    }
                 }
                 
                 # Double check the cookie setting
-                if(isset($_COOKIE[$cookieuser]) || $logged_in===true) {
+                if (isset($_COOKIE[$cookieuser]) || $logged_in===true) {
                     $cookiedebug.=" cookie-enter";
                     // Cookies are set
-                    $result=$user->lookupItem($_COOKIE[$cookieuser],'username');
-                    if($result!==false)
-                    {
+                    $result=$user->lookupItem($_COOKIE[$cookieuser], 'username');
+                    if ($result!==false) {
                         // good user
                         // Check auth
-                        $cookiedebug.='good-user check-auth '.print_r($_COOKIE[$cookieuser],true);
+                        $cookiedebug.='good-user check-auth '.print_r($_COOKIE[$cookieuser], true);
                         $userdata=mysqli_fetch_assoc($result);
-                        $pw_characters=json_decode($userdata['password'],true);
+                        $pw_characters=json_decode($userdata['password'], true);
 
                         // pieces:
                         $salt=$cookie_result['source'][1];
@@ -427,50 +420,50 @@ if($_REQUEST['q']=='submitlogin')
                         $ipTop = implode(".", $ipArray);
                         $current_ip = $ipTop;
                         $value_create=array($cookie_secret,$salt,$otsalt,$current_ip,$site_security_token);
-                        $value=sha1(implode('',$value_create));
-                        if($value==$cookie_result['raw_auth'])
-                        {
+                        $value=sha1(implode('', $value_create));
+                        if ($value==$cookie_result['raw_auth']) {
                             // Good cookie
                             $cookiedebug.=' good-auth';
                             $logged_in=true;
                             $user_cookie=$_COOKIE[$cookieuser];
-                            if($use_javascript_cookies || empty($_COOKIE)) $deferredJS.="\n".$cookie_result['js'];
+                            if ($use_javascript_cookies || empty($_COOKIE)) {
+                                $deferredJS.="\n".$cookie_result['js'];
+                            }
                         } else {
                             // bad cookie
-                            $cookiedebug.="\n bad-auth ".print_r($cookie_result,true)." for $cookieuser. \nExpecting: $value from ".print_r($value_create,true)."\n Given:\n ".$cookie_result['raw_auth']." from ".print_r($cookie_result['source'],true)." \nRaw cookie:\n".print_r($_COOKIE,true);
-                            if(!$debug)
-                            {
+                            $cookiedebug.="\n bad-auth ".print_r($cookie_result, true)." for $cookieuser. \nExpecting: $value from ".print_r($value_create, true)."\n Given:\n ".$cookie_result['raw_auth']." from ".print_r($cookie_result['source'], true)." \nRaw cookie:\n".print_r($_COOKIE, true);
+                            if (!$debug) {
                                 $cookiedebug.="\n\nWiping ...";
-                                setcookie($cookieuser,false,time()-3600*24*365);
-                                setcookie($cookieperson,false,time()-3600*24*365);
-                                setcookie($cookieauth,false,time()-3600*24*365);
-                                setcookie($cookiekey,false,time()-3600*24*365);
-                                setcookie($cookiepic,false,time()-3600*24*365);
+                                setcookie($cookieuser, false, time()-3600*24*365);
+                                setcookie($cookieperson, false, time()-3600*24*365);
+                                setcookie($cookieauth, false, time()-3600*24*365);
+                                setcookie($cookiekey, false, time()-3600*24*365);
+                                setcookie($cookiepic, false, time()-3600*24*365);
                                 $durl.="?m=login_error";
+                            } else {
+                                $cookiedebug.="\nWould wipe here";
                             }
-                            else $cookiedebug.="\nWould wipe here";
                         }
                     } else {
                         // bad user
                         $cookiedebug.=' bad-user';
-                        if(!$debug)
-                        {
+                        if (!$debug) {
                             $cookiedebug.="\n\nWiping ...";
-                            setcookie($cookieuser,false,time()-3600*24*365);
-                            setcookie($cookieperson,false,time()-3600*24*365);
-                            setcookie($cookieauth,false,time()-3600*24*365);
-                            setcookie($cookiekey,false,time()-3600*24*365);
-                            setcookie($cookiepic,false,time()-3600*24*365);
+                            setcookie($cookieuser, false, time()-3600*24*365);
+                            setcookie($cookieperson, false, time()-3600*24*365);
+                            setcookie($cookieauth, false, time()-3600*24*365);
+                            setcookie($cookiekey, false, time()-3600*24*365);
+                            setcookie($cookiepic, false, time()-3600*24*365);
                             $durl.="?m=login_error";
-                        } else $cookiedebug.="\nWould wipe here";
+                        } else {
+                            $cookiedebug.="\nWould wipe here";
+                        }
                     }
                     
                     # Force two factor
-                    if(!$user->has2FA() && $require_two_factor === true)
-                    {
+                    if (!$user->has2FA() && $require_two_factor === true) {
                         # If require two factor is on, always force it post login
-                        if($debug !== true)
-                        {
+                        if ($debug !== true) {
                             header("Refresh: 0; url=".$self_url."?2fa=t");
                             $deferredJS.="\nwindow.location.href=\"".$self_url."?2fa=t\";";
                         }
@@ -479,7 +472,7 @@ if($_REQUEST['q']=='submitlogin')
                         $login_output .= "<h1>You must set up two-factor authentication to continue.</h1><p>You'll be redirected in less than 10 seconds ...</p>";
                     } else {
                         $login_output.="<p>Logging in from another device or browser will end your session here. You will be redirected in 3 seconds...</p>";
-                        if($debug !== true) {
+                        if ($debug !== true) {
                             $deferredJS .= "\nsetTimeout(function(){window.location.href=\"".$durl."\";},3000);";
                         } else {
                             $login_output .= "<p><strong>Not refreshing</strong> would refresh to:</p><code>$durl</code>";
@@ -490,7 +483,7 @@ if($_REQUEST['q']=='submitlogin')
                     $cookiedebug.='cookies not set for '.$domain;
                 }
                 
-                if($debug) {
+                if ($debug) {
                     echo "<pre>CookieDebug:\n";
                     echo $cookiedebug;
                     echo "\nCookie Result:\n</pre>";
@@ -498,13 +491,12 @@ if($_REQUEST['q']=='submitlogin')
                     echo "<p>Cookie Supervar</p>";
                     echo displayDebug($_COOKIE);
                     echo "<p>Would refresh to:".$durl."</p>";
-
-                } else if($cancel_redirects !== true) header("Refresh: 3; url=".$durl);
+                } elseif ($cancel_redirects !== true) {
+                    header("Refresh: 3; url=".$durl);
+                }
             }
             ob_end_flush(); // Flush the buffer, start displaying
-        }
-        else
-        {
+        } else {
             ob_end_flush();
             $login_output.=$login_preamble;
             $login_output.="<div class='alert alert-warning'><button type='button' class='close' data-dismiss='alert' aria-label='Close'><span aria-hidden='true'>&times;</span></button><p><strong>Whoops!</strong> " . $res['message'] . "</p><aside class='ssmall'>Did you mean to <a href='?q=create' class='alert-link'>create a new account instead?</a> Or did you need to <a href='#' class='alert-link do-password-reset'>reset your password?</a></aside>
@@ -515,49 +507,41 @@ if($_REQUEST['q']=='submitlogin')
               <input type='hidden' name='failcount' id='failcount' value='$fail'/>".$loginform_close;
 
 
-                             if($failcount<10) $login_output.=$loginform_whole;
-                             else
-                             {
-                                 $result=lookupItem($_POST['username'],'username',null,null,false,true);
-                                 if($result!==false)
-                                 {
-                                     $userdata=mysqli_fetch_assoc($result);
-                                     $id=$userdata['id'];
-                                 }
-                                 $query="UPDATE `$default_user_table` SET dtime=".$user->microtime_float()." WHERE id=$id";
-                                 $query2="UPDATE `$default_user_table` SET disabled=true WHERE id=$id";
-                                 $l=openDB();
-                                 $result1=mysqli_query($l,$query);
-                                 if(!$result1) echo "<div class='alert alert-warning'><button type='button' class='close' data-dismiss='alert' aria-label='Close'><span aria-hidden='true'>&times;</span></button><p>".mysqli_error($l)."</p></div>";
-                                 else
-                                 {
-                                     $result2=execAndCloseDB($l,$query2);
-                                     if(!$result2) echo "<div class='alert alert-warning'><button type='button' class='close' data-dismiss='alert' aria-label='Close'><span aria-hidden='true'>&times;</span></button><p>".mysqli_error($l)."</p></div>";
-                                     else
-                                     {
-                                         $login_output.="<div class='alert alert-danger'><button type='button' class='close' data-dismiss='alert' aria-label='Close'><span aria-hidden='true'>&times;</span></button><p><strong>Sorry, you've had ten failed login attempts.</strong> Your account has been disabled for 1 hour.</p></div>";
-                                     }
-                                 }
-
-                             }
+            if ($failcount<10) {
+                $login_output.=$loginform_whole;
+            } else {
+                $result=lookupItem($_POST['username'], 'username', null, null, false, true);
+                if ($result!==false) {
+                    $userdata=mysqli_fetch_assoc($result);
+                    $id=$userdata['id'];
+                }
+                $query="UPDATE `$default_user_table` SET dtime=".$user->microtime_float()." WHERE id=$id";
+                $query2="UPDATE `$default_user_table` SET disabled=true WHERE id=$id";
+                $l=openDB();
+                $result1=mysqli_query($l, $query);
+                if (!$result1) {
+                    echo "<div class='alert alert-warning'><button type='button' class='close' data-dismiss='alert' aria-label='Close'><span aria-hidden='true'>&times;</span></button><p>".mysqli_error($l)."</p></div>";
+                } else {
+                    $result2=execAndCloseDB($l, $query2);
+                    if (!$result2) {
+                        echo "<div class='alert alert-warning'><button type='button' class='close' data-dismiss='alert' aria-label='Close'><span aria-hidden='true'>&times;</span></button><p>".mysqli_error($l)."</p></div>";
+                    } else {
+                        $login_output.="<div class='alert alert-danger'><button type='button' class='close' data-dismiss='alert' aria-label='Close'><span aria-hidden='true'>&times;</span></button><p><strong>Sorry, you've had ten failed login attempts.</strong> Your account has been disabled for 1 hour.</p></div>";
+                    }
+                }
+            }
         }
-    }
-    else
-    {
+    } else {
         $login_output.="<h1>Whoops! You forgot something.</h1><h2>Please try again.</h2>";
         $login_output.=$loginform.$loginform_close;
     }
-}
-else if($_REQUEST['q']=='create')
-{
+} elseif ($_REQUEST['q']=='create') {
     // Create a new user
     // display login form
     // include a captcha and honeypot
 
     $login_output .= "<link rel='stylesheet' type='text/css' href='".$relative_path."css/otp.min.css'/>";
-    if(!empty($recaptcha_public_key) && !empty($recaptcha_private_key))
-    {
-
+    if (!empty($recaptcha_public_key) && !empty($recaptcha_private_key)) {
         $prefill_email = $_POST['username'];
         $prefill_display = $_POST['dname'];
         $prefill_lname = $_POST['lname'];
@@ -639,16 +623,13 @@ else if($_REQUEST['q']=='create')
         $secnotice="<br/><p><small>Remember your security best practices! Do not use the same password you use for other sites. While your information is <a href='http://en.wikipedia.org/wiki/Cryptographic_hash_function' $newwindow>hashed</a> with a multiple-round hash function, <a href='http://arstechnica.com/security/2013/05/how-crackers-make-minced-meat-out-of-your-passwords/' $newwindow>passwords are easy to crack!</a></small></p>
 ";
         $createform.=$secnotice; # Password security notice
-        if($_SERVER["HTTPS"] != "on" && $displaywarnings === true)
-        {
+        if ($_SERVER["HTTPS"] != "on" && $displaywarnings === true) {
             $createform.="<div class='alert alert-warning text-center'>Warning: This form is insecure.</div>";
         }
 
-        if($_REQUEST['s']=='next')
-        {
+        if ($_REQUEST['s']=='next') {
             $email_preg="/[a-z0-9!#$%&'*+=?^_`{|}~-]+(?:\.[a-z0-9!#$%&'*+=?^_`{|}~-]+)*@(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\.)+(?:[a-z]{2}|com|org|net|edu|gov|mil|biz|info|mobi|name|aero|asia|jobs|museum)\b/";
-            if(!empty($_POST['honey']))
-            {
+            if (!empty($_POST['honey'])) {
                 $login_ouptut.="<div class='alert alert-warning'><button type='button' class='close' data-dismiss='alert' aria-label='Close'><span aria-hidden='true'>&times;</span></button><p><strong>Whoops!</strong> You tripped one of our bot tests. If you are not a bot, please go back and try again. Read your fields carefully!</p></div>";
                 $_POST['email']='bob';
             }
@@ -660,83 +641,86 @@ else if($_REQUEST['q']=='create')
                 "remoteip" => $_SERVER["REMOTE_ADDR"]
             );
             try {
-                if ($debug)  $login_output .= "<pre>Querying reCAPTCHA: ".displayDebug($recaptcha_params)."\n to $recaptcha_uri</pre>";
-                $bareResponse = do_post_request($recaptcha_uri,$recaptcha_params);
-                if ($debug) $login_output .= "<pre>Bare output: ".displayDebug($bareResponse)."</pre>";
-                $resp = json_decode($bareResponse,true);
-                if(empty($bareResponse) || $bareResponse === false) throw new Exception("Bad Response");
-                if ($debug) $login_output .= "<pre>Parsed output: ".displayDebug($resp)."</pre>";
-            } catch(Exception $e) {
+                if ($debug) {
+                    $login_output .= "<pre>Querying reCAPTCHA: ".displayDebug($recaptcha_params)."\n to $recaptcha_uri</pre>";
+                }
+                $bareResponse = do_post_request($recaptcha_uri, $recaptcha_params);
+                if ($debug) {
+                    $login_output .= "<pre>Bare output: ".displayDebug($bareResponse)."</pre>";
+                }
+                $resp = json_decode($bareResponse, true);
+                if (empty($bareResponse) || $bareResponse === false) {
+                    throw new Exception("Bad Response");
+                }
+                if ($debug) {
+                    $login_output .= "<pre>Parsed output: ".displayDebug($resp)."</pre>";
+                }
+            } catch (Exception $e) {
                 $resp["success"] = false;
                 $resp["post-error"] = $e->getMessage();
                 $resp["full_error"] = $e;
                 $resp["login_caught_error"] = true;
             }
 
-            if (!$resp["success"]) #  && !$debug
-            {
+            if (!$resp["success"]) { #  && !$debug
                 // What happens when the CAPTCHA was entered
                 // incorrectly
                 $error = empty($resp["error-codes"]) ? $resp["post-error"]:$resp["error-codes"];
-                if(empty($error)) $error = "Unknown Error";
+                if (empty($error)) {
+                    $error = "Unknown Error";
+                }
                 $login_output.= "<div class='alert alert-danger'><button type='button' class='close' data-dismiss='alert' aria-label='Close'><span aria-hidden='true'>&times;</span></button>The reCAPTCHA wasn't entered correctly. Go back and try it again." . " (reCAPTCHA said: " . $error . ")</div>";
-                if ($debug) $login_output .= "<pre>".displayDebug($resp)."</pre>";
+                if ($debug) {
+                    $login_output .= "<pre>".displayDebug($resp)."</pre>";
+                }
             } else {
                 // Successful verification
-                if(preg_match($email_preg,$_POST['username']))
-                {
-                    if($_POST['password']==$_POST['password2'])
-                    {
-                        if(preg_match('/(?=^.{'.$minimum_password_length.',}$)((?=.*\d)|(?=.*\W+))(?![.\n])(?=.*[A-Z])(?=.*[a-z]).*$/',$_POST['password']) || strlen($_POST['password'])>=$password_threshold_length) // validate email, use in validation to notify user.
-                        {
+                if (preg_match($email_preg, $_POST['username'])) {
+                    if ($_POST['password']==$_POST['password2']) {
+                        if (preg_match('/(?=^.{'.$minimum_password_length.',}$)((?=.*\d)|(?=.*\W+))(?![.\n])(?=.*[A-Z])(?=.*[a-z]).*$/', $_POST['password']) || strlen($_POST['password'])>=$password_threshold_length) { // validate email, use in validation to notify user.
                             # Create the user
-                            $res=$user->createUser($_POST['username'],$_POST['password'],array($_POST['fname'],$_POST['lname']),$_POST['dname'],$_POST['phone']);
-                            if($res["status"]) {
+                            $res=$user->createUser($_POST['username'], $_POST['password'], array($_POST['fname'],$_POST['lname']), $_POST['dname'], $_POST['phone']);
+                            if ($res["status"]) {
                                 $login_output.="<div class='alert alert-success text-center force-center'><button type='button' class='close' data-dismiss='alert' aria-label='Close'><span aria-hidden='true'>&times;</span></button>
 <h3> ".$res["message"]." </h3><p>You can <a class='alert-link' href='".$self_url."'>return to your profile page here</a>.</p></div>"; //jumpto1
-                                             if($user->needsManualAuth()) {
+                                             if ($user->needsManualAuth()) {
                                                  $login_output.="<div class='alert alert-warning text-center force-center'><p>Your ability to login will be restricted until you've been authorized.</p></div>";
                                              }
                                              // email user
                                              $to=$_POST['username'];
-                                             $headers  = 'MIME-Version: 1.0' . "\r\n";
-                                             $headers .= 'Content-type: text/html; charset=iso-8859-1' . "\r\n";
-                                             $headers .= "From: [".$shorturl."] Mailer Bot <blackhole@".$shorturl.">";
-                                             $subject='New Account Creation';
-                                             $body = "<p>Congratulations! Your new account has been created. Your username is this email address ($to). We do not keep a record of your password we can access, so please be sure to remember it!</p><p>If you do forget your password, you can go to the login page to reset it. All secure data will be lost in the reset.</p>";
-                                             if(mail($to,$subject,$body,$headers)) $login_output.="<p>A confirmation email has been sent to your inbox at $to .</p>";
-                                             else
-                                             {
-                                                 // no email
-                                             }
+                                $headers  = 'MIME-Version: 1.0' . "\r\n";
+                                $headers .= 'Content-type: text/html; charset=iso-8859-1' . "\r\n";
+                                $headers .= "From: [".$shorturl."] Mailer Bot <blackhole@".$shorturl.">";
+                                $subject='New Account Creation';
+                                $body = "<p>Congratulations! Your new account has been created. Your username is this email address ($to). We do not keep a record of your password we can access, so please be sure to remember it!</p><p>If you do forget your password, you can go to the login page to reset it. All secure data will be lost in the reset.</p>";
+                                if (mail($to, $subject, $body, $headers)) {
+                                    $login_output.="<p>A confirmation email has been sent to your inbox at $to .</p>";
+                                } else {
+                                    // no email
+                                }
 
                                              /***
                                               * Post login behavior ...
                                               ***/
                                              $deferredJS.=$res['js'];
-                                             if($post_create_redirect)
-                                             {
-                                                 if($redirect_to_home !== true && empty($redirect_url))
-                                                 {
-                                                     $durl = $self_url;
-                                                 }
-                                                 else
-                                                 {
-                                                     if($redirect_to_home === true) $durl = $baseurl;
-                                                     else $durl = $redirect_url;
-                                                 }
-                                                 $deferredJS.="\nwindow.location.href=\"$durl\";";
-                                                 header("Refresh: 3; url=".$durl);
-                                             }
-                                             else
-                                             {
-                                                 # Let's show a nice message
+                                if ($post_create_redirect) {
+                                    if ($redirect_to_home !== true && empty($redirect_url)) {
+                                        $durl = $self_url;
+                                    } else {
+                                        if ($redirect_to_home === true) {
+                                            $durl = $baseurl;
+                                        } else {
+                                            $durl = $redirect_url;
+                                        }
+                                    }
+                                    $deferredJS.="\nwindow.location.href=\"$durl\";";
+                                    header("Refresh: 3; url=".$durl);
+                                } else {
+                                    # Let's show a nice message
                                                  $html = "<p >You may <a href='$baseurl/$redirect_url'>want to visit your administration page</a>, but otherwise we suggest <a href='$baseurl'>going home</a> and navigating from there.</p>";
-
-                                             }
-                                             if($ask_verify_phone_at_signup)
-                                             {
-                                                 # Verify the phone number
+                                }
+                                if ($ask_verify_phone_at_signup) {
+                                    # Verify the phone number
                                                  $phone_verify_template = "<form id='verify_phone' onsubmit='event.preventDefault();'>
   <input type='tel' id='phone' name='phone' value='".$user->getPhone()."' readonly='readonly'/>
   <input type='hidden' id='username' name='username' value='".$user->getUsername()."'/>
@@ -749,11 +733,10 @@ else if($_REQUEST['q']=='create')
     </small>
   </p>
 </form>";
-                                                 $login_output .= "<h2>Verifying your Phone</h2>".$phone_verify_template;
-                                             }
+                                    $login_output .= "<h2>Verifying your Phone</h2>".$phone_verify_template;
+                                }
                                              # Give the option to add two-factor now; force it if flag enabled
-                                             if($ask_twofactor_at_signup)
-                                             {
+                                             if ($ask_twofactor_at_signup) {
                                                  # Give user 2FA
                                                  $totp_add_form = "<section id='totp_add' class='row'>
   <div id='totp_message' class='col-xs-12 col-md-6 alert alert-warning force-center'>
@@ -782,64 +765,53 @@ else if($_REQUEST['q']=='create')
 </section>";
                                                  $login_output .= "<h2 class='row'>Adding two-factor authentication</h2>".$totp_add_form;
                                              }
-
                             } else {
-                                if($debug) $login_output.=displayDebug($res);
+                                if ($debug) {
+                                    $login_output.=displayDebug($res);
+                                }
                                 $feedback = empty($res["human_error"]) ? $res["error"] : $res["human_error"];
                                 $login_output.="<div class='alert alert-warning'><button type='button' class='close' data-dismiss='alert' aria-label='Close'><span aria-hidden='true'>&times;</span></button><h2>There was an error creating your user</h2><p>The server said:</p><code>".$feedback."</code><br/><p>Use your browser's back button to try again.</p></div>";
                                 $deferredJS = "console.warn('Got response',".json_encode($res).")";
                             }
                             ob_end_flush();
-                        }
-                        else
-                        {
+                        } else {
                             $login_output.="<div class='alert alert-warning'><button type='button' class='close' data-dismiss='alert' aria-label='Close'><span aria-hidden='true'>&times;</span></button><p>Your password was not long enough ($minimum_password_length characters) or did not match minimum complexity levels (one upper case letter, one lower case letter, one digit or special character). You can also use <a href='http://imgs.xkcd.com/comics/password_strength.png' id='any_long_pass' class='lightboximage'>any long password</a> of at least $password_threshold_length characters. Please go back and try again.</p></div>";
                         }
+                    } else {
+                        $login_output.="<div class='alert alert-warning'><button type='button' class='close' data-dismiss='alert' aria-label='Close'><span aria-hidden='true'>&times;</span></button><p>Your passwords did not match. Please go back and try again.</p></div>";
                     }
-                    else $login_output.="<div class='alert alert-warning'><button type='button' class='close' data-dismiss='alert' aria-label='Close'><span aria-hidden='true'>&times;</span></button><p>Your passwords did not match. Please go back and try again.</p></div>";
+                } else {
+                    $login_output.="<div class='alert alert-warning'><button type='button' class='close' data-dismiss='alert' aria-label='Close'><span aria-hidden='true'>&times;</span></button><p><strong>Error</strong>: Your email address was invalid. Please enter a valid email.</p></div>";
                 }
-                else $login_output.="<div class='alert alert-warning'><button type='button' class='close' data-dismiss='alert' aria-label='Close'><span aria-hidden='true'>&times;</span></button><p><strong>Error</strong>: Your email address was invalid. Please enter a valid email.</p></div>";
             }
+        } else {
+            $login_output.=$createform;
         }
-        else $login_output.=$createform;
+    } else {
+        $login_output.="<div class='alert alert-warning'><button type='button' class='close' data-dismiss='alert' aria-label='Close'><span aria-hidden='true'>&times;</span></button><p>This site's ReCAPTCHA library hasn't been set up. Please contact the site administrator.</p></div>";
     }
-    else $login_output.="<div class='alert alert-warning'><button type='button' class='close' data-dismiss='alert' aria-label='Close'><span aria-hidden='true'>&times;</span></button><p>This site's ReCAPTCHA library hasn't been set up. Please contact the site administrator.</p></div>";
-}
-else if($_REQUEST['q'] == "verify")
-{
+} elseif ($_REQUEST['q'] == "verify") {
     $login_output .= $phone_verify_form;
-}
-else if(isset($_REQUEST['confirm']))
-{
+} elseif (isset($_REQUEST['confirm'])) {
     $token = $_REQUEST['token'];
     $userToActivate = $_REQUEST['user'];
     $encoded_key = $_REQUEST['key'];
-    $result = $user->verifyUserAuth($encoded_key,$token,$userToActivate);
-    if($result['status'] === false)
-    {
+    $result = $user->verifyUserAuth($encoded_key, $token, $userToActivate);
+    if ($result['status'] === false) {
         $login_output .= "<div class='alert alert-warning'><button type='button' class='close' data-dismiss='alert' aria-label='Close'><span aria-hidden='true'>&times;</span></button><h1>Could not verify user</h1><p>".$result['message']."</p></div>";
-    }
-    else
-    {
-        if ($result["admin_confirm_sent"] && $result["user_confirm_sent"])
-        {
+    } else {
+        if ($result["admin_confirm_sent"] && $result["user_confirm_sent"]) {
             $messageFollowUp = "Check your inbox for a confirmation.";
-        }
-        else
-        {
+        } else {
             $messageFollowUp = "<strong>However, not all confirmations could not be sent</strong> (".$result["error"].").";
         }
         $login_output .= "<div class='alert alert-info'><button type='button' class='close' data-dismiss='alert' aria-label='Close'><span aria-hidden='true'>&times;</span></button><p>The user was successfully activated. $messageFollowUp</p></div>";
     }
-    if($debug)
-    {
+    if ($debug) {
         echo displayDebug($result);
     }
-}
-else if(isset($_REQUEST['2fa']))
-{
-    if($logged_in && !$user->has2FA())
-    {
+} elseif (isset($_REQUEST['2fa'])) {
+    if ($logged_in && !$user->has2FA()) {
         # Give user 2FA
         $totp_add_form = "<section id='totp_add' class='row'>
   <div id='totp_message' class='alert alert-info col-xs-12 col-md-6 force-center'>Two factor authentication is very secure, but when you enable it, you'll be unable to log in without your mobile device.</div>
@@ -864,11 +836,11 @@ else if(isset($_REQUEST['2fa']))
     <button id='totp_help' class='alert-link btn btn-link'>Help with Two-Factor Authentication</button>
   </div>
 </section>";
-        if($require_two_factor) $totp_add_form = "<h1>This site requires two-factor authentication</h1><h2>Please set up two-factor authentication to continue.</h2>".$totp_add_form;
+        if ($require_two_factor) {
+            $totp_add_form = "<h1>This site requires two-factor authentication</h1><h2>Please set up two-factor authentication to continue.</h2>".$totp_add_form;
+        }
         $login_output .= $totp_add_form;
-    }
-    else if ($logged_in && $user->has2FA())
-    {
+    } elseif ($logged_in && $user->has2FA()) {
         # Remove 2FA from the user
         $totp_remove_form = "<section id='totp_remove_section' class='row'>
     <div id='totp_message' class='alert alert-warning col-xs-12 col-md-6 force-center'>Are you sure you want to disable two-factor authentication?</div>
@@ -883,54 +855,45 @@ else if(isset($_REQUEST['2fa']))
   </form>
 </section>";
         $login_output .= $totp_remove_form;
-    }
-    else if (!$logged_in)
-    {
+    } elseif (!$logged_in) {
         $login_output .= "<div class='alert alert-warning'><p>You have to be logged in to set up two factor authentication.<br/><a href='?q=login'>Click here to log in</a></p></div>";
-    }
-    else
-    {
+    } else {
         # Should never trigger
         throw(new Exception("Unexpected condition setting up two-factor authentication"));
     }
-    if($logged_in)
-    {
+    if ($logged_in) {
         $login_output .= $settings_blob;
     }
-}
-else if(strtolower($_REQUEST["action"]) == "finishpasswordreset")
-{
+} elseif (strtolower($_REQUEST["action"]) == "finishpasswordreset") {
     # Pass it off to the JS handler
     $resetString = " window.checkPasswordReset = true; window.resetParams = new Object(); resetParams.key = '".$_REQUEST["key"]."'; resetParams.verify = '".$_REQUEST["verify"]."'; resetParams.user = '".$_REQUEST["user"]."';";
-}
-else
-{
+} else {
     $resetString = "window.checkPasswordReset = false";
-    if($redirect_to_home !== true && empty($redirect_url))
-    {
+    if ($redirect_to_home !== true && empty($redirect_url)) {
         $durl = $self_url;
-    }
-    else
-    {
-        if($redirect_to_home === true) $durl = $baseurl;
-        else $durl = $redirect_url;
+    } else {
+        if ($redirect_to_home === true) {
+            $durl = $baseurl;
+        } else {
+            $durl = $redirect_url;
+        }
     }
 
-    if(strtolower($_REQUEST["action"]) == "verifyemail") {
-        if(!isset($_REQUEST["alternate"])) {
+    if (strtolower($_REQUEST["action"]) == "verifyemail") {
+        if (!isset($_REQUEST["alternate"])) {
             $alternate = false;
         } else {
             $alternate = toBool($_REQUEST["alternate"]);
         }
         $skip = false;
-        if(empty($_REQUEST["username"]) && $logged_in) {
+        if (empty($_REQUEST["username"]) && $logged_in) {
             $uTemp = $user;
-        } else if (!empty($_REQUEST["username"])) {
+        } elseif (!empty($_REQUEST["username"])) {
             $uTemp = new UserFunctions($_REQUEST["username"]);
         } else {
             $skip = true;
         }
-        if(!$skip) {
+        if (!$skip) {
             try {
                 $result = $uTemp->verifyEmail($_REQUEST["token"], $alternate);
             } catch (Exception $e) {
@@ -940,8 +903,8 @@ else
                     "human_error" => "Unable to send verification email",
                 );
             }
-            if($result["is_good"] === true || $result["status"] === true) {
-                if($result["status"] === true) {
+            if ($result["is_good"] === true || $result["status"] === true) {
+                if ($result["status"] === true) {
                     $class = "alert-success";
                     $message = "<strong>Success!</strong> You've verified <strong>".$result["email"]."</strong>";
                     # TODO: Add flag to JS remove the verify and
@@ -950,13 +913,11 @@ else
                     $class = "alert-info";
                     $message = "<strong>Notice:</strong> " . $result["human_error"];
                 }
-
             } else {
                 # Bad verification
                 $class = "alert-warning";
                 $message = "<strong>Couldn't verify email:</strong> Invalid authorization token";
             }
-
         } else {
             $class = "alert-danger";
             $message = "<strong>Couldn't verify email:</strong> Bad authorization link";
@@ -965,8 +926,11 @@ else
     }
 
 
-    if(!$logged_in) $login_output.=$login_preamble . $loginform.$loginform_close;
-    else $login_output.="<aside class='ssmall pull-right'><a href='?q=logout' class='btn btn-warning btn-sm'><span class='glyphicon glyphicon-log-out' aria-hidden='true'></span> Logout</a></aside><h1 id='signin_greeting'>Welcome back, $first_name</h1><br/><p id='logout_para'></p>".$settings_blob."<button id='next' name='next' class='btn btn-primary continue click' data-href='$durl'>Continue &#187;</button>";
+    if (!$logged_in) {
+        $login_output.=$login_preamble . $loginform.$loginform_close;
+    } else {
+        $login_output.="<aside class='ssmall pull-right'><a href='?q=logout' class='btn btn-warning btn-sm'><span class='glyphicon glyphicon-log-out' aria-hidden='true'></span> Logout</a></aside><h1 id='signin_greeting'>Welcome back, $first_name</h1><br/><p id='logout_para'></p>".$settings_blob."<button id='next' name='next' class='btn btn-primary continue click' data-href='$durl'>Continue &#187;</button>";
+    }
     $deferredJS .= "\n$(\"#next\").click(function(){window.location.href=\"".$durl."\";});";
 }
 $login_output.="</div>";
@@ -976,12 +940,9 @@ $totpOverride = !empty($redirect_url) ? "window.totpParams.home = \"".$redirect_
 $totpOverride .= !empty($relative_path) ? "window.totpParams.relative = \"".$relative_path."\";\n":null;
 $totpOverride .= !empty($working_subdirectory) ? "window.totpParams.subdirectory = \"".$working_subdirectory."\";\n":null;
 $totpOverride .= "window.totpParams.domain = \"".$domain."\";\n";
-try
-{
+try {
     $need_tfa = !$user->has2FA();
-}
-catch (Exception $e)
-{
+} catch (Exception $e) {
     $need_tfa = false;
 }
 $totpOverride .= $need_tfa && $require_two_factor ? "window.totpParams.tfaLock = true;\n":"window.totpParams.tfaLock = false;\n";
@@ -1019,4 +980,3 @@ var loadLast = function () {
 
 
 $login_output .= $deferredScriptBlock;
-?>

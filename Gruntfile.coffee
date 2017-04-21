@@ -71,7 +71,17 @@ module.exports = (grunt) ->
           "modular/"
           ]
       users:
-        dir: "admin/"
+        dir: [
+          "admin/api.php"
+          "admin/app_api.php"
+          "admin/app_handlers.php"
+          "admin/async_login_handler.php"
+          "admin/braintree_billing.php"
+          "admin/index.php"
+          "admin/login.php"
+          "admin/test_page.php"
+          "admin/handlers/"
+          ]
       options:
         rules: "@PSR2"
     uglify:

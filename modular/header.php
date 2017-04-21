@@ -15,22 +15,24 @@
 
 
 <?php
-  if(!empty($prefetch)) {
-  if(!is_array($prefetch)) {
-  $prefetch_arr = array($prefetch);
-  } else {
-  $prefetch_arr = $prefetch;
-  }
-  foreach($prefetch_arr as $prefetch) {
-  ?>
+  if (!empty($prefetch)) {
+      if (!is_array($prefetch)) {
+          $prefetch_arr = array($prefetch);
+      } else {
+          $prefetch_arr = $prefetch;
+      }
+      foreach ($prefetch_arr as $prefetch) {
+          ?>
 <link rel="prefetch" href="<?php echo $prefetch; ?>" />
 <?php
+
+      }
   }
-  }
-  if(!empty($prerender)) {
-  ?>
+  if (!empty($prerender)) {
+      ?>
 <link rel="prerender" href="<?php echo $prerender; ?>" />
 <?php
+
   }
   ?>
 

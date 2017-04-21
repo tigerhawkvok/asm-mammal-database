@@ -68,7 +68,10 @@ module.exports = (grunt) ->
           "species-account.php"
           "meta.php"
           "400.php"
+          "modular/"
           ]
+      users:
+        dir: "admin/"
       options:
         rules: "@PSR2"
     uglify:

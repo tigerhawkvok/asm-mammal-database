@@ -233,4 +233,4 @@ module.exports = (grunt) ->
     grunt.task.run("phplint","compile","css","shell:dumpver")
   grunt.registerTask "build","Prepare for deployment", ->
     # ,"vulcanize"
-    grunt.task.run("update","qbuild","minify")
+    grunt.task.run("update","qbuild","minify","phpcsfixer")

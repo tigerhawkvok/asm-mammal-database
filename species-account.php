@@ -383,15 +383,22 @@ $entryTitle = "<h1 class='species-title col-xs-12'>".getCanonicalSpecies($specie
 # Taxonomy notes
 $englishMap = array(
     "eutheria" => "placental mammals",
-        "metatheria" => "marsupials",
-        "prototheria" => "egg-laying mammals (monotremes)",
-    );
+    "metatheria" => "marsupials",
+    "prototheria" => "egg-laying mammals (monotremes)",
+);
+
+$mappedGroup = $englishMap[$speciesRow["simple_linnean_group"]];
+
+if (empty($mappedGroup)) {
+    $mappedGroup = $speciesRow["simple_linnean_group"];
+}
+
 $subTaxa = !empty($speciesRow["major_type"]) ? "<span class='clade' data-linnean-level='magnaorder'>".$speciesRow["major_type"]."</span> &#187; " : "";
 $subTaxa .= !empty($speciesRow["major_subtype"]) ? "<span class='clade' data-linnean-level-level='superorder'>".$speciesRow["major_subtype"]."</span> &#187; " : "";
 $taxonomyNotes = "<section id='taxonomy' class='col-xs-12'>
 <section class='scientific-taxonomy'><span class='clade' data-linnean-level='cohort'>".$speciesRow["simple_linnean_group"]."</span> &#187; $subTaxa <span class='clade' data-linnean-level='order'>".$speciesRow["linnean_order"]."</span> &#187; <span class='clade' data-linnean-level='family'>".$speciesRow["linnean_family"]."</span></section>
 
-<section class='common-taxonomy'>".$englishMap[$speciesRow["simple_linnean_group"]]." &#187; ".$speciesRow["simple_linnean_subgroup"]."</section>
+<section class='common-taxonomy'>".$mappedGroup." &#187; ".$speciesRow["simple_linnean_subgroup"]."</section>
 </section>\n\n";
 
 # Any aside / note for this species.

@@ -1561,7 +1561,7 @@ adminPreloadSearch = function() {
    * the standard search uses the verbatim entry of the user, this uses
    * a JSON constructed by the system
    */
-  var fill, fillTimeout, fillWhenReady, loadArgs, start;
+  var cleanedArg, fill, fillTimeout, fillWhenReady, k, loadArgs, start, v;
   if (_asm.preloaderBlocked === true) {
     console.debug("Skipping re-running active search preload");
     return false;
@@ -1583,6 +1583,11 @@ adminPreloadSearch = function() {
     if (isNull(loadArgs.genus) || (loadArgs.species == null)) {
       console.error("Bad taxon format");
       return false;
+    }
+    for (k in loadArgs) {
+      v = loadArgs[k];
+      cleanedArg = decodeURIComponent(v);
+      loadArgs[k] = cleanedArg.replace(/(\+|\%20|\s)+/g, " ");
     }
     fill = loadArgs.genus + " " + loadArgs.species;
     if (!isNull(loadArgs.subspecies)) {

@@ -1608,6 +1608,9 @@ adminPreloadSearch = ->
     if isNull(loadArgs.genus) or not loadArgs.species?
       console.error "Bad taxon format"
       return false
+    for k, v of loadArgs
+      cleanedArg = decodeURIComponent v
+      loadArgs[k] = cleanedArg.replace /(\+|\%20|\s)+/g, " "
     fill = "#{loadArgs.genus} #{loadArgs.species}"
     unless isNull loadArgs.subspecies
       fill += " #{loadArgs.subspecies}"

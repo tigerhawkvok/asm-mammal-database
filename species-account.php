@@ -134,10 +134,10 @@ function getCanonicalSpecies($speciesRow, $short = false)
 $loose = false;
 
 switch ($lookupRef) {
-  case "genus":
-      if (empty($_REQUEST['species'])) {
-          $output = buildHeader("Species Not Found");
-          $content = "<h1 class='col-xs-12'>Species Not Found</h1>
+    case "genus":
+        if (empty($_REQUEST['species'])) {
+            $output = buildHeader("Species Not Found");
+            $content = "<h1 class='col-xs-12'>Species Not Found</h1>
 <p class='col-xs-12'>
 Sorry, you tried to do an invalid species search. The system said:
 </p>
@@ -145,28 +145,28 @@ Sorry, you tried to do an invalid species search. The system said:
 SCIENTIFIC_SEARCH_NO_SPECIES
 </code>
 <p class='col-xs-12'>Please try searching above for a new species.</p>";
-          $output .= getBody($content);
-          echo $output;
-          exit();
-      }
-      $lookup = array(
-          "genus" => $_REQUEST['genus'],
-          "species" => $_REQUEST['species'],
-      );
-      if (!empty($_REQUEST["ssp"])) {
-          $lookup["subspecies"] = $_REQUEST["ssp"];
-      }
-      break;
-  case "common":
-      $lookup = array(
-          "common_name" => $_REQUEST["common-name"],
-      );
-      $loose = true;
-      break;
-  case null:
-      # The request was invalid
-      $output = buildHeader("Species Not Found");
-      $content = "<h1 class='col-xs-12'>Species Not Found</h1>
+                     $output .= getBody($content);
+                     echo $output;
+                     exit();
+        }
+        $lookup = array(
+            "genus" => $_REQUEST['genus'],
+            "species" => $_REQUEST['species'],
+        );
+        if (!empty($_REQUEST["ssp"])) {
+            $lookup["subspecies"] = $_REQUEST["ssp"];
+        }
+        break;
+    case "common":
+        $lookup = array(
+            "common_name" => $_REQUEST["common-name"],
+        );
+        $loose = true;
+        break;
+    case null:
+        # The request was invalid
+        $output = buildHeader("Species Not Found");
+        $content = "<h1 class='col-xs-12'>Species Not Found</h1>
 <p class='col-xs-12'>
 Sorry, you tried to do an invalid species search. The system said:
 </p>
@@ -174,13 +174,13 @@ Sorry, you tried to do an invalid species search. The system said:
 INVALID_LOOKUP_REFERENCE
 </code>
 <p class='col-xs-12'>Please try searching above for a new species.</p>";
-      $output .= getBody($content);
-      echo $output;
-      exit();
-      break;
-  default:
-      # The lookup isn't picky
-      $lookup = array($lookupRef => $_REQUEST[$lookupRef]);
+        $output .= getBody($content);
+        echo $output;
+        exit();
+        break;
+    default:
+        # The lookup isn't picky
+        $lookup = array($lookupRef => $_REQUEST[$lookupRef]);
 }
 
 
@@ -283,11 +283,11 @@ if (empty($speciesRow["common_name"])) {
             throw new Exception("NO_IUCN_RESULT_ERROR");
         } else {
             # Save this common name to the database
-        try {
-            $db->updateEntry(array("common_name" => $speciesRow["common_name"]), array("id" => $speciesRow["id"]));
-        } catch (Exception $e) {
-            $output .= "<!-- Warning: Unable to save common name to database -->";
-        }
+            try {
+                $db->updateEntry(array("common_name" => $speciesRow["common_name"]), array("id" => $speciesRow["id"]));
+            } catch (Exception $e) {
+                $output .= "<!-- Warning: Unable to save common name to database -->";
+            }
         }
     } catch (Exception $e) {
         $output .= "<!-- Warning: Unable to generate common name: ". $e->getMessage() . " -->";
@@ -348,6 +348,7 @@ if (!empty($speciesRow["genus_authority"])) {
     }
     $nameCitation = "<span class='genus'>".$speciesRow["genus"]."</span>, <span class='citation person $iucnCitation'>".$citation."</span>; ";
 }
+$genusCitation = $citation;
 if (!empty($speciesRow["species_authority"])) {
     if (!empty($citationYears)) {
         $citation = $speciesRow["species_authority"].", ".current($citationYears);
@@ -358,7 +359,13 @@ if (!empty($speciesRow["species_authority"])) {
         $citation = "";
     }
     if (!empty($citation)) {
-        $nameCitation .= "<span class='species'>".$speciesRow["species"]."</span>, <span class='citation person $iucnCitation'>".$citation."</span>";
+        if ($citation == $genusCitation) {
+            # We shouldn't double up on this. Just say that it's the
+            # whole darn citation.
+            $nameCitation = "<span class='genus'>".$speciesRow["genus"]."</span> <span class='species'>".$speciesRow["species"]."</span>, <span class='citation person $iucnCitation'>".$citation."</span>; ";
+        } else {
+            $nameCitation .= "<span class='species'>".$speciesRow["species"]."</span>, <span class='citation person $iucnCitation'>".$citation."</span>";
+        }
     } else {
         # What if we got it from the IUCN?
         if (empty($nameCitation)) {
@@ -391,6 +398,7 @@ $taxonomyNotes = "<section id='taxonomy' class='col-xs-12'>
 $entryNote = empty($speciesRow["notes"]) ? "" : "<section id='species-note' class='col-xs-12'><h3>Taxon Notes</h3><marked-element><div class='markdown-html'></div><script type='text/markdown'>".$speciesRow["notes"]."</script></marked-element></section>\n\n"; #"<section id='species-note' class='col-xs-12'><marked-element><div class='markdown-html'></div><script type='text/markdown'>".$speciesRow["notes"]."</script></marked-element></section>\n\n";
 
 
+
 /***********************************************************************************
  * Images!
  ***********************************************************************************/
@@ -399,13 +407,17 @@ $entryNote = empty($speciesRow["notes"]) ? "" : "<section id='species-note' clas
 # Others should be linked ones from 'image_resources'
 
 $mammalDomain = "http://www.mammalogy.org";
+
 if (toBool($_REQUEST["extended_attribution"])) {
     $pictureLabel = "<p class='picture-label extended-attribution'>Family <span class='sciname linnean_family'>".$speciesRow["linnean_family"]."</span><br/><span class='sciname'>".getCanonicalSpecies($speciesRow)."</span><br/>";
 } else {
     $pictureLabel = "<p class='picture-label'><span class='sciname'>".getCanonicalSpecies($speciesRow)."</span></p>";
 }
+
 $images = "<section id='images-block' class='text-center col-xs-12'>";
-if (empty($speciesRow["image"]) || !file_exists(dirname(__FILE__)."/".$speciesRow["image"])) {
+$imgPath = preg_replace('/species&#95;photos/im', 'species_photos', $speciesRow["image"]);
+
+if (empty($imgPath) || !file_exists(dirname(__FILE__)."/".$imgPath)) {
     # Get a picture from the Mammalogy database
     try {
         include_once dirname(__FILE__) . "/phpquery/phpQuery/phpQuery.php";
@@ -607,7 +619,7 @@ $caption
     $imageCredit = $speciesRow["image_credit"];
     $imageCredit = substr($imageCredit, -1) == "." ? $imageCredit : $imageCredit . ".";
     $imageCaption = "<span class='caption-description'>".$speciesRow["image_caption"]."</span> <span class='caption-credit'>" . $imageCredit . "</span> ".$imageLicense;
-    $imgHtml = "<img src='".$speciesRow["image"]."' alt='' />";
+    $imgHtml = "<img src='".$imgPath."' alt='' />";
     $images .= "
 <figure class='from-sadb center-block text-center'>
 <picture class='lightboximage'>

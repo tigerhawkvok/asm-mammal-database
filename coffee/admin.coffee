@@ -152,7 +152,7 @@ renderAdminSearchResults = (overrideSearch, containerSelector = "#search-results
     # Now, take the results and format them
     data = result.result
     html = ""
-    htmlHead = "<table id='cndb-result-list' class='table table-striped table-hover'>\n\t<tr class='cndb-row-headers'>"
+    htmlHead = "<table id='cndb-result-list' class='table table-striped table-hover'>\n\t<thead class='cndb-row-headers'>"
     htmlClose = "</table>"
     # We start at 0, so we want to count one below
     targetCount = toInt(result.count)-1
@@ -175,7 +175,7 @@ renderAdminSearchResults = (overrideSearch, containerSelector = "#search-results
       if toInt(i) is 0
         j = 0
         htmlHead += "\n<!-- Table Headers - #{Object.size(row)} entries -->"
-        $.each row, (k,v) ->
+        for k, v of row
           niceKey = k.replace(/_/g," ")
           if k is "genus" or k is "species" or k is "subspecies"
             htmlHead += "\n\t\t<th class='text-center'>#{niceKey}</th>"
@@ -184,7 +184,9 @@ renderAdminSearchResults = (overrideSearch, containerSelector = "#search-results
           if j is Object.size(row)
             htmlHead += "\n\t\t<th class='text-center'>Edit</th>"
             bootstrapColCount++
-            htmlHead += "\n\t\t<th class='text-center'>Delete</th>\n\t</tr>"
+            htmlHead += "\n\t\t<th class='text-center'>Delete</th>"
+            bootstrapColCount++
+            htmlHead += "\n\t\t<th class='text-center'>View</th>\n\t</thead>"
             bootstrapColCount++
             htmlHead += "\n<!-- End Table Headers -->"
             console.log("Got #{bootstrapColCount} display columns.")
@@ -204,7 +206,8 @@ renderAdminSearchResults = (overrideSearch, containerSelector = "#search-results
         l++
         if l is Object.size row
           htmlRow += "\n\t\t<td id='edit-#{i}' class='edit-taxon #{colClass} text-center'><paper-icon-button icon='image:edit' class='edit' data-taxon='#{taxonQuery}'></paper-icon-button></td>"
-          htmlRow += "\n\t\t<td id='delete-#{i}' class='delete-taxon #{colClass} text-center'><paper-icon-button icon='delete' class='delete-taxon-button fadebg' data-taxon='#{taxonQuery}' data-database-id='#{row.id}'></paper-icon-button></td>"
+          htmlRow += "\n\t\t<td id='delete-#{i}' class='delete-taxon #{colClass} text-center'><paper-icon-button icon='icons:delete-forever' class='delete-taxon-button fadebg' data-taxon='#{taxonQuery}' data-database-id='#{row.id}'></paper-icon-button></td>"
+          htmlRow += "\n\t\t<td id='visit-listing-#{i}' class='view-taxon #{colClass} text-center'><paper-icon-button icon='icons:visibility' class='view-taxon-button fadebg click' data-href='#{uri.urlString}species-account.php?genus=#{row.genus.trim()}&species=#{row.species.trim()}' data-newtab='true'></paper-icon-button></td>"
           htmlRow += "\n\t</tr>"
           html += htmlRow
       if toInt(i) is targetCount
@@ -218,6 +221,7 @@ renderAdminSearchResults = (overrideSearch, containerSelector = "#search-results
           taxon = $(this).attr('data-taxon')
           taxaId = $(this).attr('data-database-id')
           deleteTaxon(taxaId)
+        bindClicks()
         # Set the argument to the search result
         try
           taxonSplit = s.split(" ")
@@ -743,6 +747,23 @@ createNewTaxon = ->
       selector = "#edit-#{fieldLabel}"
       $(selector).keyup ->
         validateNewTaxon.debounce()
+    try
+      # Fill the markdown previews
+      entry = $(p$("#edit-entry").textarea).val()
+      notes = $(p$("#edit-notes").textarea).val()
+      p$("#entry-markdown-preview").markdown = entry
+      p$("#notes-markdown-preview").markdown = notes
+      for region in $(".markdown-region")
+        $(p$(region).textarea).keyup ->
+          md = $(this).val()
+          target = $(this).parents("iron-autogrow-textarea").attr "data-md-field"
+          try
+            p$("##{target}").markdown = md
+            console.debug "Wrote markdown to target '##{target}'"
+          catch e
+            console.warn "Can't update preview for target '##{target}'", $(this).get(0), md
+    catch e
+      console.error "Couldn't run markdown previews"
     validateNewTaxon()
   try
     p$("#modal-taxon-edit").open()
@@ -1131,7 +1152,7 @@ saveEditorEntry = (performMode = "save") ->
     ]
   saveObject = new Object()
   escapeCompletion = false
-  d$("paper-input").removeAttr("invalid") 
+  d$("paper-input").removeAttr("invalid")
   ## Manual parses
   try
     # Authority year
@@ -1441,6 +1462,8 @@ saveEditorEntry = (performMode = "save") ->
       d$("#modal-taxon-edit").get(0).close()
       unless isNull($("#admin-search").val())
         renderAdminSearchResults()
+      # We may have updated the dropdowns
+      prefetchEditorDropdowns()
       stopLoad()
       delay 250, ->
         stopLoad()
@@ -1610,7 +1633,8 @@ adminPreloadSearch = ->
       return false
     for k, v of loadArgs
       cleanedArg = decodeURIComponent v
-      loadArgs[k] = cleanedArg.replace /(\+|\%20|\s)+/g, " "
+      cleanedArg = cleanedArg.replace /(\+|\%20|\s)+/g, " "
+      loadArgs[k] = cleanedArg.trim()
     fill = "#{loadArgs.genus} #{loadArgs.species}"
     unless isNull loadArgs.subspecies
       fill += " #{loadArgs.subspecies}"

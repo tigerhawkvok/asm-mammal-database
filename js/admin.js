@@ -147,7 +147,7 @@ renderAdminSearchResults = function(overrideSearch, containerSelector) {
   newLink = uri.urlString + "#" + b64s;
   $("#app-linkout").attr("data-url", newLink);
   return $.get(searchParams.targetApi, args, "json").done(function(result) {
-    var bootstrapColCount, col, colClass, data, fragment, html, htmlClose, htmlHead, htmlRow, i, j, k, key, l, len, m, newPath, origData, ref, ref1, requiredKeyOrder, row, targetCount, taxonObj, taxonQuery, taxonSplit;
+    var bootstrapColCount, bootstrapColSize, col, colClass, data, fragment, html, htmlClose, htmlHead, htmlRow, i, j, k, key, l, len, m, newPath, niceKey, origData, ref, ref1, requiredKeyOrder, row, targetCount, taxonObj, taxonQuery, taxonSplit, v;
     if (result.status !== true || result.count === 0) {
       stopLoadError();
       if (isNull(result.human_error)) {
@@ -159,7 +159,7 @@ renderAdminSearchResults = function(overrideSearch, containerSelector) {
     }
     data = result.result;
     html = "";
-    htmlHead = "<table id='cndb-result-list' class='table table-striped table-hover'>\n\t<tr class='cndb-row-headers'>";
+    htmlHead = "<table id='cndb-result-list' class='table table-striped table-hover'>\n\t<thead class='cndb-row-headers'>";
     htmlClose = "</table>";
     targetCount = toInt(result.count) - 1;
     colClass = null;
@@ -180,8 +180,8 @@ renderAdminSearchResults = function(overrideSearch, containerSelector) {
       if (toInt(i) === 0) {
         j = 0;
         htmlHead += "\n<!-- Table Headers - " + (Object.size(row)) + " entries -->";
-        $.each(row, function(k, v) {
-          var bootstrapColSize, niceKey;
+        for (k in row) {
+          v = row[k];
           niceKey = k.replace(/_/g, " ");
           if (k === "genus" || k === "species" || k === "subspecies") {
             htmlHead += "\n\t\t<th class='text-center'>" + niceKey + "</th>";
@@ -191,14 +191,16 @@ renderAdminSearchResults = function(overrideSearch, containerSelector) {
           if (j === Object.size(row)) {
             htmlHead += "\n\t\t<th class='text-center'>Edit</th>";
             bootstrapColCount++;
-            htmlHead += "\n\t\t<th class='text-center'>Delete</th>\n\t</tr>";
+            htmlHead += "\n\t\t<th class='text-center'>Delete</th>";
+            bootstrapColCount++;
+            htmlHead += "\n\t\t<th class='text-center'>View</th>\n\t</thead>";
             bootstrapColCount++;
             htmlHead += "\n<!-- End Table Headers -->";
             console.log("Got " + bootstrapColCount + " display columns.");
             bootstrapColSize = roundNumber(12 / bootstrapColCount, 0);
-            return colClass = "col-md-" + bootstrapColSize;
+            colClass = "col-md-" + bootstrapColSize;
           }
-        });
+        }
       }
       taxonQuery = (row.genus.trim()) + "+" + (row.species.trim());
       if (!isNull(row.subspecies)) {
@@ -217,7 +219,8 @@ renderAdminSearchResults = function(overrideSearch, containerSelector) {
         l++;
         if (l === Object.size(row)) {
           htmlRow += "\n\t\t<td id='edit-" + i + "' class='edit-taxon " + colClass + " text-center'><paper-icon-button icon='image:edit' class='edit' data-taxon='" + taxonQuery + "'></paper-icon-button></td>";
-          htmlRow += "\n\t\t<td id='delete-" + i + "' class='delete-taxon " + colClass + " text-center'><paper-icon-button icon='delete' class='delete-taxon-button fadebg' data-taxon='" + taxonQuery + "' data-database-id='" + row.id + "'></paper-icon-button></td>";
+          htmlRow += "\n\t\t<td id='delete-" + i + "' class='delete-taxon " + colClass + " text-center'><paper-icon-button icon='icons:delete-forever' class='delete-taxon-button fadebg' data-taxon='" + taxonQuery + "' data-database-id='" + row.id + "'></paper-icon-button></td>";
+          htmlRow += "\n\t\t<td id='visit-listing-" + i + "' class='view-taxon " + colClass + " text-center'><paper-icon-button icon='icons:visibility' class='view-taxon-button fadebg click' data-href='" + uri.urlString + "species-account.php?genus=" + (row.genus.trim()) + "&species=" + (row.species.trim()) + "' data-newtab='true'></paper-icon-button></td>";
           htmlRow += "\n\t</tr>";
           html += htmlRow;
         }
@@ -237,6 +240,7 @@ renderAdminSearchResults = function(overrideSearch, containerSelector) {
           taxaId = $(this).attr('data-database-id');
           return deleteTaxon(taxaId);
         });
+        bindClicks();
         try {
           taxonSplit = s.split(" ");
           taxonObj = {
@@ -1587,7 +1591,8 @@ adminPreloadSearch = function() {
     for (k in loadArgs) {
       v = loadArgs[k];
       cleanedArg = decodeURIComponent(v);
-      loadArgs[k] = cleanedArg.replace(/(\+|\%20|\s)+/g, " ");
+      cleanedArg = cleanedArg.replace(/(\+|\%20|\s)+/g, " ");
+      loadArgs[k] = cleanedArg.trim();
     }
     fill = loadArgs.genus + " " + loadArgs.species;
     if (!isNull(loadArgs.subspecies)) {

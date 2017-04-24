@@ -1191,13 +1191,14 @@ lookupEditorSpecies = (taxon = undefined) ->
         else
           fieldSelector = "#edit-#{col.replace(/_/g,"-")}"
           if col is "deprecated_scientific"
+            try
+              $(fieldSelector).attr "data-json", encode64(JSON.stringify(d))
             # Create a "neat" string from it
             d = JSON.stringify(d).trim().replace(/\\/g,"")
             d = d.replace(/{/,"")
             d = d.replace(/}/,"")
             if d is '""'
               d = ""
-            $(fieldSelector).attr "data-json", encode64(JSON.stringify(d))
           textAreas = [
             "notes"
             "entry"

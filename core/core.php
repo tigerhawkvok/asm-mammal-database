@@ -1016,6 +1016,13 @@ class ImageFunctions
                     continue;
             }
         }
+        if ($maxDimension == "width") {
+            $imgSrcSet[] = $this->getRelPath(true) . " " . $this->getWidth() . "w";
+            $usedSizes[] = $this->getWidth();
+        } elseif ($maxDimension == "height") {
+            $imgSrcSet[] = $this->getRelPath(true) . " " . $this->getHeight() . "h";
+            $usedSizes[] = $this->getHeight();
+        }
         $response = array(
             "status" => true,
             "relative_path" => $rel,

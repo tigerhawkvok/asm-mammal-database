@@ -342,6 +342,12 @@ paper-dialog#set-license-value {
     width: 85vw;
 }
 
+paper-dialog#deprecated-taxon-list {
+    li {
+
+    }
+}
+
 #modal-taxon, #modal-taxon-edit {
     // position:fixed !important;
     // max-height:75vh; // For mobile
@@ -362,6 +368,14 @@ paper-dialog#set-license-value {
                 .text-center;
             }
 
+            .row {
+                * + .col-xs-3,
+                * + .col-xs-2 {
+                    paper-icon-button {
+                        margin-top: 18px;
+                    }
+                }
+            }
         }
     }
 }

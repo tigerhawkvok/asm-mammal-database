@@ -494,8 +494,13 @@ loadModalTaxonEditor = (extraHtml = "", affirmativeText = "Save") ->
   <paper-input label="Subspecies" id="edit-subspecies" name="edit-subspecies" class="subspecies" floatingLabel></paper-input>
   <paper-input label="Common Name" id="edit-common-name" name="edit-common-name"  class="common_name" floatingLabel></paper-input>
   <paper-input label="Common Name Source" id="edit-common-name-source" name="edit-common-name-source"  class="common_name_source" floatingLabel readonly></paper-input>
-  <paper-input label="Deprecated Scientific Names" id="edit-deprecated-scientific" name="edit-depreated-scientific" floatingLabel aria-describedby="deprecatedHelp" data-column="deprecated_scientific"></paper-input>
-    <span class="help-block" id="deprecatedHelp">List names here in the form <span class="code">"Genus species":"Authority: year","Genus species":"Authority: year",[...]</span>.<br/>There should be no spaces between the quotes and comma or colon. If there are, it may not save correctly.</span>
+  <div class="row">
+    <paper-input label="Deprecated Scientific Names" id="edit-deprecated-scientific" name="edit-depreated-scientific" floatingLabel aria-describedby="deprecatedHelp" data-column="deprecated_scientific" class="col-xs-10" readonly></paper-input>
+    <div class="col-xs-2">
+      <paper-icon-button icon="icons:create" id="fire-deprecated-editor"></paper-icon-button>
+    </div>
+    <span class="help-block col-xs-12" id="deprecatedHelp">List names here in the form <span class="code">"Genus species":"Authority: year","Genus species":"Authority: year",[...]</span>.<br/>There should be no spaces between the quotes and comma or colon. If there are, it may not save correctly.</span>
+  </div>
   #{_asm.dropdownPopulation.major_type.html}
   #{_asm.dropdownPopulation.major_subtype.html}
   #{_asm.dropdownPopulation.linnean_order.html}
@@ -582,6 +587,14 @@ loadModalTaxonEditor = (extraHtml = "", affirmativeText = "Save") ->
   catch e
     console.warn "Couldn't set license helper: #{e.message}"
     console.warn e.stack
+  try
+    deprecatedHelper()
+    $("#fire-deprecated-editor").click ->
+      elTarget = p$("#edit-deprecated-scientific")
+      _asm._setDeprecatedDialog.debounce null, null, null, elTarget
+  catch e
+    console.warn "Couldn't set deprecated helper: #{e.message}"
+    console.warn e.stack
   handleDragDropImage()
   # # Bind the autogrow
   # # https://elements.polymer-project.org/elements/iron-autogrow-textarea
@@ -639,7 +652,7 @@ deprecatedHelper = (selector = "#edit-deprecated-taxon-dialog") ->
             # Potential fixes
             oldTaxon = oldTaxon.replace /\-/g, " "
           authorityParts = authorityString.split(":")
-          authorities = authorityParts[0]          
+          authorities = authorityParts[0]
           prettyElement = """ #{oldTaxon} <iron-icon icon="icons:arrow-forward"></iron-icon> #{authorities.toTitleCase()} in #{authorityParts[1]}"""
           listEl.push prettyElement
         list = "<li>#{listEl.join("</li>\n<li>")}</li>"
@@ -705,6 +718,8 @@ deprecatedHelper = (selector = "#edit-deprecated-taxon-dialog") ->
         species: p$("#dialog-update-species").value.trim()
         authority: p$("#dialog-update-authority").value.trim()
         year: toInt p$("#dialog-update-year").value.trim()
+      # Ensure that the taxon doesn't match the current one
+      # Construct the strings
       oldTaxonString = "#{oldTaxon.genus} #{oldTaxon.species}"
       oldAuthorityString = "#{oldTaxon.authority}:#{oldTaxon.year}"
       console.log "Got strings", oldTaxonString, oldAuthorityString

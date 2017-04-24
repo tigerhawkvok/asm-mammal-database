@@ -48,10 +48,17 @@ loadAdminUi = ->
       ###
       searchForm = """
       <form id="admin-search-form" onsubmit="event.preventDefault()" class="row">
-        <div>
-          <paper-input label="Search for species" id="admin-search" name="admin-search" required autofocus floatingLabel class="col-xs-7 col-sm-8"></paper-input>
+        <div class="col-xs-7 col-sm-8">
+          <paper-input label="Search for species" id="admin-search" name="admin-search" required autofocus floatingLabel></paper-input>
+        </div>
+        <div class="col-xs-2 col-lg-1">
           <paper-fab id="do-admin-search" icon="search" raisedButton class="asm-blue"></paper-fab>
-          <paper-fab id="do-admin-add" icon="add" raisedButton class="asm-blue"></paper-fab>
+        </div>
+        <div class="col-xs-2 col-lg-1">
+          <paper-fab id="do-admin-add" icon="add" raisedButton class="asm-blue" title="Create New Taxon" data-toggle="tooltip"></paper-fab>
+        </div>
+        <div class="col-offset-lg-2">
+          <!-- Placeholder -->
         </div>
       </form>
       <div id='search-results' class="row"></div>
@@ -202,7 +209,7 @@ renderAdminSearchResults = (overrideSearch, containerSelector = "#search-results
           # Next iteration
           return true
         if k is "genus" or k is "species" or k is "subspecies"
-          htmlRow += "\n\t\t<td id='#{k}-#{i}' class='#{k} #{colClass}'>#{col}</td>"
+          htmlRow += "\n\t\t<td id='#{k}-#{i}' class='#{k} #{colClass}'><span>#{col}</span></td>"
         l++
         if l is Object.size row
           htmlRow += "\n\t\t<td id='edit-#{i}' class='edit-taxon #{colClass} text-center'><paper-icon-button icon='image:edit' class='edit' data-taxon='#{taxonQuery}'></paper-icon-button></td>"
@@ -1494,10 +1501,15 @@ deleteTaxon = (taxaId) ->
     window.deleteWatchTimer = Date.now()
     delay 300, ->
       delete window.deleteWatchTimer
-    caller.addClass("extreme-danger")
-    delay 7500, ->
-      caller.removeClass("extreme-danger")
-    toastStatusMessage("Click again to confirm deletion of #{taxon}")
+    caller
+    .addClass("extreme-danger")
+    .attr "icon", "icons:delete-sweep"
+    safetyTimeout = 7500
+    delay safetyTimeout, ->
+      caller
+      .removeClass("extreme-danger")
+      .attr "icon", "icons:delete-forever"
+    toastStatusMessage "Click again to confirm deletion of #{taxon}. This can't be undone.", "", safetyTimeout
     return false
   if window.deleteWatchTimer?
     # It has been less than 300 ms since delete was first tapped.

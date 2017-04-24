@@ -6772,9 +6772,52 @@ paper-fab.materialblue.paper-fab-0:hover {
   background: #3f52b5;
   color: #fff;
 }
+.success-glow {
+  background: #5cb85c;
+  animation-name: successPulse;
+  animation-duration: 2s;
+  animation-iteration-count: infinite;
+}
+@keyframes successPulse {
+  from {
+    background-color: #5cb85c;
+    box-shadow: 0 0 9px #333;
+  }
+  50% {
+    background-color: #34a73a;
+    box-shadow: 0 0 18px #34a73a;
+  }
+  to {
+    background-color: #5cb85c;
+    box-shadow: 0 0 9px #333;
+  }
+}
+.danger-glow {
+  background-color: #F44336;
+  animation-name: dangerPulse;
+  animation-duration: 2s;
+  animation-iteration-count: infinite;
+}
+@keyframes dangerPulse {
+  from {
+    background-color: #F44336;
+    box-shadow: 0 0 2em 0.25em #F44336;
+  }
+  50% {
+    background-color: #cc3214;
+    box-shadow: 0 0 8px #cc3214;
+  }
+  to {
+    background-color: #F44336;
+    box-shadow: 0 0 2em 0.25em #F44336;
+  }
+}
 .extreme-danger {
-  box-shadow: 0 0 2em 0.25em #f00;
-  background: #f00;
+  background-color: #F44336;
+  animation-name: dangerPulse;
+  animation-duration: 2s;
+  animation-iteration-count: infinite;
+  animation-duration: .75s;
   color: #fff;
 }
 .fadebg {
@@ -7043,19 +7086,34 @@ header .logo-container img {
   margin-bottom: 5em;
   border-bottom: 2px solid #ddd;
 }
-.cndb-result-entry:hover {
+#cndb-result-list .cndb-result-entry {
+  cursor: pointer;
+}
+#cndb-result-list .cndb-result-entry:hover {
   background: rgba(0, 0, 0, 0.2) !important;
   transition: all 0.2s ease-out;
 }
-.cndb-result-entry td {
+#cndb-result-list .cndb-result-entry td {
   padding-left: .5rem;
   padding-right: .5rem;
 }
-.cndb-result-entry {
-  cursor: pointer;
+#cndb-result-list .cndb-result-entry td span {
+  display: inline-block;
+  padding: 8px;
 }
-.cndb-result-entry paper-icon-button {
-  margin-top: -0.75em;
+#cndb-result-list .cndb-result-entry paper-icon-button {
+  margin-top: -0.25em;
+}
+.row .polymer-container,
+form .polymer-container,
+.row .paper-element-container,
+form .paper-element-container {
+  display: -ms-flexbox;
+  display: flex;
+  -ms-flex-pack: center;
+      justify-content: center;
+  -ms-flex-align: center;
+      align-items: center;
 }
 #search {
   position: relative;

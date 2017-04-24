@@ -41,7 +41,7 @@ loadAdminUi = function() {
        * We want a search box that we pipe through the API
        * and display the table out for editing
        */
-      searchForm = "<form id=\"admin-search-form\" onsubmit=\"event.preventDefault()\" class=\"row\">\n  <div>\n    <paper-input label=\"Search for species\" id=\"admin-search\" name=\"admin-search\" required autofocus floatingLabel class=\"col-xs-7 col-sm-8\"></paper-input>\n    <paper-fab id=\"do-admin-search\" icon=\"search\" raisedButton class=\"asm-blue\"></paper-fab>\n    <paper-fab id=\"do-admin-add\" icon=\"add\" raisedButton class=\"asm-blue\"></paper-fab>\n  </div>\n</form>\n<div id='search-results' class=\"row\"></div>";
+      searchForm = "<form id=\"admin-search-form\" onsubmit=\"event.preventDefault()\" class=\"row\">\n  <div class=\"col-xs-7 col-sm-8\">\n    <paper-input label=\"Search for species\" id=\"admin-search\" name=\"admin-search\" required autofocus floatingLabel></paper-input>\n  </div>\n  <div class=\"col-xs-2 col-lg-1\">\n    <paper-fab id=\"do-admin-search\" icon=\"search\" raisedButton class=\"asm-blue\"></paper-fab>\n  </div>\n  <div class=\"col-xs-2 col-lg-1\">\n    <paper-fab id=\"do-admin-add\" icon=\"add\" raisedButton class=\"asm-blue\" title=\"Create New Taxon\" data-toggle=\"tooltip\"></paper-fab>\n  </div>\n  <div class=\"col-offset-lg-2\">\n    <!-- Placeholder -->\n  </div>\n</form>\n<div id='search-results' class=\"row\"></div>";
       $("#admin-actions-block").html("<div class='col-xs-12'>" + searchForm + "</div>");
       $("#admin-search-form").submit(function(e) {
         return e.preventDefault();
@@ -214,7 +214,7 @@ renderAdminSearchResults = function(overrideSearch, containerSelector) {
           return true;
         }
         if (k === "genus" || k === "species" || k === "subspecies") {
-          htmlRow += "\n\t\t<td id='" + k + "-" + i + "' class='" + k + " " + colClass + "'>" + col + "</td>";
+          htmlRow += "\n\t\t<td id='" + k + "-" + i + "' class='" + k + " " + colClass + "'><span>" + col + "</span></td>";
         }
         l++;
         if (l === Object.size(row)) {
@@ -1446,7 +1446,7 @@ saveEditorEntry = function(performMode) {
 };
 
 deleteTaxon = function(taxaId) {
-  var args, caller, diff, taxon, taxonRaw;
+  var args, caller, diff, safetyTimeout, taxon, taxonRaw;
   caller = $(".delete-taxon .delete-taxon-button[data-database-id='" + taxaId + "']");
   taxonRaw = caller.attr("data-taxon").replace(/\+/g, " ");
   taxon = taxonRaw.substr(0, 1).toUpperCase() + taxonRaw.substr(1);
@@ -1455,11 +1455,12 @@ deleteTaxon = function(taxaId) {
     delay(300, function() {
       return delete window.deleteWatchTimer;
     });
-    caller.addClass("extreme-danger");
-    delay(7500, function() {
-      return caller.removeClass("extreme-danger");
+    caller.addClass("extreme-danger").attr("icon", "icons:delete-sweep");
+    safetyTimeout = 7500;
+    delay(safetyTimeout, function() {
+      return caller.removeClass("extreme-danger").attr("icon", "icons:delete-forever");
     });
-    toastStatusMessage("Click again to confirm deletion of " + taxon);
+    toastStatusMessage("Click again to confirm deletion of " + taxon + ". This can't be undone.", "", safetyTimeout);
     return false;
   }
   if (window.deleteWatchTimer != null) {

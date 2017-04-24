@@ -47,7 +47,7 @@ if ($allow_insecure_connections !== true) {
     }
 }
 
-if(!function_exists("returnAjax")) {
+if (!function_exists("returnAjax")) {
     function returnAjax($data)
     {
         if (!is_array($data)) {
@@ -77,18 +77,18 @@ if(!function_exists("returnAjax")) {
         //     }
         // } catch (Exception $e) {
         // }
-        $json = json_encode($data,JSON_FORCE_OBJECT);
+        $json = json_encode($data, JSON_FORCE_OBJECT);
         $replace_array = array("&quot;","&#34;");
         $deescaped = htmlspecialchars_decode(html_entity_decode($json));
-        $dequoted = str_replace($replace_array,"\\\"",$deescaped);
-        $dequoted_bare = str_replace($replace_array,"\\\"",$json);
+        $dequoted = str_replace($replace_array, "\\\"", $deescaped);
+        $dequoted_bare = str_replace($replace_array, "\\\"", $json);
         $de2 = htmlspecialchars_decode(html_entity_decode($dequoted_bare));
         #print $deescaped;
         # print $dequoted_bare;
         print $de2;
         exit();
     }
-  }
+}
 
 parse_str($_SERVER['QUERY_STRING'], $_GET);
 $_REQUEST = array_merge($_REQUEST, $_GET, $_POST);
@@ -100,7 +100,7 @@ if ($print_login_state === true) {
         returnAjax(getLoginState($_REQUEST));
         break;
       case "login":
-          returnAjax( doAsyncLogin($_REQUEST) );
+          returnAjax(doAsyncLogin($_REQUEST));
           break;
       case 'write':
         returnAjax(saveToUser($_REQUEST));
@@ -158,7 +158,8 @@ if ($print_login_state === true) {
       }
 }
 
-function doAsyncLogin($get) {
+function doAsyncLogin($get)
+{
     $u = new UserFunctions();
     $totp = empty($get["totp"]) ? false : $get["totp"];
     $r = $u->lookupUser($get["username"], $get["password"], true, $totp);
@@ -218,7 +219,7 @@ function getLoginState($get, $default = false)
         "alternate_allowed" => $u->alternateIsAllowed(),
         "restriction_criteria" => $u->getRestrictionCriteria(),
     );
-    if($default) {
+    if ($default) {
         $response["provided_arguments"] = $_REQUEST;
     }
     return $response;
@@ -382,10 +383,11 @@ function sendTOTPText($get)
 }
 
 
-function addAlternateEmail($get) {
+function addAlternateEmail($get)
+{
     $alternate = $get["email"];
     $user = $get["username"];
-    if(empty($get["username"])) {
+    if (empty($get["username"])) {
         return array(
             "status" => false,
             "error" => "INVALID_PARAMETERS",
@@ -393,7 +395,7 @@ function addAlternateEmail($get) {
         );
     }
     $u = new UserFunctions();
-    if($u->getUsername() != $user) {
+    if ($u->getUsername() != $user) {
         return array(
             "status" => false,
             "error" => "NOT_LOGGED_IN",
@@ -409,12 +411,12 @@ function verifyEmail($get)
      * Verify an email
      * An empty or bad verification code generates a new one to be saved in the temp column
      ***/
-    if(!isset($get["alternate"])) {
+    if (!isset($get["alternate"])) {
         $get["alternate"] = false;
     } else {
         $get["alternate"] = toBool($get["alternate"]);
     }
-    if(empty($get["username"])) {
+    if (empty($get["username"])) {
         return array(
             "status" => false,
             "error" => "INVALID_PARAMETERS",

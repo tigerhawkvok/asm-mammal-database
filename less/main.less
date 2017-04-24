@@ -41,6 +41,9 @@ body {
 @bs-danger: #d9534f;
 @bs-warning: #f0ad4e;
 
+@success: @btn-success-bg;
+@danger: @material-red; // #F00;
+
 @combinator: ~">>>";
 @hc: ~"html >>>";
 
@@ -105,9 +108,62 @@ paper-fab.materialblue.paper-fab-0 {
     color:#fff;
 }
 
+
+
+.success-glow {
+    background: @success;
+    //box-shadow: 0 0 2em .25em @success;
+    animation-name: successPulse;
+    animation-duration: 2s;
+    animation-iteration-count: infinite;
+}
+
+@success-glowdown: @success - #281122;
+
+@keyframes successPulse {
+  from {
+      background-color: @success;
+      box-shadow: 0 0 9px #333;
+  }
+  50% {
+      background-color: @success-glowdown;
+      box-shadow: 0 0 18px @success-glowdown;
+  }
+  to {
+      background-color: @success;
+      box-shadow: 0 0 9px #333;
+  }
+}
+
+.danger-glow {
+    background-color: @danger;
+    //box-shadow: 0 0 2em .25em @danger;
+    animation-name: dangerPulse;
+    animation-duration: 2s;
+    animation-iteration-count: infinite;
+}
+
+@danger-glowdown: @danger - #281122;
+
+@keyframes dangerPulse {
+  from {
+      background-color: @danger;
+      box-shadow: 0 0 2em .25em @danger; // 9px #333;
+  }
+  50% {
+      background-color: @danger-glowdown;
+      box-shadow: 0 0 8px @danger-glowdown;
+  }
+  to {
+      background-color: @danger;
+      box-shadow: 0 0 2em .25em @danger; // 9px #333;
+  }
+}
+
+
 .extreme-danger {
-    box-shadow: 0 0 2em 0.25em #f00;
-    background:#f00;
+    .danger-glow;
+    animation-duration: .75s;
     color: #fff;
 }
 
@@ -456,22 +512,38 @@ header {
 #cndb-result-list {
     margin-bottom: 5em;
     border-bottom: 2px solid #ddd;
+
+    .cndb-result-entry {
+        cursor: pointer;
+        &:hover {
+            background: rgba(0,0,0,.2)!important;
+            transition: all .2s ease-out;
+        }
+        td {
+            padding-left:.5rem;
+            padding-right:.5rem;
+
+            span {
+                display: inline-block;
+                padding: 8px;
+            }
+        }
+        paper-icon-button {
+            // margin-top: -0.75em;
+            margin-top: -0.25em;
+        }
+    }
 }
 
-.cndb-result-entry:hover {
-    background: rgba(0,0,0,.2)!important;
-    transition: all .2s ease-out;
+
+.row, form {
+    .polymer-container, .paper-element-container {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+    }
 }
-.cndb-result-entry td {
-    padding-left:.5rem;
-    padding-right:.5rem;
-}
-.cndb-result-entry {
-    cursor: pointer;
-}
-.cndb-result-entry paper-icon-button {
-    margin-top: -0.75em;
-}
+
 #search {
     position:relative;
     font-size: 220%;

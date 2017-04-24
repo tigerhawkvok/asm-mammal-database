@@ -48,10 +48,17 @@ loadAdminUi = ->
       ###
       searchForm = """
       <form id="admin-search-form" onsubmit="event.preventDefault()" class="row">
-        <div>
-          <paper-input label="Search for species" id="admin-search" name="admin-search" required autofocus floatingLabel class="col-xs-7 col-sm-8"></paper-input>
+        <div class="col-xs-7 col-sm-8">
+          <paper-input label="Search for species" id="admin-search" name="admin-search" required autofocus floatingLabel></paper-input>
+        </div>
+        <div class="col-xs-2 col-lg-1">
           <paper-fab id="do-admin-search" icon="search" raisedButton class="asm-blue"></paper-fab>
-          <paper-fab id="do-admin-add" icon="add" raisedButton class="asm-blue"></paper-fab>
+        </div>
+        <div class="col-xs-2 col-lg-1">
+          <paper-fab id="do-admin-add" icon="add" raisedButton class="asm-blue" title="Create New Taxon" data-toggle="tooltip"></paper-fab>
+        </div>
+        <div class="col-offset-lg-2">
+          <!-- Placeholder -->
         </div>
       </form>
       <div id='search-results' class="row"></div>
@@ -140,7 +147,7 @@ renderAdminSearchResults = (overrideSearch, containerSelector = "#search-results
   b64s = Base64.encodeURI(s)
   newLink = "#{uri.urlString}##{b64s}"
   $("#app-linkout").attr("data-url",newLink)
-  $.get(searchParams.targetApi,args,"json")
+  $.get searchParams.targetApi, args, "json"
   .done (result) ->
     if result.status isnt true or result.count is 0
       stopLoadError()
@@ -152,7 +159,7 @@ renderAdminSearchResults = (overrideSearch, containerSelector = "#search-results
     # Now, take the results and format them
     data = result.result
     html = ""
-    htmlHead = "<table id='cndb-result-list' class='table table-striped table-hover'>\n\t<tr class='cndb-row-headers'>"
+    htmlHead = "<table id='cndb-result-list' class='table table-striped table-hover'>\n\t<thead class='cndb-row-headers'>"
     htmlClose = "</table>"
     # We start at 0, so we want to count one below
     targetCount = toInt(result.count)-1
@@ -160,6 +167,7 @@ renderAdminSearchResults = (overrideSearch, containerSelector = "#search-results
     bootstrapColCount = 0
     # Sort the column output
     requiredKeyOrder = [
+      "id"
       "genus"
       "species"
       "subspecies"
@@ -175,7 +183,8 @@ renderAdminSearchResults = (overrideSearch, containerSelector = "#search-results
       if toInt(i) is 0
         j = 0
         htmlHead += "\n<!-- Table Headers - #{Object.size(row)} entries -->"
-        $.each row, (k,v) ->
+        console.debug "Got row", row
+        for k, v of row
           niceKey = k.replace(/_/g," ")
           if k is "genus" or k is "species" or k is "subspecies"
             htmlHead += "\n\t\t<th class='text-center'>#{niceKey}</th>"
@@ -184,7 +193,9 @@ renderAdminSearchResults = (overrideSearch, containerSelector = "#search-results
           if j is Object.size(row)
             htmlHead += "\n\t\t<th class='text-center'>Edit</th>"
             bootstrapColCount++
-            htmlHead += "\n\t\t<th class='text-center'>Delete</th>\n\t</tr>"
+            htmlHead += "\n\t\t<th class='text-center'>Delete</th>"
+            bootstrapColCount++
+            htmlHead += "\n\t\t<th class='text-center'>View</th>\n\t</thead>"
             bootstrapColCount++
             htmlHead += "\n<!-- End Table Headers -->"
             console.log("Got #{bootstrapColCount} display columns.")
@@ -200,11 +211,12 @@ renderAdminSearchResults = (overrideSearch, containerSelector = "#search-results
           # Next iteration
           return true
         if k is "genus" or k is "species" or k is "subspecies"
-          htmlRow += "\n\t\t<td id='#{k}-#{i}' class='#{k} #{colClass}'>#{col}</td>"
+          htmlRow += "\n\t\t<td id='#{k}-#{i}' class='#{k} #{colClass}'><span>#{col}</span></td>"
         l++
         if l is Object.size row
           htmlRow += "\n\t\t<td id='edit-#{i}' class='edit-taxon #{colClass} text-center'><paper-icon-button icon='image:edit' class='edit' data-taxon='#{taxonQuery}'></paper-icon-button></td>"
-          htmlRow += "\n\t\t<td id='delete-#{i}' class='delete-taxon #{colClass} text-center'><paper-icon-button icon='delete' class='delete-taxon-button fadebg' data-taxon='#{taxonQuery}' data-database-id='#{row.id}'></paper-icon-button></td>"
+          htmlRow += "\n\t\t<td id='delete-#{i}' class='delete-taxon #{colClass} text-center'><paper-icon-button icon='icons:delete-forever' class='delete-taxon-button fadebg' data-taxon='#{taxonQuery}' data-database-id='#{row.id}'></paper-icon-button></td>"
+          htmlRow += "\n\t\t<td id='visit-listing-#{i}' class='view-taxon #{colClass} text-center'><paper-icon-button icon='icons:visibility' class='view-taxon-button fadebg click' data-href='#{uri.urlString}species-account.php?genus=#{row.genus.trim()}&species=#{row.species.trim()}' data-newtab='true'></paper-icon-button></td>"
           htmlRow += "\n\t</tr>"
           html += htmlRow
       if toInt(i) is targetCount
@@ -218,6 +230,7 @@ renderAdminSearchResults = (overrideSearch, containerSelector = "#search-results
           taxon = $(this).attr('data-taxon')
           taxaId = $(this).attr('data-database-id')
           deleteTaxon(taxaId)
+        bindClicks()
         # Set the argument to the search result
         try
           taxonSplit = s.split(" ")
@@ -526,7 +539,7 @@ loadModalTaxonEditor = (extraHtml = "", affirmativeText = "Save") ->
   <div id="upload-image"></div>
   <span class="help-block" id="upload-image-help">You can drag and drop an image above, or enter its server path below.</span>
   <paper-input label="Image" id="edit-image" name="edit-image" floatingLabel aria-describedby="imagehelp"></paper-input>
-    <span class="help-block" id="imagehelp">The image path here should be relative to the <span class="code">public_html/</span> directory.</span>
+    <span class="help-block" id="imagehelp">The image path here should be relative to the <code>public_html/</code> directory. Check the preview below.</span>
   <paper-input label="Image Caption" id="edit-image-caption" name="edit-image-caption" floatingLabel></paper-input>
   <paper-input label="Image Credit" id="edit-image-credit" name="edit-image-credit" floatingLabel></paper-input>
   <section class="row license-region">
@@ -743,6 +756,23 @@ createNewTaxon = ->
       selector = "#edit-#{fieldLabel}"
       $(selector).keyup ->
         validateNewTaxon.debounce()
+    try
+      # Fill the markdown previews
+      entry = $(p$("#edit-entry").textarea).val()
+      notes = $(p$("#edit-notes").textarea).val()
+      p$("#entry-markdown-preview").markdown = entry
+      p$("#notes-markdown-preview").markdown = notes
+      for region in $(".markdown-region")
+        $(p$(region).textarea).keyup ->
+          md = $(this).val()
+          target = $(this).parents("iron-autogrow-textarea").attr "data-md-field"
+          try
+            p$("##{target}").markdown = md
+            console.debug "Wrote markdown to target '##{target}'"
+          catch e
+            console.warn "Can't update preview for target '##{target}'", $(this).get(0), md
+    catch e
+      console.error "Couldn't run markdown previews"
     validateNewTaxon()
   try
     p$("#modal-taxon-edit").open()
@@ -1097,6 +1127,9 @@ lookupEditorSpecies = (taxon = undefined) ->
     stopLoadError("There was a server error populating this taxon. Please try again.")
   false
 
+
+
+
 saveEditorEntry = (performMode = "save") ->
   ###
   # Send an editor state along with login credentials,
@@ -1122,6 +1155,7 @@ saveEditorEntry = (performMode = "save") ->
     "image"
     "image-credit"
     "image-license"
+    "image-caption"
     "taxon-author"
     "taxon-credit"
     "taxon-credit-date"
@@ -1267,6 +1301,7 @@ saveEditorEntry = (performMode = "save") ->
     "image"
     "image_credit"
     "image_license"
+    "image_caption"
     ]
   # List of IDs that can't be empty
   # Reserved use pending
@@ -1441,6 +1476,8 @@ saveEditorEntry = (performMode = "save") ->
       d$("#modal-taxon-edit").get(0).close()
       unless isNull($("#admin-search").val())
         renderAdminSearchResults()
+      # We may have updated the dropdowns
+      prefetchEditorDropdowns()
       stopLoad()
       delay 250, ->
         stopLoad()
@@ -1466,10 +1503,15 @@ deleteTaxon = (taxaId) ->
     window.deleteWatchTimer = Date.now()
     delay 300, ->
       delete window.deleteWatchTimer
-    caller.addClass("extreme-danger")
-    delay 7500, ->
-      caller.removeClass("extreme-danger")
-    toastStatusMessage("Click again to confirm deletion of #{taxon}")
+    caller
+    .addClass("extreme-danger")
+    .attr "icon", "icons:delete-sweep"
+    safetyTimeout = 7500
+    delay safetyTimeout, ->
+      caller
+      .removeClass("extreme-danger")
+      .attr "icon", "icons:delete-forever"
+    toastStatusMessage "Click again to confirm deletion of #{taxon}. This can't be undone.", "", safetyTimeout
     return false
   if window.deleteWatchTimer?
     # It has been less than 300 ms since delete was first tapped.
@@ -1479,12 +1521,18 @@ deleteTaxon = (taxaId) ->
     return false
   animateLoad()
   args = "perform=delete&id=#{taxaId}"
-  $.post(adminParams.apiTarget,args,"json")
+  $.post adminParams.apiTarget, args, "json"
   .done (result) ->
+    console.log "Filed delete", "#{adminParams.apiTarget}?#{args}"
+    console.log "Server response", result
     if result.status is true
       # Remove the visual row
       caller.parents("tr").remove()
-      toastStatusMessage("#{taxon} with ID #{taxaId} has been removed from the database.")
+      try
+        p$("#search-status").hide()
+      window._metaStatus.isToasting = false
+      delay 250, ->
+        toastStatusMessage("#{taxon} with ID #{taxaId} has been removed from the database.")
       stopLoad()
     else
       stopLoadError(result.human_error)
@@ -1608,6 +1656,10 @@ adminPreloadSearch = ->
     if isNull(loadArgs.genus) or not loadArgs.species?
       console.error "Bad taxon format"
       return false
+    for k, v of loadArgs
+      cleanedArg = decodeURIComponent v
+      cleanedArg = cleanedArg.replace /(\+|\%20|\s)+/g, " "
+      loadArgs[k] = cleanedArg.trim()
     fill = "#{loadArgs.genus} #{loadArgs.species}"
     unless isNull loadArgs.subspecies
       fill += " #{loadArgs.subspecies}"

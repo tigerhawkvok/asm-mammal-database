@@ -1,6 +1,6 @@
 {
   "name": "asm-mammal-database",
-  "version": "0.5.17",
+  "version": "0.5.18",
   "description": "ASM Mammal Database",
   "main": "api.php",
   "scripts": {
@@ -37,6 +37,8 @@
     "vulcanize": "^1.10.1"
   },
   "dependencies": {
-    "bower": "^1.8.0"
+    "bower": "^1.8.0",
+    "grunt-php-cs-fixer": "^1.0.0",
+    "grunt-phpcs": "^0.4.0"
   }
 }

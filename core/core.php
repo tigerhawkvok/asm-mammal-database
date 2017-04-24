@@ -1,6 +1,8 @@
 <?php
 
-if(isset($_SERVER['QUERY_STRING'])) parse_str($_SERVER['QUERY_STRING'],$_REQUEST);
+if (isset($_SERVER['QUERY_STRING'])) {
+    parse_str($_SERVER['QUERY_STRING'], $_REQUEST);
+}
 
 if (!function_exists('microtime_float')) {
     function microtime_float()
@@ -33,48 +35,52 @@ if (!class_exists('Wysiwyg')) {
 }
 
 
-if(!function_exists("returnAjax")) {
-    function returnAjax($data) {
-    /***
-     * Return the data as a JSON object
-     *
-     * @param array $data
-     *
-     ***/
-    if(!is_array($data)) $data=array($data);
-    $data["execution_time"] = elapsed();
-    header('Cache-Control: no-cache, must-revalidate');
-    header('Expires: Mon, 26 Jul 1997 05:00:00 GMT');
-    header('Content-type: application/json');
-    $json = json_encode($data,JSON_FORCE_OBJECT);
-    $replace_array = array("&quot;","&#34;");
-    print str_replace($replace_array,"\\\"",$json);
-    exit();
+if (!function_exists("returnAjax")) {
+    function returnAjax($data)
+    {
+        /***
+         * Return the data as a JSON object
+         *
+         * @param array $data
+         *
+         ***/
+        if (!is_array($data)) {
+            $data=array($data);
+        }
+        $data["execution_time"] = elapsed();
+        header('Cache-Control: no-cache, must-revalidate');
+        header('Expires: Mon, 26 Jul 1997 05:00:00 GMT');
+        header('Content-type: application/json');
+        $json = json_encode($data, JSON_FORCE_OBJECT);
+        $replace_array = array("&quot;","&#34;");
+        print str_replace($replace_array, "\\\"", $json);
+        exit();
     }
 }
 
-if(!function_exists('elapsed'))
-  {
+if (!function_exists('elapsed')) {
     function elapsed($start_time = null)
     {
-      /***
-       * Return the duration since the start time in
-       * milliseconds.
-       * If no start time is provided, it'll try to use the global
-       * variable $start_script_timer
-       *
-       * @param float $start_time in unix epoch. See http://us1.php.net/microtime
-       ***/
+        /***
+         * Return the duration since the start time in
+         * milliseconds.
+         * If no start time is provided, it'll try to use the global
+         * variable $start_script_timer
+         *
+         * @param float $start_time in unix epoch. See http://us1.php.net/microtime
+         ***/
 
-      if(!is_numeric($start_time))
-        {
-          global $start_script_timer;
-          if(is_numeric($start_script_timer)) $start_time = $start_script_timer;
-          else return false;
+        if (!is_numeric($start_time)) {
+            global $start_script_timer;
+            if (is_numeric($start_script_timer)) {
+                $start_time = $start_script_timer;
+            } else {
+                return false;
+            }
         }
-      return 1000*(microtime_float() - (float)$start_time);
+        return 1000*(microtime_float() - (float)$start_time);
     }
-  }
+}
 
 
 if (!function_exists('dirListPHP')) {
@@ -151,9 +157,9 @@ if (!function_exists('encode64')) {
     function decode64($data)
     {
         # This is STRICT decoding
-      if (@base64_encode(@base64_decode($data, true)) == $data) {
-          return urldecode(@base64_decode($data));
-      }
+        if (@base64_encode(@base64_decode($data, true)) == $data) {
+            return urldecode(@base64_decode($data));
+        }
 
         return false;
     }
@@ -163,13 +169,13 @@ if (!function_exists('smart_decode64')) {
     function smart_decode64($data, $clean_this = true)
     {
         /*
-       * Take in a base 64 object, decode it. Pass back an array
-       * if it's a JSON, and sanitize the elements in any case.
-       */
-      if (is_null($data)) {
-          return;
-      } // in case emptyness of data is meaningful
-      $r = urldecode(base64_decode($data));
+         * Take in a base 64 object, decode it. Pass back an array
+         * if it's a JSON, and sanitize the elements in any case.
+         */
+        if (is_null($data)) {
+            return;
+        } // in case emptyness of data is meaningful
+        $r = urldecode(base64_decode($data));
         if ($r === false) {
             return false;
         }
@@ -178,14 +184,14 @@ if (!function_exists('smart_decode64')) {
         if ($clean_this) {
             try {
                 // clean
-              if (is_array($working)) {
-                  $prepped_data = loopSanitizeArray($working);
-              } else {
-                  $prepped_data = DBHelper::staticSanitize($working);
-              }
+                if (is_array($working)) {
+                    $prepped_data = loopSanitizeArray($working);
+                } else {
+                    $prepped_data = DBHelper::staticSanitize($working);
+                }
             } catch (Exception $e) {
                 // Something broke, probably an invalid data format.
-              return false;
+                return false;
             }
         } else {
             $prepped_data = $working;
@@ -219,21 +225,21 @@ if (!function_exists('strbool')) {
     function strbool($bool)
     {
         // returns the string of a boolean as 'true' or 'false'.
-      if (is_string($bool)) {
-          $bool = boolstr($bool);
-      } // if a string is passed, convert it to a bool
-      if (is_bool($bool)) {
-          return $bool ? 'true' : 'false';
-      } else {
-          return 'non_bool';
-      }
+        if (is_string($bool)) {
+            $bool = boolstr($bool);
+        } // if a string is passed, convert it to a bool
+        if (is_bool($bool)) {
+            return $bool ? 'true' : 'false';
+        } else {
+            return 'non_bool';
+        }
     }
     function boolstr($string)
     {
         // returns the boolean of a string 'true' or 'false'
-      if (is_bool($string)) {
-          return $string;
-      }
+        if (is_bool($string)) {
+            return $string;
+        }
         if (is_string($string)) {
             if (preg_match('/[0-1]/', $string)) {
                 return intval($string) == 1 ? true : false;
@@ -247,9 +253,10 @@ if (!function_exists('strbool')) {
 
         return false;
     }
-        function toBool($str) {
-            return boolstr($str);
-        }
+    function toBool($str)
+    {
+        return boolstr($str);
+    }
 }
 
 if (!function_exists('shuffle_assoc')) {
@@ -288,13 +295,16 @@ if (!function_exists('displayDebug')) {
         $string = str_replace('&', '&amp;', $string);
         $string = str_replace('<', '&lt;', $string);
         $string = str_replace('>', '&gt;', $string);
-        if(!$background) return $string;
+        if (!$background) {
+            return $string;
+        }
         return "<pre style='background:white;color:black;'>".$string.'</pre>';
     }
 }
 
 if (!function_exists('do_post_request')) {
-    function do_post_request($url, $data, $method = "POST", $optional_headers = null) {
+    function do_post_request($url, $data, $method = "POST", $optional_headers = null)
+    {
         /***
          * Do a POST request
          *
@@ -305,7 +315,9 @@ if (!function_exists('do_post_request')) {
         $bareUrl = $url;
         $url = urlencode($url);
 
-        if(!is_array($data)) $data = array($data);
+        if (!is_array($data)) {
+            $data = array($data);
+        }
 
         $params = array('http' => array(
             'method' => $method,
@@ -319,7 +331,7 @@ if (!function_exists('do_post_request')) {
         $ctx = stream_context_create($params);
         # If url handlers are set,t his whole next part can be file_get_contents($url,false,$ctx)
         try {
-            ini_set("default_socket_timeout",3.5);
+            ini_set("default_socket_timeout", 3.5);
             ini_set("allow_url_fopen", true);
             $simpleOptions = array(
                 'http' => array(
@@ -346,37 +358,45 @@ if (!function_exists('do_post_request')) {
             $getContentsUrl = $bareUrl . "?" . $postArgs;
             $simpleCtx = stream_context_create($simpleOptions);
             $response = file_get_contents($getContentsUrl, false, $simpleCtx);
-            if(empty($response) || $response === false) {
+            if (empty($response) || $response === false) {
                 # Try the longer context
                 $method = "complex_fgc";
                 $response = file_get_contents($getContentsUrl, false, $ctx);
-                if(empty($response) || $response === false) throw new Exception("No Response from file_get_contents");
+                if (empty($response) || $response === false) {
+                    throw new Exception("No Response from file_get_contents");
+                }
             }
         } catch (Exception $e) {
             ini_set("allow_url_fopen", true);
             $fp = @fopen($bareUrl, 'rb', false, $ctx);
             if (!$fp) {
-                if(function_exists("http_post_fields")) {
+                if (function_exists("http_post_fields")) {
                     $response = http_post_fields($bareUrl, $data);
-                    if($response === false || empty($response)) throw new Exception("Could not POST to $bareUrl");
+                    if ($response === false || empty($response)) {
+                        throw new Exception("Could not POST to $bareUrl");
+                    }
                     $method = "hpf";
                     # return $response;
-                }
-                else if (function_exists("curl_init")) {
+                } elseif (function_exists("curl_init")) {
                     # Last-ditch: CURL
-                    $ch = curl_init( $bareUrl );
-                    if($method == "POST") curl_setopt( $ch, CURLOPT_POST, 1);
-                    curl_setopt( $ch, CURLOPT_POSTFIELDS, http_build_query($data));
-                    curl_setopt( $ch, CURLOPT_FOLLOWLOCATION, 1);
-                    curl_setopt( $ch, CURLOPT_HEADER, 0);
-                    curl_setopt( $ch, CURLOPT_RETURNTRANSFER, 1);
+                    $ch = curl_init($bareUrl);
+                    if ($method == "POST") {
+                        curl_setopt($ch, CURLOPT_POST, 1);
+                    }
+                    curl_setopt($ch, CURLOPT_POSTFIELDS, http_build_query($data));
+                    curl_setopt($ch, CURLOPT_FOLLOWLOCATION, 1);
+                    curl_setopt($ch, CURLOPT_HEADER, 0);
+                    curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
 
                     $method = "curl";
-                    $response = curl_exec( $ch );
-                    if($response === false || empty($response)) throw new Exception("CURL failure: ".curl_error($ch));
+                    $response = curl_exec($ch);
+                    if ($response === false || empty($response)) {
+                        throw new Exception("CURL failure: ".curl_error($ch));
+                    }
                     # return $response;
+                } else {
+                    throw new Exception("Problem POSTing to  $bareUrl");
                 }
-                else throw new Exception("Problem POSTing to  $bareUrl");
             } else {
                 $method = "fopen";
                 $response = @stream_get_contents($fp);
@@ -451,8 +471,9 @@ if (!function_exists('appendQuery')) {
 }
 
 
-if(!function_exists("get_include_contents")) {
-    function get_include_contents($filename) {
+if (!function_exists("get_include_contents")) {
+    function get_include_contents($filename)
+    {
         if (is_file($filename)) {
             ob_start();
             include $filename;
@@ -493,9 +514,10 @@ class ImageFunctions
      *
      ***/
 
-    public function __construct($imgUrl = null, $fromUrl = false, $fromUrlWritePath = "images") {
-        if($fromUrl) {
-            if(substr($fromUrlWritePath, -1) == "/") {
+    public function __construct($imgUrl = null, $fromUrl = false, $fromUrlWritePath = "images")
+    {
+        if ($fromUrl) {
+            if (substr($fromUrlWritePath, -1) == "/") {
                 $fromUrlWritePath = substr($fromUrlWritePath, 0, -1);
             }
             $relWritePath = dirname(__FILE__) . "/../" . $fromUrlWritePath;
@@ -504,7 +526,7 @@ class ImageFunctions
             $ext = array_pop($fileParts);
             $localImage = md5($imgUrl) . "." . $ext;
             $fileWrite = $relWritePath . "/" . $localImage;
-            if(!file_exists($fileWrite)) {
+            if (!file_exists($fileWrite)) {
                 file_put_contents($fileWrite, $rawImg);
             }
             $imgUrl = $fileWrite;
@@ -516,22 +538,35 @@ class ImageFunctions
         $this->img = $imgUrl;
     }
 
-    private static function notfound() {
+    private static function notfound()
+    {
         throw new Exception('Not Found Exception');
     }
-
-    public function getImagePath() {
+    public function getRelPath($file = false)
+    {
+        $parentPath = realpath(dirname(__FILE__) . "/../");
+        $relPath = str_replace($parentPath, "", $this->getPath());
+        if ($file) {
+            return $relPath;
+        } else {
+            return dirname($relPath) . "/";
+        }
+    }
+    public function getImagePath()
+    {
         return $this->imgPath;
     }
-    
-    public function getPath() {
+
+    public function getPath()
+    {
         # Alias
         return $this->getImage();
     }
-    
 
-    
-    protected function getImage() {
+
+
+    protected function getImage()
+    {
         if (function_exists(get_magic_quotes_gpc) && get_magic_quotes_gpc()) {
             $image = stripslashes($this->img);
         } else {
@@ -540,7 +575,8 @@ class ImageFunctions
         return $image;
     }
 
-    public function setImage($imagePath) {
+    public function setImage($imagePath)
+    {
         if (function_exists(get_magic_quotes_gpc) && get_magic_quotes_gpc()) {
             $image = stripslashes($imagePath);
         } else {
@@ -549,7 +585,8 @@ class ImageFunctions
         $this->img = $image;
     }
 
-    public function imageExists() {
+    public function imageExists()
+    {
         $image = $this->getImage();
 
         if (strrchr($image, '/')) {
@@ -560,8 +597,9 @@ class ImageFunctions
 
         return file_exists($image);
     }
-    
-    public static function randomRotate($min, $max) {
+
+    public static function randomRotate($min, $max)
+    {
         /***
          * Return a random CSS rotation transformation, in the
          * positive or negative direction. If the random angle is
@@ -582,7 +620,8 @@ class ImageFunctions
         return 'transform:rotate('.$angle.'deg);-moz-transform:rotate('.$angle.'deg);-webkit-transform:rotate('.$angle.'deg);';
     }
 
-    public static function randomImage($dir = 'assets/images', $extension = 'jpg') {
+    public static function randomImage($dir = 'assets/images', $extension = 'jpg')
+    {
         /***
          * Fetch a random image from a directory
          *
@@ -602,7 +641,8 @@ class ImageFunctions
         return $dir.'/'.$images[$item];
     }
 
-    public function getImageDimensions() {
+    public function getImageDimensions()
+    {
         $image = $this->getImage();
 
         if (strrchr($image, '/')) {
@@ -624,14 +664,46 @@ class ImageFunctions
         );
     }
 
-    public function getWidth() {
+    public function getWidth()
+    {
         $size = $this->getImageDimensions();
         return $size["width"];
     }
 
-    public function getHeight() {
+    public function getHeight()
+    {
         $size = $this->getImageDimensions();
         return $size["height"];
+    }
+
+    public function getImageFiletype()
+    {
+        $parts = explode(".", $this->getPath());
+        $ext = array_pop($parts);
+        return $ext;
+    }
+
+    public function getImageType()
+    {
+        return $this->getImageFiletype();
+    }
+
+    public function getExtension()
+    {
+        return $this->getImageFiletype();
+    }
+
+
+    public function getFilename($extension = true)
+    {
+        $fileName = basename($this->getPath());
+        if ($extension) {
+            return $fileName;
+        } else {
+            $parts = explode(".", $fileName);
+            array_pop($parts);
+            return implode(".", $parts);
+        }
     }
 
     public static function staticResizeImage($imgfile, $output, $max_width = null, $max_height = null)
@@ -728,7 +800,7 @@ class ImageFunctions
         # set up canvas
         $dst = imagecreatetruecolor($tn_width, $tn_height);
 
-        if(function_exists("imageantialias")) {
+        if (function_exists("imageantialias")) {
             imageantialias($dst, true);
         }
         # copy resized image to new canvas
@@ -846,7 +918,7 @@ class ImageFunctions
         # set up canvas
         $dst = imagecreatetruecolor($tn_width, $tn_height);
 
-        if(function_exists("imageantialias")) {
+        if (function_exists("imageantialias")) {
             imageantialias($dst, true);
         }
 
@@ -873,5 +945,95 @@ class ImageFunctions
         imagedestroy($dst);
 
         return array('status' => $status, 'output' => $output, 'output_size' => "$tn_width X $tn_height");
+    }
+
+
+    public function createSrcSetFromImage($sizes = array(480, 768, 1024, 1280, 1920, 2048, 4000), $maxDimension = "width")
+    {
+        /***
+         * Create image set for a <picture> element
+         ***/
+        $allowedMaxDimension = array(
+            "width",
+            "height",
+        );
+        if (!in_array(strtolower($maxDimension), $allowedMaxDimension)) {
+            $maxDimension = "width";
+        }
+        $dimensions = $this->getImageDimensions();
+        $extension = $this->getExtension();
+        $sizeOk = true;
+        $saveDir = dirname($this->getPath());
+        $imgPaths = array();
+        $imgSrcSet = array();
+        $errors = array();
+        $rel = $this->getRelPath();
+        $usedSizes = array();
+        foreach ($sizes as $maxSize) {
+            if ($maxSize > $dimensions[$maxDimension]) {
+                $sizeOk = false;
+            }
+            if (!$sizeOk) {
+                # We've resized as much as possible
+                break;
+            }
+            $usedSizes[] = $maxSize;
+            $writeStart = $saveDir . "/" . $this->getFilename(false) . "-" . $maxSize;
+            switch ($maxDimension) {
+                case "width":
+                    $write = $writeStart . "w" . "." . $extension;
+                    if (file_exists($write)) {
+                        $imgPaths[] = basename($write);
+                        $imgSrcSet[] = $rel . basename($write) . " " . $maxSize . "w";
+                        continue;
+                    }
+                    $maxHeight = 2 * ($maxSize / $dimensions["width"]) * $dimensions["height"];
+                    $result = $this->resizeImage($write, $maxSize, $maxHeight);
+                    if ($result["status"]) {
+                        $imgPaths[] = basename($result["output"]);
+                        $imgSrcSet[] = $rel . basename($result["output"]) . " " . $maxSize . "w";
+                    } else {
+                        $errors[] = $result;
+                    }
+                    break;
+                case "height":
+                    $write = $writeStart . "h" . "." . $extension;
+                    if (file_exists($write)) {
+                        $imgPaths[] = basename($write);
+                        $imgSrcSet[] = $rel . basename($write) . " " . $maxSize . "h";
+                        continue;
+                    }
+                    $maxWidth = 2 * ($maxSize / $dimensions["height"]) * $dimensions["width"];
+                    $result = $this->resizeImage($write, $maxWidth, $maxSize);
+                    if ($result["status"]) {
+                        $imgPaths[] = basename($result["output"]);
+                        $imgSrcSet[] = $rel . basename($result["output"]) . " " . $maxSize . "h";
+                    } else {
+                        $errors[] = $result;
+                    }
+                    break;
+                default:
+                    continue;
+            }
+        }
+        if ($maxDimension == "width") {
+            $imgSrcSet[] = $this->getRelPath(true) . " " . $this->getWidth() . "w";
+            $usedSizes[] = $this->getWidth();
+        } elseif ($maxDimension == "height") {
+            $imgSrcSet[] = $this->getRelPath(true) . " " . $this->getHeight() . "h";
+            $usedSizes[] = $this->getHeight();
+        }
+        $response = array(
+            "status" => true,
+            "relative_path" => $rel,
+            "files" => $imgPaths,
+            "srcset" => $imgSrcSet,
+            "sizes" => $usedSizes,
+            "dimension" => $maxDimension,
+        );
+        if (!empty($errors)) {
+            $reponse["errors"] = $errors;
+        }
+        return $response;
     }
 }

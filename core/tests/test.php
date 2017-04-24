@@ -30,9 +30,9 @@ echo "Raw input:<br/><br/>";
 $text = "Here is some **Markdown** text that I *really* want to parse. What about [b]Classic options[/b]? How about greek? [grk]npLl[/grk]";
 echo "<code class='center-block text-center'>$text</code><br/>";
 $html = Wysiwyg::toHtml($text);
-echo "<div class='alert alert-success center-block'>$html<br/><code>".displayDebug($html,false)."</code></div>";
+echo "<div class='alert alert-success center-block'>$html<br/><code>".displayDebug($html, false)."</code></div>";
 echo "<br/>This de-parses as: <div class='alert alert-success center-block'><code>" . Wysiwyg::fromHtml($html) . "</code></div>";
-echo "Full detail: <code>".displayDebug(Wysiwyg::toHtml($text,true),false).displayDebug(Wysiwyg::fromHtml($html,true),false)."</code>";
+echo "Full detail: <code>".displayDebug(Wysiwyg::toHtml($text, true), false).displayDebug(Wysiwyg::fromHtml($html, true), false)."</code>";
 echo "</section>";
        ?>
   </body>

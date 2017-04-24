@@ -20,6 +20,7 @@ module.exports = (grunt) ->
   grunt.loadNpmTasks("grunt-phplint")
   # https://github.com/Polymer/grunt-vulcanize
   grunt.loadNpmTasks('grunt-vulcanize')
+  grunt.loadNpmTasks('grunt-php-cs-fixer')
   grunt.initConfig
     pkg: grunt.file.readJSON('package.json')
     shell:
@@ -50,6 +51,43 @@ module.exports = (grunt) ->
           #abspath: "cndb/"
         files:
           "build.html": "index.html"
+    phpcs:
+      application:
+        src: [
+          "api.php"
+          ]
+      options:
+        standard: "PSR2"
+    phpcsfixer:
+      app:
+        dir: [
+          "api.php"
+          "admin-api.php"
+          "admin-login.php"
+          "index.php"
+          "species-account.php"
+          "meta.php"
+          "400.php"
+          "modular/"
+          ]
+      users:
+        dir: [
+          "admin/api.php"
+          "admin/app_api.php"
+          "admin/app_handlers.php"
+          "admin/async_login_handler.php"
+          "admin/braintree_billing.php"
+          "admin/index.php"
+          "admin/login.php"
+          "admin/test_page.php"
+          "admin/handlers/"
+          ]
+      core:
+        dir: [
+          "core/"
+          ]
+      options:
+        rules: "@PSR2"
     uglify:
       options:
         mangle:
@@ -199,4 +237,4 @@ module.exports = (grunt) ->
     grunt.task.run("phplint","compile","css","shell:dumpver")
   grunt.registerTask "build","Prepare for deployment", ->
     # ,"vulcanize"
-    grunt.task.run("update","qbuild","minify")
+    grunt.task.run("update","qbuild","minify","phpcsfixer")

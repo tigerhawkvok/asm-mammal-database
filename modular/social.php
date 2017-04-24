@@ -1,9 +1,9 @@
 <?php 
   require_once dirname(__FILE__) . "/../core/core.php";
   $defaultImage = "species_photos/Tragelaphus_eurycerus.jpg";
-  $pageImage = empty($pageImage) ? $defaultImage : $pageImage;  
+  $pageImage = empty($pageImage) ? $defaultImage : $pageImage;
   $image = new ImageFunctions($pageImage);
-  if(!$image->imageExists()) {
+  if (!$image->imageExists()) {
       $pageImage = $defaultImage;
       $image->setImage($defaultImage);
   }

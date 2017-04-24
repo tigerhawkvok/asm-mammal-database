@@ -199,6 +199,7 @@ function saveEntry($get, $dataIsDecoded = false)
                     $extension = array_pop($thumbArr);
                     $outputFile = dirname(__FILE__)."/".implode(".", $thumbArr)."-thumb.".$extension;
                     $imgDetails["resize_status"] = $i->resizeImage($outputFile, 256, 256);
+                    $imgDetails["srcset_resize_status"] = $i->createSrcSetFromImage();
                 } catch (Exception $e) {
                     $imgDetails["resize_status"] = false;
                     $imgDetails["resize_error"] = $e->getMessage();

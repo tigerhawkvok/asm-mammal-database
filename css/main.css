@@ -6965,6 +6965,12 @@ paper-dialog#set-license-value {
   margin-right: auto;
   text-align: center;
 }
+#modal-taxon paper-dialog-scrollable#modal-taxon-editor div.scrollable .row * + .col-xs-3 paper-icon-button,
+#modal-taxon-edit paper-dialog-scrollable#modal-taxon-editor div.scrollable .row * + .col-xs-3 paper-icon-button,
+#modal-taxon paper-dialog-scrollable#modal-taxon-editor div.scrollable .row * + .col-xs-2 paper-icon-button,
+#modal-taxon-edit paper-dialog-scrollable#modal-taxon-editor div.scrollable .row * + .col-xs-2 paper-icon-button {
+  margin-top: 18px;
+}
 paper-dialog#modal-taxon .buttons,
 paper-dialog#modal-taxon-edit .buttons {
   background: #fff;

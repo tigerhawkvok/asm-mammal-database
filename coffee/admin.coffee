@@ -494,8 +494,13 @@ loadModalTaxonEditor = (extraHtml = "", affirmativeText = "Save") ->
   <paper-input label="Subspecies" id="edit-subspecies" name="edit-subspecies" class="subspecies" floatingLabel></paper-input>
   <paper-input label="Common Name" id="edit-common-name" name="edit-common-name"  class="common_name" floatingLabel></paper-input>
   <paper-input label="Common Name Source" id="edit-common-name-source" name="edit-common-name-source"  class="common_name_source" floatingLabel readonly></paper-input>
-  <paper-input label="Deprecated Scientific Names" id="edit-deprecated-scientific" name="edit-depreated-scientific" floatingLabel aria-describedby="deprecatedHelp"></paper-input>
-    <span class="help-block" id="deprecatedHelp">List names here in the form <span class="code">"Genus species":"Authority: year","Genus species":"Authority: year",[...]</span>.<br/>There should be no spaces between the quotes and comma or colon. If there are, it may not save correctly.</span>
+  <div class="row">
+    <paper-input label="Deprecated Scientific Names" id="edit-deprecated-scientific" name="edit-depreated-scientific" floatingLabel aria-describedby="deprecatedHelp" data-column="deprecated_scientific" class="col-xs-10" readonly></paper-input>
+    <div class="col-xs-2">
+      <paper-icon-button icon="icons:create" id="fire-deprecated-editor" title="Edit deprecated scientifics" data-toggle="tooltip"></paper-icon-button>
+    </div>
+    <span class="help-block col-xs-12" id="deprecatedHelp">Click the edit button to fill the old names.</span>
+  </div>
   #{_asm.dropdownPopulation.major_type.html}
   #{_asm.dropdownPopulation.major_subtype.html}
   #{_asm.dropdownPopulation.linnean_order.html}
@@ -582,6 +587,14 @@ loadModalTaxonEditor = (extraHtml = "", affirmativeText = "Save") ->
   catch e
     console.warn "Couldn't set license helper: #{e.message}"
     console.warn e.stack
+  try
+    deprecatedHelper()
+    $("#fire-deprecated-editor").click ->
+      elTarget = p$("#edit-deprecated-scientific")
+      _asm._setDeprecatedDialog.debounce null, null, null, elTarget
+  catch e
+    console.warn "Couldn't set deprecated helper: #{e.message}"
+    console.warn e.stack
   handleDragDropImage()
   # # Bind the autogrow
   # # https://elements.polymer-project.org/elements/iron-autogrow-textarea
@@ -601,7 +614,159 @@ loadModalTaxonEditor = (extraHtml = "", affirmativeText = "Save") ->
 
 
 
-handleDeprecatedInput = ->
+deprecatedHelper = (selector = "#edit-deprecated-taxon-dialog") ->
+  ###
+  # Helper for the otherwise JSON entries of the deprecated
+  ###
+  $(selector).unbind()
+  _asm._setDeprecatedDialog = (el) ->
+    targetColumn = $(el).attr "data-column"
+    if isNull targetColumn
+      console.error "Unable to show dialog -- invalud column designator"
+      return false
+    console.debug "Setup deprecated fired -- target is #{targetColumn}"
+    dialogSelector = "#set-deprecated-taxa"
+    $(dialogSelector).remove()
+    currentTaxon =
+      genus: p$("#edit-genus").value ? ""
+      species: p$("#edit-species").value ? ""
+    currentTaxonAuthority =
+      genus:
+        authority: p$("#edit-genus-authority").value ? ""
+        year: p$("#edit-gauthyear").value ? ""
+        parens: if p$("#genus-authority-parens").checked then "checked" else ""
+      species:
+        authority: p$("#edit-species-authority").value ? ""
+        year: p$("#edit-gauthyear").value ? ""
+        parens: if p$("#species-authority-parens").checked then "checked" else ""
+    _asm._updateDeprecatedListItem = (json64attr = undefined) ->
+      if isNull json64attr
+        # Fetch it
+        json64attr = $("#deprecated-taxon-json").val()
+      try
+        jDep = JSON.parse decode64 json64attr
+        console.log "Rendering with", jDep
+        listEl = new Array()
+        for oldTaxon, authorityString of jDep
+          try
+            # Potential fixes
+            oldTaxon = oldTaxon.replace /\-/g, " "
+          authorityParts = authorityString.split(":")
+          authorities = authorityParts[0]
+          prettyElement = """ #{oldTaxon} <iron-icon icon="icons:arrow-forward"></iron-icon> #{authorities.toTitleCase()} in #{authorityParts[1]}"""
+          listEl.push prettyElement
+        list = "<li>#{listEl.join("</li>\n<li>")}</li>"
+      catch e
+        console.warn "Didn't parse JSON: #{e.message}"
+        console.warn e.stack
+        list = "<em>No deprecated identifiers</em>"
+      list
+    json64Orig = $("#edit-deprecated-scientific").attr "data-json"
+    list = _asm._updateDeprecatedListItem json64Orig
+    html = """
+    <paper-dialog id="#{dialogSelector.slice(1)}" data-column="#{targetColumn}" modal>
+      <h2>Set Deprecated Taxa</h2>
+      <paper-dialog-scrollable>
+        <div class="row">
+          <h3 class="col-xs-12">Alternate Taxon Names</h3>
+          <ul id="deprecated-taxon-list" class="col-xs-11 col-xs-offset-1">
+            #{list}
+          </ul>
+          <input type="hidden" value="#{json64Orig}" id="deprecated-taxon-json"/>
+        </div>
+        <div class="form">
+          <div class="row update-old-taxon">
+            <paper-input class="col-xs-12" value="#{currentTaxon.genus}" label="Old Genus" placeholder="#{currentTaxon.genus}" id="dialog-update-genus" required autovalidate></paper-input>
+            <paper-input class="col-xs-12" value="#{currentTaxon.species}" label="Old Species" placeholder="#{currentTaxon.species}" id="dialog-update-species" required autovalidate></paper-input>
+            <paper-input class="col-xs-6" value="#{currentTaxonAuthority.genus.authority}" label="Old Authority" placeholder="#{currentTaxonAuthority.genus.authority}" required autovalidate floatingLabel id="dialog-update-authority"></paper-input>
+            <paper-input class="col-xs-6" value="#{currentTaxonAuthority.genus.year}" label="Old Year" placeholder="#{currentTaxonAuthority.genus.year}" pattern="[0-9]{4}" error-message="Invalid Year" required autovalidate floatingLabel id="dialog-update-year"></paper-input>
+          </div>
+          <div class="row">
+            <div class="col-xs-12 text-right pull-right">
+              <button class="btn btn-primary" id="add-to-json-list">Add To List</button>
+            </div>
+          </div>
+        </div>
+      </paper-dialog-scrollable>
+      <div class="buttons">
+        <paper-button dialog-dismiss>Cancel</paper-button>
+        <paper-button class="add-value">Set</paper-button>
+      </div>
+    </paper-dialog>
+    """
+    $("body").append html
+    p$(dialogSelector).open()
+    addToListClickEvent = ->
+      # Make sure everything is valid
+      canProceed = true
+      for field in $("#{dialogSelector} paper-input")
+        p$(field).errorMessage = "This field can't be empty"
+        p$(field).validate()
+        if p$(field).invalid
+          canProceed = false
+      unless canProceed
+        return false
+      # Update the JSON
+      json64attr = $("#deprecated-taxon-json").val()
+      try
+        jDep = JSON.parse decode64 json64attr
+        if typeof jDep isnt "object"
+          jDep = new Object()
+      catch
+        jDep = new Object()
+      oldTaxon =
+        genus: p$("#dialog-update-genus").value.trim().toTitleCase()
+        species: p$("#dialog-update-species").value.trim()
+        authority: p$("#dialog-update-authority").value.trim()
+        year: toInt p$("#dialog-update-year").value.trim()
+      # Ensure that the taxon doesn't match the current one
+      if currentTaxon.genus.toLowerCase() is oldTaxon.genus.toLowerCase()
+        if currentTaxon.species.toLowerCase() is oldTaxon.species.toLowerCase()
+          console.warn "Taxon is the same as the primary"
+          p$("#dialog-update-genus").errorMessage = "This name is the same as the current one"
+          p$("#dialog-update-genus").invalid = true
+          p$("#dialog-update-species").errorMessage = "This name is the same as the current one"
+          p$("#dialog-update-species").invalid = true
+          return false
+      # Check the year
+      linnaeusYear = 1707 # Linnaeus's birth year
+      today = new Date()
+      if oldTaxon.year < linnaeusYear or oldTaxon.year > today.getFullYear()
+        console.warn "Invalid year"
+        p$("#dialog-update-year").errorMessage = "The year must be after #{linnaeusYear} and on or before #{today.getFullYear()}"
+        p$("#dialog-update-year").invalid = true
+        return false
+      # Construct the strings
+      oldTaxonString = "#{oldTaxon.genus} #{oldTaxon.species}"
+      oldAuthorityString = "#{oldTaxon.authority}:#{oldTaxon.year}"
+      console.log "Got strings", oldTaxonString, oldAuthorityString
+      jDep[oldTaxonString] = oldAuthorityString
+      console.log "Object:", jDep
+      jString = JSON.stringify jDep
+      console.log "Stringified:", jString
+      $("#deprecated-taxon-json").val encode64 jString
+      # Get the list
+      list = _asm._updateDeprecatedListItem()
+      $("#deprecated-taxon-list").html list
+      false
+    $("#{dialogSelector} #add-to-json-list").click ->
+      addToListClickEvent.debounce 75
+      false
+    _asm._updateDeprecated = ->
+      # Make sure JSON is smart, prettify for entry
+      json64attr = $("#deprecated-taxon-json").val()
+      unless isNull json64attr
+        json = decode64 json64attr
+      else
+        json = "{}"
+      prettyEntry = json.slice 1, -1
+      p$(el).value = prettyEntry
+      false
+    $("#{dialogSelector} .buttons paper-button.add-value").click ->
+      _asm._updateDeprecated.debounce()
+      p$("#{dialogSelector}").close()
+      false
+    false
   false
 
 
@@ -1026,6 +1191,8 @@ lookupEditorSpecies = (taxon = undefined) ->
         else
           fieldSelector = "#edit-#{col.replace(/_/g,"-")}"
           if col is "deprecated_scientific"
+            try
+              $(fieldSelector).attr "data-json", encode64(JSON.stringify(d))
             # Create a "neat" string from it
             d = JSON.stringify(d).trim().replace(/\\/g,"")
             d = d.replace(/{/,"")

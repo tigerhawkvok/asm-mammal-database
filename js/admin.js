@@ -684,7 +684,7 @@ createNewTaxon = function() {
     return saveEditorEntry("new");
   });
   $("#modal-taxon-edit").on("iron-overlay-opened", function() {
-    var editFields, fieldLabel, len, m, selector;
+    var e, editFields, entry, error1, fieldLabel, len, len1, m, n, notes, ref, region, selector;
     console.log("Binding new taxon events");
     editFields = ["genus", "species", "subspecies"];
     for (m = 0, len = editFields.length; m < len; m++) {
@@ -693,6 +693,31 @@ createNewTaxon = function() {
       $(selector).keyup(function() {
         return validateNewTaxon.debounce();
       });
+    }
+    try {
+      entry = $(p$("#edit-entry").textarea).val();
+      notes = $(p$("#edit-notes").textarea).val();
+      p$("#entry-markdown-preview").markdown = entry;
+      p$("#notes-markdown-preview").markdown = notes;
+      ref = $(".markdown-region");
+      for (n = 0, len1 = ref.length; n < len1; n++) {
+        region = ref[n];
+        $(p$(region).textarea).keyup(function() {
+          var e, error1, md, target;
+          md = $(this).val();
+          target = $(this).parents("iron-autogrow-textarea").attr("data-md-field");
+          try {
+            p$("#" + target).markdown = md;
+            return console.debug("Wrote markdown to target '#" + target + "'");
+          } catch (error1) {
+            e = error1;
+            return console.warn("Can't update preview for target '#" + target + "'", $(this).get(0), md);
+          }
+        });
+      }
+    } catch (error1) {
+      e = error1;
+      console.error("Couldn't run markdown previews");
     }
     return validateNewTaxon();
   });
@@ -1093,7 +1118,7 @@ saveEditorEntry = function(performMode) {
    * Send an editor state along with login credentials,
    * and report the save result back to the user
    */
-  examineIds = ["genus", "species", "subspecies", "common-name", "major-type", "major-subtype", "linnean-order", "linnean-family", "simple-linnean-group", "simple-linnean-subgroup", "genus-authority", "species-authority", "notes", "entry", "image", "image-credit", "image-license", "taxon-author", "taxon-credit", "taxon-credit-date", "internal-id", "source", "citation"];
+  examineIds = ["genus", "species", "subspecies", "common-name", "major-type", "major-subtype", "linnean-order", "linnean-family", "simple-linnean-group", "simple-linnean-subgroup", "genus-authority", "species-authority", "notes", "entry", "image", "image-credit", "image-license", "image-caption", "taxon-author", "taxon-credit", "taxon-credit-date", "internal-id", "source", "citation"];
   saveObject = new Object();
   escapeCompletion = false;
   d$("paper-input").removeAttr("invalid");
@@ -1217,7 +1242,7 @@ saveEditorEntry = function(performMode) {
     completionErrorMessage = "There was a problem with your formatting for the deprecated scientifics. Please check it and try again.";
   }
   saveObject["deprecated_scientific"] = depString;
-  keepCase = ["notes", "taxon_credit", "image", "image_credit", "image_license"];
+  keepCase = ["notes", "taxon_credit", "image", "image_credit", "image_license", "image_caption"];
   requiredNotEmpty = ["common-name", "major-type", "linnean-order", "genus-authority", "species-authority"];
   if (!isNull(d$("#edit-image").val())) {
     requiredNotEmpty.push("image-credit");
@@ -1400,6 +1425,7 @@ saveEditorEntry = function(performMode) {
       if (!isNull($("#admin-search").val())) {
         renderAdminSearchResults();
       }
+      prefetchEditorDropdowns();
       stopLoad();
       delay(250, function() {
         return stopLoad();

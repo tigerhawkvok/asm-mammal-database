@@ -1118,6 +1118,9 @@ lookupEditorSpecies = (taxon = undefined) ->
     stopLoadError("There was a server error populating this taxon. Please try again.")
   false
 
+
+
+
 saveEditorEntry = (performMode = "save") ->
   ###
   # Send an editor state along with login credentials,
@@ -1143,6 +1146,7 @@ saveEditorEntry = (performMode = "save") ->
     "image"
     "image-credit"
     "image-license"
+    "image-caption"
     "taxon-author"
     "taxon-credit"
     "taxon-credit-date"
@@ -1288,6 +1292,7 @@ saveEditorEntry = (performMode = "save") ->
     "image"
     "image_credit"
     "image_license"
+    "image_caption"
     ]
   # List of IDs that can't be empty
   # Reserved use pending

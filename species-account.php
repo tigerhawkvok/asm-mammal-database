@@ -626,7 +626,15 @@ $caption
     $imageCredit = $speciesRow["image_credit"];
     $imageCredit = substr($imageCredit, -1) == "." ? $imageCredit : $imageCredit . ".";
     $imageCaption = "<span class='caption-description'>".$speciesRow["image_caption"]."</span> <span class='caption-credit'>" . $imageCredit . "</span> ".$imageLicense;
-    $imgHtml = "<img src='".$imgPath."' alt='' />";
+    # Create the thumbs
+    $localImage = new ImageFunctions($imgPath);
+    $resize = $localImage->createSrcSetFromImage();
+    echo "<!-- \n\n Base: $imgPath \n\n Resize efforts: \n\n" . print_r($resize, true) . "\n\n -->";
+    $imgHtml = "<source
+sizes='(max-width: 480px) 25vw, (max-width: 768px) 33vw, (max-width: 1024px) 35w, (min-width: 1025px) 40w'
+srcset='".implode(", ", $resize["srcset"])."'
+/>";
+    $imgHtml .= "<img src='".$imgPath."' alt='' />";
     $images .= "
 <figure class='from-sadb center-block text-center'>
 <picture class='lightboximage'>

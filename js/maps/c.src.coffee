@@ -675,16 +675,12 @@ toastStatusMessage = (message, className = "", duration = 3000, selector = "#sea
   ###
   # Pop up a status message
   ###
-  unless window.metaTracker?.isToasting?
-    unless window.metaTracker?
-      window.metaTracker = new Object()
-      window.metaTracker.isToasting = false
-  if window.metaTracker.isToasting
+  if window._metaStatus.isToasting is true
     delay 250, ->
       # Wait and call again
       toastStatusMessage(message, className, duration, selector)
     return false
-  window.metaTracker.isToasting = true
+  window._metaStatus.isToasting = true
   if not isNumber(duration)
     duration = 3000
   if selector.slice(0,1) is not "#"
@@ -705,7 +701,7 @@ toastStatusMessage = (message, className = "", duration = 3000, selector = "#sea
         $(selector).empty()
         $(selector).removeClass(className)
         $(selector).attr("text","")
-        window.metaTracker.isToasting = false
+        window._metaStatus.isToasting = false
         false
     catch error
       if i <= 50
@@ -715,6 +711,8 @@ toastStatusMessage = (message, className = "", duration = 3000, selector = "#sea
       else
         console.error "Couldn't show loader: #{error.message}"
         console.warn error.stack
+  delay duration, ->
+    _metaStatus.isToasting = false
   false
 
 openLink = (url) ->
@@ -734,6 +732,7 @@ unless _metaStatus?.isLoading?
   unless _metaStatus?
     window._metaStatus = new Object()
   _metaStatus.isLoading = false
+  _metaStatus.isToasting = false
 
 animateLoad = (elId = "loader", iteration = 0) ->
   ###

@@ -147,7 +147,7 @@ renderAdminSearchResults = (overrideSearch, containerSelector = "#search-results
   b64s = Base64.encodeURI(s)
   newLink = "#{uri.urlString}##{b64s}"
   $("#app-linkout").attr("data-url",newLink)
-  $.get(searchParams.targetApi,args,"json")
+  $.get searchParams.targetApi, args, "json"
   .done (result) ->
     if result.status isnt true or result.count is 0
       stopLoadError()
@@ -167,6 +167,7 @@ renderAdminSearchResults = (overrideSearch, containerSelector = "#search-results
     bootstrapColCount = 0
     # Sort the column output
     requiredKeyOrder = [
+      "id"
       "genus"
       "species"
       "subspecies"
@@ -182,6 +183,7 @@ renderAdminSearchResults = (overrideSearch, containerSelector = "#search-results
       if toInt(i) is 0
         j = 0
         htmlHead += "\n<!-- Table Headers - #{Object.size(row)} entries -->"
+        console.debug "Got row", row
         for k, v of row
           niceKey = k.replace(/_/g," ")
           if k is "genus" or k is "species" or k is "subspecies"
@@ -537,7 +539,7 @@ loadModalTaxonEditor = (extraHtml = "", affirmativeText = "Save") ->
   <div id="upload-image"></div>
   <span class="help-block" id="upload-image-help">You can drag and drop an image above, or enter its server path below.</span>
   <paper-input label="Image" id="edit-image" name="edit-image" floatingLabel aria-describedby="imagehelp"></paper-input>
-    <span class="help-block" id="imagehelp">The image path here should be relative to the <span class="code">public_html/</span> directory.</span>
+    <span class="help-block" id="imagehelp">The image path here should be relative to the <code>public_html/</code> directory. Check the preview below.</span>
   <paper-input label="Image Caption" id="edit-image-caption" name="edit-image-caption" floatingLabel></paper-input>
   <paper-input label="Image Credit" id="edit-image-credit" name="edit-image-credit" floatingLabel></paper-input>
   <section class="row license-region">
@@ -1519,12 +1521,18 @@ deleteTaxon = (taxaId) ->
     return false
   animateLoad()
   args = "perform=delete&id=#{taxaId}"
-  $.post(adminParams.apiTarget,args,"json")
+  $.post adminParams.apiTarget, args, "json"
   .done (result) ->
+    console.log "Filed delete", "#{adminParams.apiTarget}?#{args}"
+    console.log "Server response", result
     if result.status is true
       # Remove the visual row
       caller.parents("tr").remove()
-      toastStatusMessage("#{taxon} with ID #{taxaId} has been removed from the database.")
+      try
+        p$("#search-status").hide()
+      window._metaStatus.isToasting = false
+      delay 250, ->
+        toastStatusMessage("#{taxon} with ID #{taxaId} has been removed from the database.")
       stopLoad()
     else
       stopLoadError(result.human_error)

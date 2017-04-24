@@ -872,7 +872,7 @@ mapNewWindows = function(stopPropagation) {
 };
 
 toastStatusMessage = function(message, className, duration, selector) {
-  var html, ref1, showLoader;
+  var html, showLoader;
   if (className == null) {
     className = "";
   }
@@ -886,19 +886,13 @@ toastStatusMessage = function(message, className, duration, selector) {
   /*
    * Pop up a status message
    */
-  if (((ref1 = window.metaTracker) != null ? ref1.isToasting : void 0) == null) {
-    if (window.metaTracker == null) {
-      window.metaTracker = new Object();
-      window.metaTracker.isToasting = false;
-    }
-  }
-  if (window.metaTracker.isToasting) {
+  if (window._metaStatus.isToasting === true) {
     delay(250, function() {
       return toastStatusMessage(message, className, duration, selector);
     });
     return false;
   }
-  window.metaTracker.isToasting = true;
+  window._metaStatus.isToasting = true;
   if (!isNumber(duration)) {
     duration = 3000;
   }
@@ -919,7 +913,7 @@ toastStatusMessage = function(message, className, duration, selector) {
         $(selector).empty();
         $(selector).removeClass(className);
         $(selector).attr("text", "");
-        window.metaTracker.isToasting = false;
+        window._metaStatus.isToasting = false;
         return false;
       });
     } catch (error1) {
@@ -935,6 +929,9 @@ toastStatusMessage = function(message, className, duration, selector) {
       }
     }
   })(0);
+  delay(duration, function() {
+    return _metaStatus.isToasting = false;
+  });
   return false;
 };
 
@@ -963,6 +960,7 @@ if ((_metaStatus != null ? _metaStatus.isLoading : void 0) == null) {
     window._metaStatus = new Object();
   }
   _metaStatus.isLoading = false;
+  _metaStatus.isToasting = false;
 }
 
 animateLoad = function(elId, iteration) {

@@ -632,13 +632,20 @@ deprecatedHelper = (selector = "#edit-deprecated-taxon-dialog") ->
         json64attr = $("#deprecated-taxon-json").val()
       try
         jDep = JSON.parse decode64 json64attr
+        console.log "Rendering with", jDep
         listEl = new Array()
         for oldTaxon, authorityString of jDep
+          try
+            # Potential fixes
+            oldTaxon = oldTaxon.replace /\-/g, " "
           authorityParts = authorityString.split(":")
-          prettyElement = """ #{oldTaxon} <iron-icon icon="icons:arrow-forward"></iron-icon> #{authorityParts[0]} in #{authorityParts[1]}"""
+          authorities = authorityParts[0]          
+          prettyElement = """ #{oldTaxon} <iron-icon icon="icons:arrow-forward"></iron-icon> #{authorities.toTitleCase()} in #{authorityParts[1]}"""
           listEl.push prettyElement
-        list = "<li>#{prettyElement.join("</li>\n<li>")}</li>"
-      catch
+        list = "<li>#{listEl.join("</li>\n<li>")}</li>"
+      catch e
+        console.warn "Didn't parse JSON: #{e.message}"
+        console.warn e.stack
         list = "<em>No deprecated identifiers</em>"
       list
     json64Orig = $("#edit-deprecated-scientific").attr "data-json"
@@ -662,7 +669,7 @@ deprecatedHelper = (selector = "#edit-deprecated-taxon-dialog") ->
             <paper-input class="col-xs-6" value="#{currentTaxonAuthority.genus.year}" label="Old Year" placeholder="#{currentTaxonAuthority.genus.year}" pattern="[0-9]{4}" error-message="Invalid Year" required autovalidate floatingLabel id="dialog-update-year"></paper-input>
           </div>
           <div class="row">
-            <div class="col-xs-12 text-left pull-left">
+            <div class="col-xs-12 text-right pull-right">
               <button class="btn btn-primary" id="add-to-json-list">Add To List</button>
             </div>
           </div>
@@ -689,23 +696,30 @@ deprecatedHelper = (selector = "#edit-deprecated-taxon-dialog") ->
       json64attr = $("#deprecated-taxon-json").val()
       try
         jDep = JSON.parse decode64 json64attr
+        if typeof jDep isnt "object"
+          jDep = new Object()
       catch
         jDep = new Object()
       oldTaxon =
-        genus: p$("#dialog-update-genus").value.trim()
+        genus: p$("#dialog-update-genus").value.trim().toTitleCase()
         species: p$("#dialog-update-species").value.trim()
         authority: p$("#dialog-update-authority").value.trim()
         year: toInt p$("#dialog-update-year").value.trim()
       oldTaxonString = "#{oldTaxon.genus} #{oldTaxon.species}"
-
-      jDep[oldTaxonString] = "#{oldTaxon.authority}:#{oldTaxon.year}"
+      oldAuthorityString = "#{oldTaxon.authority}:#{oldTaxon.year}"
+      console.log "Got strings", oldTaxonString, oldAuthorityString
+      jDep[oldTaxonString] = oldAuthorityString
+      console.log "Object:", jDep
       jString = JSON.stringify jDep
+      console.log "Stringified:", jString
       $("#deprecated-taxon-json").val encode64 jString
       # Get the list
-      list = _asm.updateDeprecatedListItem()
+      list = _asm._updateDeprecatedListItem()
       $("#deprecated-taxon-list").html list
       false
     _asm._updateDeprecated = ->
+      # Do the broken fake json -- replace dashes with spaces, title
+      # case, etc.
       false
     false
   false

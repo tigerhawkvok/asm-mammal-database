@@ -582,7 +582,7 @@ deprecatedHelper = function(selector) {
       }
     };
     _asm._updateDeprecatedListItem = function(json64attr) {
-      var authorityParts, authorityString, error1, jDep, list, listEl, oldTaxon, prettyElement;
+      var authorities, authorityParts, authorityString, e, error1, jDep, list, listEl, oldTaxon, prettyElement;
       if (json64attr == null) {
         json64attr = void 0;
       }
@@ -591,26 +591,34 @@ deprecatedHelper = function(selector) {
       }
       try {
         jDep = JSON.parse(decode64(json64attr));
+        console.log("Rendering with", jDep);
         listEl = new Array();
         for (oldTaxon in jDep) {
           authorityString = jDep[oldTaxon];
+          try {
+            oldTaxon = oldTaxon.replace(/\-/g, " ");
+          } catch (undefined) {}
           authorityParts = authorityString.split(":");
-          prettyElement = " " + oldTaxon + " <iron-icon icon=\"icons:arrow-forward\"></iron-icon> " + authorityParts[0] + " in " + authorityParts[1];
+          authorities = authorityParts[0];
+          prettyElement = " " + oldTaxon + " <iron-icon icon=\"icons:arrow-forward\"></iron-icon> " + (authorities.toTitleCase()) + " in " + authorityParts[1];
           listEl.push(prettyElement);
         }
-        list = "<li>" + (prettyElement.join("</li>\n<li>")) + "</li>";
+        list = "<li>" + (listEl.join("</li>\n<li>")) + "</li>";
       } catch (error1) {
+        e = error1;
+        console.warn("Didn't parse JSON: " + e.message);
+        console.warn(e.stack);
         list = "<em>No deprecated identifiers</em>";
       }
       return list;
     };
     json64Orig = $("#edit-deprecated-scientific").attr("data-json");
     list = _asm._updateDeprecatedListItem(json64Orig);
-    html = "<paper-dialog id=\"" + (dialogSelector.slice(1)) + "\" data-column=\"" + targetColumn + "\" modal>\n  <h2>Set Deprecated Taxa</h2>\n  <paper-dialog-scrollable>\n    <div class=\"row\">\n      <h3 class=\"col-xs-12\">Alternate Taxon Names</h3>\n      <ul id=\"deprecated-taxon-list\" class=\"col-xs-12\">\n        " + list + "\n      </ul>\n      <input type=\"hidden\" value=\"" + json64Orig + "\" id=\"deprecated-taxon-json\"/>\n    </div>\n    <div class=\"form\">\n      <div class=\"row update-old-taxon\">\n        <paper-input class=\"col-xs-12\" value=\"" + currentTaxon.genus + "\" label=\"Old Genus\" placeholder=\"" + currentTaxon.genus + "\" id=\"dialog-update-genus\"></paper-input>\n        <paper-input class=\"col-xs-12\" value=\"" + currentTaxon.species + "\" label=\"Old Species\" placeholder=\"" + currentTaxon.species + "\" id=\"dialog-update-species\"></paper-input>\n        <paper-input class=\"col-xs-6\" value=\"" + currentTaxonAuthority.genus.authority + "\" label=\"Old Authority\" placeholder=\"" + currentTaxonAuthority.genus.authority + "\" required autovalidate floatingLabel id=\"dialog-update-authority\"></paper-input>\n        <paper-input class=\"col-xs-6\" value=\"" + currentTaxonAuthority.genus.year + "\" label=\"Old Year\" placeholder=\"" + currentTaxonAuthority.genus.year + "\" pattern=\"[0-9]{4}\" error-message=\"Invalid Year\" required autovalidate floatingLabel id=\"dialog-update-year\"></paper-input>\n      </div>\n      <div class=\"row\">\n        <div class=\"col-xs-12 text-left pull-left\">\n          <button class=\"btn btn-primary\" id=\"add-to-json-list\">Add To List</button>\n        </div>\n      </div>\n    </div>\n  </paper-dialog-scrollable>\n  <div class=\"buttons\">\n    <paper-button dialog-dismiss>Cancel</paper-button>\n    <paper-button class=\"add-value\">Set</paper-button>\n  </div>\n</paper-dialog>";
+    html = "<paper-dialog id=\"" + (dialogSelector.slice(1)) + "\" data-column=\"" + targetColumn + "\" modal>\n  <h2>Set Deprecated Taxa</h2>\n  <paper-dialog-scrollable>\n    <div class=\"row\">\n      <h3 class=\"col-xs-12\">Alternate Taxon Names</h3>\n      <ul id=\"deprecated-taxon-list\" class=\"col-xs-12\">\n        " + list + "\n      </ul>\n      <input type=\"hidden\" value=\"" + json64Orig + "\" id=\"deprecated-taxon-json\"/>\n    </div>\n    <div class=\"form\">\n      <div class=\"row update-old-taxon\">\n        <paper-input class=\"col-xs-12\" value=\"" + currentTaxon.genus + "\" label=\"Old Genus\" placeholder=\"" + currentTaxon.genus + "\" id=\"dialog-update-genus\"></paper-input>\n        <paper-input class=\"col-xs-12\" value=\"" + currentTaxon.species + "\" label=\"Old Species\" placeholder=\"" + currentTaxon.species + "\" id=\"dialog-update-species\"></paper-input>\n        <paper-input class=\"col-xs-6\" value=\"" + currentTaxonAuthority.genus.authority + "\" label=\"Old Authority\" placeholder=\"" + currentTaxonAuthority.genus.authority + "\" required autovalidate floatingLabel id=\"dialog-update-authority\"></paper-input>\n        <paper-input class=\"col-xs-6\" value=\"" + currentTaxonAuthority.genus.year + "\" label=\"Old Year\" placeholder=\"" + currentTaxonAuthority.genus.year + "\" pattern=\"[0-9]{4}\" error-message=\"Invalid Year\" required autovalidate floatingLabel id=\"dialog-update-year\"></paper-input>\n      </div>\n      <div class=\"row\">\n        <div class=\"col-xs-12 text-right pull-right\">\n          <button class=\"btn btn-primary\" id=\"add-to-json-list\">Add To List</button>\n        </div>\n      </div>\n    </div>\n  </paper-dialog-scrollable>\n  <div class=\"buttons\">\n    <paper-button dialog-dismiss>Cancel</paper-button>\n    <paper-button class=\"add-value\">Set</paper-button>\n  </div>\n</paper-dialog>";
     $("body").append(html);
     p$(dialogSelector).open();
     $(dialogSelector + " #add-to-json-list").click(function() {
-      var canProceed, error1, field, jDep, jString, json64attr, len, m, oldTaxon, oldTaxonString, ref6;
+      var canProceed, error1, field, jDep, jString, json64attr, len, m, oldAuthorityString, oldTaxon, oldTaxonString, ref6;
       canProceed = true;
       ref6 = $(dialogSelector + " paper-input");
       for (m = 0, len = ref6.length; m < len; m++) {
@@ -626,20 +634,27 @@ deprecatedHelper = function(selector) {
       json64attr = $("#deprecated-taxon-json").val();
       try {
         jDep = JSON.parse(decode64(json64attr));
+        if (typeof jDep !== "object") {
+          jDep = new Object();
+        }
       } catch (error1) {
         jDep = new Object();
       }
       oldTaxon = {
-        genus: p$("#dialog-update-genus").value.trim(),
+        genus: p$("#dialog-update-genus").value.trim().toTitleCase(),
         species: p$("#dialog-update-species").value.trim(),
         authority: p$("#dialog-update-authority").value.trim(),
         year: toInt(p$("#dialog-update-year").value.trim())
       };
       oldTaxonString = oldTaxon.genus + " " + oldTaxon.species;
-      jDep[oldTaxonString] = oldTaxon.authority + ":" + oldTaxon.year;
+      oldAuthorityString = oldTaxon.authority + ":" + oldTaxon.year;
+      console.log("Got strings", oldTaxonString, oldAuthorityString);
+      jDep[oldTaxonString] = oldAuthorityString;
+      console.log("Object:", jDep);
       jString = JSON.stringify(jDep);
+      console.log("Stringified:", jString);
       $("#deprecated-taxon-json").val(encode64(jString));
-      list = _asm.updateDeprecatedListItem();
+      list = _asm._updateDeprecatedListItem();
       $("#deprecated-taxon-list").html(list);
       return false;
     });

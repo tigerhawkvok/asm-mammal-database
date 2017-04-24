@@ -82,6 +82,10 @@ module.exports = (grunt) ->
           "admin/test_page.php"
           "admin/handlers/"
           ]
+      core:
+        dir: [
+          "core/"
+          ]
       options:
         rules: "@PSR2"
     uglify:

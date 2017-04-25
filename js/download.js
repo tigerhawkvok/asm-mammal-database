@@ -1,5 +1,6 @@
 var downloadCSVList, downloadHTMLList, showDownloadChooser,
-  indexOf = [].indexOf || function(item) { for (var i = 0, l = this.length; i < l; i++) { if (i in this && this[i] === item) return i; } return -1; };
+  indexOf = [].indexOf || function(item) { for (var i = 0, l = this.length; i < l; i++) { if (i in this && this[i] === item) return i; } return -1; },
+  modulo = function(a, b) { return (+a % (b = +b) + b) % b; };
 
 downloadCSVList = function() {
 
@@ -135,10 +136,13 @@ downloadHTMLList = function() {
     day = d.getDate().toString().length === 1 ? "0" + (d.getDate().toString()) : d.getDate();
     dateString = (d.getUTCFullYear()) + "-" + month + "-" + day;
     htmlBody = "<!doctype html>\n<html lang=\"en\">\n  <head>\n    <title>ASM Species Checklist ver. " + dateString + "</title>\n    <meta http-equiv=\"X-UA-Compatible\" content=\"IE=edge\">\n    <meta charset=\"UTF-8\"/>\n    <meta name=\"theme-color\" content=\"#445e14\"/>\n    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1\" />\n    <link href='http://fonts.googleapis.com/css?family=Droid+Serif:400,700,700italic,400italic|Roboto+Slab:400,700' rel='stylesheet' type='text/css' />\n    <style type=\"text/css\" id=\"asm-checklist-inline-stylesheet\">\n      " + importedCSS + "\n    </style>\n  </head>\n  <body>\n    <div class=\"container-fluid\">\n      <article>\n        <h1 class=\"text-center\">ASM Species Checklist ver. " + dateString + "</h1>";
-    args = "q=*&order=linnean_order,genus,species,subspecies";
+    args = "q=*&order=linnean_order,linnean_family,genus,species,subspecies";
     return $.get("" + searchParams.apiPath, args, "json").done(function(result) {
-      var authorityYears, c, dialogHtml, downloadable, e, entryHtml, error, error1, error2, error3, genusAuth, genusYear, hasReadClade, hasReadGenus, htmlCredit, htmlNotes, k, oneOffHtml, ref, ref1, ref2, row, shortGenus, speciesAuth, speciesYear, split, taxonCreditDate, v, year;
+      var authorityYears, c, dialogHtml, downloadable, e, entryHtml, error, error1, error2, error3, genusAuth, genusYear, hasReadClade, hasReadGenus, hasReadSubClade, htmlCredit, htmlNotes, k, oneOffHtml, ref, ref1, ref2, ref3, row, shortGenus, speciesAuth, speciesYear, split, taxonCreditDate, total, v, year;
       console.debug("Got", result);
+      startLoad();
+      toastStatusMessage("Please be patient while we create the file for you");
+      total = result.count;
       try {
         if (result.status !== true) {
           throw Error("Invalid Result");
@@ -152,9 +156,15 @@ downloadHTMLList = function() {
          */
         hasReadGenus = new Array();
         hasReadClade = new Array();
+        hasReadSubClade = new Array();
         ref = result.result;
         for (k in ref) {
           row = ref[k];
+          try {
+            if (modulo(k, 100) === 0) {
+              console.log("Parsing row " + k + " of " + total);
+            }
+          } catch (undefined) {}
           if (isNull(row.genus) || isNull(row.species)) {
             continue;
           }
@@ -225,7 +235,11 @@ downloadHTMLList = function() {
             oneOffHtml += "<h2 class=\"clade-declaration text-capitalize text-center\">" + row.linnean_order + " &#8212; " + row.linnean_family + "</h2>";
             hasReadClade.push(row.linnean_order.trim());
           }
-          if (ref2 = row.genus, indexOf.call(hasReadGenus, ref2) < 0) {
+          if (ref2 = row.linnean_family.trim(), indexOf.call(hasReadSubClade, ref2) < 0) {
+            oneOffHtml += "<h3 class=\"subclade-declaration text-capitalize text-center\">" + row.linnean_family + "</h3>";
+            hasReadSubClade.push(row.linnean_family.trim());
+          }
+          if (ref3 = row.genus, indexOf.call(hasReadGenus, ref3) < 0) {
             oneOffHtml += "<aside class=\"genus-declaration lead\">\n  <span class=\"entry-sciname text-capitalize\">" + row.genus + "</span>\n  <span class=\"entry-authority\">" + (genusAuth.unescape()) + "</span>\n</aside>";
             hasReadGenus.push(row.genus);
           }
@@ -234,6 +248,7 @@ downloadHTMLList = function() {
           htmlBody += entryHtml;
         }
         htmlBody += "</article>\n</div>\n</body>\n</html>";
+        console.log("HTML file prepped");
         downloadable = "data:text/html;charset=utf-8," + (encodeURIComponent(htmlBody));
         dialogHtml = "<paper-dialog  modal class=\"download-file\" id=\"download-html-file\">\n  <h2>Your file is ready</h2>\n  <paper-dialog-scrollable class=\"dialog-content\">\n    <p class=\"text-center\">\n      <a href=\"" + downloadable + "\" download=\"asm-species-" + dateString + ".html\" class=\"btn btn-default\"><iron-icon icon=\"file-download\"></iron-icon> Download HTML Now</a>\n    </p>\n  </paper-dialog-scrollable>\n  <div class=\"buttons\">\n    <paper-button dialog-dismiss>Close</paper-button>\n  </div>\n</paper-dialog>";
         if (!$("#download-html-file").exists()) {

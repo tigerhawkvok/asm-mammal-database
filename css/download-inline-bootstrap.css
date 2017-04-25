@@ -34,6 +34,13 @@
               page-break-before: always;
               break-before: always;
               }
+            .subclade-declaration {
+              font-variant: small-caps;
+              border-bottom: 1px solid #000;
+              margin-left:auto;
+              margin-right: auto;
+              width:80%;
+              }
             .species-entry {
               page-break-inside: avoid;
               break-inside: avoid;

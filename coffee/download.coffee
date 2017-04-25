@@ -191,10 +191,13 @@ downloadHTMLList = ->
               <article>
                 <h1 class="text-center">ASM Species Checklist ver. #{dateString}</h1>
     """
-    args = "q=*&order=linnean_order,genus,species,subspecies"
+    args = "q=*&order=linnean_order,linnean_family,genus,species,subspecies"
     $.get "#{searchParams.apiPath}", args, "json"
     .done (result) ->
       console.debug "Got", result
+      startLoad()
+      toastStatusMessage "Please be patient while we create the file for you"
+      total = result.count
       try
         unless result.status is true
           throw Error("Invalid Result")
@@ -206,7 +209,14 @@ downloadHTMLList = ->
         ###
         hasReadGenus = new Array()
         hasReadClade = new Array()
+        hasReadSubClade = new Array()
         for k, row of result.result
+          try
+            if k %% 100 is 0
+              console.log "Parsing row #{k} of #{total}"
+              if k %% 500 is 0
+                startLoad()
+                toastStatusMessage "Parsing #{k} of #{total}, please wait"
           if isNull(row.genus) or isNull(row.species)
             # Skip this clearly unfinished entry
             continue
@@ -273,9 +283,14 @@ downloadHTMLList = ->
           oneOffHtml = ""
           unless row.linnean_order.trim() in hasReadClade
             oneOffHtml += """
-            <h2 class="clade-declaration text-capitalize text-center">#{row.linnean_order} &#8212; #{row.linnean_family}</h2>
+            <h2 class="clade-declaration text-capitalize text-center">#{row.linnean_order}</h2>
             """
             hasReadClade.push row.linnean_order.trim()
+          unless row.linnean_family.trim() in hasReadSubClade
+            oneOffHtml += """
+            <h3 class="subclade-declaration text-capitalize text-center">#{row.linnean_family}</h3>
+            """
+            hasReadSubClade.push row.linnean_family.trim()
           unless row.genus in hasReadGenus
             # Show the genus header
             oneOffHtml += """
@@ -317,13 +332,14 @@ downloadHTMLList = ->
         </body>
         </html>
         """
+        console.log "HTML file prepped"
         downloadable = "data:text/html;charset=utf-8,#{encodeURIComponent(htmlBody)}"
         dialogHtml = """
         <paper-dialog  modal class="download-file" id="download-html-file">
           <h2>Your file is ready</h2>
           <paper-dialog-scrollable class="dialog-content">
             <p class="text-center">
-              <a href="#{downloadable}" download="asm-species-#{dateString}.html" class="btn btn-default"><iron-icon icon="file-download"></iron-icon> Download HTML Now</a>
+              <a href="#{downloadable}" download="asm-species-#{dateString}.html" class="btn btn-default"><iron-icon icon="file-download"></iron-icon> Download HTML</a>
             </p>
           </paper-dialog-scrollable>
           <div class="buttons">
@@ -336,22 +352,24 @@ downloadHTMLList = ->
         else
           $("#download-html-file").replaceWith(dialogHtml)
         $("#download-chooser").get(0).close()
-        safariDialogHelper("#download-html-file")
-        $.post "pdf/pdfwrapper.php", "html=#{encodeURIComponent(htmlBody)}", "json"
+        # Now try to fetch the PDF file
+        $.post "#{uri.urlString}pdf/pdfwrapper.php", "html=#{encodeURIComponent(htmlBody)}", "json"
         .done (result) ->
           console.debug "PDF result", result
           if result.status
             pdfDownloadPath = "#{uri.urlString}#{result.file}"
             console.debug pdfDownloadPath
             pdfDownload = """
-              <a href="#{pdfDownloadPath}" download="asm-species-#{dateString}.pdf" class="btn btn-default"><iron-icon icon="file-download"></iron-icon> Download PDF Now</a>
+              <a href="#{pdfDownloadPath}" download="asm-species-#{dateString}.pdf" class="btn btn-default"><iron-icon icon="file-download"></iron-icon> Download PDF</a>
             """
             $("#download-html-file paper-dialog-scrollable p.text-center a").after pdfDownload
           else
             console.error "Couldn't make PDF file"
-          false
         .error (result, status) ->
           console.error "Wasn't able to fetch PDF"
+        .always ->
+          safariDialogHelper("#download-html-file")
+          stopLoad()
       catch e
         stopLoadError("There was a problem creating your file. Please try again later.")
         console.error("Exception in downloadHTMLList() - #{e.message}")
@@ -359,7 +377,6 @@ downloadHTMLList = ->
         console.warn(e.stack)
     .fail  ->
       stopLoadError("There was a problem communicating with the server. Please try again later.")
-      false
   .fail ->
     stopLoadError "Unable to fetch styles for printout"
     false

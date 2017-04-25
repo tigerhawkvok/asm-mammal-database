@@ -163,6 +163,10 @@ downloadHTMLList = function() {
           try {
             if (modulo(k, 100) === 0) {
               console.log("Parsing row " + k + " of " + total);
+              if (modulo(k, 500) === 0) {
+                startLoad();
+                toastStatusMessage("Parsing " + k + " of " + total + ", please wait");
+              }
             }
           } catch (undefined) {}
           if (isNull(row.genus) || isNull(row.species)) {
@@ -232,7 +236,7 @@ downloadHTMLList = function() {
           }
           oneOffHtml = "";
           if (ref1 = row.linnean_order.trim(), indexOf.call(hasReadClade, ref1) < 0) {
-            oneOffHtml += "<h2 class=\"clade-declaration text-capitalize text-center\">" + row.linnean_order + " &#8212; " + row.linnean_family + "</h2>";
+            oneOffHtml += "<h2 class=\"clade-declaration text-capitalize text-center\">" + row.linnean_order + "</h2>";
             hasReadClade.push(row.linnean_order.trim());
           }
           if (ref2 = row.linnean_family.trim(), indexOf.call(hasReadSubClade, ref2) < 0) {
@@ -250,28 +254,29 @@ downloadHTMLList = function() {
         htmlBody += "</article>\n</div>\n</body>\n</html>";
         console.log("HTML file prepped");
         downloadable = "data:text/html;charset=utf-8," + (encodeURIComponent(htmlBody));
-        dialogHtml = "<paper-dialog  modal class=\"download-file\" id=\"download-html-file\">\n  <h2>Your file is ready</h2>\n  <paper-dialog-scrollable class=\"dialog-content\">\n    <p class=\"text-center\">\n      <a href=\"" + downloadable + "\" download=\"asm-species-" + dateString + ".html\" class=\"btn btn-default\"><iron-icon icon=\"file-download\"></iron-icon> Download HTML Now</a>\n    </p>\n  </paper-dialog-scrollable>\n  <div class=\"buttons\">\n    <paper-button dialog-dismiss>Close</paper-button>\n  </div>\n</paper-dialog>";
+        dialogHtml = "<paper-dialog  modal class=\"download-file\" id=\"download-html-file\">\n  <h2>Your file is ready</h2>\n  <paper-dialog-scrollable class=\"dialog-content\">\n    <p class=\"text-center\">\n      <a href=\"" + downloadable + "\" download=\"asm-species-" + dateString + ".html\" class=\"btn btn-default\"><iron-icon icon=\"file-download\"></iron-icon> Download HTML</a>\n    </p>\n  </paper-dialog-scrollable>\n  <div class=\"buttons\">\n    <paper-button dialog-dismiss>Close</paper-button>\n  </div>\n</paper-dialog>";
         if (!$("#download-html-file").exists()) {
           $("body").append(dialogHtml);
         } else {
           $("#download-html-file").replaceWith(dialogHtml);
         }
         $("#download-chooser").get(0).close();
-        safariDialogHelper("#download-html-file");
-        return $.post("pdf/pdfwrapper.php", "html=" + (encodeURIComponent(htmlBody)), "json").done(function(result) {
+        return $.post(uri.urlString + "pdf/pdfwrapper.php", "html=" + (encodeURIComponent(htmlBody)), "json").done(function(result) {
           var pdfDownload, pdfDownloadPath;
           console.debug("PDF result", result);
           if (result.status) {
             pdfDownloadPath = "" + uri.urlString + result.file;
             console.debug(pdfDownloadPath);
-            pdfDownload = "<a href=\"" + pdfDownloadPath + "\" download=\"asm-species-" + dateString + ".pdf\" class=\"btn btn-default\"><iron-icon icon=\"file-download\"></iron-icon> Download PDF Now</a>";
-            $("#download-html-file paper-dialog-scrollable p.text-center a").after(pdfDownload);
+            pdfDownload = "<a href=\"" + pdfDownloadPath + "\" download=\"asm-species-" + dateString + ".pdf\" class=\"btn btn-default\"><iron-icon icon=\"file-download\"></iron-icon> Download PDF</a>";
+            return $("#download-html-file paper-dialog-scrollable p.text-center a").after(pdfDownload);
           } else {
-            console.error("Couldn't make PDF file");
+            return console.error("Couldn't make PDF file");
           }
-          return false;
         }).error(function(result, status) {
           return console.error("Wasn't able to fetch PDF");
+        }).always(function() {
+          safariDialogHelper("#download-html-file");
+          return stopLoad();
         });
       } catch (error3) {
         e = error3;
@@ -281,8 +286,7 @@ downloadHTMLList = function() {
         return console.warn(e.stack);
       }
     }).fail(function() {
-      stopLoadError("There was a problem communicating with the server. Please try again later.");
-      return false;
+      return stopLoadError("There was a problem communicating with the server. Please try again later.");
     });
   }).fail(function() {
     stopLoadError("Unable to fetch styles for printout");

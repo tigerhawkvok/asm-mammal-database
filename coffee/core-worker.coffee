@@ -194,41 +194,22 @@ String::stripHtml = (stripChildren = false) ->
   str = str.replace /<\/?\w(?:[^"'>]|"[^"]*"|'[^']*')*>/gmi, ''
   str
 
-String::unescape = (strict = false) ->
+String::unescape = ->
   ###
-  # Take escaped text, and return the unescaped version
-  #
-  # @param string str | String to be used
-  # @param bool strict | Stict mode will remove all HTML
-  #
-  # Test it here:
-  # https://jsfiddle.net/tigerhawkvok/t9pn1dn5/
-  #
-  # Code: https://gist.github.com/tigerhawkvok/285b8631ed6ebef4446d
+  # We can't access 'document', so alias
   ###
-  # Create a dummy element
-  element = document.createElement("div")
-  decodeHTMLEntities = (str) ->
-    if str? and typeof str is "string"
-      unless strict is true
-        # escape HTML tags
-        str = escape(str).replace(/%26/g,'&').replace(/%23/g,'#').replace(/%3B/g,';')
-      else
-        str = str.replace(/<script[^>]*>([\S\s]*?)<\/script>/gmi, '')
-        str = str.replace(/<\/?\w(?:[^"'>]|"[^"]*"|'[^']*')*>/gmi, '')
-      element.innerHTML = str
-      if element.innerText
-        # Do we support innerText?
-        str = element.innerText
-        element.innerText = ""
-      else
-        # Firefox
-        str = element.textContent
-        element.textContent = ""
-    unescape(str)
-  # Remove encoded or double-encoded tags
-  fixHtmlEncodings = (string) ->
-    string = string.replace(/\&amp;#/mg, '&#') # The rest, for double-encodings
+  deEscape this
+
+
+deEscape = (string) ->
+  stringIn = string
+  i = 0
+  while newString isnt stringIn
+    if i isnt 0
+      stringIn = newString
+      string = newString
+    string = string.replace(/\&amp;#/mg, '&#') # The rest
+    string = string.replace(/\&amp;/mg, '&')
     string = string.replace(/\&quot;/mg, '"')
     string = string.replace(/\&quote;/mg, '"')
     string = string.replace(/\&#95;/mg, '_')
@@ -236,22 +217,9 @@ String::unescape = (strict = false) ->
     string = string.replace(/\&#34;/mg, '"')
     string = string.replace(/\&#62;/mg, '>')
     string = string.replace(/\&#60;/mg, '<')
-    string
-  # Run it
-  tmp = fixHtmlEncodings(this)
-  decodeHTMLEntities(tmp)
-
-
-deEscape = (string) ->
-  string = string.replace(/\&amp;#/mg, '&#') # The rest
-  string = string.replace(/\&quot;/mg, '"')
-  string = string.replace(/\&quote;/mg, '"')
-  string = string.replace(/\&#95;/mg, '_')
-  string = string.replace(/\&#39;/mg, "'")
-  string = string.replace(/\&#34;/mg, '"')
-  string = string.replace(/\&#62;/mg, '>')
-  string = string.replace(/\&#60;/mg, '<')
-  string
+    ++i
+    newString = string
+  decodeURIComponent string
 
 
 
@@ -404,7 +372,7 @@ smartUpperCasing = (text) ->
       smartCased = smartCased.replace secondWord, secondWordCased
   smartCased
 
-  
+
 
 Function::getName = ->
   ###

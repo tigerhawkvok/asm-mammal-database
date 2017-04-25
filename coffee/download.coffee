@@ -194,145 +194,29 @@ downloadHTMLList = ->
     args = "q=*&order=linnean_order,linnean_family,genus,species,subspecies"
     $.get "#{searchParams.apiPath}", args, "json"
     .done (result) ->
-      console.debug "Got", result
       startLoad()
       toastStatusMessage "Please be patient while we create the file for you"
-      total = result.count
-      try
-        unless result.status is true
-          throw Error("Invalid Result")
+      postMessageContent =
+        action: "render-html"
+        data: result
+        htmlHeader: htmlBody
+      worker = new Worker "js/serviceWorker.js"
+      console.info "Rendering list off-thread"
+      worker.addEventListener "message", (e) ->
         ###
-        # Let's work with each result
-        #
-        # We're going to construct an entry for each, then go through
-        # and append that to to the text blobb htmlBody
+        # Service worker callback
         ###
-        hasReadGenus = new Array()
-        hasReadClade = new Array()
-        hasReadSubClade = new Array()
-        for k, row of result.result
-          try
-            if k %% 100 is 0
-              console.log "Parsing row #{k} of #{total}"
-              if k %% 500 is 0
-                startLoad()
-                toastStatusMessage "Parsing #{k} of #{total}, please wait"
-          if isNull(row.genus) or isNull(row.species)
-            # Skip this clearly unfinished entry
-            continue
-          # Prep the authorities
-          try
-            unless typeof row.authority_year is "object"
-              try
-                authorityYears = JSON.parse(row.authority_year)
-              catch
-                # Try to fix a bad JSON
-                split = row.authority_year.split(":")
-                if split.length > 1
-                  year = split[1].slice(split[1].search("\"")+1,-2)
-                  # console.log("Examining #{year}")
-                  year = year.replace(/"/g,"'")
-                  split[1] = "\"#{year}\"}"
-                  authorityYears = JSON.parse split.join(":")
-                else
-                  # Try to deal with the singlet
-                  if isNumeric row.authority_year
-                    authorityYears[row.authority_year] = row.authority_year
-            else
-              authorityYears = row.authority_year
-            genusYear = ""
-            speciesYear = ""
-            for c,v of authorityYears
-              genusYear = c.replace(/&#39;/g,"'")
-              speciesYear = v.replace(/&#39;/g,"'")
-            if isNull row.genus_authority
-              row.genus_authority = row.species_authority
-            else if isNull row.species_authority
-              row.species_authority = row.genus_authority
-            genusAuth = "#{row.genus_authority.toTitleCase()} #{genusYear}"
-            if toInt(row.parens_auth_genus).toBool()
-              genusAuth = "(#{genusAuth})"
-            speciesAuth = "#{row.species_authority.toTitleCase()} #{speciesYear}"
-            if toInt(row.parens_auth_species).toBool()
-              speciesAuth = "(#{speciesAuth})"
-          catch e
-            # There was a data problem for the authority year!
-            # However, we want it to be non-fatal.
-            console.warn "There was a problem parsing the authority information for _#{row.genus} #{row.species} #{row.subspecies}_ - #{e.message}"
-            console.warn e.stack
-            console.warn "Bad parse for authority year -- tried to fix >>#{row.authority_year}<<", authorityYears, row.authority_year
-            console.warn "We were working with",authorityYears,genusYear,genusAuth,speciesYear, speciesAuth
-          try
-            htmlNotes = markdown.toHTML(row.notes)
-          catch e
-            console.warn("Unable to parse Markdown for _#{row.genus} #{row.species} #{row.subspecies}_")
-            htmlNotes = row.notes
-          htmlCredit = ""
-          unless isNull(htmlNotes) or isNull(row.taxon_credit)
-            taxonCreditDate = ""
-            unless isNull(row.taxon_credit_date)
-              taxonCreditDate = ", #{row.taxon_credit_date}"
-            htmlCredit = """
-              <p class="text-right small text-muted">
-                <cite>
-                  #{row.taxon_credit}#{taxonCreditDate}
-                </cite>
-              </p>
-            """
-          # Now for each result, we want to create a text blob
-          oneOffHtml = ""
-          unless row.linnean_order.trim() in hasReadClade
-            oneOffHtml += """
-            <h2 class="clade-declaration text-capitalize text-center">#{row.linnean_order}</h2>
-            """
-            hasReadClade.push row.linnean_order.trim()
-          unless row.linnean_family.trim() in hasReadSubClade
-            oneOffHtml += """
-            <h3 class="subclade-declaration text-capitalize text-center">#{row.linnean_family}</h3>
-            """
-            hasReadSubClade.push row.linnean_family.trim()
-          unless row.genus in hasReadGenus
-            # Show the genus header
-            oneOffHtml += """
-            <aside class="genus-declaration lead">
-              <span class="entry-sciname text-capitalize">#{row.genus}</span>
-              <span class="entry-authority">#{genusAuth.unescape()}</span>
-            </aside>
-            """
-            hasReadGenus.push row.genus
-          shortGenus = "#{row.genus.slice(0,1)}. "
-          entryHtml = """
-          <section class="species-entry">
-            #{oneOffHtml}
-            <p class="h4 entry-header">
-              <span class="entry-sciname">
-                <span class="text-capitalize">#{shortGenus}</span> #{row.species} #{row.subspecies}
-              </span>
-              <span class="entry-authority">
-                #{speciesAuth.unescape()}
-              </span>
-              &#8212;
-              <span class="common_name no-cap">
-                #{smartUpperCasing row.common_name}
-              </span>
-            </p>
-            <div class="entry-content">
-              #{htmlNotes}
-              #{htmlCredit}
-            </div>
-          </section>
-          """
-          # Append it to htmlBody
-          htmlBody += entryHtml
-          ## End for loop
-        # Now let's close up that HTML file
-        htmlBody += """
-        </article>
-        </div>
-        </body>
-        </html>
-        """
-        console.log "HTML file prepped"
+        console.info "Got message back from service worker", e.data
+        if e.data.done isnt true
+          console.log "Just an update"
+          unless isNull e.data.updateUser
+            toastStatusMessage e.data.updateUser
+          return false
+        if e.data.status isnt true
+          console.warn "Got an error!"
+          stopLoadError "Failed to create file"
+          return false
+        htmlBody = e.data.html
         downloadable = "data:text/html;charset=utf-8,#{encodeURIComponent(htmlBody)}"
         dialogHtml = """
         <paper-dialog  modal class="download-file" id="download-html-file">
@@ -370,11 +254,7 @@ downloadHTMLList = ->
         .always ->
           safariDialogHelper("#download-html-file")
           stopLoad()
-      catch e
-        stopLoadError("There was a problem creating your file. Please try again later.")
-        console.error("Exception in downloadHTMLList() - #{e.message}")
-        console.warn("Got",result,"from","#{searchParams.apiPath}?#{args}", result.status)
-        console.warn(e.stack)
+      worker.postMessage postMessageContent
     .fail  ->
       stopLoadError("There was a problem communicating with the server. Please try again later.")
   .fail ->

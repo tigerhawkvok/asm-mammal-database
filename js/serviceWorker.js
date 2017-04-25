@@ -1065,7 +1065,7 @@ createHtmlFile = function(result, htmlBody) {
   var authorityYears, c, duration, e, entryHtml, error1, error2, error3, error4, genusAuth, genusYear, hasReadClade, hasReadGenus, hasReadSubClade, htmlCredit, htmlNotes, k, message, oneOffHtml, ref, ref1, ref2, ref3, row, shortGenus, speciesAuth, speciesYear, split, startTime, taxonCreditDate, total, v, year;
   startTime = Date.now();
   console.debug("Got", result);
-  console.debug("Got body provided?", isNull(htmlBody));
+  console.debug("Got body provided?", !isNull(htmlBody));
   total = result.count;
   try {
     if (result.status !== true) {
@@ -1087,6 +1087,14 @@ createHtmlFile = function(result, htmlBody) {
       try {
         if (modulo(k, 100) === 0) {
           console.log("Parsing row " + k + " of " + total);
+          if (modulo(k, 500) === 0) {
+            message = {
+              status: true,
+              done: false,
+              updateUser: "Parsing " + k + " of " + total + ", please wait"
+            };
+            self.postMessage(message);
+          }
         }
       } catch (undefined) {}
       if (isNull(row.genus) || isNull(row.species)) {
@@ -1175,7 +1183,9 @@ createHtmlFile = function(result, htmlBody) {
     duration = Date.now() - startTime;
     console.log("HTML file prepped in " + duration + "ms off-thread");
     message = {
-      html: htmlBody
+      html: htmlBody,
+      status: true,
+      done: true
     };
     self.postMessage(message);
     return self.close();
@@ -1183,7 +1193,13 @@ createHtmlFile = function(result, htmlBody) {
     e = error4;
     console.error("There was a problem creating your file. Please try again later.");
     console.error("Exception in createHtmlFile() - " + e.message);
-    return console.warn(e.stack);
+    console.warn(e.stack);
+    message = {
+      status: false,
+      done: true
+    };
+    self.postMessage(message);
+    return self.close();
   }
 };
 

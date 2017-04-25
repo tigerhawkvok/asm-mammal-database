@@ -154,6 +154,18 @@ downloadHTMLList = function() {
          */
         var dialogHtml, downloadable;
         console.info("Got message back from service worker", e.data);
+        if (e.data.done !== true) {
+          console.log("Just an update");
+          if (!isNull(e.data.updateUser)) {
+            toastStatusMessage(e.data.updateUser);
+          }
+          return false;
+        }
+        if (e.data.status !== true) {
+          console.warn("Got an error!");
+          stopLoadError("Failed to create file");
+          return false;
+        }
         htmlBody = e.data.html;
         downloadable = "data:text/html;charset=utf-8," + (encodeURIComponent(htmlBody));
         dialogHtml = "<paper-dialog  modal class=\"download-file\" id=\"download-html-file\">\n  <h2>Your file is ready</h2>\n  <paper-dialog-scrollable class=\"dialog-content\">\n    <p class=\"text-center\">\n      <a href=\"" + downloadable + "\" download=\"asm-species-" + dateString + ".html\" class=\"btn btn-default\"><iron-icon icon=\"file-download\"></iron-icon> Download HTML</a>\n    </p>\n  </paper-dialog-scrollable>\n  <div class=\"buttons\">\n    <paper-button dialog-dismiss>Close</paper-button>\n  </div>\n</paper-dialog>";

@@ -923,7 +923,7 @@ createHtmlFile = (result, htmlBody) ->
   ###
   startTime = Date.now()
   console.debug "Got", result
-  console.debug "Got body provided?", isNull htmlBody
+  console.debug "Got body provided?", not isNull htmlBody
   total = result.count
   try
     unless result.status is true
@@ -941,7 +941,12 @@ createHtmlFile = (result, htmlBody) ->
       try
         if k %% 100 is 0
           console.log "Parsing row #{k} of #{total}"
-          # if k %% 500 is 0
+          if k %% 500 is 0
+            message =
+              status: true
+              done: false
+              updateUser: "Parsing #{k} of #{total}, please wait"
+            self.postMessage message
           #   startLoad()
           #   toastStatusMessage "Parsing #{k} of #{total}, please wait"
       if isNull(row.genus) or isNull(row.species)
@@ -1063,9 +1068,16 @@ createHtmlFile = (result, htmlBody) ->
     console.log "HTML file prepped in #{duration}ms off-thread"
     message =
       html: htmlBody
+      status: true
+      done: true
     self.postMessage message
     self.close()
   catch e
     console.error "There was a problem creating your file. Please try again later."
     console.error("Exception in createHtmlFile() - #{e.message}")
     console.warn(e.stack)
+    message =
+      status: false
+      done: true
+    self.postMessage message
+    self.close()

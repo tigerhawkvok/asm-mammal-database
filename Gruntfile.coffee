@@ -86,6 +86,10 @@ module.exports = (grunt) ->
         dir: [
           "core/"
           ]
+      pdf:
+        dir: [
+          "pdf/pdfwrapper.php"
+          ]
       options:
         rules: "@PSR2"
     uglify:
@@ -136,6 +140,7 @@ module.exports = (grunt) ->
             cascade: true
         files:
           "js/c.min.js":["js/c.js"]
+          "js/download.min.js":["js/download.js"]
           "js/admin.min.js":["js/admin.js"]
           "js/serviceWorker.min.js":["js/serviceWorker.js"]
       minpurl:
@@ -181,7 +186,8 @@ module.exports = (grunt) ->
           sourceMapDir: "js/maps"
           sourceMap: true
         files:
-          "js/c.js":["coffee/core.coffee","coffee/search.coffee", "coffee/download.coffee"]
+          "js/c.js":["coffee/core.coffee","coffee/search.coffee"]
+          "js/download.js":["coffee/download.coffee"]
           "js/admin.js":"coffee/admin.coffee"
           "js/serviceWorker.js":["coffee/core-worker.coffee","coffee/serviceWorker.coffee"]
     watch:

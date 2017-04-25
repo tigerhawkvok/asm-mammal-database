@@ -40,7 +40,7 @@ try {
     #$execPath = dirname(__FILE__)."/" . $pathBits . "/bin/wkhtmltopdf";
     $execPath = "./" . $pathBits . "/bin/wkhtmltopdf";
     $destFile = "./pdf-gen/asm-species-pdf-".microtime_float().".pdf";
-    $pdfResponse["file"] = $destFile;
+    $pdfResponse["file"] = str_replace("./", "pdf/", $destFile);
     $execCmd = $execPath . " ./" . $filePath . " ".$destFile . " 2>&1";
     # Exec shell
     # https://secure.php.net/manual/en/function.shell-exec.php
@@ -58,12 +58,17 @@ try {
         $pdfResponse["error"] = "NO_SHELL_RESPONSE";
         $pdfResponse["cmd"] = $execCmd;
     } else {
-        if (strpos($shellResponse, "Permission denied") !== false) {
+        $totalResponse = implode("\n", $shellResponse);
+        if (strpos($totalResponse, "Permission denied") !== false) {
             $pdfResponse["status"] = false;
             $pdfResponse["error"] = "PERMISSION_DENIED";
             $pdfResponse["cmd"] = $execCmd;
-        } else {
+        } elseif (preg_match('/done$/i', $totalResponse)) {
             $pdfResponse["status"] = true;
+        } else {
+            $pdfResponse["status"] = false;
+            $pdfResponse["error"] = "UNKNOWN_ERROR";
+            $pdfResponse["cmd"] = $execCmd;
         }
     }
     # Check the files in pdf-gen, remove all over 24hrs old

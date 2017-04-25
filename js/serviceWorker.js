@@ -2,8 +2,9 @@
 /*
  * Core helpers/imports for web workers
  */
-var _asm, byteCount, dateMonthToString, deEscape, decode64, delay, downloadCSVFile, encode64, generateCSVFromResults, getLocation, goTo, isArray, isBlank, isBool, isEmpty, isJson, isNull, isNumber, jsonTo64, locationData, openLink, openTab, post64, prepURI, randomInt, randomString, renderDataArray, roundNumber, roundNumberSigfig, smartUpperCasing, toFloat, toInt, toObject, uri, validateAWebTaxon,
-  indexOf = [].indexOf || function(item) { for (var i = 0, l = this.length; i < l; i++) { if (i in this && this[i] === item) return i; } return -1; };
+var _asm, byteCount, createHtmlFile, dateMonthToString, deEscape, decode64, delay, downloadCSVFile, encode64, generateCSVFromResults, getLocation, goTo, isArray, isBlank, isBool, isEmpty, isJson, isNull, isNumber, jsonTo64, locationData, markdown, openLink, openTab, post64, prepURI, randomInt, randomString, renderDataArray, roundNumber, roundNumberSigfig, smartUpperCasing, toFloat, toInt, toObject, uri, validateAWebTaxon, window,
+  indexOf = [].indexOf || function(item) { for (var i = 0, l = this.length; i < l; i++) { if (i in this && this[i] === item) return i; } return -1; },
+  modulo = function(a, b) { return (+a % (b = +b) + b) % b; };
 
 locationData = new Object();
 
@@ -247,45 +248,25 @@ String.prototype.stripHtml = function(stripChildren) {
   return str;
 };
 
-String.prototype.unescape = function(strict) {
-  var decodeHTMLEntities, element, fixHtmlEncodings, tmp;
-  if (strict == null) {
-    strict = false;
-  }
+String.prototype.unescape = function() {
 
   /*
-   * Take escaped text, and return the unescaped version
-   *
-   * @param string str | String to be used
-   * @param bool strict | Stict mode will remove all HTML
-   *
-   * Test it here:
-   * https://jsfiddle.net/tigerhawkvok/t9pn1dn5/
-   *
-   * Code: https://gist.github.com/tigerhawkvok/285b8631ed6ebef4446d
+   * We can't access 'document', so alias
    */
-  element = document.createElement("div");
-  decodeHTMLEntities = function(str) {
-    if ((str != null) && typeof str === "string") {
-      if (strict !== true) {
-        str = escape(str).replace(/%26/g, '&').replace(/%23/g, '#').replace(/%3B/g, ';');
-      } else {
-        str = str.replace(/<script[^>]*>([\S\s]*?)<\/script>/gmi, '');
-        str = str.replace(/<\/?\w(?:[^"'>]|"[^"]*"|'[^']*')*>/gmi, '');
-      }
-      element.innerHTML = str;
-      if (element.innerText) {
-        str = element.innerText;
-        element.innerText = "";
-      } else {
-        str = element.textContent;
-        element.textContent = "";
-      }
+  return deEscape(this);
+};
+
+deEscape = function(string) {
+  var i, newString, stringIn;
+  stringIn = string;
+  i = 0;
+  while (newString !== stringIn) {
+    if (i !== 0) {
+      stringIn = newString;
+      string = newString;
     }
-    return unescape(str);
-  };
-  fixHtmlEncodings = function(string) {
     string = string.replace(/\&amp;#/mg, '&#');
+    string = string.replace(/\&amp;/mg, '&');
     string = string.replace(/\&quot;/mg, '"');
     string = string.replace(/\&quote;/mg, '"');
     string = string.replace(/\&#95;/mg, '_');
@@ -293,22 +274,10 @@ String.prototype.unescape = function(strict) {
     string = string.replace(/\&#34;/mg, '"');
     string = string.replace(/\&#62;/mg, '>');
     string = string.replace(/\&#60;/mg, '<');
-    return string;
-  };
-  tmp = fixHtmlEncodings(this);
-  return decodeHTMLEntities(tmp);
-};
-
-deEscape = function(string) {
-  string = string.replace(/\&amp;#/mg, '&#');
-  string = string.replace(/\&quot;/mg, '"');
-  string = string.replace(/\&quote;/mg, '"');
-  string = string.replace(/\&#95;/mg, '_');
-  string = string.replace(/\&#39;/mg, "'");
-  string = string.replace(/\&#34;/mg, '"');
-  string = string.replace(/\&#62;/mg, '>');
-  string = string.replace(/\&#60;/mg, '<');
-  return string;
+    ++i;
+    newString = string;
+  }
+  return decodeURIComponent(string);
 };
 
 jsonTo64 = function(obj, encode) {
@@ -931,8 +900,19 @@ self.addEventListener("message", function(e) {
       chunkSize = isNumber(e.data.chunk) ? toInt(e.data.chunk) : 100;
       firstIteration = (ref = e.data.firstIteration.toBool()) != null ? ref : false;
       return renderDataArray(data, firstIteration, chunkSize);
+    case "render-html":
+      console.log("Got info from file on thread", e.data);
+      return createHtmlFile(e.data.data, e.data.htmlHeader);
   }
 });
+
+window = new Object();
+
+self.importScripts("markdown.min.js");
+
+self.importScripts("markdown.min.js");
+
+markdown = window.markdown;
 
 renderDataArray = function(data, firstIteration, renderChunk) {
   var bootstrapColCount, bootstrapColSize, col, colClass, d, e, error1, error2, externalCounter, finalIteration, genus, headers, html, htmlClose, htmlHead, htmlRow, i, j, k, kClass, l, len, message, niceKey, row, rowId, species, split, tableId, taxonQuery, v, year;
@@ -1073,6 +1053,138 @@ renderDataArray = function(data, firstIteration, renderChunk) {
   };
   self.postMessage(message);
   return self.close();
+};
+
+createHtmlFile = function(result, htmlBody) {
+
+  /*
+   * The off-thread component to download.coffee->downloadHTMLList()
+   *
+   * Requires the JSOn result from the main function.
+   */
+  var authorityYears, c, duration, e, entryHtml, error1, error2, error3, error4, genusAuth, genusYear, hasReadClade, hasReadGenus, hasReadSubClade, htmlCredit, htmlNotes, k, message, oneOffHtml, ref, ref1, ref2, ref3, row, shortGenus, speciesAuth, speciesYear, split, startTime, taxonCreditDate, total, v, year;
+  startTime = Date.now();
+  console.debug("Got", result);
+  console.debug("Got body provided?", isNull(htmlBody));
+  total = result.count;
+  try {
+    if (result.status !== true) {
+      throw Error("Invalid Result");
+    }
+
+    /*
+     * Let's work with each result
+     *
+     * We're going to construct an entry for each, then go through
+     * and append that to to the text blobb htmlBody
+     */
+    hasReadGenus = new Array();
+    hasReadClade = new Array();
+    hasReadSubClade = new Array();
+    ref = result.result;
+    for (k in ref) {
+      row = ref[k];
+      try {
+        if (modulo(k, 100) === 0) {
+          console.log("Parsing row " + k + " of " + total);
+        }
+      } catch (undefined) {}
+      if (isNull(row.genus) || isNull(row.species)) {
+        continue;
+      }
+      try {
+        if (typeof row.authority_year !== "object") {
+          try {
+            authorityYears = JSON.parse(row.authority_year);
+          } catch (error1) {
+            split = row.authority_year.split(":");
+            if (split.length > 1) {
+              year = split[1].slice(split[1].search("\"") + 1, -2);
+              year = year.replace(/"/g, "'");
+              split[1] = "\"" + year + "\"}";
+              authorityYears = JSON.parse(split.join(":"));
+            } else {
+              if (isNumber(row.authority_year)) {
+                authorityYears[row.authority_year] = row.authority_year;
+              }
+            }
+          }
+        } else {
+          authorityYears = row.authority_year;
+        }
+        genusYear = "";
+        speciesYear = "";
+        for (c in authorityYears) {
+          v = authorityYears[c];
+          genusYear = c.replace(/&#39;/g, "'");
+          speciesYear = v.replace(/&#39;/g, "'");
+        }
+        if (isNull(row.genus_authority)) {
+          row.genus_authority = row.species_authority;
+        } else if (isNull(row.species_authority)) {
+          row.species_authority = row.genus_authority;
+        }
+        genusAuth = (row.genus_authority.toTitleCase()) + " " + genusYear;
+        if (toInt(row.parens_auth_genus).toBool()) {
+          genusAuth = "(" + genusAuth + ")";
+        }
+        speciesAuth = (row.species_authority.toTitleCase()) + " " + speciesYear;
+        if (toInt(row.parens_auth_species).toBool()) {
+          speciesAuth = "(" + speciesAuth + ")";
+        }
+      } catch (error2) {
+        e = error2;
+        console.warn("There was a problem parsing the authority information for _" + row.genus + " " + row.species + " " + row.subspecies + "_ - " + e.message);
+        console.warn(e.stack);
+        console.warn("Bad parse for authority year -- tried to fix >>" + row.authority_year + "<<", authorityYears, row.authority_year);
+        console.warn("We were working with", authorityYears, genusYear, genusAuth, speciesYear, speciesAuth);
+      }
+      try {
+        htmlNotes = markdown.toHTML(row.notes);
+      } catch (error3) {
+        e = error3;
+        console.warn("Unable to parse Markdown for _" + row.genus + " " + row.species + " " + row.subspecies + "_");
+        htmlNotes = row.notes;
+      }
+      htmlCredit = "";
+      if (!(isNull(htmlNotes) || isNull(row.taxon_credit))) {
+        taxonCreditDate = "";
+        if (!isNull(row.taxon_credit_date)) {
+          taxonCreditDate = ", " + row.taxon_credit_date;
+        }
+        htmlCredit = "<p class=\"text-right small text-muted\">\n  <cite>\n    " + row.taxon_credit + taxonCreditDate + "\n  </cite>\n</p>";
+      }
+      oneOffHtml = "";
+      if (ref1 = row.linnean_order.trim(), indexOf.call(hasReadClade, ref1) < 0) {
+        oneOffHtml += "<h2 class=\"clade-declaration text-capitalize text-center\">" + row.linnean_order + "</h2>";
+        hasReadClade.push(row.linnean_order.trim());
+      }
+      if (ref2 = row.linnean_family.trim(), indexOf.call(hasReadSubClade, ref2) < 0) {
+        oneOffHtml += "<h3 class=\"subclade-declaration text-capitalize text-center\">" + row.linnean_family + "</h3>";
+        hasReadSubClade.push(row.linnean_family.trim());
+      }
+      if (ref3 = row.genus, indexOf.call(hasReadGenus, ref3) < 0) {
+        oneOffHtml += "<aside class=\"genus-declaration lead\">\n  <span class=\"entry-sciname text-capitalize\">" + row.genus + "</span>\n  <span class=\"entry-authority\">" + (genusAuth.unescape()) + "</span>\n</aside>";
+        hasReadGenus.push(row.genus);
+      }
+      shortGenus = (row.genus.slice(0, 1)) + ". ";
+      entryHtml = "<section class=\"species-entry\">\n  " + oneOffHtml + "\n  <p class=\"h4 entry-header\">\n    <span class=\"entry-sciname\">\n      <span class=\"text-capitalize\">" + shortGenus + "</span> " + row.species + " " + row.subspecies + "\n    </span>\n    <span class=\"entry-authority\">\n      " + (speciesAuth.unescape()) + "\n    </span>\n    &#8212;\n    <span class=\"common_name no-cap\">\n      " + (smartUpperCasing(row.common_name)) + "\n    </span>\n  </p>\n  <div class=\"entry-content\">\n    " + htmlNotes + "\n    " + htmlCredit + "\n  </div>\n</section>";
+      htmlBody += entryHtml;
+    }
+    htmlBody += "</article>\n</div>\n</body>\n</html>";
+    duration = Date.now() - startTime;
+    console.log("HTML file prepped in " + duration + "ms off-thread");
+    message = {
+      html: htmlBody
+    };
+    self.postMessage(message);
+    return self.close();
+  } catch (error4) {
+    e = error4;
+    console.error("There was a problem creating your file. Please try again later.");
+    console.error("Exception in createHtmlFile() - " + e.message);
+    return console.warn(e.stack);
+  }
 };
 
 //# sourceMappingURL=maps/serviceWorker.js.map

@@ -149,6 +149,12 @@ module.exports = (grunt) ->
           sourceMapName:"js/maps/purl.map"
         files:
           "js/purl.min.js": ["bower_components/purl/purl.js"]
+      minmarkdown:
+        options:
+          sourceMap:true
+          sourceMapName:"js/maps/markdown.map"
+        files:
+          "js/markdown.min.js": ["bower_components/markdown/lib/markdown.js"]
       minxmljson:
         options:
           sourceMap:true

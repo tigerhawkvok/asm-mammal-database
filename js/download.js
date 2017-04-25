@@ -1,6 +1,5 @@
 var downloadCSVList, downloadHTMLList, showDownloadChooser,
-  indexOf = [].indexOf || function(item) { for (var i = 0, l = this.length; i < l; i++) { if (i in this && this[i] === item) return i; } return -1; },
-  modulo = function(a, b) { return (+a % (b = +b) + b) % b; };
+  indexOf = [].indexOf || function(item) { for (var i = 0, l = this.length; i < l; i++) { if (i in this && this[i] === item) return i; } return -1; };
 
 downloadCSVList = function() {
 
@@ -138,121 +137,24 @@ downloadHTMLList = function() {
     htmlBody = "<!doctype html>\n<html lang=\"en\">\n  <head>\n    <title>ASM Species Checklist ver. " + dateString + "</title>\n    <meta http-equiv=\"X-UA-Compatible\" content=\"IE=edge\">\n    <meta charset=\"UTF-8\"/>\n    <meta name=\"theme-color\" content=\"#445e14\"/>\n    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1\" />\n    <link href='http://fonts.googleapis.com/css?family=Droid+Serif:400,700,700italic,400italic|Roboto+Slab:400,700' rel='stylesheet' type='text/css' />\n    <style type=\"text/css\" id=\"asm-checklist-inline-stylesheet\">\n      " + importedCSS + "\n    </style>\n  </head>\n  <body>\n    <div class=\"container-fluid\">\n      <article>\n        <h1 class=\"text-center\">ASM Species Checklist ver. " + dateString + "</h1>";
     args = "q=*&order=linnean_order,linnean_family,genus,species,subspecies";
     return $.get("" + searchParams.apiPath, args, "json").done(function(result) {
-      var authorityYears, c, dialogHtml, downloadable, e, entryHtml, error, error1, error2, error3, genusAuth, genusYear, hasReadClade, hasReadGenus, hasReadSubClade, htmlCredit, htmlNotes, k, oneOffHtml, ref, ref1, ref2, ref3, row, shortGenus, speciesAuth, speciesYear, split, taxonCreditDate, total, v, year;
-      console.debug("Got", result);
+      var postMessageContent, worker;
       startLoad();
       toastStatusMessage("Please be patient while we create the file for you");
-      total = result.count;
-      try {
-        if (result.status !== true) {
-          throw Error("Invalid Result");
-        }
+      postMessageContent = {
+        action: "render-html",
+        data: result,
+        htmlHeader: htmlBody
+      };
+      worker = new Worker("js/serviceWorker.js");
+      console.info("Rendering list off-thread");
+      worker.addEventListener("message", function(e) {
 
         /*
-         * Let's work with each result
-         *
-         * We're going to construct an entry for each, then go through
-         * and append that to to the text blobb htmlBody
+         * Service worker callback
          */
-        hasReadGenus = new Array();
-        hasReadClade = new Array();
-        hasReadSubClade = new Array();
-        ref = result.result;
-        for (k in ref) {
-          row = ref[k];
-          try {
-            if (modulo(k, 100) === 0) {
-              console.log("Parsing row " + k + " of " + total);
-              if (modulo(k, 500) === 0) {
-                startLoad();
-                toastStatusMessage("Parsing " + k + " of " + total + ", please wait");
-              }
-            }
-          } catch (undefined) {}
-          if (isNull(row.genus) || isNull(row.species)) {
-            continue;
-          }
-          try {
-            if (typeof row.authority_year !== "object") {
-              try {
-                authorityYears = JSON.parse(row.authority_year);
-              } catch (error) {
-                split = row.authority_year.split(":");
-                if (split.length > 1) {
-                  year = split[1].slice(split[1].search("\"") + 1, -2);
-                  year = year.replace(/"/g, "'");
-                  split[1] = "\"" + year + "\"}";
-                  authorityYears = JSON.parse(split.join(":"));
-                } else {
-                  if (isNumeric(row.authority_year)) {
-                    authorityYears[row.authority_year] = row.authority_year;
-                  }
-                }
-              }
-            } else {
-              authorityYears = row.authority_year;
-            }
-            genusYear = "";
-            speciesYear = "";
-            for (c in authorityYears) {
-              v = authorityYears[c];
-              genusYear = c.replace(/&#39;/g, "'");
-              speciesYear = v.replace(/&#39;/g, "'");
-            }
-            if (isNull(row.genus_authority)) {
-              row.genus_authority = row.species_authority;
-            } else if (isNull(row.species_authority)) {
-              row.species_authority = row.genus_authority;
-            }
-            genusAuth = (row.genus_authority.toTitleCase()) + " " + genusYear;
-            if (toInt(row.parens_auth_genus).toBool()) {
-              genusAuth = "(" + genusAuth + ")";
-            }
-            speciesAuth = (row.species_authority.toTitleCase()) + " " + speciesYear;
-            if (toInt(row.parens_auth_species).toBool()) {
-              speciesAuth = "(" + speciesAuth + ")";
-            }
-          } catch (error1) {
-            e = error1;
-            console.warn("There was a problem parsing the authority information for _" + row.genus + " " + row.species + " " + row.subspecies + "_ - " + e.message);
-            console.warn(e.stack);
-            console.warn("Bad parse for authority year -- tried to fix >>" + row.authority_year + "<<", authorityYears, row.authority_year);
-            console.warn("We were working with", authorityYears, genusYear, genusAuth, speciesYear, speciesAuth);
-          }
-          try {
-            htmlNotes = markdown.toHTML(row.notes);
-          } catch (error2) {
-            e = error2;
-            console.warn("Unable to parse Markdown for _" + row.genus + " " + row.species + " " + row.subspecies + "_");
-            htmlNotes = row.notes;
-          }
-          htmlCredit = "";
-          if (!(isNull(htmlNotes) || isNull(row.taxon_credit))) {
-            taxonCreditDate = "";
-            if (!isNull(row.taxon_credit_date)) {
-              taxonCreditDate = ", " + row.taxon_credit_date;
-            }
-            htmlCredit = "<p class=\"text-right small text-muted\">\n  <cite>\n    " + row.taxon_credit + taxonCreditDate + "\n  </cite>\n</p>";
-          }
-          oneOffHtml = "";
-          if (ref1 = row.linnean_order.trim(), indexOf.call(hasReadClade, ref1) < 0) {
-            oneOffHtml += "<h2 class=\"clade-declaration text-capitalize text-center\">" + row.linnean_order + "</h2>";
-            hasReadClade.push(row.linnean_order.trim());
-          }
-          if (ref2 = row.linnean_family.trim(), indexOf.call(hasReadSubClade, ref2) < 0) {
-            oneOffHtml += "<h3 class=\"subclade-declaration text-capitalize text-center\">" + row.linnean_family + "</h3>";
-            hasReadSubClade.push(row.linnean_family.trim());
-          }
-          if (ref3 = row.genus, indexOf.call(hasReadGenus, ref3) < 0) {
-            oneOffHtml += "<aside class=\"genus-declaration lead\">\n  <span class=\"entry-sciname text-capitalize\">" + row.genus + "</span>\n  <span class=\"entry-authority\">" + (genusAuth.unescape()) + "</span>\n</aside>";
-            hasReadGenus.push(row.genus);
-          }
-          shortGenus = (row.genus.slice(0, 1)) + ". ";
-          entryHtml = "<section class=\"species-entry\">\n  " + oneOffHtml + "\n  <p class=\"h4 entry-header\">\n    <span class=\"entry-sciname\">\n      <span class=\"text-capitalize\">" + shortGenus + "</span> " + row.species + " " + row.subspecies + "\n    </span>\n    <span class=\"entry-authority\">\n      " + (speciesAuth.unescape()) + "\n    </span>\n    &#8212;\n    <span class=\"common_name no-cap\">\n      " + (smartUpperCasing(row.common_name)) + "\n    </span>\n  </p>\n  <div class=\"entry-content\">\n    " + htmlNotes + "\n    " + htmlCredit + "\n  </div>\n</section>";
-          htmlBody += entryHtml;
-        }
-        htmlBody += "</article>\n</div>\n</body>\n</html>";
-        console.log("HTML file prepped");
+        var dialogHtml, downloadable;
+        console.info("Got message back from service worker", e.data);
+        htmlBody = e.data.html;
         downloadable = "data:text/html;charset=utf-8," + (encodeURIComponent(htmlBody));
         dialogHtml = "<paper-dialog  modal class=\"download-file\" id=\"download-html-file\">\n  <h2>Your file is ready</h2>\n  <paper-dialog-scrollable class=\"dialog-content\">\n    <p class=\"text-center\">\n      <a href=\"" + downloadable + "\" download=\"asm-species-" + dateString + ".html\" class=\"btn btn-default\"><iron-icon icon=\"file-download\"></iron-icon> Download HTML</a>\n    </p>\n  </paper-dialog-scrollable>\n  <div class=\"buttons\">\n    <paper-button dialog-dismiss>Close</paper-button>\n  </div>\n</paper-dialog>";
         if (!$("#download-html-file").exists()) {
@@ -278,13 +180,8 @@ downloadHTMLList = function() {
           safariDialogHelper("#download-html-file");
           return stopLoad();
         });
-      } catch (error3) {
-        e = error3;
-        stopLoadError("There was a problem creating your file. Please try again later.");
-        console.error("Exception in downloadHTMLList() - " + e.message);
-        console.warn("Got", result, "from", searchParams.apiPath + "?" + args, result.status);
-        return console.warn(e.stack);
-      }
+      });
+      return worker.postMessage(postMessageContent);
     }).fail(function() {
       return stopLoadError("There was a problem communicating with the server. Please try again later.");
     });

@@ -163,7 +163,6 @@ downloadHTMLList = function() {
               try {
                 authorityYears = JSON.parse(row.authority_year);
               } catch (error) {
-                console.warn("Bad parse for authority year -- trying to fix >>" + row.authority_year + "<<", authorityYears);
                 split = row.authority_year.split(":");
                 if (split.length > 1) {
                   year = split[1].slice(split[1].search("\"") + 1, -2);
@@ -203,6 +202,7 @@ downloadHTMLList = function() {
             e = error1;
             console.warn("There was a problem parsing the authority information for _" + row.genus + " " + row.species + " " + row.subspecies + "_ - " + e.message);
             console.warn(e.stack);
+            console.warn("Bad parse for authority year -- tried to fix >>" + row.authority_year + "<<", authorityYears, row.authority_year);
             console.warn("We were working with", authorityYears, genusYear, genusAuth, speciesYear, speciesAuth);
           }
           try {
@@ -222,15 +222,15 @@ downloadHTMLList = function() {
           }
           oneOffHtml = "";
           if (ref1 = row.linnean_order.trim(), indexOf.call(hasReadClade, ref1) < 0) {
-            oneOffHtml += "<h2 class=\"clade-declaration text-capitalize text-center\">" + row.linnean_order + " &#8212; " + row.major_common_type + "</h2>";
+            oneOffHtml += "<h2 class=\"clade-declaration text-capitalize text-center\">" + row.linnean_order + " &#8212; " + row.linnean_family + "</h2>";
             hasReadClade.push(row.linnean_order.trim());
           }
           if (ref2 = row.genus, indexOf.call(hasReadGenus, ref2) < 0) {
-            oneOffHtml += "<aside class=\"genus-declaration lead\">\n  <span class=\"entry-sciname text-capitalize\">" + row.genus + "</span>\n  <span class=\"entry-authority\">" + genusAuth + "</span>\n</aside>";
+            oneOffHtml += "<aside class=\"genus-declaration lead\">\n  <span class=\"entry-sciname text-capitalize\">" + row.genus + "</span>\n  <span class=\"entry-authority\">" + (genusAuth.unescape()) + "</span>\n</aside>";
             hasReadGenus.push(row.genus);
           }
           shortGenus = (row.genus.slice(0, 1)) + ". ";
-          entryHtml = "<section class=\"species-entry\">\n  " + oneOffHtml + "\n  <p class=\"h4 entry-header\">\n    <span class=\"entry-sciname\">\n      <span class=\"text-capitalize\">" + shortGenus + "</span> " + row.species + " " + row.subspecies + "\n    </span>\n    <span class=\"entry-authority\">\n      " + speciesAuth + "\n    </span>\n    &#8212;\n    <span class=\"common_name no-cap\">\n      " + (smartUpperCasing(row.common_name)) + "\n    </span>\n  </p>\n  <div class=\"entry-content\">\n    " + htmlNotes + "\n    " + htmlCredit + "\n  </div>\n</section>";
+          entryHtml = "<section class=\"species-entry\">\n  " + oneOffHtml + "\n  <p class=\"h4 entry-header\">\n    <span class=\"entry-sciname\">\n      <span class=\"text-capitalize\">" + shortGenus + "</span> " + row.species + " " + row.subspecies + "\n    </span>\n    <span class=\"entry-authority\">\n      " + (speciesAuth.unescape()) + "\n    </span>\n    &#8212;\n    <span class=\"common_name no-cap\">\n      " + (smartUpperCasing(row.common_name)) + "\n    </span>\n  </p>\n  <div class=\"entry-content\">\n    " + htmlNotes + "\n    " + htmlCredit + "\n  </div>\n</section>";
           htmlBody += entryHtml;
         }
         htmlBody += "</article>\n</div>\n</body>\n</html>";

@@ -129,6 +129,8 @@ eutheriaFilterHelper = (skipFetch = false) ->
       $("#eutheria-subfilter span.dropdown-label").text type
     else
       $("#eutheria-extra").remove()
+  try
+    doLazily()
   false
 
 
@@ -1152,7 +1154,10 @@ safariDialogHelper = (selector = "#download-chooser", counter = 0, callback) ->
     try
       # Safari is stupid and like to throw an error. Presumably
       # it's VERY slow about creating the element.
-      d$(selector).get(0).open()
+      try
+        p$(selector).open()
+      catch
+        d$(selector).get(0).open()
       if typeof callback is "function"
         callback()
       stopLoad()
@@ -1163,6 +1168,8 @@ safariDialogHelper = (selector = "#download-chooser", counter = 0, callback) ->
       delayTimer = 250
       delay delayTimer, ->
         console.warn "Trying again to display dialog after #{newCount * delayTimer}ms"
+        console.debug "Error caught: #{e.message}"
+        console.debug e.stack
         safariDialogHelper(selector, newCount, callback)
   else
     stopLoadError("Unable to show dialog. Please try again.")
@@ -1320,6 +1327,12 @@ getRandomEntry = ->
 
 
 window.getRandomEntry = getRandomEntry
+
+
+
+doLazily = ->
+  loadJS "#{uri.urlString}js/download.min.js"
+  false
 
 
 

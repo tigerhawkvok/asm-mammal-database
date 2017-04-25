@@ -208,9 +208,9 @@ deEscape = (string) ->
     if i isnt 0
       stringIn = newString
       string = newString
-    string = string.replace(/\&amp;#/mg, '&#') # The rest
-    string = string.replace(/\&amp;/mg, '&')
-    string = string.replace(/\&quot;/mg, '"')
+    string = string.replace(/\&amp;#/mig, '&#') # The rest
+    string = string.replace(/\&amp;/mig, '&')
+    string = string.replace(/\&quot;/mig, '"')
     string = string.replace(/\&quote;/mg, '"')
     string = string.replace(/\&#95;/mg, '_')
     string = string.replace(/\&#39;/mg, "'")

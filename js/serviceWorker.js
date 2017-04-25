@@ -265,9 +265,9 @@ deEscape = function(string) {
       stringIn = newString;
       string = newString;
     }
-    string = string.replace(/\&amp;#/mg, '&#');
-    string = string.replace(/\&amp;/mg, '&');
-    string = string.replace(/\&quot;/mg, '"');
+    string = string.replace(/\&amp;#/mig, '&#');
+    string = string.replace(/\&amp;/mig, '&');
+    string = string.replace(/\&quot;/mig, '"');
     string = string.replace(/\&quote;/mg, '"');
     string = string.replace(/\&#95;/mg, '_');
     string = string.replace(/\&#39;/mg, "'");

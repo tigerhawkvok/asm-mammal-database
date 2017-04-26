@@ -1087,7 +1087,7 @@ createHtmlFile = function(result, htmlBody) {
       try {
         if (modulo(k, 100) === 0) {
           console.log("Parsing row " + k + " of " + total);
-          if (modulo(k, 500) === 0) {
+          if (modulo(k, 500) === 0 && k > 0) {
             message = {
               status: true,
               done: false,

@@ -180,7 +180,17 @@ downloadHTMLList = function() {
         } else {
           $("#download-html-file").replaceWith(dialogHtml);
         }
-        $("#download-chooser").get(0).close();
+        try {
+          p$("#download-chooser").close();
+        } catch (undefined) {}
+        if (fileSizeMiB >= 2) {
+          console.debug("Large file size triggering blob creation");
+          downloadDataUriAsBlob("#download-html-summary");
+        } else {
+          console.debug("File size is small enough to use a data-uri");
+        }
+        toastStatusMessage("Please wait while we prepare your PDF file...", "", 7000);
+        console.debug("Posting for PDF");
         return $.post(uri.urlString + "pdf/pdfwrapper.php", "html=" + (encodeURIComponent(htmlBody)), "json").done(function(result) {
           var pdfDownload, pdfDownloadPath;
           console.debug("PDF result", result);

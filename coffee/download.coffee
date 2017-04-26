@@ -244,9 +244,12 @@ downloadHTMLList = ->
           p$("#download-chooser").close()
         if fileSizeMiB >= 2
           # Chrome doesn't support a data URI this big
+          console.debug "Large file size triggering blob creation"
           downloadDataUriAsBlob "#download-html-summary"
+        else
+          console.debug "File size is small enough to use a data-uri"
         # Now try to fetch the PDF file
-        toastStatusMessage "Please wait while we prepare your PDF file"
+        toastStatusMessage "Please wait while we prepare your PDF file...", "", 7000
         console.debug "Posting for PDF"
         $.post "#{uri.urlString}pdf/pdfwrapper.php", "html=#{encodeURIComponent(htmlBody)}", "json"
         .done (result) ->

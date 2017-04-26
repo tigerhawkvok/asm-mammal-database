@@ -941,7 +941,7 @@ createHtmlFile = (result, htmlBody) ->
       try
         if k %% 100 is 0
           console.log "Parsing row #{k} of #{total}"
-          if k %% 500 is 0
+          if k %% 500 is 0 and k > 0
             message =
               status: true
               done: false

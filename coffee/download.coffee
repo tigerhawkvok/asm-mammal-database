@@ -1,4 +1,6 @@
-
+# Handle all the downloads
+# Depends on the service worker to do some of the load off-thread
+# See ./serviceWorker.coffee
 
 downloadCSVList = ->
   ###
@@ -305,6 +307,7 @@ showDownloadChooser = ->
   unless $("#download-chooser").exists()
     $("body").append(html)
   $("#initiate-csv-download").click ->
+    # Show a notice to docs for direct queries
     downloadCSVList()
   $("#initiate-html-download").click ->
     downloadHTMLList()

@@ -3486,7 +3486,23 @@ getRandomEntry = function() {
 window.getRandomEntry = getRandomEntry;
 
 doLazily = function() {
-  loadJS(uri.urlString + "js/download.min.js");
+
+  /*
+   * Load these assets lazily, but only once
+   */
+  if ((typeof _asm !== "undefined" && _asm !== null ? _asm.hasDoneLazily : void 0) !== true) {
+    if (typeof _asm !== "object") {
+      window._asm = new Object();
+    }
+    _asm.hasDoneLazily = true;
+    loadJS(uri.urlString + "js/download.min.js", function() {
+      var html;
+      html = "<paper-icon-button\n  icon=\"icons:cloud-download\"\n  class=\"click\"\n  data-fn=\"showDownloadChooser\"\n  title=\"Download Copy\"\n  data-toggle=\"tooltip\"\n  >\n</paper-icon-button>";
+      $("#git-footer").prepend(html);
+      bindClicks();
+      return false;
+    });
+  }
   return false;
 };
 

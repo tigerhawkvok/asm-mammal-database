@@ -1331,7 +1331,29 @@ window.getRandomEntry = getRandomEntry
 
 
 doLazily = ->
-  loadJS "#{uri.urlString}js/download.min.js"
+  ###
+  # Load these assets lazily, but only once
+  ###
+  unless _asm?.hasDoneLazily is true
+    unless typeof _asm is "object"
+      window._asm = new Object()
+    _asm.hasDoneLazily = true
+    loadJS "#{uri.urlString}js/download.min.js", ->
+      # Insert an icon into the footer to trigger the download
+      # (eg, invoke showDownloadChooser())
+      html = """
+      <paper-icon-button
+        icon="icons:cloud-download"
+        class="click"
+        data-fn="showDownloadChooser"
+        title="Download Copy"
+        data-toggle="tooltip"
+        >
+      </paper-icon-button>
+      """
+      $("#git-footer").prepend html
+      bindClicks()
+      false
   false
 
 
@@ -1365,7 +1387,7 @@ $ ->
             throw {message:"POLYMER_NOT_READY"}
         catch
           delay 100, ->
-            setupPolymerReady        
+            setupPolymerReady
     return false
   # Do bindings
   # console.log("Doing onloads ...")

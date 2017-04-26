@@ -218,6 +218,9 @@ deEscape = (string) ->
     string = string.replace(/\&#62;/mg, '>')
     string = string.replace(/\&#60;/mg, '<')
     ++i
+    if i >= 10
+      console.warn "deEscape quitting after #{i} iterations"
+      break
     newString = string
   decodeURIComponent string
 
@@ -952,6 +955,20 @@ createHtmlFile = (result, htmlBody) ->
       if isNull(row.genus) or isNull(row.species)
         # Skip this clearly unfinished entry
         continue
+      try
+        clearTimeout hangTimeout
+        hangTimeout = delay 250, ->
+          console.warn "Possible hang on row ##{k}", row
+          hangTimeout = delay 1000, ->
+            message =
+              status: false
+              done: false
+              updateUser: "Failure to parse row #{k}"
+            self.postMessage message
+            self.close()
+      # try
+      #   if 4900 <= k <= 5000
+      #     console.warn "Testing row #{k}", row
       # Prep the authorities
       try
         unless typeof row.authority_year is "object"
@@ -962,10 +979,13 @@ createHtmlFile = (result, htmlBody) ->
               authorityYears[row.authority_year] = row.authority_year
             else if isNull row.authority_year
               # Check if this is an IUCN style species authority
-              if /^\(? *((['"])? *([\w\.\-\&; \[\]]+(,|&|&amp;|&amp;amp;)?)+ *\2) *, *([0-9]{4}) *\)?/i.test(row.species_authority)
-                year = row.species_authority.replace /^\(? *((['"])? *([\w\.\-\&; \[\]]+(,|&|&amp;|&amp;amp;)?)+ *\2) *, *([0-9]{4}) *\)?/ig, "$3"
-                row.species_authority = row.species_authority.replace /^\(? *((['"])? *([\w\.\-\&; \[\]]+(,|&|&amp;|&amp;amp;)?)+ *\2) *, *([0-9]{4}) *\)?/ig, "$1"
+              # Strip HTML
+              row.species_authority = row.species_authority.replace /(<\/|<|&lt;|&lt;\/).*?(>|&gt;)/img, ""
+              if /^\(? *((['"])? *([\w\.\-\&; \[\]]+(,|&|&amp;|&amp;amp;|&#[\w0-9]+;)?)+ *\2) *, *([0-9]{4}) *\)?/i.test(row.species_authority)
+                year = row.species_authority.replace /^\(? *((['"])? *([\w\.\-\&; \[\]]+(,|&|&amp;|&amp;amp;|&#[\w0-9]+;)?)+ *\2) *, *([0-9]{4}) *\)?/ig, "$5"
+                row.species_authority = row.species_authority.replace /^\(? *((['"])? *([\w\.\-\&; \[\]]+(,|&|&amp;|&amp;amp;|&#[\w0-9]+;)?)+ *\2) *, *([0-9]{4}) *\)?/ig, "$1"
                 authorityYears[year] = year
+                row.authority_year = authorityYears
               else
                 authorityYears["No Year"] = "No Year"
             else

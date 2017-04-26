@@ -275,6 +275,10 @@ deEscape = function(string) {
     string = string.replace(/\&#62;/mg, '>');
     string = string.replace(/\&#60;/mg, '<');
     ++i;
+    if (i >= 10) {
+      console.warn("deEscape quitting after " + i + " iterations");
+      break;
+    }
     newString = string;
   }
   return decodeURIComponent(string);
@@ -1062,7 +1066,7 @@ createHtmlFile = function(result, htmlBody) {
    *
    * Requires the JSOn result from the main function.
    */
-  var authorityYears, c, duration, e, entryHtml, error1, error2, error3, error4, error5, genusAuth, genusYear, hasReadClade, hasReadGenus, hasReadSubClade, htmlCredit, htmlNotes, k, message, oneOffHtml, ref, ref1, ref2, ref3, row, shortGenus, speciesAuth, speciesYear, split, startTime, taxonCreditDate, total, v, year;
+  var authorityYears, c, duration, e, entryHtml, error1, error2, error3, error4, error5, genusAuth, genusYear, hangTimeout, hasReadClade, hasReadGenus, hasReadSubClade, htmlCredit, htmlNotes, k, message, oneOffHtml, ref, ref1, ref2, ref3, row, shortGenus, speciesAuth, speciesYear, split, startTime, taxonCreditDate, total, v, year;
   startTime = Date.now();
   console.debug("Got", result);
   console.debug("Got body provided?", !isNull(htmlBody));
@@ -1101,16 +1105,33 @@ createHtmlFile = function(result, htmlBody) {
         continue;
       }
       try {
+        clearTimeout(hangTimeout);
+        hangTimeout = delay(250, function() {
+          console.warn("Possible hang on row #" + k, row);
+          return hangTimeout = delay(1000, function() {
+            message = {
+              status: false,
+              done: false,
+              updateUser: "Failure to parse row " + k
+            };
+            self.postMessage(message);
+            return self.close();
+          });
+        });
+      } catch (undefined) {}
+      try {
         if (typeof row.authority_year !== "object") {
           authorityYears = new Object();
           try {
             if (isNumber(row.authority_year)) {
               authorityYears[row.authority_year] = row.authority_year;
             } else if (isNull(row.authority_year)) {
-              if (/^\(? *((['"])? *([\w\.\-\&; \[\]]+(,|&|&amp;|&amp;amp;)?)+ *\2) *, *([0-9]{4}) *\)?/i.test(row.species_authority)) {
-                year = row.species_authority.replace(/^\(? *((['"])? *([\w\.\-\&; \[\]]+(,|&|&amp;|&amp;amp;)?)+ *\2) *, *([0-9]{4}) *\)?/ig, "$3");
-                row.species_authority = row.species_authority.replace(/^\(? *((['"])? *([\w\.\-\&; \[\]]+(,|&|&amp;|&amp;amp;)?)+ *\2) *, *([0-9]{4}) *\)?/ig, "$1");
+              row.species_authority = row.species_authority.replace(/(<\/|<|&lt;|&lt;\/).*?(>|&gt;)/img, "");
+              if (/^\(? *((['"])? *([\w\.\-\&; \[\]]+(,|&|&amp;|&amp;amp;|&#[\w0-9]+;)?)+ *\2) *, *([0-9]{4}) *\)?/i.test(row.species_authority)) {
+                year = row.species_authority.replace(/^\(? *((['"])? *([\w\.\-\&; \[\]]+(,|&|&amp;|&amp;amp;|&#[\w0-9]+;)?)+ *\2) *, *([0-9]{4}) *\)?/ig, "$5");
+                row.species_authority = row.species_authority.replace(/^\(? *((['"])? *([\w\.\-\&; \[\]]+(,|&|&amp;|&amp;amp;|&#[\w0-9]+;)?)+ *\2) *, *([0-9]{4}) *\)?/ig, "$1");
                 authorityYears[year] = year;
+                row.authority_year = authorityYears;
               } else {
                 authorityYears["No Year"] = "No Year";
               }

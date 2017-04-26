@@ -216,7 +216,8 @@ downloadHTMLList = ->
           return false
         if e.data.status isnt true
           console.warn "Got an error!"
-          stopLoadError "Failed to create file"
+          message = unless isNull e.data.updateUser then e.data.updateUser else "Failed to create file"
+          stopLoadError message, "", 10000
           return false
         htmlBody = e.data.html
         downloadable = "data:text/html;charset=utf-8,#{encodeURIComponent(htmlBody)}"

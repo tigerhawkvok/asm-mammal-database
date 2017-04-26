@@ -152,7 +152,7 @@ downloadHTMLList = function() {
         /*
          * Service worker callback
          */
-        var dialogHtml, downloadable, error, fileSizeMiB, pdfError;
+        var dialogHtml, downloadable, error, fileSizeMiB, message, pdfError;
         console.info("Got message back from service worker", e.data);
         if (e.data.done !== true) {
           console.log("Just an update");
@@ -163,7 +163,8 @@ downloadHTMLList = function() {
         }
         if (e.data.status !== true) {
           console.warn("Got an error!");
-          stopLoadError("Failed to create file");
+          message = !isNull(e.data.updateUser) ? e.data.updateUser : "Failed to create file";
+          stopLoadError(message, "", 10000);
           return false;
         }
         htmlBody = e.data.html;

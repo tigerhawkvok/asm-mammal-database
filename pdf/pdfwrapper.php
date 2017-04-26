@@ -15,7 +15,7 @@ $htmlBuildable = $_REQUEST["html"];
 require_once dirname(__FILE__)."/../core/core.php";
 
 $buildLead = "data:text/html;charset=utf-8,";
-if(strpos($htmlBuildable, $buildLead) !== false) {
+if (strpos($htmlBuildable, $buildLead) !== false) {
     $truncateLength = strlen();
     $htmlEncoded = substr($htmlBuildable, $truncatelength);
 } else {
@@ -39,8 +39,8 @@ $pdfResponse["OS_Architecture"] = $pathBits;
 try {
     #$execPath = dirname(__FILE__)."/" . $pathBits . "/bin/wkhtmltopdf";
     $execPath = "./" . $pathBits . "/bin/wkhtmltopdf";
-    $destFile = "pdf-gen/ssar-common-names-pdf-".microtime_float().".pdf";
-    $pdfResponse["file"] = $destFile;
+    $destFile = "./pdf-gen/asm-species-pdf-".microtime_float().".pdf";
+    $pdfResponse["file"] = str_replace("./", "pdf/", $destFile);
     $execCmd = $execPath . " ./" . $filePath . " ".$destFile . " 2>&1";
     # Exec shell
     # https://secure.php.net/manual/en/function.shell-exec.php
@@ -53,22 +53,25 @@ try {
     #$shellResponse = shell_exec($execCmd);
     $pdfResponse["response"] = $shellResponse;
     $pdfResponse["return"] = $shellReturn;
-    if(empty($shellResponse)) {
+    if (empty($shellResponse)) {
         $pdfResponse["status"] = false;
         $pdfResponse["error"] = "NO_SHELL_RESPONSE";
         $pdfResponse["cmd"] = $execCmd;
     } else {
-        if(strpos($shellResponse, "Permission denied") !== false) {
+        $totalResponse = implode("\n", $shellResponse);
+        if (strpos($totalResponse, "Permission denied") !== false) {
             $pdfResponse["status"] = false;
             $pdfResponse["error"] = "PERMISSION_DENIED";
             $pdfResponse["cmd"] = $execCmd;
-        } else {
+        } elseif (preg_match('/done$/i', $totalResponse)) {
             $pdfResponse["status"] = true;
+        } else {
+            $pdfResponse["status"] = false;
+            $pdfResponse["error"] = "UNKNOWN_ERROR";
+            $pdfResponse["cmd"] = $execCmd;
         }
     }
     # Check the files in pdf-gen, remove all over 24hrs old
-
-
 } catch (Exception $e) {
     $pdfResponse["status"] = false;
     $pdfResponse["error"] = $e->getMessage();
@@ -132,11 +135,11 @@ function returnAjax($data)
     //     }
     // } catch (Exception $e) {
     // }
-    $json = json_encode($data,JSON_FORCE_OBJECT);
+    $json = json_encode($data, JSON_FORCE_OBJECT);
     $replace_array = array("&quot;","&#34;");
     $deescaped = htmlspecialchars_decode(html_entity_decode($json));
-    $dequoted = str_replace($replace_array,"\\\"",$deescaped);
-    $dequoted_bare = str_replace($replace_array,"\\\"",$json);
+    $dequoted = str_replace($replace_array, "\\\"", $deescaped);
+    $dequoted_bare = str_replace($replace_array, "\\\"", $json);
     $de2 = htmlspecialchars_decode(html_entity_decode($dequoted_bare));
     #print $deescaped;
     # print $dequoted_bare;
@@ -146,6 +149,3 @@ function returnAjax($data)
 
 
 returnAjax($pdfResponse);
-
-
-?>

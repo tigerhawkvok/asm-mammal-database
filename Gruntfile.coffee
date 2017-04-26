@@ -86,6 +86,10 @@ module.exports = (grunt) ->
         dir: [
           "core/"
           ]
+      pdf:
+        dir: [
+          "pdf/pdfwrapper.php"
+          ]
       options:
         rules: "@PSR2"
     uglify:
@@ -136,6 +140,7 @@ module.exports = (grunt) ->
             cascade: true
         files:
           "js/c.min.js":["js/c.js"]
+          "js/download.min.js":["js/download.js"]
           "js/admin.min.js":["js/admin.js"]
           "js/serviceWorker.min.js":["js/serviceWorker.js"]
       minpurl:
@@ -144,6 +149,12 @@ module.exports = (grunt) ->
           sourceMapName:"js/maps/purl.map"
         files:
           "js/purl.min.js": ["bower_components/purl/purl.js"]
+      minmarkdown:
+        options:
+          sourceMap:true
+          sourceMapName:"js/maps/markdown.map"
+        files:
+          "js/markdown.min.js": ["bower_components/markdown/lib/markdown.js"]
       minxmljson:
         options:
           sourceMap:true
@@ -181,7 +192,8 @@ module.exports = (grunt) ->
           sourceMapDir: "js/maps"
           sourceMap: true
         files:
-          "js/c.js":["coffee/core.coffee","coffee/search.coffee", "coffee/download.coffee"]
+          "js/c.js":["coffee/core.coffee","coffee/search.coffee"]
+          "js/download.js":["coffee/download.coffee"]
           "js/admin.js":"coffee/admin.coffee"
           "js/serviceWorker.js":["coffee/core-worker.coffee","coffee/serviceWorker.coffee"]
     watch:
@@ -234,7 +246,7 @@ module.exports = (grunt) ->
   ## Deploy
   grunt.registerTask "qbuild","CoffeeScript and CSS", ->
     # ,"vulcanize"
-    grunt.task.run("phplint","compile","css","shell:dumpver")
+    grunt.task.run("phplint","compile","css")
   grunt.registerTask "build","Prepare for deployment", ->
     # ,"vulcanize"
-    grunt.task.run("update","qbuild","minify","phpcsfixer")
+    grunt.task.run("update","qbuild","minify","phpcsfixer","shell:dumpver")

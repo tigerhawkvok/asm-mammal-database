@@ -194,64 +194,32 @@ String::stripHtml = (stripChildren = false) ->
   str = str.replace /<\/?\w(?:[^"'>]|"[^"]*"|'[^']*')*>/gmi, ''
   str
 
-String::unescape = (strict = false) ->
+String::unescape = ->
   ###
-  # Take escaped text, and return the unescaped version
-  #
-  # @param string str | String to be used
-  # @param bool strict | Stict mode will remove all HTML
-  #
-  # Test it here:
-  # https://jsfiddle.net/tigerhawkvok/t9pn1dn5/
-  #
-  # Code: https://gist.github.com/tigerhawkvok/285b8631ed6ebef4446d
+  # We can't access 'document', so alias
   ###
-  # Create a dummy element
-  element = document.createElement("div")
-  decodeHTMLEntities = (str) ->
-    if str? and typeof str is "string"
-      unless strict is true
-        # escape HTML tags
-        str = escape(str).replace(/%26/g,'&').replace(/%23/g,'#').replace(/%3B/g,';')
-      else
-        str = str.replace(/<script[^>]*>([\S\s]*?)<\/script>/gmi, '')
-        str = str.replace(/<\/?\w(?:[^"'>]|"[^"]*"|'[^']*')*>/gmi, '')
-      element.innerHTML = str
-      if element.innerText
-        # Do we support innerText?
-        str = element.innerText
-        element.innerText = ""
-      else
-        # Firefox
-        str = element.textContent
-        element.textContent = ""
-    unescape(str)
-  # Remove encoded or double-encoded tags
-  fixHtmlEncodings = (string) ->
-    string = string.replace(/\&amp;#/mg, '&#') # The rest, for double-encodings
-    string = string.replace(/\&quot;/mg, '"')
+  deEscape this
+
+
+deEscape = (string) ->
+  stringIn = string
+  i = 0
+  while newString isnt stringIn
+    if i isnt 0
+      stringIn = newString
+      string = newString
+    string = string.replace(/\&amp;#/mig, '&#') # The rest
+    string = string.replace(/\&amp;/mig, '&')
+    string = string.replace(/\&quot;/mig, '"')
     string = string.replace(/\&quote;/mg, '"')
     string = string.replace(/\&#95;/mg, '_')
     string = string.replace(/\&#39;/mg, "'")
     string = string.replace(/\&#34;/mg, '"')
     string = string.replace(/\&#62;/mg, '>')
     string = string.replace(/\&#60;/mg, '<')
-    string
-  # Run it
-  tmp = fixHtmlEncodings(this)
-  decodeHTMLEntities(tmp)
-
-
-deEscape = (string) ->
-  string = string.replace(/\&amp;#/mg, '&#') # The rest
-  string = string.replace(/\&quot;/mg, '"')
-  string = string.replace(/\&quote;/mg, '"')
-  string = string.replace(/\&#95;/mg, '_')
-  string = string.replace(/\&#39;/mg, "'")
-  string = string.replace(/\&#34;/mg, '"')
-  string = string.replace(/\&#62;/mg, '>')
-  string = string.replace(/\&#60;/mg, '<')
-  string
+    ++i
+    newString = string
+  decodeURIComponent string
 
 
 
@@ -404,7 +372,7 @@ smartUpperCasing = (text) ->
       smartCased = smartCased.replace secondWord, secondWordCased
   smartCased
 
-  
+
 
 Function::getName = ->
   ###
@@ -805,7 +773,18 @@ self.addEventListener "message", (e) ->
       firstIteration = e.data.firstIteration.toBool() ? false
       # Posts its own message
       renderDataArray data, firstIteration, chunkSize
+    when "render-html"
+      console.log "Got info from file on thread", e.data
+      createHtmlFile e.data.data, e.data.htmlHeader
 
+
+# Import Markdown
+#
+# https://developer.mozilla.org/en-US/docs/Web/API/WorkerGlobalScope/importScripts
+window = new Object()
+self.importScripts "markdown.min.js"
+self.importScripts "markdown.min.js"
+markdown = window.markdown
 
 
 renderDataArray = (data = dataArray, firstIteration = true, renderChunk = 100) ->
@@ -933,3 +912,172 @@ renderDataArray = (data = dataArray, firstIteration = true, renderChunk = 100) -
     loops: i
   self.postMessage message
   self.close()
+
+
+
+createHtmlFile = (result, htmlBody) ->
+  ###
+  # The off-thread component to download.coffee->downloadHTMLList()
+  #
+  # Requires the JSOn result from the main function.
+  ###
+  startTime = Date.now()
+  console.debug "Got", result
+  console.debug "Got body provided?", not isNull htmlBody
+  total = result.count
+  try
+    unless result.status is true
+      throw Error("Invalid Result")
+    ###
+    # Let's work with each result
+    #
+    # We're going to construct an entry for each, then go through
+    # and append that to to the text blobb htmlBody
+    ###
+    hasReadGenus = new Array()
+    hasReadClade = new Array()
+    hasReadSubClade = new Array()
+    for k, row of result.result
+      try
+        if k %% 100 is 0
+          console.log "Parsing row #{k} of #{total}"
+          if k %% 500 is 0 and k > 0
+            message =
+              status: true
+              done: false
+              updateUser: "Parsing #{k} of #{total}, please wait"
+            self.postMessage message
+          #   startLoad()
+          #   toastStatusMessage "Parsing #{k} of #{total}, please wait"
+      if isNull(row.genus) or isNull(row.species)
+        # Skip this clearly unfinished entry
+        continue
+      # Prep the authorities
+      try
+        unless typeof row.authority_year is "object"
+          try
+            authorityYears = JSON.parse(row.authority_year)
+          catch
+            # Try to fix a bad JSON
+            split = row.authority_year.split(":")
+            if split.length > 1
+              year = split[1].slice(split[1].search("\"")+1,-2)
+              # console.log("Examining #{year}")
+              year = year.replace(/"/g,"'")
+              split[1] = "\"#{year}\"}"
+              authorityYears = JSON.parse split.join(":")
+            else
+              # Try to deal with the singlet
+              if isNumber row.authority_year
+                authorityYears[row.authority_year] = row.authority_year
+        else
+          authorityYears = row.authority_year
+        genusYear = ""
+        speciesYear = ""
+        for c,v of authorityYears
+          genusYear = c.replace(/&#39;/g,"'")
+          speciesYear = v.replace(/&#39;/g,"'")
+        if isNull row.genus_authority
+          row.genus_authority = row.species_authority
+        else if isNull row.species_authority
+          row.species_authority = row.genus_authority
+        genusAuth = "#{row.genus_authority.toTitleCase()} #{genusYear}"
+        if toInt(row.parens_auth_genus).toBool()
+          genusAuth = "(#{genusAuth})"
+        speciesAuth = "#{row.species_authority.toTitleCase()} #{speciesYear}"
+        if toInt(row.parens_auth_species).toBool()
+          speciesAuth = "(#{speciesAuth})"
+      catch e
+        # There was a data problem for the authority year!
+        # However, we want it to be non-fatal.
+        console.warn "There was a problem parsing the authority information for _#{row.genus} #{row.species} #{row.subspecies}_ - #{e.message}"
+        console.warn e.stack
+        console.warn "Bad parse for authority year -- tried to fix >>#{row.authority_year}<<", authorityYears, row.authority_year
+        console.warn "We were working with",authorityYears,genusYear,genusAuth,speciesYear, speciesAuth
+      try
+        htmlNotes = markdown.toHTML(row.notes)
+      catch e
+        console.warn("Unable to parse Markdown for _#{row.genus} #{row.species} #{row.subspecies}_")
+        htmlNotes = row.notes
+      htmlCredit = ""
+      unless isNull(htmlNotes) or isNull(row.taxon_credit)
+        taxonCreditDate = ""
+        unless isNull(row.taxon_credit_date)
+          taxonCreditDate = ", #{row.taxon_credit_date}"
+        htmlCredit = """
+          <p class="text-right small text-muted">
+            <cite>
+              #{row.taxon_credit}#{taxonCreditDate}
+            </cite>
+          </p>
+        """
+      # Now for each result, we want to create a text blob
+      oneOffHtml = ""
+      unless row.linnean_order.trim() in hasReadClade
+        oneOffHtml += """
+        <h2 class="clade-declaration text-capitalize text-center">#{row.linnean_order}</h2>
+        """
+        hasReadClade.push row.linnean_order.trim()
+      unless row.linnean_family.trim() in hasReadSubClade
+        oneOffHtml += """
+        <h3 class="subclade-declaration text-capitalize text-center">#{row.linnean_family}</h3>
+        """
+        hasReadSubClade.push row.linnean_family.trim()
+      unless row.genus in hasReadGenus
+        # Show the genus header
+        oneOffHtml += """
+        <aside class="genus-declaration lead">
+          <span class="entry-sciname text-capitalize">#{row.genus}</span>
+          <span class="entry-authority">#{genusAuth.unescape()}</span>
+        </aside>
+        """
+        hasReadGenus.push row.genus
+      shortGenus = "#{row.genus.slice(0,1)}. "
+      entryHtml = """
+      <section class="species-entry">
+        #{oneOffHtml}
+        <p class="h4 entry-header">
+          <span class="entry-sciname">
+            <span class="text-capitalize">#{shortGenus}</span> #{row.species} #{row.subspecies}
+          </span>
+          <span class="entry-authority">
+            #{speciesAuth.unescape()}
+          </span>
+          &#8212;
+          <span class="common_name no-cap">
+            #{smartUpperCasing row.common_name}
+          </span>
+        </p>
+        <div class="entry-content">
+          #{htmlNotes}
+          #{htmlCredit}
+        </div>
+      </section>
+      """
+      # Append it to htmlBody
+      htmlBody += entryHtml
+      ## End for loop
+    # Now let's close up that HTML file
+    htmlBody += """
+    </article>
+    </div>
+    </body>
+    </html>
+    """
+    duration = Date.now() - startTime
+    console.log "HTML file prepped in #{duration}ms off-thread"
+    message =
+      html: htmlBody
+      status: true
+      done: true
+    self.postMessage message
+    self.close()
+  catch e
+    console.error "There was a problem creating your file. Please try again later."
+    console.error("Exception in createHtmlFile() - #{e.message}")
+    console.warn(e.stack)
+    message =
+      status: false
+      done: true
+    self.postMessage message
+    self.close()

@@ -1062,7 +1062,7 @@ createHtmlFile = function(result, htmlBody) {
    *
    * Requires the JSOn result from the main function.
    */
-  var authorityYears, c, duration, e, entryHtml, error1, error2, error3, error4, genusAuth, genusYear, hasReadClade, hasReadGenus, hasReadSubClade, htmlCredit, htmlNotes, k, message, oneOffHtml, ref, ref1, ref2, ref3, row, shortGenus, speciesAuth, speciesYear, split, startTime, taxonCreditDate, total, v, year;
+  var authorityYears, c, duration, e, entryHtml, error1, error2, error3, error4, error5, genusAuth, genusYear, hasReadClade, hasReadGenus, hasReadSubClade, htmlCredit, htmlNotes, k, message, oneOffHtml, ref, ref1, ref2, ref3, row, shortGenus, speciesAuth, speciesYear, split, startTime, taxonCreditDate, total, v, year;
   startTime = Date.now();
   console.debug("Got", result);
   console.debug("Got body provided?", !isNull(htmlBody));
@@ -1102,9 +1102,24 @@ createHtmlFile = function(result, htmlBody) {
       }
       try {
         if (typeof row.authority_year !== "object") {
+          authorityYears = new Object();
           try {
-            authorityYears = JSON.parse(row.authority_year);
+            if (isNumber(row.authority_year)) {
+              authorityYears[row.authority_year] = row.authority_year;
+            } else if (isNull(row.authority_year)) {
+              if (/\(?((['"])?[\w \&;]+\2) *, *([0-9]{4})\)?/i.test(row.species_authority)) {
+                year = row.species_authority.replace(/\(?((['"])?[\w \&;]+\2) *, *([0-9]{4})\)?/ig, "$3");
+                row.species_authority = row.species_authority.replace(/\(?((['"])?[\w \&;]+\2) *, *([0-9]{4})\)?/ig, "$1");
+                authorityYears[year] = year;
+              } else {
+                authorityYears["No Year"] = "No Year";
+              }
+            } else {
+              console.debug("authority isnt number or null, with bad species_authority '" + row.authority_year + "'");
+              authorityYears = JSON.parse(row.authority_year);
+            }
           } catch (error1) {
+            e = error1;
             split = row.authority_year.split(":");
             if (split.length > 1) {
               year = split[1].slice(split[1].search("\"") + 1, -2);
@@ -1112,20 +1127,24 @@ createHtmlFile = function(result, htmlBody) {
               split[1] = "\"" + year + "\"}";
               authorityYears = JSON.parse(split.join(":"));
             } else {
-              if (isNumber(row.authority_year)) {
-                authorityYears[row.authority_year] = row.authority_year;
-              }
+              console.warn("Unable to figure out the type of data for `authority_year`: " + e.message, JSON.stringify(row));
+              console.warn(e.stack);
             }
           }
         } else {
           authorityYears = row.authority_year;
         }
-        genusYear = "";
-        speciesYear = "";
-        for (c in authorityYears) {
-          v = authorityYears[c];
-          genusYear = c.replace(/&#39;/g, "'");
-          speciesYear = v.replace(/&#39;/g, "'");
+        try {
+          genusYear = Object.keys(authorityYears)[0];
+          speciesYear = authorityYears[genusYear];
+          genusYear = genusYear.replace(/&#39;/g, "'");
+          speciesYear = speciesYear.replace(/&#39;/g, "'");
+        } catch (error2) {
+          for (c in authorityYears) {
+            v = authorityYears[c];
+            genusYear = c.replace(/&#39;/g, "'");
+            speciesYear = v.replace(/&#39;/g, "'");
+          }
         }
         if (isNull(row.genus_authority)) {
           row.genus_authority = row.species_authority;
@@ -1140,19 +1159,23 @@ createHtmlFile = function(result, htmlBody) {
         if (toInt(row.parens_auth_species).toBool()) {
           speciesAuth = "(" + speciesAuth + ")";
         }
-      } catch (error2) {
-        e = error2;
+      } catch (error3) {
+        e = error3;
         console.warn("There was a problem parsing the authority information for _" + row.genus + " " + row.species + " " + row.subspecies + "_ - " + e.message);
         console.warn(e.stack);
         console.warn("Bad parse for authority year -- tried to fix >>" + row.authority_year + "<<", authorityYears, row.authority_year);
         console.warn("We were working with", authorityYears, genusYear, genusAuth, speciesYear, speciesAuth);
       }
-      try {
-        htmlNotes = markdown.toHTML(row.notes);
-      } catch (error3) {
-        e = error3;
-        console.warn("Unable to parse Markdown for _" + row.genus + " " + row.species + " " + row.subspecies + "_");
-        htmlNotes = row.notes;
+      if (!isNull(row.entry)) {
+        try {
+          htmlNotes = markdown.toHTML(row.entry);
+        } catch (error4) {
+          e = error4;
+          console.warn("Unable to parse Markdown for _" + row.genus + " " + row.species + " " + row.subspecies + "_");
+          htmlNotes = row.entry;
+        }
+      } else {
+        htmlNotes = "";
       }
       htmlCredit = "";
       if (!(isNull(htmlNotes) || isNull(row.taxon_credit))) {
@@ -1189,8 +1212,8 @@ createHtmlFile = function(result, htmlBody) {
     };
     self.postMessage(message);
     return self.close();
-  } catch (error4) {
-    e = error4;
+  } catch (error5) {
+    e = error5;
     console.error("There was a problem creating your file. Please try again later.");
     console.error("Exception in createHtmlFile() - " + e.message);
     console.warn(e.stack);

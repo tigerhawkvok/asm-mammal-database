@@ -955,9 +955,23 @@ createHtmlFile = (result, htmlBody) ->
       # Prep the authorities
       try
         unless typeof row.authority_year is "object"
+          authorityYears = new Object()
           try
-            authorityYears = JSON.parse(row.authority_year)
-          catch
+            # Try to deal with the singlet
+            if isNumber row.authority_year
+              authorityYears[row.authority_year] = row.authority_year
+            else if isNull row.authority_year
+              # Check if this is an IUCN style species authority
+              if /\(?((['"])?[\w \&;]+\2) *, *([0-9]{4})\)?/i.test(row.species_authority)
+                year = row.species_authority.replace /\(?((['"])?[\w \&;]+\2) *, *([0-9]{4})\)?/ig, "$3"
+                row.species_authority = row.species_authority.replace /\(?((['"])?[\w \&;]+\2) *, *([0-9]{4})\)?/ig, "$1"
+                authorityYears[year] = year
+              else
+                authorityYears["No Year"] = "No Year"
+            else
+              console.debug "authority isnt number or null, with bad species_authority '#{row.authority_year}'"
+              authorityYears = JSON.parse row.authority_year
+          catch e
             # Try to fix a bad JSON
             split = row.authority_year.split(":")
             if split.length > 1
@@ -967,16 +981,19 @@ createHtmlFile = (result, htmlBody) ->
               split[1] = "\"#{year}\"}"
               authorityYears = JSON.parse split.join(":")
             else
-              # Try to deal with the singlet
-              if isNumber row.authority_year
-                authorityYears[row.authority_year] = row.authority_year
+              console.warn "Unable to figure out the type of data for `authority_year`: #{e.message}", JSON.stringify row
+              console.warn e.stack
         else
           authorityYears = row.authority_year
-        genusYear = ""
-        speciesYear = ""
-        for c,v of authorityYears
-          genusYear = c.replace(/&#39;/g,"'")
-          speciesYear = v.replace(/&#39;/g,"'")
+        try
+          genusYear = Object.keys(authorityYears)[0]
+          speciesYear = authorityYears[genusYear]
+          genusYear = genusYear.replace(/&#39;/g,"'")
+          speciesYear = speciesYear.replace(/&#39;/g,"'")
+        catch
+          for c,v of authorityYears
+            genusYear = c.replace(/&#39;/g,"'")
+            speciesYear = v.replace(/&#39;/g,"'")
         if isNull row.genus_authority
           row.genus_authority = row.species_authority
         else if isNull row.species_authority
@@ -994,11 +1011,15 @@ createHtmlFile = (result, htmlBody) ->
         console.warn e.stack
         console.warn "Bad parse for authority year -- tried to fix >>#{row.authority_year}<<", authorityYears, row.authority_year
         console.warn "We were working with",authorityYears,genusYear,genusAuth,speciesYear, speciesAuth
-      try
-        htmlNotes = markdown.toHTML(row.notes)
-      catch e
-        console.warn("Unable to parse Markdown for _#{row.genus} #{row.species} #{row.subspecies}_")
-        htmlNotes = row.notes
+      # Handle the entry. Taxon notes (row.notes) are ignored.
+      unless isNull row.entry
+        try
+          htmlNotes = markdown.toHTML row.entry
+        catch e
+          console.warn("Unable to parse Markdown for _#{row.genus} #{row.species} #{row.subspecies}_")
+          htmlNotes = row.entry
+      else
+        htmlNotes = ""
       htmlCredit = ""
       unless isNull(htmlNotes) or isNull(row.taxon_credit)
         taxonCreditDate = ""

@@ -1542,7 +1542,7 @@ dataUriToBlob = (dataUri, callback) ->
   try
     binStr = atob data
   catch
-    binStr = data
+    binStr = decodeURIComponent data
   # if encoding is "base64"
   #   # encodedData = data
   #   binStr = atob data #encodedData

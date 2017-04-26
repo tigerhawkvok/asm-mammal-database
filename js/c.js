@@ -1942,7 +1942,7 @@ dataUriToBlob = function(dataUri, callback) {
   try {
     binStr = atob(data);
   } catch (error1) {
-    binStr = data;
+    binStr = decodeURIComponent(data);
   }
   len = binStr.length;
   arr = new Uint8Array(len);

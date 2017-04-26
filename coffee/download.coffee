@@ -229,6 +229,9 @@ downloadHTMLList = ->
           <paper-dialog-scrollable class="dialog-content">
             <p class="text-center">
               <a href="#{downloadable}" download="asm-species-#{dateString}.html" class="btn btn-default" id="download-html-summary"><iron-icon icon="file-download"></iron-icon> Download HTML</a>
+              <div id="pdf-download-placeholder">
+                <paper-spinner active></paper-spinner> Please wait while your PDF creation finishes ...
+              </div>
             </p>
           </paper-dialog-scrollable>
           <div class="buttons">
@@ -248,8 +251,13 @@ downloadHTMLList = ->
           downloadDataUriAsBlob "#download-html-summary"
         else
           console.debug "File size is small enough to use a data-uri"
+        safariDialogHelper("#download-html-file")
+        stopLoad()
         # Now try to fetch the PDF file
         toastStatusMessage "Please wait while we prepare your PDF file...", "", 7000
+        pdfError = """
+        <a href="#" disabled class="btn btn-default" id="download-pdf-summary">PDF Creation Failed</a>
+        """
         console.debug "Posting for PDF"
         $.post "#{uri.urlString}pdf/pdfwrapper.php", "html=#{encodeURIComponent(htmlBody)}", "json"
         .done (result) ->
@@ -260,14 +268,16 @@ downloadHTMLList = ->
             pdfDownload = """
               <a href="#{pdfDownloadPath}" download="asm-species-#{dateString}.pdf" class="btn btn-default" id="download-pdf-summary"><iron-icon icon="file-download"></iron-icon> Download PDF</a>
             """
-            $("#download-html-file paper-dialog-scrollable p.text-center a").after pdfDownload
+            $("#download-html-file #download-html-summary").after pdfDownload
           else
             console.error "Couldn't make PDF file"
+            $("#download-html-file #download-html-summary").after pdfError
         .error (result, status) ->
           console.error "Wasn't able to fetch PDF"
+          $("#download-html-file #download-html-summary").after pdfError
         .always ->
-          safariDialogHelper("#download-html-file")
-          stopLoad()
+          try
+            $("#download-html-file #pdf-download-placeholder").remove()
       worker.postMessage postMessageContent
     .fail  ->
       stopLoadError("There was a problem communicating with the server. Please try again later.")

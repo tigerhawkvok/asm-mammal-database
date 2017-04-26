@@ -152,7 +152,7 @@ downloadHTMLList = function() {
         /*
          * Service worker callback
          */
-        var dialogHtml, downloadable, error, fileSizeMiB;
+        var dialogHtml, downloadable, error, fileSizeMiB, pdfError;
         console.info("Got message back from service worker", e.data);
         if (e.data.done !== true) {
           console.log("Just an update");
@@ -174,7 +174,7 @@ downloadHTMLList = function() {
           fileSizeMiB = 0;
         }
         console.log("Downloadable size: " + fileSizeMiB + " MiB");
-        dialogHtml = "<paper-dialog  modal class=\"download-file\" id=\"download-html-file\">\n  <h2>Your file is ready</h2>\n  <paper-dialog-scrollable class=\"dialog-content\">\n    <p class=\"text-center\">\n      <a href=\"" + downloadable + "\" download=\"asm-species-" + dateString + ".html\" class=\"btn btn-default\" id=\"download-html-summary\"><iron-icon icon=\"file-download\"></iron-icon> Download HTML</a>\n    </p>\n  </paper-dialog-scrollable>\n  <div class=\"buttons\">\n    <paper-button dialog-dismiss>Close</paper-button>\n  </div>\n</paper-dialog>";
+        dialogHtml = "<paper-dialog  modal class=\"download-file\" id=\"download-html-file\">\n  <h2>Your file is ready</h2>\n  <paper-dialog-scrollable class=\"dialog-content\">\n    <p class=\"text-center\">\n      <a href=\"" + downloadable + "\" download=\"asm-species-" + dateString + ".html\" class=\"btn btn-default\" id=\"download-html-summary\"><iron-icon icon=\"file-download\"></iron-icon> Download HTML</a>\n      <div id=\"pdf-download-placeholder\">\n        <paper-spinner active></paper-spinner> Please wait while your PDF creation finishes ...\n      </div>\n    </p>\n  </paper-dialog-scrollable>\n  <div class=\"buttons\">\n    <paper-button dialog-dismiss>Close</paper-button>\n  </div>\n</paper-dialog>";
         if (!$("#download-html-file").exists()) {
           $("body").append(dialogHtml);
         } else {
@@ -189,7 +189,10 @@ downloadHTMLList = function() {
         } else {
           console.debug("File size is small enough to use a data-uri");
         }
+        safariDialogHelper("#download-html-file");
+        stopLoad();
         toastStatusMessage("Please wait while we prepare your PDF file...", "", 7000);
+        pdfError = "<a href=\"#\" disabled class=\"btn btn-default\" id=\"download-pdf-summary\">PDF Creation Failed</a>";
         console.debug("Posting for PDF");
         return $.post(uri.urlString + "pdf/pdfwrapper.php", "html=" + (encodeURIComponent(htmlBody)), "json").done(function(result) {
           var pdfDownload, pdfDownloadPath;
@@ -198,15 +201,18 @@ downloadHTMLList = function() {
             pdfDownloadPath = "" + uri.urlString + result.file;
             console.debug(pdfDownloadPath);
             pdfDownload = "<a href=\"" + pdfDownloadPath + "\" download=\"asm-species-" + dateString + ".pdf\" class=\"btn btn-default\" id=\"download-pdf-summary\"><iron-icon icon=\"file-download\"></iron-icon> Download PDF</a>";
-            return $("#download-html-file paper-dialog-scrollable p.text-center a").after(pdfDownload);
+            return $("#download-html-file #download-html-summary").after(pdfDownload);
           } else {
-            return console.error("Couldn't make PDF file");
+            console.error("Couldn't make PDF file");
+            return $("#download-html-file #download-html-summary").after(pdfError);
           }
         }).error(function(result, status) {
-          return console.error("Wasn't able to fetch PDF");
+          console.error("Wasn't able to fetch PDF");
+          return $("#download-html-file #download-html-summary").after(pdfError);
         }).always(function() {
-          safariDialogHelper("#download-html-file");
-          return stopLoad();
+          try {
+            return $("#download-html-file #pdf-download-placeholder").remove();
+          } catch (undefined) {}
         });
       });
       return worker.postMessage(postMessageContent);

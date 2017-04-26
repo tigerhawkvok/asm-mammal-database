@@ -1127,13 +1127,16 @@ createHtmlFile = function(result, htmlBody) {
               authorityYears[row.authority_year] = row.authority_year;
             } else if (isNull(row.authority_year)) {
               row.species_authority = row.species_authority.replace(/(<\/|<|&lt;|&lt;\/).*?(>|&gt;)/img, "");
-              if (/^\(? *((['"])? *([\w\.\-\&; \[\]]+(,|&|&amp;|&amp;amp;|&#[\w0-9]+;)?)+ *\2) *, *([0-9]{4}) *\)?/i.test(row.species_authority)) {
-                year = row.species_authority.replace(/^\(? *((['"])? *([\w\.\-\&; \[\]]+(,|&|&amp;|&amp;amp;|&#[\w0-9]+;)?)+ *\2) *, *([0-9]{4}) *\)?/ig, "$5");
-                row.species_authority = row.species_authority.replace(/^\(? *((['"])? *([\w\.\-\&; \[\]]+(,|&|&amp;|&amp;amp;|&#[\w0-9]+;)?)+ *\2) *, *([0-9]{4}) *\)?/ig, "$1");
+              if (/^\(? *((['"])? *([\w\u00C0-\u017F\. \-\&;\[\]]+(,|&|&amp;|&amp;amp;|&#[\w0-9]+;)?)+ *\2) *, *([0-9]{4}) *\)?/im.test(row.species_authority)) {
+                year = row.species_authority.replace(/^\(? *((['"])? *([\w\u00C0-\u017F\.\-\&; \[\]]+(,|&|&amp;|&amp;amp;|&#[\w0-9]+;)?)+ *\2) *, *([0-9]{4}) *\)?/ig, "$5");
+                row.species_authority = row.species_authority.replace(/^\(? *((['"])? *([\w\u00C0-\u017F\.\-\&; \[\]]+(,|&|&amp;|&amp;amp;|&#[\w0-9]+;)?)+ *\2) *, *([0-9]{4}) *\)?/ig, "$1");
                 authorityYears[year] = year;
                 row.authority_year = authorityYears;
               } else {
-                authorityYears["No Year"] = "No Year";
+                if (!isNull(row.species_authority)) {
+                  console.warn("Failed a match on authority '" + row.species_authority + "'");
+                }
+                authorityYears["Unknown"] = "Unknown";
               }
             } else {
               authorityYears = JSON.parse(row.authority_year);

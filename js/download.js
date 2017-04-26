@@ -152,7 +152,7 @@ downloadHTMLList = function() {
         /*
          * Service worker callback
          */
-        var dialogHtml, downloadable;
+        var dialogHtml, downloadable, error, fileSizeMiB;
         console.info("Got message back from service worker", e.data);
         if (e.data.done !== true) {
           console.log("Just an update");
@@ -168,7 +168,13 @@ downloadHTMLList = function() {
         }
         htmlBody = e.data.html;
         downloadable = "data:text/html;charset=utf-8," + (encodeURIComponent(htmlBody));
-        dialogHtml = "<paper-dialog  modal class=\"download-file\" id=\"download-html-file\">\n  <h2>Your file is ready</h2>\n  <paper-dialog-scrollable class=\"dialog-content\">\n    <p class=\"text-center\">\n      <a href=\"" + downloadable + "\" download=\"asm-species-" + dateString + ".html\" class=\"btn btn-default\"><iron-icon icon=\"file-download\"></iron-icon> Download HTML</a>\n    </p>\n  </paper-dialog-scrollable>\n  <div class=\"buttons\">\n    <paper-button dialog-dismiss>Close</paper-button>\n  </div>\n</paper-dialog>";
+        try {
+          fileSizeMiB = downloadable.length / 1024 / 1024;
+        } catch (error) {
+          fileSizeMiB = 0;
+        }
+        console.log("Downloadable size: " + fileSizeMiB + " MiB");
+        dialogHtml = "<paper-dialog  modal class=\"download-file\" id=\"download-html-file\">\n  <h2>Your file is ready</h2>\n  <paper-dialog-scrollable class=\"dialog-content\">\n    <p class=\"text-center\">\n      <a href=\"" + downloadable + "\" download=\"asm-species-" + dateString + ".html\" class=\"btn btn-default\" id=\"download-html-summary\"><iron-icon icon=\"file-download\"></iron-icon> Download HTML</a>\n    </p>\n  </paper-dialog-scrollable>\n  <div class=\"buttons\">\n    <paper-button dialog-dismiss>Close</paper-button>\n  </div>\n</paper-dialog>";
         if (!$("#download-html-file").exists()) {
           $("body").append(dialogHtml);
         } else {
@@ -181,7 +187,7 @@ downloadHTMLList = function() {
           if (result.status) {
             pdfDownloadPath = "" + uri.urlString + result.file;
             console.debug(pdfDownloadPath);
-            pdfDownload = "<a href=\"" + pdfDownloadPath + "\" download=\"asm-species-" + dateString + ".pdf\" class=\"btn btn-default\"><iron-icon icon=\"file-download\"></iron-icon> Download PDF</a>";
+            pdfDownload = "<a href=\"" + pdfDownloadPath + "\" download=\"asm-species-" + dateString + ".pdf\" class=\"btn btn-default\" id=\"download-pdf-summary\"><iron-icon icon=\"file-download\"></iron-icon> Download PDF</a>";
             return $("#download-html-file paper-dialog-scrollable p.text-center a").after(pdfDownload);
           } else {
             return console.error("Couldn't make PDF file");

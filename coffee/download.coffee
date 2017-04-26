@@ -218,12 +218,17 @@ downloadHTMLList = ->
           return false
         htmlBody = e.data.html
         downloadable = "data:text/html;charset=utf-8,#{encodeURIComponent(htmlBody)}"
+        try
+          fileSizeMiB = downloadable.length / 1024 / 1024
+        catch
+          fileSizeMiB = 0
+        console.log "Downloadable size: #{fileSizeMiB} MiB"
         dialogHtml = """
         <paper-dialog  modal class="download-file" id="download-html-file">
           <h2>Your file is ready</h2>
           <paper-dialog-scrollable class="dialog-content">
             <p class="text-center">
-              <a href="#{downloadable}" download="asm-species-#{dateString}.html" class="btn btn-default"><iron-icon icon="file-download"></iron-icon> Download HTML</a>
+              <a href="#{downloadable}" download="asm-species-#{dateString}.html" class="btn btn-default" id="download-html-summary"><iron-icon icon="file-download"></iron-icon> Download HTML</a>
             </p>
           </paper-dialog-scrollable>
           <div class="buttons">
@@ -235,8 +240,14 @@ downloadHTMLList = ->
           $("body").append(dialogHtml)
         else
           $("#download-html-file").replaceWith(dialogHtml)
-        $("#download-chooser").get(0).close()
+        try
+          p$("#download-chooser").close()
+        if fileSizeMiB >= 2
+          # Chrome doesn't support a data URI this big
+          downloadDataUriAsBlob "#download-html-summary"
         # Now try to fetch the PDF file
+        toastStatusMessage "Please wait while we prepare your PDF file"
+        console.debug "Posting for PDF"
         $.post "#{uri.urlString}pdf/pdfwrapper.php", "html=#{encodeURIComponent(htmlBody)}", "json"
         .done (result) ->
           console.debug "PDF result", result
@@ -244,7 +255,7 @@ downloadHTMLList = ->
             pdfDownloadPath = "#{uri.urlString}#{result.file}"
             console.debug pdfDownloadPath
             pdfDownload = """
-              <a href="#{pdfDownloadPath}" download="asm-species-#{dateString}.pdf" class="btn btn-default"><iron-icon icon="file-download"></iron-icon> Download PDF</a>
+              <a href="#{pdfDownloadPath}" download="asm-species-#{dateString}.pdf" class="btn btn-default" id="download-pdf-summary"><iron-icon icon="file-download"></iron-icon> Download PDF</a>
             """
             $("#download-html-file paper-dialog-scrollable p.text-center a").after pdfDownload
           else

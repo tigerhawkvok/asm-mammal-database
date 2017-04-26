@@ -1,4 +1,4 @@
-var _metaStatus, activityIndicatorOff, activityIndicatorOn, allError, animateHoverShadows, animateLoad, bindClickTargets, bindClicks, bindDismissalRemoval, bindPaperMenuButton, browserBeware, bsAlert, buildQuery, byteCount, checkFileVersion, checkLaggedUpdate, checkLocalVersion, checkTaxonNear, clearSearch, dateMonthToString, deEscape, decode64, deepJQuery, delay, doCORSget, doFontExceptions, doLazily, doNothing, domainPlaceholder, e, encode64, error1, eutheriaFilterHelper, fetchMajorMinorGroups, foo, formatScientificNames, formatSearchResults, getElementHtml, getFilters, getLocation, getMaxZ, getRandomEntry, goTo, insertCORSWorkaround, insertModalImage, interval, isArray, isBlank, isBool, isEmpty, isJson, isNull, isNumber, isNumeric, jsonTo64, lightboxImages, loadJS, mapNewWindows, modalTaxon, openLink, openTab, overlayOff, overlayOn, p$, parseTaxonYear, performSearch, post64, prepURI, randomInt, ref, roundNumber, roundNumberSigfig, safariDialogHelper, safariSearchArgHelper, searchParams, setHistory, setupServiceWorker, showBadSearchErrorMessage, smartUpperCasing, sortResults, startLoad, stopLoad, stopLoadError, toFloat, toInt, toObject, toastStatusMessage, uri,
+var _metaStatus, activityIndicatorOff, activityIndicatorOn, allError, animateHoverShadows, animateLoad, bindClickTargets, bindClicks, bindDismissalRemoval, bindPaperMenuButton, browserBeware, bsAlert, buildQuery, byteCount, checkFileVersion, checkLaggedUpdate, checkLocalVersion, checkTaxonNear, clearSearch, dataUriToBlob, dateMonthToString, deEscape, decode64, deepJQuery, delay, doCORSget, doFontExceptions, doLazily, doNothing, domainPlaceholder, downloadDataUriAsBlob, e, encode64, error1, eutheriaFilterHelper, fetchMajorMinorGroups, foo, formatScientificNames, formatSearchResults, getElementHtml, getFilters, getLocation, getMaxZ, getRandomEntry, goTo, insertCORSWorkaround, insertModalImage, interval, isArray, isBlank, isBool, isEmpty, isJson, isNull, isNumber, isNumeric, jsonTo64, lightboxImages, loadJS, mapNewWindows, modalTaxon, openLink, openTab, overlayOff, overlayOn, p$, parseTaxonYear, performSearch, post64, prepURI, randomInt, ref, roundNumber, roundNumberSigfig, safariDialogHelper, safariSearchArgHelper, searchParams, setHistory, setupServiceWorker, showBadSearchErrorMessage, smartUpperCasing, sortResults, startLoad, stopLoad, stopLoadError, toFloat, toInt, toObject, toastStatusMessage, uri,
   slice = [].slice,
   indexOf = [].indexOf || function(item) { for (var i = 0, l = this.length; i < l; i++) { if (i in this && this[i] === item) return i; } return -1; };
 
@@ -234,10 +234,10 @@ Object.size = function(obj) {
 };
 
 Object.doOnSortedKeys = function(obj, fn) {
-  var data, key, len, m, results, sortedKeys;
+  var data, key, len1, m, results, sortedKeys;
   sortedKeys = Object.keys(obj).sort();
   results = [];
-  for (m = 0, len = sortedKeys.length; m < len; m++) {
+  for (m = 0, len1 = sortedKeys.length; m < len1; m++) {
     key = sortedKeys[m];
     data = obj[key];
     results.push(fn(data));
@@ -395,7 +395,7 @@ jQuery.fn.exists = function() {
 };
 
 jQuery.fn.polymerSelected = function(setSelected, attrLookup, dropdownSelector, childElement, ignoreCase) {
-  var attr, dropdownId, dropdownUniqueSelector, e, error1, error2, error3, error4, error5, index, item, itemSelector, len, m, ref1, selectedMatch, selector, text, val;
+  var attr, dropdownId, dropdownUniqueSelector, e, error1, error2, error3, error4, error5, index, item, itemSelector, len1, m, ref1, selectedMatch, selector, text, val;
   if (setSelected == null) {
     setSelected = void 0;
   }
@@ -473,7 +473,7 @@ jQuery.fn.polymerSelected = function(setSelected, attrLookup, dropdownSelector, 
       try {
         if (attr === true) {
           ref1 = $(this).find(childElement);
-          for (m = 0, len = ref1.length; m < len; m++) {
+          for (m = 0, len1 = ref1.length; m < len1; m++) {
             item = ref1[m];
             text = ignoreCase ? $(item).text().toLowerCase().trim() : $(item).text();
             selectedMatch = ignoreCase ? setSelected.toLowerCase().trim() : setSelected;
@@ -782,12 +782,12 @@ loadJS = function(src, callback, doCallbackOnError) {
 };
 
 String.prototype.toTitleCase = function() {
-  var len, len1, lower, lowerRegEx, lowers, m, o, str, upper, upperRegEx, uppers;
+  var len1, len2, lower, lowerRegEx, lowers, m, o, str, upper, upperRegEx, uppers;
   str = this.replace(/([^\W_]+[^\s-]*) */g, function(txt) {
     return txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase();
   });
   lowers = ["A", "An", "The", "And", "But", "Or", "For", "Nor", "As", "At", "By", "For", "From", "In", "Into", "Near", "Of", "On", "Onto", "To", "With"];
-  for (m = 0, len = lowers.length; m < len; m++) {
+  for (m = 0, len1 = lowers.length; m < len1; m++) {
     lower = lowers[m];
     lowerRegEx = new RegExp("\\s" + lower + "\\s", "g");
     str = str.replace(lowerRegEx, function(txt) {
@@ -795,7 +795,7 @@ String.prototype.toTitleCase = function() {
     });
   }
   uppers = ["Id", "Tv"];
-  for (o = 0, len1 = uppers.length; o < len1; o++) {
+  for (o = 0, len2 = uppers.length; o < len2; o++) {
     upper = uppers[o];
     upperRegEx = new RegExp("\\b" + upper + "\\b", "g");
     str = str.replace(upperRegEx, upper.toUpperCase());
@@ -804,7 +804,7 @@ String.prototype.toTitleCase = function() {
 };
 
 smartUpperCasing = function(text) {
-  var len, m, r, replaceLower, replacer, searchUpper, secondWord, secondWordCased, smartCased, specialLowerCaseWords, word;
+  var len1, m, r, replaceLower, replacer, searchUpper, secondWord, secondWordCased, smartCased, specialLowerCaseWords, word;
   if (isNull(text)) {
     return "";
   }
@@ -814,7 +814,7 @@ smartUpperCasing = function(text) {
   smartCased = text.replace(/((?=((?!-)[\W\s\r\n]))\s[A-Za-z]|^[A-Za-z])/g, replacer);
   specialLowerCaseWords = ["a", "an", "and", "at", "but", "by", "for", "in", "nor", "of", "on", "or", "out", "so", "to", "the", "up", "yet"];
   try {
-    for (m = 0, len = specialLowerCaseWords.length; m < len; m++) {
+    for (m = 0, len1 = specialLowerCaseWords.length; m < len1; m++) {
       word = specialLowerCaseWords[m];
       searchUpper = word.toTitleCase();
       replaceLower = word.toLowerCase();
@@ -1803,11 +1803,11 @@ buildQuery = function(obj) {
 };
 
 checkLocalVersion = function() {
-  var len, m, part, prefixUrl, urlBase, urlBaseRaw;
+  var len1, m, part, prefixUrl, urlBase, urlBaseRaw;
   if (uri.o.attr("host") === "localhost") {
     urlBaseRaw = uri.o.attr("directory").split("/");
     urlBase = new Array();
-    for (m = 0, len = urlBaseRaw.length; m < len; m++) {
+    for (m = 0, len1 = urlBaseRaw.length; m < len1; m++) {
       part = urlBaseRaw[m];
       if (isNull(part)) {
         continue;
@@ -1833,16 +1833,16 @@ checkLocalVersion = function() {
       };
       githubApiEndpoint = "https://api.github.com/repos/tigerhawkvok/asm-mammal-database/releases";
       return $.get(githubApiEndpoint, buildQuery(args, "json")).done(function(result) {
-        var html, i, len1, len2, localVersionPartNumber, o, p, release, tag, tagParts, tagVersion, tagVersionPartNumber;
+        var html, i, len2, len3, localVersionPartNumber, o, p, release, tag, tagParts, tagVersion, tagVersionPartNumber;
         console.log("Github API result:", result);
-        for (o = 0, len1 = result.length; o < len1; o++) {
+        for (o = 0, len2 = result.length; o < len2; o++) {
           release = result[o];
           console.log("Checking release", release);
           tag = release.tag_name;
           tagVersion = tag.replace(/v(([0-9]+\.)+[0-9]+)(\-\w+)?/img, "$1");
           tagParts = tagVersion.split(".");
           i = 0;
-          for (p = 0, len2 = tagParts.length; p < len2; p++) {
+          for (p = 0, len3 = tagParts.length; p < len3; p++) {
             part = tagParts[p];
             tagVersionPartNumber = toInt(part);
             localVersionPartNumber = toInt(versionParts[i]);
@@ -1922,6 +1922,71 @@ post64 = function(string) {
   return p64;
 };
 
+dataUriToBlob = function(dataUri, callback) {
+
+  /*
+   * From
+   *
+   * http://stackoverflow.com/a/38845151/1877527
+   *
+   * Itself edited from
+   *
+   * https://developer.mozilla.org/en-US/docs/Web/API/HTMLCanvasElement/toBlob#Polyfill
+   *
+   * Chrome has a 2 MiB data uri limit;
+   * convert to blob then use that instead.
+   */
+  var arr, binStr, blob, blobAttr, data, el, encoding, error1, i, len, len1, m, mimeString;
+  data = dataUri.split(",")[1];
+  encoding = dataUri.split(";")[1].split(",")[0];
+  try {
+    binStr = atob(data);
+  } catch (error1) {
+    binStr = data;
+  }
+  len = binStr.length;
+  arr = new Uint8Array(len);
+  mimeString = dataUri.split(',')[0].split(':')[1].split(';')[0];
+  i = 0;
+  for (m = 0, len1 = arr.length; m < len1; m++) {
+    el = arr[m];
+    arr[i] = binStr.charCodeAt(i);
+    ++i;
+  }
+  blobAttr = {
+    type: mimeString
+  };
+  blob = new Blob([arr], blobAttr);
+  if (typeof callback === "function") {
+    callback(blob);
+  }
+  return blob;
+};
+
+downloadDataUriAsBlob = function(selector) {
+  var blob, data, objUrl;
+  if (isNull(selector)) {
+    console.error("Needs a data URI or element selector as an argument!");
+    return false;
+  }
+  try {
+    if ($(selector).exists()) {
+      data = $(selector).attr("href");
+    }
+  } catch (undefined) {}
+  if (isNull(data)) {
+    data = selector;
+    selector = null;
+  }
+  blob = dataUriToBlob(data);
+  objUrl = URL.createObjectURL(blob);
+  if (isNull(selector)) {
+    return objUrl;
+  }
+  $(selector).attr("href", objUrl);
+  return false;
+};
+
 try {
   $();
 } catch (error1) {
@@ -1930,7 +1995,7 @@ try {
 }
 
 $(function() {
-  var caption, captionValue, error2, error3, len, len1, m, md, mdText, o, offsetImageLabel, ref1, ref2;
+  var caption, captionValue, error2, error3, len1, len2, m, md, mdText, o, offsetImageLabel, ref1, ref2;
   try {
     checkLocalVersion();
     interval(3600 * 1000, function() {
@@ -1982,7 +2047,7 @@ $(function() {
   }
   try {
     ref1 = $("marked-element");
-    for (m = 0, len = ref1.length; m < len; m++) {
+    for (m = 0, len1 = ref1.length; m < len1; m++) {
       md = ref1[m];
       mdText = $(md).find("script").text();
       if (!isNull(mdText)) {
@@ -1994,7 +2059,7 @@ $(function() {
   checkFileVersion();
   try {
     ref2 = $("figcaption .caption-description");
-    for (o = 0, len1 = ref2.length; o < len1; o++) {
+    for (o = 0, len2 = ref2.length; o < len2; o++) {
       caption = ref2[o];
       captionValue = $(caption).text().unescape();
       $(caption).text(captionValue);
@@ -2126,17 +2191,17 @@ eutheriaFilterHelper = function(skipFetch) {
     } catch (undefined) {}
   }
   $("#linnean").on("iron-select", function() {
-    var column, error2, group, html, humanGroup, len, len1, m, mammalGroups, mammalItems, o, ref1, ref2, scientific, type;
+    var column, error2, group, html, humanGroup, len1, len2, m, mammalGroups, mammalItems, o, ref1, ref2, scientific, type;
     if ($(p$("#linnean").selectedItem).attr("data-type") === "eutheria") {
       mammalGroups = new Array();
       ref1 = _asm.mammalGroupsBase;
-      for (m = 0, len = ref1.length; m < len; m++) {
+      for (m = 0, len1 = ref1.length; m < len1; m++) {
         humanGroup = ref1[m];
         mammalGroups.push(humanGroup.toLowerCase());
       }
       mammalGroups.sort();
       mammalItems = "";
-      for (o = 0, len1 = mammalGroups.length; o < len1; o++) {
+      for (o = 0, len2 = mammalGroups.length; o < len2; o++) {
         group = mammalGroups[o];
         html = "<paper-item data-type=\"" + group + "\">\n  " + (group.toTitleCase()) + "\n</paper-item>";
         mammalItems += html;
@@ -2169,7 +2234,7 @@ eutheriaFilterHelper = function(skipFetch) {
 };
 
 checkLaggedUpdate = function(result) {
-  var args, error2, finishedLoop, i, iucnCanProvide, j, k, key, len, m, ref1, shouldSkip, start, taxon;
+  var args, error2, finishedLoop, i, iucnCanProvide, j, k, key, len1, m, ref1, shouldSkip, start, taxon;
   iucnCanProvide = ["common_name", "species_authority"];
   start = Date.now();
   if (result.do_client_update === true) {
@@ -2180,7 +2245,7 @@ checkLaggedUpdate = function(result) {
       for (i in ref1) {
         taxon = ref1[i];
         shouldSkip = true;
-        for (m = 0, len = iucnCanProvide.length; m < len; m++) {
+        for (m = 0, len1 = iucnCanProvide.length; m < len1; m++) {
           key = iucnCanProvide[m];
           if (!isNull(taxon[key])) {
             continue;
@@ -2419,7 +2484,7 @@ formatSearchResults = function(result, container, callback) {
   });
   requiredKeyOrder = ["common_name", "genus", "species"];
   delay(5, function() {
-    var allColsHaveData, colHasData, dataArray, i, k, key, len, m, origData, ref1, renderDataArray, row, totalLoops, v;
+    var allColsHaveData, colHasData, dataArray, i, k, key, len1, m, origData, ref1, renderDataArray, row, totalLoops, v;
     colHasData = new Array();
     for (i in data) {
       row = data[i];
@@ -2458,7 +2523,7 @@ formatSearchResults = function(result, container, callback) {
     for (i in origData) {
       row = origData[i];
       data[i] = new Object();
-      for (m = 0, len = requiredKeyOrder.length; m < len; m++) {
+      for (m = 0, len1 = requiredKeyOrder.length; m < len1; m++) {
         key = requiredKeyOrder[m];
         data[i][key] = row[key];
       }
@@ -2466,7 +2531,7 @@ formatSearchResults = function(result, container, callback) {
     totalLoops = 0;
     dataArray = Object.toArray(data);
     return (renderDataArray = function(data, firstIteration, renderChunk) {
-      var bootstrapColSize, col, d, error2, error3, error4, finalIteration, frameHtml, genus, html, htmlRow, j, kClass, len1, loopCleanup, nextIterationData, niceKey, o, postMessageContent, rowId, species, split, taxonQuery, wasOffThread, worker, year;
+      var bootstrapColSize, col, d, error2, error3, error4, finalIteration, frameHtml, genus, html, htmlRow, j, kClass, len2, loopCleanup, nextIterationData, niceKey, o, postMessageContent, rowId, species, split, taxonQuery, wasOffThread, worker, year;
       html = "";
       i = 0;
       nextIterationData = null;
@@ -2497,7 +2562,7 @@ formatSearchResults = function(result, container, callback) {
         worker.postMessage(postMessageContent);
       } catch (error2) {
         console.log("Starting loop with i = " + i + ", renderChunk = " + renderChunk + ", data length = " + data.length, firstIteration, finalIteration);
-        for (o = 0, len1 = data.length; o < len1; o++) {
+        for (o = 0, len2 = data.length; o < len2; o++) {
           row = data[o];
           ++totalLoops;
           externalCounter = i;
@@ -3348,7 +3413,7 @@ showBadSearchErrorMessage = function(result) {
 };
 
 bindPaperMenuButton = function(selector, unbindTargets) {
-  var dropdown, len, m, menu, ref1, relabelSelectedItem;
+  var dropdown, len1, m, menu, ref1, relabelSelectedItem;
   if (selector == null) {
     selector = "paper-menu-button";
   }
@@ -3366,7 +3431,7 @@ bindPaperMenuButton = function(selector, unbindTargets) {
    */
   return false;
   ref1 = $(selector);
-  for (m = 0, len = ref1.length; m < len; m++) {
+  for (m = 0, len1 = ref1.length; m < len1; m++) {
     dropdown = ref1[m];
     menu = $(dropdown).find("paper-menu");
     if (unbindTargets) {

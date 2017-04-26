@@ -1523,6 +1523,67 @@ post64 = (string) ->
   p64
 
 
+dataUriToBlob = (dataUri, callback) ->
+  ###
+  # From
+  #
+  # http://stackoverflow.com/a/38845151/1877527
+  #
+  # Itself edited from
+  #
+  # https://developer.mozilla.org/en-US/docs/Web/API/HTMLCanvasElement/toBlob#Polyfill
+  #
+  # Chrome has a 2 MiB data uri limit;
+  # convert to blob then use that instead.
+  ###
+  # Set it up
+  data = dataUri.split(",")[1]
+  encoding = dataUri.split(";")[1].split(",")[0]
+  try
+    binStr = atob data
+  catch
+    binStr = data
+  # if encoding is "base64"
+  #   # encodedData = data
+  #   binStr = atob data #encodedData
+  # else
+  #   # encodedData = encode64 data
+  #   binStr = data
+  len = binStr.length
+  arr = new Uint8Array(len)
+  mimeString = dataUri.split(',')[0].split(':')[1].split(';')[0]
+  # Create a blob
+  i = 0
+  for el in arr
+    arr[i] = binStr.charCodeAt i
+    ++i
+  blobAttr =
+    type: mimeString
+  blob = new Blob [arr], blobAttr
+  if typeof callback is "function"
+    callback(blob)
+  blob
+
+
+downloadDataUriAsBlob = (selector) ->
+  if isNull selector
+    console.error "Needs a data URI or element selector as an argument!"
+    return false
+  try
+    if $(selector).exists()
+      data = $(selector).attr "href"
+  if isNull data
+    data = selector
+    selector = null
+  blob = dataUriToBlob data
+  objUrl = URL.createObjectURL blob
+  if isNull selector
+    return objUrl
+  # Change the data download
+  $(selector).attr "href", objUrl
+  false
+
+
 
 try
   $()

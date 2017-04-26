@@ -1107,19 +1107,19 @@ createHtmlFile = function(result, htmlBody) {
             if (isNumber(row.authority_year)) {
               authorityYears[row.authority_year] = row.authority_year;
             } else if (isNull(row.authority_year)) {
-              if (/\(?((['"])?[\w \&;]+\2) *, *([0-9]{4})\)?/i.test(row.species_authority)) {
-                year = row.species_authority.replace(/\(?((['"])?[\w \&;]+\2) *, *([0-9]{4})\)?/ig, "$3");
-                row.species_authority = row.species_authority.replace(/\(?((['"])?[\w \&;]+\2) *, *([0-9]{4})\)?/ig, "$1");
+              if (/^\(? *((['"])? *([\w\.\-\&; \[\]]+(,|&|&amp;|&amp;amp;)?)+ *\2) *, *([0-9]{4}) *\)?/i.test(row.species_authority)) {
+                year = row.species_authority.replace(/^\(? *((['"])? *([\w\.\-\&; \[\]]+(,|&|&amp;|&amp;amp;)?)+ *\2) *, *([0-9]{4}) *\)?/ig, "$3");
+                row.species_authority = row.species_authority.replace(/^\(? *((['"])? *([\w\.\-\&; \[\]]+(,|&|&amp;|&amp;amp;)?)+ *\2) *, *([0-9]{4}) *\)?/ig, "$1");
                 authorityYears[year] = year;
               } else {
                 authorityYears["No Year"] = "No Year";
               }
             } else {
-              console.debug("authority isnt number or null, with bad species_authority '" + row.authority_year + "'");
               authorityYears = JSON.parse(row.authority_year);
             }
           } catch (error1) {
             e = error1;
+            console.debug("authority isnt number, null, or object, with bad species_authority '" + row.authority_year + "'");
             split = row.authority_year.split(":");
             if (split.length > 1) {
               year = split[1].slice(split[1].search("\"") + 1, -2);

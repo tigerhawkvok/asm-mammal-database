@@ -297,7 +297,7 @@ showDownloadChooser = ->
     </paper-dialog-scrollable>
     <div class="buttons">
       <paper-button dialog-dismiss>Cancel</paper-button>
-      <paper-button dialog-confirm id="initiate-csv-download" disabled>CSV</paper-button>
+      <paper-button dialog-confirm id="initiate-csv-download">CSV</paper-button>
       <paper-button dialog-confirm id="initiate-html-download">HTML/PDF</paper-button>
     </div>
   </paper-dialog>

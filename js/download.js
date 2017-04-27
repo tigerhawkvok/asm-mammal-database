@@ -46,8 +46,7 @@ downloadCSVList = function() {
         /*
          * Service worker callback
          */
-        var avgTotalTimeEstimate, downloadable, duration, error, estimatedTimeRemaining, fileSizeMiB, fractionalProgress, html, message, timeElapsed, totalTimeEstimate;
-        console.info("Got message back from service worker", e.data);
+        var avgTotalTimeEstimate, delayCheckSqlButton, downloadable, duration, error, estimatedTimeRemaining, fileSizeMiB, fractionalProgress, html, message, sqlButton, timeElapsed, totalTimeEstimate;
         if (e.data.status !== true) {
           console.warn("Got an error!");
           message = !isNull(e.data.updateUser) ? e.data.updateUser : "Failed to create file";
@@ -83,17 +82,34 @@ downloadCSVList = function() {
           fileSizeMiB = 0;
         }
         console.log("Downloadable size: " + fileSizeMiB + " MiB");
-        html = "<paper-dialog class=\"download-file\" id=\"download-csv-file\" modal>\n  <h2>Your files are ready</h2>\n  <paper-dialog-scrollable class=\"dialog-content\">\n    <h3>Need data analysis?</h3>\n    <p>\n      api explanation link blurb\n    </p>\n    <h3>Which file type do I want?</h3>\n    <p>\n      A CSV file is readily opened by consumer-grade programs, such as Microsoft Excel or Google Spreadsheets.\n      It has some transformations done to the raw data to make it more readable.\n      <br/><br/>\n      However, if you wish to replicate the whole database and perform queries, the SQL file is machine-readable,\n      ready for import into a MySQL or MariaDB database by running the <code>source asm-species-" + dateString + ".sql;</code> in their\n      interactive shell prompts when run from your download directory. This file has not been transformed in any way.\n    </p>\n    <h3>Excel Important Note</h3>\n    <p>\n      Please note that some special characters in names may be decoded incorrectly by Microsoft Excel. If this is a problem, following the steps in <a href=\"https://github.com/SSARHERPS/SSAR-species-database/blob/master/meta/excel_unicode_readme.md\"  onclick='window.open(this.href); return false;' onkeypress='window.open(this.href); return false;'>this README <iron-icon icon=\"launch\"></iron-icon></a> to force Excel to format it correctly.\n    </p>\n    <p class=\"text-center\">\n      <a href=\"" + downloadable + "\" download=\"asm-species-" + dateString + ".csv\" class=\"btn btn-default data-download-button\" id=\"download-csv-summary\"><iron-icon icon=\"file-download\"></iron-icon> Download CSV</a>\n      <a href=\"#\" download=\"asm-species-" + dateString + ".sql\" class=\"btn btn-default data-download-button\" id=\"download-sql-summary\" disabled><iron-icon icon=\"file-download\"></iron-icon> Download SQL</a>\n    </p>\n  </paper-dialog-scrollable>\n  <div class=\"buttons\">\n    <paper-button dialog-dismiss>Close</paper-button>\n  </div>\n</paper-dialog>";
+        if (_asm.sqlDumpLocation === null) {
+          sqlButton = "<div id=\"download-sql-summary\" class=\"data-download-button\">\n  <paper-spinner active></paper-spinner> Please wait while your SQL creation finishes ...\n</div>";
+          (delayCheckSqlButton = function() {
+            if (_asm.sqlDumpLocation === null) {
+              delay(250, function() {
+                return delayCheckSqlButton();
+              });
+            } else {
+              if (_asm.sqlDumpLocation === false) {
+                sqlButton = "<a href=\"#\" class=\"btn btn-danger data-download-button\" id=\"download-sql-summary\" disabled><iron-icon icon=\"icons:error\"></iron-icon> SQL Creation Failed</a>";
+              } else {
+                sqlButton = "<a href=\"" + _asm.sqlDumpLocation + "\" download=\"asm-species-" + dateString + ".sql\" class=\"btn btn-default data-download-button\" id=\"download-sql-summary\"><iron-icon icon=\"icons:file-download\"></iron-icon> Download SQL</a>";
+              }
+              $("#download-sql-summary").replaceWith(sqlButton);
+            }
+            return false;
+          })();
+        } else if (_asm.sqlDumpLocation === false) {
+          sqlButton = "<a href=\"#\" class=\"btn btn-danger data-download-button\" id=\"download-sql-summary\" disabled><iron-icon icon=\"icons:error\"></iron-icon> SQL Creation Failed</a>";
+        } else {
+          sqlButton = "<a href=\"" + _asm.sqlDumpLocation + "\" download=\"asm-species-" + dateString + ".sql\" class=\"btn btn-default data-download-button\" id=\"download-sql-summary\"><iron-icon icon=\"icons:file-download\"></iron-icon> Download SQL</a>";
+        }
+        html = "<paper-dialog class=\"download-file\" id=\"download-csv-file\" modal>\n  <h2>Your files are ready</h2>\n  <paper-dialog-scrollable class=\"dialog-content\">\n    <h3>Want to do data analysis?</h3>\n    <p>\n      We have an open API! Read all of our parameters here:\n      <a href=\"https://github.com/tigerhawkvok/asm-mammal-database/blob/master/README.md#api\"  onclick='window.open(this.href); return false;' onkeypress='window.open(this.href); return false;'>README API Documentation <iron-icon icon=\"launch\"></iron-icon></a>\n      <br/><br/>\n      We also have a UI to perform permission-restricted SQL queries on the database TODO\n    </p>\n    <h3>Which file type do I want?</h3>\n    <p>\n      A CSV file is readily opened by consumer-grade programs, such as Microsoft Excel or Google Spreadsheets.\n      It has some transformations done to the raw data to make it more readable.\n      <br/><br/>\n      However, if you wish to replicate the whole database and perform queries, the SQL file is machine-readable,\n      ready for import into a MySQL or MariaDB database by running the <code>source asm-species-" + dateString + ".sql;</code> in their\n      interactive shell prompts when run from your download directory. This file has not been transformed in any way.\n    </p>\n    <h3>Excel Important Note</h3>\n    <p>\n      Please note that some special characters in names may be decoded incorrectly by Microsoft Excel. If this is a problem, following the steps in <a href=\"https://github.com/tigerhawkvok/asm-mammal-database/blob/master/meta/excel_unicode_readme.md\"  onclick='window.open(this.href); return false;' onkeypress='window.open(this.href); return false;'>this README <iron-icon icon=\"icons:launch\"></iron-icon></a> to force Excel to format it correctly.\n    </p>\n    <p class=\"text-center\">\n      <a href=\"" + downloadable + "\" download=\"asm-species-" + dateString + ".csv\" class=\"btn btn-default data-download-button\" id=\"download-csv-summary\"><iron-icon icon=\"icons:file-download\"></iron-icon> Download CSV</a>\n      " + sqlButton + "\n    </p>\n  </paper-dialog-scrollable>\n  <div class=\"buttons\">\n    <paper-button dialog-dismiss>Close</paper-button>\n  </div>\n</paper-dialog>";
         if (!$("#download-csv-file").exists()) {
           $("body").append(html);
         } else {
           $("#download-csv-file").replaceWith(html);
         }
-        $("#download-chooser").on("iron-overlay-closed", function() {
-          return delay(100, function() {
-            return $(this).remove();
-          });
-        });
         p$("#download-chooser").close();
         if (fileSizeMiB >= 2) {
           console.debug("Large file size triggering blob creation");
@@ -120,6 +136,17 @@ downloadCSVList = function() {
     }
   }).fail(function() {
     return stopLoadError("There was a problem communicating with the server. Please try again later.");
+  });
+  _asm.sqlDumpLocation = null;
+  $.get(uri.urlString + "meta.php", "action=get_db_dump", "json").done(function(result) {
+    if (result.status === true) {
+      _asm.sqlDumpLocation = result.download_path;
+    } else {
+      _asm.sqlDumpLocation = false;
+    }
+    return false;
+  }).fail(function(result, status) {
+    return false;
   });
   return false;
 };
@@ -217,7 +244,7 @@ downloadHTMLList = function() {
           fileSizeMiB = 0;
         }
         console.log("Downloadable size: " + fileSizeMiB + " MiB");
-        dialogHtml = "<paper-dialog  modal class=\"download-file\" id=\"download-html-file\">\n  <h2>Your file is ready</h2>\n  <paper-dialog-scrollable class=\"dialog-content\">\n    <p>\n      Please note that some taxa may have had incomplete data. Please download a CSV or SQL file for the uncombined taxon data.\n    </p>\n    <p class=\"text-center\">\n      <a href=\"" + downloadable + "\" download=\"asm-species-" + dateString + ".html\" class=\"btn btn-default data-download-button\" id=\"download-html-summary\"><iron-icon icon=\"file-download\"></iron-icon> Download HTML</a>\n      <div id=\"pdf-download-placeholder\">\n        <paper-spinner active></paper-spinner> Please wait while your PDF creation finishes ...\n      </div>\n    </p>\n  </paper-dialog-scrollable>\n  <div class=\"buttons\">\n    <paper-button dialog-dismiss>Close</paper-button>\n  </div>\n</paper-dialog>";
+        dialogHtml = "<paper-dialog  modal class=\"download-file\" id=\"download-html-file\">\n  <h2>Your file is ready</h2>\n  <paper-dialog-scrollable class=\"dialog-content\">\n    <p>\n      Please note that some taxa may have had incomplete data. Please download a CSV or SQL file for the uncombined taxon data.\n    </p>\n    <p class=\"text-center\">\n      <a href=\"" + downloadable + "\" download=\"asm-species-" + dateString + ".html\" class=\"btn btn-default data-download-button\" id=\"download-html-summary\"><iron-icon icon=\"icons:file-download\"></iron-icon> Download HTML</a>\n      <div id=\"pdf-download-placeholder\" class=\"data-download-button\">\n        <paper-spinner active></paper-spinner> Please wait while your PDF creation finishes ...\n      </div>\n    </p>\n  </paper-dialog-scrollable>\n  <div class=\"buttons\">\n    <paper-button dialog-dismiss>Close</paper-button>\n  </div>\n</paper-dialog>";
         if (!$("#download-html-file").exists()) {
           $("body").append(dialogHtml);
         } else {
@@ -240,7 +267,7 @@ downloadHTMLList = function() {
         safariDialogHelper("#download-html-file");
         stopLoad();
         toastStatusMessage("Please wait while we prepare your PDF file...", "", 7000);
-        pdfError = "<a href=\"#\" disabled class=\"btn btn-default\" id=\"download-pdf-summary\">PDF Creation Failed</a>";
+        pdfError = "<a href=\"#\" disabled class=\"btn btn-danger\" id=\"download-pdf-summary\"><iron-icon icon=\"icons:error\"></iron-icon> PDF Creation Failed</a>";
         console.debug("Posting for PDF");
         $.post(uri.urlString + "pdf/pdfwrapper.php", "html=" + (encodeURIComponent(htmlBody)), "json").done(function(result) {
           var pdfDownload, pdfDownloadPath;
@@ -290,6 +317,13 @@ showDownloadChooser = function() {
   });
   $("#initiate-html-download").click(function() {
     return downloadHTMLList();
+  });
+  $("#download-chooser").on("iron-overlay-closed", function() {
+    return delay(100, (function(_this) {
+      return function() {
+        return $(_this).remove();
+      };
+    })(this));
   });
   safariDialogHelper("#download-chooser");
   return false;

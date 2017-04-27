@@ -1288,7 +1288,7 @@ createCSVFile = function(result) {
   startTime = Date.now();
   csvBody = "  ";
   csvHeader = new Array();
-  showColumn = ["genus", "species", "subspecies", "canonical_sciname", "common_name", "common_name_source", "image", "image_caption", "image_credit", "image_license", "major_type", "major_subtype", "simple_linnean_group", "simple_linnean_subgroup", "linnean_order", "linnean_family", "genus_authority", "parens_auth_genus", "species_authority", "parens_auth_species", "authority_year", "deprecated_scientific", "notes", "entry", "taxon_credit", "taxon_credit_date", "taxon_author", "citation", "source", "internal_id"];
+  showColumn = ["genus", "species", "subspecies", "canonical_sciname", "common_name", "common_name_source", "image", "image_caption", "image_credit", "image_license", "major_type", "major_subtype", "simple_linnean_group", "simple_linnean_subgroup", "linnean_order", "linnean_family", "genus_authority", "species_authority", "deprecated_scientific", "notes", "entry", "taxon_credit", "taxon_credit_date", "taxon_author", "citation", "source", "internal_id"];
   makeTitleCase = ["genus", "common_name", "taxon_credit", "linnean_order", "linnean_family", "genus_authority", "species_authority"];
   boolToString = ["parens_auth_genus", "parens_auth_species"];
   i = 0;
@@ -1403,7 +1403,7 @@ createCSVFile = function(result) {
                 }
               }
               if (isNull(row.genus_authority)) {
-                row.genus_authority = row.species_authority;
+                row.genus_authority = row.species_authority + " [assumed]";
               } else if (isNull(row.species_authority)) {
                 row.species_authority = row.genus_authority;
               }
@@ -1411,7 +1411,7 @@ createCSVFile = function(result) {
                 try {
                   colData = row[dirtyCol].unescape();
                 } catch (undefined) {}
-                if (isNull(colData)) {
+                if (isNull(colData) || colData.trim() === "[assumed]") {
                   colData = "Unknown";
                 }
               }
@@ -1443,6 +1443,11 @@ createCSVFile = function(result) {
               } catch (undefined) {}
             } else {
               console.debug("auth year '" + colData + "' is valid", isNull(colData, !isNull(row[dirtyCol], col, dirtyCol)));
+            }
+          }
+          if (dirtyCol === "deprecated_scientific") {
+            if (typeof colData === "object") {
+              colData = JSON.stringify(colData);
             }
           }
           if (indexOf.call(makeTitleCase, col) >= 0) {

@@ -422,10 +422,10 @@ createCSVFile = (result) ->
     "linnean_order"
     "linnean_family"
     "genus_authority"
-    "parens_auth_genus"
+    # "parens_auth_genus"
     "species_authority"
-    "parens_auth_species"
-    "authority_year"
+    # "parens_auth_species"
+    # "authority_year"
     "deprecated_scientific"
     "notes"
     "entry"
@@ -552,14 +552,14 @@ createCSVFile = (result) ->
                   genusYear = c.replace(/&#39;/g,"'")
                   speciesYear = v.replace(/&#39;/g,"'")
               if isNull row.genus_authority
-                row.genus_authority = row.species_authority
+                row.genus_authority = "#{row.species_authority} [assumed]"
               else if isNull row.species_authority
                 row.species_authority = row.genus_authority
               if isNull colData
                 # It may have been updated above
                 try
                   colData = row[dirtyCol].unescape()
-                if isNull colData
+                if isNull(colData) or colData.trim() is "[assumed]"
                   colData = "Unknown"
               switch col.split("_")[0]
                 when "genus"
@@ -581,6 +581,9 @@ createCSVFile = (result) ->
                   colData = JSON.stringify(colData).replace /"/g,'\"\"'
             else
               console.debug "auth year '#{colData}' is valid", isNull colData, not isNull row[dirtyCol], col, dirtyCol
+          if dirtyCol is "deprecated_scientific"
+            if typeof colData is "object"
+              colData = JSON.stringify colData
           if col in makeTitleCase
             colData = colData.toTitleCase()
           if col is "image" and not isNull(colData)

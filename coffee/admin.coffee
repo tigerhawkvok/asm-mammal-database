@@ -1129,11 +1129,14 @@ lookupEditorSpecies = (taxon = undefined) ->
           $(dropdownTentativeSelector).polymerSelected d, true
         if col is "species_authority" or col is "genus_authority"
           # Check if the authority is in full format, eg, "(Linnaeus, 1758)"
-          unless isNull d.match /\(? *([\w\. \[\]]+), *([0-9]{4}) *\)?/g
+          #unless isNull d.match /\(? *([\w\. \[\]]+), *([0-9]{4}) *\)?/g
+          if /^\(? *((['"])? *([\w\u00C0-\u017F\. \-\&;\[\]]+(,|&|&amp;|&amp;amp;|&#[\w0-9]+;)?)+ *\2) *, *([0-9]{4}) *\)?/im.test d
             hasParens = d.search(/\(/) >= 0 and d.search(/\)/) >= 0
-            authorityParts = d.replace(/[\(\)]/g,"").split(",")
-            d = authorityParts[0].trim()
-            year = toInt(authorityParts[1])
+            #authorityParts = d.replace(/[\(\)]/g,"").split(",")
+            #d = authorityParts[0].trim()
+            #year = toInt(authorityParts[1])
+            year = d.replace /^\(? *((['"])? *([\w\u00C0-\u017F\.\-\&; \[\]]+(,|&|&amp;|&amp;amp;|&#[\w0-9]+;)?)+ *\2) *, *([0-9]{4}) *\)?/ig, "$5"
+            d = d.replace /^\(? *((['"])? *([\w\u00C0-\u017F\.\-\&; \[\]]+(,|&|&amp;|&amp;amp;|&#[\w0-9]+;)?)+ *\2) *, *([0-9]{4}) *\)?/ig, "$1"
             if col is "genus_authority"
               $("#edit-gauthyear").attr("value",year)
             if col is "species_authority"

@@ -1028,7 +1028,7 @@ lookupEditorSpecies = function(taxon) {
     console.warn("Pinging with", "" + uri.urlString + searchParams.targetApi + "?q=" + taxon);
   }
   $.get(searchParams.targetApi, args, "json").done(function(result) {
-    var authorityParts, category, col, colAsDropdownExists, colSplit, d, data, dropdownTentativeSelector, e, error1, error2, error3, fieldSelector, hasParens, j, jstr, license, licenseUrl, modalElement, speciesString, tempSelector, textAreas, textarea, today, toggleColumns, whoEdited, width, year;
+    var category, col, colAsDropdownExists, colSplit, d, data, dropdownTentativeSelector, e, error1, error2, error3, fieldSelector, hasParens, j, jstr, license, licenseUrl, modalElement, speciesString, tempSelector, textAreas, textarea, today, toggleColumns, whoEdited, width, year;
     try {
       console.debug("Admin lookup rending editor UI for", result);
       data = result.result[0];
@@ -1080,11 +1080,10 @@ lookupEditorSpecies = function(taxon) {
           $(dropdownTentativeSelector).polymerSelected(d, true);
         }
         if (col === "species_authority" || col === "genus_authority") {
-          if (!isNull(d.match(/\(? *([\w\. \[\]]+), *([0-9]{4}) *\)?/g))) {
+          if (/^\(? *((['"])? *([\w\u00C0-\u017F\. \-\&;\[\]]+(,|&|&amp;|&amp;amp;|&#[\w0-9]+;)?)+ *\2) *, *([0-9]{4}) *\)?/im.test(d)) {
             hasParens = d.search(/\(/) >= 0 && d.search(/\)/) >= 0;
-            authorityParts = d.replace(/[\(\)]/g, "").split(",");
-            d = authorityParts[0].trim();
-            year = toInt(authorityParts[1]);
+            year = d.replace(/^\(? *((['"])? *([\w\u00C0-\u017F\.\-\&; \[\]]+(,|&|&amp;|&amp;amp;|&#[\w0-9]+;)?)+ *\2) *, *([0-9]{4}) *\)?/ig, "$5");
+            d = d.replace(/^\(? *((['"])? *([\w\u00C0-\u017F\.\-\&; \[\]]+(,|&|&amp;|&amp;amp;|&#[\w0-9]+;)?)+ *\2) *, *([0-9]{4}) *\)?/ig, "$1");
             if (col === "genus_authority") {
               $("#edit-gauthyear").attr("value", year);
             }

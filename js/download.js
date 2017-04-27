@@ -145,7 +145,7 @@ downloadHTMLList = function() {
         data: result,
         htmlHeader: htmlBody
       };
-      worker = new Worker("js/serviceWorker.js");
+      worker = new Worker("js/serviceWorker.min.js");
       console.info("Rendering list off-thread");
       worker.addEventListener("message", function(e) {
 

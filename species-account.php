@@ -300,10 +300,11 @@ $hasWellFormattedSpeciesCitation = preg_match('/\(? *([\w\. \[\]]+), *([0-9]{4})
 
 if (empty($speciesRow["genus_authority"]) && $hasWellFormattedSpeciesCitation) {
     /***
-     * See admin.coffee for an example of how to do this
+     * See admin.coffee or serviceWorker.coffee for an example of how
+     * to do this 
      *
      * EG:
-     * https://github.com/tigerhawkvok/asm-mammal-database/blob/v0.5.6-prealpha/coffee/admin.coffee#L688-L699
+     * https://github.com/tigerhawkvok/asm-mammal-database/blob/v0.5.22/coffee/serviceWorker.coffee#L222-L230
      *
      * May need to do this in case we picked up the authority from the
      * IUCN, but it hasn't been edited

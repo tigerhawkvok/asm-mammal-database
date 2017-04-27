@@ -1,6 +1,11 @@
 ###
 # Service worker!
 ###
+
+authorityTest = /^\(? *((['"])? *([\w\u00C0-\u017F\. \-\&;\[\]]+(,|&|&amp;|&amp;amp;|&#[\w0-9]+;)?)+ *\2) *, *([0-9]{4}) *\)?/img
+commalessTest = /^(\(?)(.*?[^,]) ([0-9]{4})(\)?)$/img
+progressStepCount = 1000.0
+
 unless typeof uri is "object"
   uri =
     urlString: ""
@@ -176,7 +181,8 @@ createHtmlFile = (result, htmlBody) ->
   console.debug "Got", result
   console.debug "Got body provided?", not isNull htmlBody
   total = result.count
-  progressStep = toInt total / 1000
+  progressStep = total / progressStepCount
+  console.debug "Step size", progressStep
   try
     unless result.status is true
       throw Error("Invalid Result")
@@ -192,14 +198,14 @@ createHtmlFile = (result, htmlBody) ->
     for k, row of result.result
       try
         if k > 0
-          if k %% progressStep is 0
+          if toInt(k %% progressStep) is 0
             message =
               status: true
               done: false
               progress: toInt k / progressStep
             self.postMessage message
           if k %% 100 is 0
-            console.log "Parsing row #{k} of #{total}"
+            #console.log "Parsing row #{k} of #{total}"
             if k %% 500 is 0
               message =
                 status: true
@@ -235,9 +241,13 @@ createHtmlFile = (result, htmlBody) ->
               # Check if this is an IUCN style species authority
               # Strip HTML
               row.species_authority = row.species_authority.replace /(<\/|<|&lt;|&lt;\/).*?(>|&gt;)/img, ""
-              if /^\(? *((['"])? *([\w\u00C0-\u017F\. \-\&;\[\]]+(,|&|&amp;|&amp;amp;|&#[\w0-9]+;)?)+ *\2) *, *([0-9]{4}) *\)?/im.test(row.species_authority)
-                year = row.species_authority.replace /^\(? *((['"])? *([\w\u00C0-\u017F\.\-\&; \[\]]+(,|&|&amp;|&amp;amp;|&#[\w0-9]+;)?)+ *\2) *, *([0-9]{4}) *\)?/ig, "$5"
-                row.species_authority = row.species_authority.replace /^\(? *((['"])? *([\w\u00C0-\u017F\.\-\&; \[\]]+(,|&|&amp;|&amp;amp;|&#[\w0-9]+;)?)+ *\2) *, *([0-9]{4}) *\)?/ig, "$1"
+              # Prevent a catastrophic backtrack
+              if commalessTest.test row.species_authority
+                row.species_authority = row.species_authority.replace commalessTest, "$1$2, $3$4"
+              # The real tester
+              if authorityTest.test(row.species_authority)
+                year = row.species_authority.replace authorityTest, "$5"
+                row.species_authority = row.species_authority.replace authorityTest, "$1"
                 authorityYears[year] = year
                 row.authority_year = authorityYears
               else
@@ -364,8 +374,8 @@ createHtmlFile = (result, htmlBody) ->
     message =
       status: true
       done: false
-      progress: 100
-    self.postMessage message    
+      progress: progressStepCount
+    self.postMessage message
     duration = Date.now() - startTime
     console.log "HTML file prepped in #{duration}ms off-thread"
     message =
@@ -442,11 +452,12 @@ createCSVFile = (result) ->
   i = 0
   console.debug "Got result"
   totalCount = Object.size result.result
-  progressStep = toInt totalCount / 100
+  progressStep = totalCount / progressStepCount
+  console.debug "Step size", progressStep
   try
     for k, row of result.result
       if k > 0
-        if k %% progressStep is 0
+        if toInt(k %% progressStep) is 0
           message =
             status: true
             done: false
@@ -497,9 +508,13 @@ createCSVFile = (result) ->
                     # Check if this is an IUCN style species authority
                     # Strip HTML
                     row.species_authority = row.species_authority.replace /(<\/|<|&lt;|&lt;\/).*?(>|&gt;)/img, ""
-                    if /^\(? *((['"])? *([\w\u00C0-\u017F\. \-\&;\[\]]+(,|&|&amp;|&amp;amp;|&#[\w0-9]+;)?)+ *\2) *, *([0-9]{4}) *\)?/im.test(row.species_authority)
-                      year = row.species_authority.replace /^\(? *((['"])? *([\w\u00C0-\u017F\.\-\&; \[\]]+(,|&|&amp;|&amp;amp;|&#[\w0-9]+;)?)+ *\2) *, *([0-9]{4}) *\)?/ig, "$5"
-                      row.species_authority = row.species_authority.replace /^\(? *((['"])? *([\w\u00C0-\u017F\.\-\&; \[\]]+(,|&|&amp;|&amp;amp;|&#[\w0-9]+;)?)+ *\2) *, *([0-9]{4}) *\)?/ig, "$1"
+                    # Prevent a catastrophic backtrack
+                    if commalessTest.test row.species_authority
+                      row.species_authority = row.species_authority.replace commalessTest, "$1$2, $3$4"
+                    # The real tester
+                    if authorityTest.test(row.species_authority)
+                      year = row.species_authority.replace authorityTest, "$5"
+                      row.species_authority = row.species_authority.replace authorityTest, "$1"
                       authorityYears[year] = year
                       row.authority_year = authorityYears
                     else
@@ -563,7 +578,7 @@ createCSVFile = (result) ->
               try
                 colData = row[dirtyCol]
                 if typeof colData is "object"
-                  colData = JSON.stringify colData
+                  colData = JSON.stringify(colData).replace /"/g,'\"\"'
             else
               console.debug "auth year '#{colData}' is valid", isNull colData, not isNull row[dirtyCol], col, dirtyCol
           if col in makeTitleCase
@@ -591,12 +606,18 @@ createCSVFile = (result) ->
     # OK, it's all been created. Download it.
     downloadable = "data:text/csv;charset=utf-8," + encodeURIComponent(csv)
     message =
+      status: true
+      done: false
+      progress: progressStepCount
+    self.postMessage message
+    duration = Date.now() - startTime
+    console.log "CSV file prepped in #{duration}ms off-thread"
+    message =
       csv: downloadable
       status: true
       done: true
-    duration = Date.now() - startTime
-    console.log "CSV file prepped in #{duration}ms off-thread"
     self.postMessage message
+    console.debug "Completed worker!"
     self.close()
   catch e
     console.error "There was a problem creating your file. Please try again later."

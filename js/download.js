@@ -11,6 +11,9 @@ downloadCSVList = function() {
   var adjMonth, args, button, d, dateString, day, i, len, month, ref, startTime;
   animateLoad();
   startTime = Date.now();
+  _asm.progressTracking = {
+    estimate: new Array()
+  };
   try {
     ref = $("#download-chooser .buttons paper-button");
     for (i = 0, len = ref.length; i < len; i++) {
@@ -43,7 +46,7 @@ downloadCSVList = function() {
         /*
          * Service worker callback
          */
-        var downloadable, duration, error, fileSizeMiB, html, message;
+        var avgTotalTimeEstimate, downloadable, duration, error, estimatedTimeRemaining, fileSizeMiB, fractionalProgress, html, message, timeElapsed, totalTimeEstimate;
         console.info("Got message back from service worker", e.data);
         if (e.data.status !== true) {
           console.warn("Got an error!");
@@ -57,10 +60,17 @@ downloadCSVList = function() {
             toastStatusMessage(e.data.updateUser, 1000);
           } else if (isNumber(e.data.progress)) {
             if (!$("#download-progress-indicator").exists()) {
-              html = "<paper-progress\n  class=\"transiting\"\n  id=\"download-progress-indicator\"\n  value=\"0\">\n</paper-progress>";
+              html = "<paper-progress\n  class=\"transiting\"\n  id=\"download-progress-indicator\"\n  value=\"0\"\n  max=\"1000\">\n</paper-progress>\n<p>\n  <span class=\"bold\">Estimated Time Remaining:</span> <span id=\"estimated-remaining-time\">&#8734;</span>s\n</p>";
               $("#download-chooser .dialog-content .scrollable").append(html);
             }
             p$("#download-progress-indicator").value = e.data.progress;
+            timeElapsed = Date.now() - startTime;
+            fractionalProgress = toFloat(e.data.progress) / 1000.0;
+            totalTimeEstimate = timeElapsed / fractionalProgress;
+            _asm.progressTracking.estimate.push(totalTimeEstimate);
+            avgTotalTimeEstimate = _asm.progressTracking.estimate.mean();
+            estimatedTimeRemaining = avgTotalTimeEstimate - timeElapsed;
+            $("#estimated-remaining-time").text(toInt(estimatedTimeRemaining / 1000));
           } else {
             console.log("Just an update", e.data);
           }
@@ -73,7 +83,7 @@ downloadCSVList = function() {
           fileSizeMiB = 0;
         }
         console.log("Downloadable size: " + fileSizeMiB + " MiB");
-        html = "<paper-dialog class=\"download-file\" id=\"download-csv-file\" modal>\n  <h2>Your files are ready</h2>\n  <paper-dialog-scrollable class=\"dialog-content\">\n    <h3>Need data analysis?</h3>\n    <p>\n      api explanation link blurb\n    </p>\n    <h3>Which file type do I want?</h3>\n    <p>\n      A CSV file is readily opened by consumer-grade programs, such as Microsoft Excel or Google Spreadsheets.\n      However, if you wish to replicate the whole database and perform queries, the SQL file is machine-readable,\n      ready for import into a MySQL or MariaDB database by running the <code>source asm-species-" + dateString + ".sql;</code> in their\n      interactive shell prompts when run from your download directory.\n    </p>\n    <h3>Excel Important Note</h3>\n    <p>\n      Please note that some special characters in names may be decoded incorrectly by Microsoft Excel. If this is a problem, following the steps in <a href=\"https://github.com/SSARHERPS/SSAR-species-database/blob/master/meta/excel_unicode_readme.md\"  onclick='window.open(this.href); return false;' onkeypress='window.open(this.href); return false;'>this README <iron-icon icon=\"launch\"></iron-icon></a> to force Excel to format it correctly.\n    </p>\n    <p class=\"text-center\">\n      <a href=\"" + downloadable + "\" download=\"asm-species-" + dateString + ".csv\" class=\"btn btn-default data-download-button\" id=\"download-csv-summary\"><iron-icon icon=\"file-download\"></iron-icon> Download CSV</a>\n      <a href=\"#\" download=\"asm-species-" + dateString + ".sql\" class=\"btn btn-default data-download-button\" id=\"download-sql-summary\" disabled><iron-icon icon=\"file-download\"></iron-icon> Download SQL</a>\n    </p>\n  </paper-dialog-scrollable>\n  <div class=\"buttons\">\n    <paper-button dialog-dismiss>Close</paper-button>\n  </div>\n</paper-dialog>";
+        html = "<paper-dialog class=\"download-file\" id=\"download-csv-file\" modal>\n  <h2>Your files are ready</h2>\n  <paper-dialog-scrollable class=\"dialog-content\">\n    <h3>Need data analysis?</h3>\n    <p>\n      api explanation link blurb\n    </p>\n    <h3>Which file type do I want?</h3>\n    <p>\n      A CSV file is readily opened by consumer-grade programs, such as Microsoft Excel or Google Spreadsheets.\n      It has some transformations done to the raw data to make it more readable.\n      <br/><br/>\n      However, if you wish to replicate the whole database and perform queries, the SQL file is machine-readable,\n      ready for import into a MySQL or MariaDB database by running the <code>source asm-species-" + dateString + ".sql;</code> in their\n      interactive shell prompts when run from your download directory. This file has not been transformed in any way.\n    </p>\n    <h3>Excel Important Note</h3>\n    <p>\n      Please note that some special characters in names may be decoded incorrectly by Microsoft Excel. If this is a problem, following the steps in <a href=\"https://github.com/SSARHERPS/SSAR-species-database/blob/master/meta/excel_unicode_readme.md\"  onclick='window.open(this.href); return false;' onkeypress='window.open(this.href); return false;'>this README <iron-icon icon=\"launch\"></iron-icon></a> to force Excel to format it correctly.\n    </p>\n    <p class=\"text-center\">\n      <a href=\"" + downloadable + "\" download=\"asm-species-" + dateString + ".csv\" class=\"btn btn-default data-download-button\" id=\"download-csv-summary\"><iron-icon icon=\"file-download\"></iron-icon> Download CSV</a>\n      <a href=\"#\" download=\"asm-species-" + dateString + ".sql\" class=\"btn btn-default data-download-button\" id=\"download-sql-summary\" disabled><iron-icon icon=\"file-download\"></iron-icon> Download SQL</a>\n    </p>\n  </paper-dialog-scrollable>\n  <div class=\"buttons\">\n    <paper-button dialog-dismiss>Close</paper-button>\n  </div>\n</paper-dialog>";
         if (!$("#download-csv-file").exists()) {
           $("body").append(html);
         } else {
@@ -171,7 +181,6 @@ downloadHTMLList = function() {
          * Service worker callback
          */
         var avgTotalTimeEstimate, dialogHtml, downloadable, error, estimatedTimeRemaining, fileSizeMiB, fractionalProgress, html, message, pdfError, timeElapsed, totalTimeEstimate;
-        console.info("Got message back from service worker", e.data);
         if (e.data.status !== true) {
           console.warn("Got an error!");
           message = !isNull(e.data.updateUser) ? e.data.updateUser : "Failed to create file";
@@ -208,7 +217,7 @@ downloadHTMLList = function() {
           fileSizeMiB = 0;
         }
         console.log("Downloadable size: " + fileSizeMiB + " MiB");
-        dialogHtml = "<paper-dialog  modal class=\"download-file\" id=\"download-html-file\">\n  <h2>Your file is ready</h2>\n  <paper-dialog-scrollable class=\"dialog-content\">\n    <p class=\"text-center\">\n      <a href=\"" + downloadable + "\" download=\"asm-species-" + dateString + ".html\" class=\"btn btn-default data-download-button\" id=\"download-html-summary\"><iron-icon icon=\"file-download\"></iron-icon> Download HTML</a>\n      <div id=\"pdf-download-placeholder\">\n        <paper-spinner active></paper-spinner> Please wait while your PDF creation finishes ...\n      </div>\n    </p>\n  </paper-dialog-scrollable>\n  <div class=\"buttons\">\n    <paper-button dialog-dismiss>Close</paper-button>\n  </div>\n</paper-dialog>";
+        dialogHtml = "<paper-dialog  modal class=\"download-file\" id=\"download-html-file\">\n  <h2>Your file is ready</h2>\n  <paper-dialog-scrollable class=\"dialog-content\">\n    <p>\n      Please note that some taxa may have had incomplete data. Please download a CSV or SQL file for the uncombined taxon data.\n    </p>\n    <p class=\"text-center\">\n      <a href=\"" + downloadable + "\" download=\"asm-species-" + dateString + ".html\" class=\"btn btn-default data-download-button\" id=\"download-html-summary\"><iron-icon icon=\"file-download\"></iron-icon> Download HTML</a>\n      <div id=\"pdf-download-placeholder\">\n        <paper-spinner active></paper-spinner> Please wait while your PDF creation finishes ...\n      </div>\n    </p>\n  </paper-dialog-scrollable>\n  <div class=\"buttons\">\n    <paper-button dialog-dismiss>Close</paper-button>\n  </div>\n</paper-dialog>";
         if (!$("#download-html-file").exists()) {
           $("body").append(dialogHtml);
         } else {

@@ -2,7 +2,7 @@
 /*
  * Core helpers/imports for web workers
  */
-var _asm, byteCount, createCSVFile, createHtmlFile, dateMonthToString, deEscape, decode64, delay, downloadCSVFile, encode64, generateCSVFromResults, getLocation, goTo, isArray, isBlank, isBool, isEmpty, isJson, isNull, isNumber, jsonTo64, locationData, markdown, openLink, openTab, post64, prepURI, randomInt, randomString, renderDataArray, roundNumber, roundNumberSigfig, smartUpperCasing, toFloat, toInt, toObject, uri, validateAWebTaxon, window,
+var _asm, authorityTest, byteCount, commalessTest, createCSVFile, createHtmlFile, dateMonthToString, deEscape, decode64, delay, downloadCSVFile, encode64, generateCSVFromResults, getLocation, goTo, isArray, isBlank, isBool, isEmpty, isJson, isNull, isNumber, jsonTo64, locationData, markdown, openLink, openTab, post64, prepURI, progressStepCount, randomInt, randomString, renderDataArray, roundNumber, roundNumberSigfig, smartUpperCasing, toFloat, toInt, toObject, uri, validateAWebTaxon, window,
   indexOf = [].indexOf || function(item) { for (var i = 0, l = this.length; i < l; i++) { if (i in this && this[i] === item) return i; } return -1; },
   modulo = function(a, b) { return (+a % (b = +b) + b) % b; };
 
@@ -882,6 +882,12 @@ validateAWebTaxon = function(taxonObj, callback) {
  * Service worker!
  */
 
+authorityTest = /^\(? *((['"])? *([\w\u00C0-\u017F\. \-\&;\[\]]+(,|&|&amp;|&amp;amp;|&#[\w0-9]+;)?)+ *\2) *, *([0-9]{4}) *\)?/img;
+
+commalessTest = /^(\(?)(.*?[^,]) ([0-9]{4})(\)?)$/img;
+
+progressStepCount = 1000.0;
+
 if (typeof uri !== "object") {
   uri = {
     urlString: ""
@@ -1077,7 +1083,8 @@ createHtmlFile = function(result, htmlBody) {
   console.debug("Got", result);
   console.debug("Got body provided?", !isNull(htmlBody));
   total = result.count;
-  progressStep = toInt(total / 1000);
+  progressStep = total / progressStepCount;
+  console.debug("Step size", progressStep);
   try {
     if (result.status !== true) {
       throw Error("Invalid Result");
@@ -1097,7 +1104,7 @@ createHtmlFile = function(result, htmlBody) {
       row = ref[k];
       try {
         if (k > 0) {
-          if (modulo(k, progressStep) === 0) {
+          if (toInt(modulo(k, progressStep)) === 0) {
             message = {
               status: true,
               done: false,
@@ -1106,7 +1113,6 @@ createHtmlFile = function(result, htmlBody) {
             self.postMessage(message);
           }
           if (modulo(k, 100) === 0) {
-            console.log("Parsing row " + k + " of " + total);
             if (modulo(k, 500) === 0) {
               message = {
                 status: true,
@@ -1144,9 +1150,12 @@ createHtmlFile = function(result, htmlBody) {
               authorityYears[row.authority_year] = row.authority_year;
             } else if (isNull(row.authority_year)) {
               row.species_authority = row.species_authority.replace(/(<\/|<|&lt;|&lt;\/).*?(>|&gt;)/img, "");
-              if (/^\(? *((['"])? *([\w\u00C0-\u017F\. \-\&;\[\]]+(,|&|&amp;|&amp;amp;|&#[\w0-9]+;)?)+ *\2) *, *([0-9]{4}) *\)?/im.test(row.species_authority)) {
-                year = row.species_authority.replace(/^\(? *((['"])? *([\w\u00C0-\u017F\.\-\&; \[\]]+(,|&|&amp;|&amp;amp;|&#[\w0-9]+;)?)+ *\2) *, *([0-9]{4}) *\)?/ig, "$5");
-                row.species_authority = row.species_authority.replace(/^\(? *((['"])? *([\w\u00C0-\u017F\.\-\&; \[\]]+(,|&|&amp;|&amp;amp;|&#[\w0-9]+;)?)+ *\2) *, *([0-9]{4}) *\)?/ig, "$1");
+              if (commalessTest.test(row.species_authority)) {
+                row.species_authority = row.species_authority.replace(commalessTest, "$1$2, $3$4");
+              }
+              if (authorityTest.test(row.species_authority)) {
+                year = row.species_authority.replace(authorityTest, "$5");
+                row.species_authority = row.species_authority.replace(authorityTest, "$1");
                 authorityYears[year] = year;
                 row.authority_year = authorityYears;
               } else {
@@ -1247,7 +1256,7 @@ createHtmlFile = function(result, htmlBody) {
     message = {
       status: true,
       done: false,
-      progress: 100
+      progress: progressStepCount
     };
     self.postMessage(message);
     duration = Date.now() - startTime;
@@ -1285,13 +1294,14 @@ createCSVFile = function(result) {
   i = 0;
   console.debug("Got result");
   totalCount = Object.size(result.result);
-  progressStep = toInt(totalCount / 100);
+  progressStep = totalCount / progressStepCount;
+  console.debug("Step size", progressStep);
   try {
     ref = result.result;
     for (k in ref) {
       row = ref[k];
       if (k > 0) {
-        if (modulo(k, progressStep) === 0) {
+        if (toInt(modulo(k, progressStep)) === 0) {
           message = {
             status: true,
             done: false,
@@ -1340,9 +1350,12 @@ createCSVFile = function(result) {
                     authorityYears[row.authority_year] = row.authority_year;
                   } else if (isNull(row.authority_year)) {
                     row.species_authority = row.species_authority.replace(/(<\/|<|&lt;|&lt;\/).*?(>|&gt;)/img, "");
-                    if (/^\(? *((['"])? *([\w\u00C0-\u017F\. \-\&;\[\]]+(,|&|&amp;|&amp;amp;|&#[\w0-9]+;)?)+ *\2) *, *([0-9]{4}) *\)?/im.test(row.species_authority)) {
-                      year = row.species_authority.replace(/^\(? *((['"])? *([\w\u00C0-\u017F\.\-\&; \[\]]+(,|&|&amp;|&amp;amp;|&#[\w0-9]+;)?)+ *\2) *, *([0-9]{4}) *\)?/ig, "$5");
-                      row.species_authority = row.species_authority.replace(/^\(? *((['"])? *([\w\u00C0-\u017F\.\-\&; \[\]]+(,|&|&amp;|&amp;amp;|&#[\w0-9]+;)?)+ *\2) *, *([0-9]{4}) *\)?/ig, "$1");
+                    if (commalessTest.test(row.species_authority)) {
+                      row.species_authority = row.species_authority.replace(commalessTest, "$1$2, $3$4");
+                    }
+                    if (authorityTest.test(row.species_authority)) {
+                      year = row.species_authority.replace(authorityTest, "$5");
+                      row.species_authority = row.species_authority.replace(authorityTest, "$1");
                       authorityYears[year] = year;
                       row.authority_year = authorityYears;
                     } else {
@@ -1425,7 +1438,7 @@ createCSVFile = function(result) {
               try {
                 colData = row[dirtyCol];
                 if (typeof colData === "object") {
-                  colData = JSON.stringify(colData);
+                  colData = JSON.stringify(colData).replace(/"/g, '\"\"');
                 }
               } catch (undefined) {}
             } else {
@@ -1453,13 +1466,20 @@ createCSVFile = function(result) {
     csv = (csvHeader.join(",")) + "\n" + csvBody;
     downloadable = "data:text/csv;charset=utf-8," + encodeURIComponent(csv);
     message = {
+      status: true,
+      done: false,
+      progress: progressStepCount
+    };
+    self.postMessage(message);
+    duration = Date.now() - startTime;
+    console.log("CSV file prepped in " + duration + "ms off-thread");
+    message = {
       csv: downloadable,
       status: true,
       done: true
     };
-    duration = Date.now() - startTime;
-    console.log("CSV file prepped in " + duration + "ms off-thread");
     self.postMessage(message);
+    console.debug("Completed worker!");
     return self.close();
   } catch (error5) {
     e = error5;

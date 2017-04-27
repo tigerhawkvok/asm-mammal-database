@@ -11,6 +11,8 @@ downloadCSVList = ->
   ###
   animateLoad()
   startTime = Date.now()
+  _asm.progressTracking =
+    estimate: new Array()
   try
     for button in $("#download-chooser .buttons paper-button")
       p$(button).disabled = true
@@ -54,11 +56,25 @@ downloadCSVList = ->
               <paper-progress
                 class="transiting"
                 id="download-progress-indicator"
-                value="0">
+                value="0"
+                max="1000">
               </paper-progress>
+              <p>
+                <span class="bold">Estimated Time Remaining:</span> <span id="estimated-remaining-time">&#8734;</span>s
+              </p>
               """
               $("#download-chooser .dialog-content .scrollable").append html
             p$("#download-progress-indicator").value = e.data.progress
+            timeElapsed = Date.now() - startTime
+            fractionalProgress = toFloat(e.data.progress) / 1000.0
+            totalTimeEstimate = timeElapsed / fractionalProgress
+            _asm.progressTracking.estimate.push totalTimeEstimate
+            #console.log "Total time estimate:", totalTimeEstimate
+            avgTotalTimeEstimate = _asm.progressTracking.estimate.mean()
+            #console.log "Average time estimate:", avgTotalTimeEstimate
+            estimatedTimeRemaining = avgTotalTimeEstimate - timeElapsed
+            #console.log "Estimated time remaining:", estimatedTimeRemaining
+            $("#estimated-remaining-time").text toInt estimatedTimeRemaining / 1000
           else
             console.log "Just an update", e.data
           return false
@@ -80,9 +96,11 @@ downloadCSVList = ->
             <h3>Which file type do I want?</h3>
             <p>
               A CSV file is readily opened by consumer-grade programs, such as Microsoft Excel or Google Spreadsheets.
+              It has some transformations done to the raw data to make it more readable.
+              <br/><br/>
               However, if you wish to replicate the whole database and perform queries, the SQL file is machine-readable,
               ready for import into a MySQL or MariaDB database by running the <code>source asm-species-#{dateString}.sql;</code> in their
-              interactive shell prompts when run from your download directory.
+              interactive shell prompts when run from your download directory. This file has not been transformed in any way.
             </p>
             <h3>Excel Important Note</h3>
             <p>
@@ -199,7 +217,7 @@ downloadHTMLList = ->
         ###
         # Service worker callback
         ###
-        console.info "Got message back from service worker", e.data
+        # console.info "Got message back from service worker", e.data
         if e.data.status isnt true
           console.warn "Got an error!"
           message = unless isNull e.data.updateUser then e.data.updateUser else "Failed to create file"
@@ -248,6 +266,9 @@ downloadHTMLList = ->
         <paper-dialog  modal class="download-file" id="download-html-file">
           <h2>Your file is ready</h2>
           <paper-dialog-scrollable class="dialog-content">
+            <p>
+              Please note that some taxa may have had incomplete data. Please download a CSV or SQL file for the uncombined taxon data.
+            </p>
             <p class="text-center">
               <a href="#{downloadable}" download="asm-species-#{dateString}.html" class="btn btn-default data-download-button" id="download-html-summary"><iron-icon icon="file-download"></iron-icon> Download HTML</a>
               <div id="pdf-download-placeholder">

@@ -7012,6 +7012,10 @@ html >>> .tooltip-container {
 .italic {
   font-style: italic;
 }
+.bold,
+.strong {
+  font-weight: bold;
+}
 .click {
   cursor: pointer;
 }

@@ -19,8 +19,14 @@ self.addEventListener "message", (e) ->
       # Posts its own message
       renderDataArray data, firstIteration, chunkSize
     when "render-html"
-      console.log "Got info from file on thread", e.data
+      console.log "Got HTML info from file on thread", e.data
       createHtmlFile e.data.data, e.data.htmlHeader
+    when "render-csv"
+      console.log "Got CSV info from file on thread", e.data
+      createCSVFile e.data.data
+    else
+      console.error "No valid action recieved from worker initialization!", e.data
+      console.warn e
 
 
 # Import Markdown
@@ -184,9 +190,9 @@ createHtmlFile = (result, htmlBody) ->
     hasReadSubClade = new Array()
     for k, row of result.result
       try
-        if k %% 100 is 0
+        if k %% 100 is 0 and k > 0
           console.log "Parsing row #{k} of #{total}"
-          if k %% 500 is 0 and k > 0
+          if k %% 500 is 0
             message =
               status: true
               done: false
@@ -360,6 +366,207 @@ createHtmlFile = (result, htmlBody) ->
   catch e
     console.error "There was a problem creating your file. Please try again later."
     console.error("Exception in createHtmlFile() - #{e.message}")
+    console.warn(e.stack)
+    message =
+      status: false
+      done: true
+    self.postMessage message
+    self.close()
+
+
+
+
+createCSVFile = (result) ->
+  startTime = Date.now()
+  # Parse it all out
+  csvBody = """
+  """
+  csvHeader = new Array()
+  showColumn = [
+    "genus"
+    "species"
+    "subspecies"
+    "canonical_sciname"
+    "common_name"
+    "common_name_source"
+    "image"
+    "image_caption"
+    "image_credit"
+    "image_license"
+    "major_type"
+    "major_subtype"
+    "simple_linnean_group"
+    "simple_linnean_subgroup"
+    "linnean_order"
+    "linnean_family"
+    "genus_authority"
+    "parens_auth_genus"
+    "species_authority"
+    "parens_auth_species"
+    "authority_year"
+    "deprecated_scientific"
+    "notes"
+    "entry"
+    "taxon_credit"
+    "taxon_credit_date"
+    "taxon_author"
+    "citation"
+    "source"
+    "internal_id"
+    ]
+  makeTitleCase = [
+    "genus"
+    "common_name"
+    "taxon_credit"
+    "linnean_order"
+    "linnean_family"
+    "genus_authority"
+    "species_authority"
+    ]
+  boolToString = [
+    "parens_auth_genus"
+    "parens_auth_species"
+    ]
+  i = 0
+  console.debug "Got result"
+  totalCount = Object.size result.result
+  try
+    for k, row of result.result
+      if k %% 100 is 0 and k > 0
+        console.debug "CSV-ing row #{k} of #{totalCount}"
+        if k %% 500 is 0
+          message =
+            status: true
+            done: false
+            updateUser: "Parsing #{k} of #{totalCount}, please wait"
+          self.postMessage message
+      # Line by line ... do each result
+      csvRow = new Array()
+      if isNull(row.genus) or isNull(row.species)
+        # Skip this clearly unfinished entry
+        continue
+      #for dirtyCol, dirtyColData of row
+      for dirtyCol in showColumn
+        dirtyColData = row[dirtyCol]
+        # Escape as per RFC4180
+        # https://tools.ietf.org/html/rfc4180#page-2
+        col = dirtyCol.replace(/"/g,'\"\"')
+        try
+          colData = dirtyColData.replace(/"/g,'\"\"').replace(/&#39;/g,"'")
+        catch
+          colData = ""
+        if i is 0
+          # Do the headers
+          if col in showColumn
+            csvHeader.push col.replace(/_/g," ").toTitleCase()
+        # Sitch together the row
+        if col in showColumn
+          # You'd want to naively push, but we can't
+          # There are formatting rules to observe
+          # Deal with authorities
+          if /[a-z]+_authority/.test(col)
+            colData = colData.unescape()
+            try
+              unless typeof row.authority_year is "object"
+                authorityYears = new Object()
+                try
+                  # Try to deal with the singlet
+                  if isNumber row.authority_year
+                    authorityYears[row.authority_year] = row.authority_year
+                  else if isNull row.authority_year
+                    # Check if this is an IUCN style species authority
+                    # Strip HTML
+                    row.species_authority = row.species_authority.replace /(<\/|<|&lt;|&lt;\/).*?(>|&gt;)/img, ""
+                    if /^\(? *((['"])? *([\w\u00C0-\u017F\. \-\&;\[\]]+(,|&|&amp;|&amp;amp;|&#[\w0-9]+;)?)+ *\2) *, *([0-9]{4}) *\)?/im.test(row.species_authority)
+                      year = row.species_authority.replace /^\(? *((['"])? *([\w\u00C0-\u017F\.\-\&; \[\]]+(,|&|&amp;|&amp;amp;|&#[\w0-9]+;)?)+ *\2) *, *([0-9]{4}) *\)?/ig, "$5"
+                      row.species_authority = row.species_authority.replace /^\(? *((['"])? *([\w\u00C0-\u017F\.\-\&; \[\]]+(,|&|&amp;|&amp;amp;|&#[\w0-9]+;)?)+ *\2) *, *([0-9]{4}) *\)?/ig, "$1"
+                      authorityYears[year] = year
+                      row.authority_year = authorityYears
+                    else
+                      unless isNull row.species_authority
+                        console.warn "Failed a match on authority '#{row.species_authority}'"
+                      authorityYears["Unknown"] = "Unknown"
+                  else
+                    authorityYears = JSON.parse row.authority_year
+                catch e
+                  # Try to fix a bad JSON
+                  console.debug "authority isnt number, null, or object, with bad species_authority '#{row.authority_year}'"
+                  split = row.authority_year.split(":")
+                  if split.length > 1
+                    year = split[1].slice(split[1].search("\"")+1,-2)
+                    # console.log("Examining #{year}")
+                    year = year.replace(/"/g,"'")
+                    split[1] = "\"#{year}\"}"
+                    authorityYears = JSON.parse split.join(":")
+                  else
+                    console.warn "Unable to figure out the type of data for `authority_year`: #{e.message}", JSON.stringify row
+                    console.warn e.stack
+              else
+                authorityYears = row.authority_year
+              if isNull row.authority_year
+                row.authority_year = authorityYears
+              try
+                genusYear = Object.keys(authorityYears)[0]
+                speciesYear = authorityYears[genusYear]
+                genusYear = genusYear.replace(/&#39;/g,"'")
+                speciesYear = speciesYear.replace(/&#39;/g,"'")
+              catch
+                for c,v of authorityYears
+                  genusYear = c.replace(/&#39;/g,"'")
+                  speciesYear = v.replace(/&#39;/g,"'")
+              if isNull row.genus_authority
+                row.genus_authority = row.species_authority
+              else if isNull row.species_authority
+                row.species_authority = row.genus_authority
+              switch col.split("_")[0]
+                when "genus"
+                  tempCol = "#{colData.toTitleCase()} #{genusYear}"
+                  if toInt(row.parens_auth_genus).toBool()
+                    tempCol = "(#{tempCol})"
+                when "species"
+                  tempCol = "#{colData.toTitleCase()} #{speciesYear}"
+                  if toInt(row.parens_auth_species).toBool()
+                    tempCol = "(#{tempCol})"
+              colData = tempCol
+              # if "\"Plestiodon\"" in csvRow and "\"egregius\"" in csvRow
+              #   console.log("Plestiodon: Working with",csvRow,"inserting",tempCol)
+            catch e
+              # Bad authority year, just don't use it
+          if col in makeTitleCase
+            colData = colData.toTitleCase()
+          if col is "image" and not isNull(colData)
+            colData = "#{uri.urlString}#{colData}"
+          if col in boolToString
+            try
+              colData = colData.toBool().toString()
+          # Done with formatting, push it
+          csvRow.push "\"#{colData}\""
+      # Increment the row counter
+      i++
+      csvLiteralRow = csvRow.join(",")
+      # if "\"Plestiodon\"" in csvRow and "\"egregius\"" in csvRow
+      #   console.log("Plestiodon: Working with",csvRow,csvLiteralRow)
+      csvBody +="""
+
+      #{csvLiteralRow}
+      """
+    csv = """
+    #{csvHeader.join(",")}
+    #{csvBody}
+    """
+    # OK, it's all been created. Download it.
+    downloadable = "data:text/csv;charset=utf-8," + encodeURIComponent(csv)
+    message =
+      csv: downloadable
+      status: true
+      done: true
+    duration = Date.now() - startTime
+    console.log "HTML file prepped in #{duration}ms off-thread"
+    self.postMessage message
+    self.close()
+  catch e
+    console.error "There was a problem creating your file. Please try again later."
+    console.error("Exception in createCSVFile() - #{e.message}")
     console.warn(e.stack)
     message =
       status: false

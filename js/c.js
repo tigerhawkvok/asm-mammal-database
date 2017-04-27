@@ -893,6 +893,9 @@ toastStatusMessage = function(message, className, duration, selector) {
     return false;
   }
   window._metaStatus.isToasting = true;
+  if (isNumber(className)) {
+    duration = className;
+  }
   if (!isNumber(duration)) {
     duration = 3000;
   }
@@ -910,9 +913,18 @@ toastStatusMessage = function(message, className, duration, selector) {
     try {
       p$(selector).show();
       return delay(duration + 500, function() {
-        $(selector).empty();
-        $(selector).removeClass(className);
-        $(selector).attr("text", "");
+        var isOpen;
+        try {
+          isOpen = p$(selector).opened;
+        } catch (undefined) {}
+        if (typeof isOpen !== "boolean") {
+          isOpen = false;
+        }
+        if (!isOpen) {
+          $(selector).empty();
+          $(selector).removeClass(className);
+          $(selector).attr("text", "");
+        }
         window._metaStatus.isToasting = false;
         return false;
       });

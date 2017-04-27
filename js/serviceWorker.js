@@ -1257,7 +1257,7 @@ createHtmlFile = function(result, htmlBody) {
 };
 
 createCSVFile = function(result) {
-  var authorityYears, boolToString, c, col, colData, csv, csvBody, csvHeader, csvLiteralRow, csvRow, dirtyCol, dirtyColData, downloadable, duration, e, error1, error2, error3, error4, error5, genusYear, i, k, l, len, makeTitleCase, message, ref, row, showColumn, speciesYear, split, startTime, tempCol, totalCount, v, year;
+  var authorityYears, boolToString, c, col, colData, csv, csvBody, csvHeader, csvLiteralRow, csvRow, dirtyCol, dirtyColData, downloadable, duration, e, error1, error2, error3, error4, error5, genusYear, i, k, l, len, makeTitleCase, message, progressStep, ref, row, showColumn, speciesYear, split, startTime, tempCol, totalCount, v, year;
   startTime = Date.now();
   csvBody = "  ";
   csvHeader = new Array();
@@ -1267,19 +1267,30 @@ createCSVFile = function(result) {
   i = 0;
   console.debug("Got result");
   totalCount = Object.size(result.result);
+  progressStep = toInt(totalCount / 100);
   try {
     ref = result.result;
     for (k in ref) {
       row = ref[k];
-      if (modulo(k, 100) === 0 && k > 0) {
-        console.debug("CSV-ing row " + k + " of " + totalCount);
-        if (modulo(k, 500) === 0) {
+      if (k > 0) {
+        if (modulo(k, progressStep) === 0) {
           message = {
             status: true,
             done: false,
-            updateUser: "Parsing " + k + " of " + totalCount + ", please wait"
+            progress: toInt(k / progressStep)
           };
           self.postMessage(message);
+        }
+        if (modulo(k, 100) === 0) {
+          console.debug("CSV-ing row " + k + " of " + totalCount);
+          if (modulo(k, 500) === 0) {
+            message = {
+              status: true,
+              done: false,
+              updateUser: "Parsing " + k + " of " + totalCount + ", please wait"
+            };
+            self.postMessage(message);
+          }
         }
       }
       csvRow = new Array();
@@ -1342,8 +1353,11 @@ createCSVFile = function(result) {
               } else {
                 authorityYears = row.authority_year;
               }
+              if (typeof row.authority_year === "string") {
+                row.authority_year = row.authority_year.trim();
+              }
               if (isNull(row.authority_year)) {
-                row.authority_year = authorityYears;
+                row.authority_year = JSON.stringify(authorityYears);
               }
               try {
                 genusYear = Object.keys(authorityYears)[0];
@@ -1362,15 +1376,23 @@ createCSVFile = function(result) {
               } else if (isNull(row.species_authority)) {
                 row.species_authority = row.genus_authority;
               }
+              if (isNull(colData)) {
+                try {
+                  colData = row[dirtyCol].unescape();
+                } catch (undefined) {}
+                if (isNull(colData)) {
+                  colData = "Unknown";
+                }
+              }
               switch (col.split("_")[0]) {
                 case "genus":
-                  tempCol = (colData.toTitleCase()) + " " + genusYear;
+                  tempCol = (colData.toTitleCase()) + ", " + genusYear;
                   if (toInt(row.parens_auth_genus).toBool()) {
                     tempCol = "(" + tempCol + ")";
                   }
                   break;
                 case "species":
-                  tempCol = (colData.toTitleCase()) + " " + speciesYear;
+                  tempCol = (colData.toTitleCase()) + ", " + speciesYear;
                   if (toInt(row.parens_auth_species).toBool()) {
                     tempCol = "(" + tempCol + ")";
                   }
@@ -1378,6 +1400,18 @@ createCSVFile = function(result) {
               colData = tempCol;
             } catch (error4) {
               e = error4;
+            }
+          }
+          if (dirtyCol === "authority_year") {
+            if (isNull(colData && !isNull(row[dirtyCol]))) {
+              try {
+                colData = row[dirtyCol];
+                if (typeof colData === "object") {
+                  colData = JSON.stringify(colData);
+                }
+              } catch (undefined) {}
+            } else {
+              console.debug("auth year '" + colData + "' is valid", isNull(colData, !isNull(row[dirtyCol], col, dirtyCol)));
             }
           }
           if (indexOf.call(makeTitleCase, col) >= 0) {
@@ -1406,7 +1440,7 @@ createCSVFile = function(result) {
       done: true
     };
     duration = Date.now() - startTime;
-    console.log("HTML file prepped in " + duration + "ms off-thread");
+    console.log("CSV file prepped in " + duration + "ms off-thread");
     self.postMessage(message);
     return self.close();
   } catch (error5) {

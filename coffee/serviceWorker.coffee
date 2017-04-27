@@ -430,16 +430,24 @@ createCSVFile = (result) ->
   i = 0
   console.debug "Got result"
   totalCount = Object.size result.result
+  progressStep = toInt totalCount / 100
   try
     for k, row of result.result
-      if k %% 100 is 0 and k > 0
-        console.debug "CSV-ing row #{k} of #{totalCount}"
-        if k %% 500 is 0
+      if k > 0
+        if k %% progressStep is 0
           message =
             status: true
             done: false
-            updateUser: "Parsing #{k} of #{totalCount}, please wait"
+            progress: toInt k / progressStep
           self.postMessage message
+        if k %% 100 is 0
+          console.debug "CSV-ing row #{k} of #{totalCount}"
+          if k %% 500 is 0
+            message =
+              status: true
+              done: false
+              updateUser: "Parsing #{k} of #{totalCount}, please wait"
+            self.postMessage message
       # Line by line ... do each result
       csvRow = new Array()
       if isNull(row.genus) or isNull(row.species)
@@ -503,8 +511,10 @@ createCSVFile = (result) ->
                     console.warn e.stack
               else
                 authorityYears = row.authority_year
+              if typeof row.authority_year is "string"
+                row.authority_year = row.authority_year.trim()
               if isNull row.authority_year
-                row.authority_year = authorityYears
+                row.authority_year = JSON.stringify authorityYears
               try
                 genusYear = Object.keys(authorityYears)[0]
                 speciesYear = authorityYears[genusYear]
@@ -518,20 +528,32 @@ createCSVFile = (result) ->
                 row.genus_authority = row.species_authority
               else if isNull row.species_authority
                 row.species_authority = row.genus_authority
+              if isNull colData
+                # It may have been updated above
+                try
+                  colData = row[dirtyCol].unescape()
+                if isNull colData
+                  colData = "Unknown"
               switch col.split("_")[0]
                 when "genus"
-                  tempCol = "#{colData.toTitleCase()} #{genusYear}"
+                  tempCol = "#{colData.toTitleCase()}, #{genusYear}"
                   if toInt(row.parens_auth_genus).toBool()
                     tempCol = "(#{tempCol})"
                 when "species"
-                  tempCol = "#{colData.toTitleCase()} #{speciesYear}"
+                  tempCol = "#{colData.toTitleCase()}, #{speciesYear}"
                   if toInt(row.parens_auth_species).toBool()
                     tempCol = "(#{tempCol})"
               colData = tempCol
-              # if "\"Plestiodon\"" in csvRow and "\"egregius\"" in csvRow
-              #   console.log("Plestiodon: Working with",csvRow,"inserting",tempCol)
             catch e
               # Bad authority year, just don't use it
+          if dirtyCol is "authority_year"
+            if isNull colData and not isNull row[dirtyCol]
+              try
+                colData = row[dirtyCol]
+                if typeof colData is "object"
+                  colData = JSON.stringify colData
+            else
+              console.debug "auth year '#{colData}' is valid", isNull colData, not isNull row[dirtyCol], col, dirtyCol
           if col in makeTitleCase
             colData = colData.toTitleCase()
           if col is "image" and not isNull(colData)
@@ -561,7 +583,7 @@ createCSVFile = (result) ->
       status: true
       done: true
     duration = Date.now() - startTime
-    console.log "HTML file prepped in #{duration}ms off-thread"
+    console.log "CSV file prepped in #{duration}ms off-thread"
     self.postMessage message
     self.close()
   catch e

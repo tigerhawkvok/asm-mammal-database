@@ -11,6 +11,9 @@ downloadCSVList = ->
   ###
   animateLoad()
   startTime = Date.now()
+  try
+    for button in $("#download-chooser .buttons paper-button")
+      p$(button).disabled = true
   #filterArg = "eyJpc19hbGllbiI6MCwiYm9vbGVhbl90eXBlIjoib3IifQ"
   #args = "filter=#{filterArg}"
   args = "q=*"
@@ -36,17 +39,28 @@ downloadCSVList = ->
         # Service worker callback
         ###
         console.info "Got message back from service worker", e.data
-        if e.data.done isnt true
-          unless isNull e.data.updateUser
-            console.log "Toasting: #{e.data.updateUser}"
-            toastStatusMessage e.data.updateUser
-          else
-            console.log "Just an update"
-          return false
         if e.data.status isnt true
           console.warn "Got an error!"
           message = unless isNull e.data.updateUser then e.data.updateUser else "Failed to create file"
-          stopLoadError message, "", 10000
+          stopLoadError message, undefined, 10000
+          return false
+        if e.data.done isnt true
+          unless isNull e.data.updateUser
+            console.log "Toasting: #{e.data.updateUser}"
+            toastStatusMessage e.data.updateUser, 1000
+          else if isNumber e.data.progress
+            unless $("#download-progress-indicator").exists()
+              html = """
+              <paper-progress
+                transiting
+                id="download-progress-indicator"
+                value="0">
+              </paper-progress>
+              """
+              $("#download-chooser .dialog-content .scrollable").append html
+            p$("#download-progress-indicator").value = e.data.progress
+          else
+            console.log "Just an update", e.data
           return false
         # The CSV
         downloadable = e.data.csv
@@ -75,8 +89,8 @@ downloadCSVList = ->
               Please note that some special characters in names may be decoded incorrectly by Microsoft Excel. If this is a problem, following the steps in <a href="https://github.com/SSARHERPS/SSAR-species-database/blob/master/meta/excel_unicode_readme.md"  onclick='window.open(this.href); return false;' onkeypress='window.open(this.href); return false;'>this README <iron-icon icon="launch"></iron-icon></a> to force Excel to format it correctly.
             </p>
             <p class="text-center">
-              <a href="#{downloadable}" download="asm-species-#{dateString}.csv" class="btn btn-default" id="download-csv-summary"><iron-icon icon="file-download"></iron-icon> Download CSV</a>
-              <a href="#" download="asm-species-#{dateString}.sql" class="btn btn-default" id="download-sql-summary" disabled><iron-icon icon="file-download"></iron-icon> Download SQL</a>
+              <a href="#{downloadable}" download="asm-species-#{dateString}.csv" class="btn btn-default data-download-button" id="download-csv-summary"><iron-icon icon="file-download"></iron-icon> Download CSV</a>
+              <a href="#" download="asm-species-#{dateString}.sql" class="btn btn-default data-download-button" id="download-sql-summary" disabled><iron-icon icon="file-download"></iron-icon> Download SQL</a>
             </p>
           </paper-dialog-scrollable>
           <div class="buttons">
@@ -95,7 +109,8 @@ downloadCSVList = ->
           downloadDataUriAsBlob "#download-csv-summary"
         else
           console.debug "File size is small enough to use a data-uri"
-        safariDialogHelper("#download-csv-file")
+        delay 250, ->
+          safariDialogHelper("#download-csv-file")
         stopLoad()
         duration = Date.now() - startTime
         console.debug "Time elapsed: #{duration}ms"
@@ -174,15 +189,15 @@ downloadHTMLList = ->
         # Service worker callback
         ###
         console.info "Got message back from service worker", e.data
-        if e.data.done isnt true
-          console.log "Just an update"
-          unless isNull e.data.updateUser
-            toastStatusMessage e.data.updateUser
-          return false
         if e.data.status isnt true
           console.warn "Got an error!"
           message = unless isNull e.data.updateUser then e.data.updateUser else "Failed to create file"
-          stopLoadError message, "", 10000
+          stopLoadError message, undefined, 10000
+          return false
+        if e.data.done isnt true
+          console.log "Just an update"
+          unless isNull e.data.updateUser
+            toastStatusMessage e.data.updateUser, 1000
           return false
         htmlBody = e.data.html
         downloadable = "data:text/html;charset=utf-8,#{encodeURIComponent(htmlBody)}"
@@ -196,7 +211,7 @@ downloadHTMLList = ->
           <h2>Your file is ready</h2>
           <paper-dialog-scrollable class="dialog-content">
             <p class="text-center">
-              <a href="#{downloadable}" download="asm-species-#{dateString}.html" class="btn btn-default" id="download-html-summary"><iron-icon icon="file-download"></iron-icon> Download HTML</a>
+              <a href="#{downloadable}" download="asm-species-#{dateString}.html" class="btn btn-default data-download-button" id="download-html-summary"><iron-icon icon="file-download"></iron-icon> Download HTML</a>
               <div id="pdf-download-placeholder">
                 <paper-spinner active></paper-spinner> Please wait while your PDF creation finishes ...
               </div>
@@ -234,7 +249,7 @@ downloadHTMLList = ->
             pdfDownloadPath = "#{uri.urlString}#{result.file}"
             console.debug pdfDownloadPath
             pdfDownload = """
-              <a href="#{pdfDownloadPath}" download="asm-species-#{dateString}.pdf" class="btn btn-default" id="download-pdf-summary"><iron-icon icon="file-download"></iron-icon> Download PDF</a>
+              <a href="#{pdfDownloadPath}" download="asm-species-#{dateString}.pdf" class="btn btn-default data-download-button" id="download-pdf-summary"><iron-icon icon="file-download"></iron-icon> Download PDF</a>
             """
             $("#download-html-file #download-html-summary").after pdfDownload
           else
@@ -267,7 +282,7 @@ showDownloadChooser = ->
     </paper-dialog-scrollable>
     <div class="buttons">
       <paper-button dialog-dismiss>Cancel</paper-button>
-      <paper-button dialog-confirm id="initiate-csv-download">CSV/SQL</paper-button>
+      <paper-button id="initiate-csv-download">CSV/SQL</paper-button>
       <paper-button dialog-confirm id="initiate-html-download">HTML/PDF</paper-button>
     </div>
   </paper-dialog>

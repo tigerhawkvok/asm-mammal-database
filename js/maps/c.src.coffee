@@ -681,6 +681,8 @@ toastStatusMessage = (message, className = "", duration = 3000, selector = "#sea
       toastStatusMessage(message, className, duration, selector)
     return false
   window._metaStatus.isToasting = true
+  if isNumber className
+    duration = className
   if not isNumber(duration)
     duration = 3000
   if selector.slice(0,1) is not "#"
@@ -698,9 +700,14 @@ toastStatusMessage = (message, className = "", duration = 3000, selector = "#sea
       p$(selector).show()
       delay duration + 500, ->
         # A short time after it hides, clean it up
-        $(selector).empty()
-        $(selector).removeClass(className)
-        $(selector).attr("text","")
+        try
+          isOpen = p$(selector).opened
+        unless typeof isOpen is "boolean"
+          isOpen = false
+        unless isOpen
+          $(selector).empty()
+          $(selector).removeClass(className)
+          $(selector).attr("text","")
         window._metaStatus.isToasting = false
         false
     catch error

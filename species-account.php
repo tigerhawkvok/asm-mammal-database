@@ -309,9 +309,9 @@ if (empty($speciesRow["genus_authority"]) && $hasWellFormattedSpeciesCitation) {
      * IUCN, but it hasn't been edited
      ***/
     $authority = preg_replace('%(</|<|&lt;|&lt;/).*?(>|&gt;)%im', '', $speciesRow["species_authority"]);
-    $authority = preg_replace('/^\(? *(([\'"])? *([0-9A-Z_.\-\&; \[\]]+(,|&|&amp;|&amp;amp;|&#[A-Z0-9]+;)?)+ *\2?) *, *([0-9]{4}) *\)?/im', '$1', $authority);
+    $authority = preg_replace('/^\(? *(([\'"])? *([0-9A-Z\x{00C0}-\x{017F}_. \[\]]+(,|&|&amp;|&amp;amp;|&#?[A-Z0-9]+;)?)+ *\2?) *, *([0-9]{4}) *\)?/uim', '$1', $authority);
     $authority = htmlspecialchars_decode($authority);
-    $authorityYear = preg_replace('/^\(? *(([\'"])? *([0-9A-Z_.\-\&; \[\]]+(,|&|&amp;|&amp;amp;|&#[A-Z0-9]+;)?)+ *\2?) *, *([0-9]{4}) *\)?/im', '$5', $speciesRow["species_authority"]);
+    $authorityYear = preg_replace('/^\(? *(([\'"])? *([0-9A-Z\x{00C0}-\x{017F}_. \[\]]+(,|&|&amp;|&amp;amp;|&#?[A-Z0-9]+;)?)+ *\2?) *, *([0-9]{4}) *\)?/uim', '$5', $speciesRow["species_authority"]);
     $speciesRow["authority_year"] = json_encode(array(
         $authorityYear => $authorityYear,
     ));

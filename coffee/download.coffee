@@ -52,7 +52,7 @@ downloadCSVList = ->
             unless $("#download-progress-indicator").exists()
               html = """
               <paper-progress
-                transiting
+                class="transiting"
                 id="download-progress-indicator"
                 value="0">
               </paper-progress>
@@ -102,6 +102,11 @@ downloadCSVList = ->
           $("body").append(html)
         else
           $("#download-csv-file").replaceWith(html)
+        # When we close it, we want to remove it to reset the
+        # progress bar and the disabled's, etc.
+        $("#download-chooser").on "iron-overlay-closed", ->
+          delay 100, ->
+            $(this).remove()
         p$("#download-chooser").close()
         if fileSizeMiB >= 2
           # Chrome doesn't support a data URI this big
@@ -113,7 +118,7 @@ downloadCSVList = ->
           safariDialogHelper("#download-csv-file")
         stopLoad()
         duration = Date.now() - startTime
-        console.debug "Time elapsed: #{duration}ms"
+        console.debug "CSV time elapsed: #{duration}ms"
         false
       worker.postMessage postMessageContent
       false
@@ -147,6 +152,12 @@ downloadHTMLList = ->
   # https://github.com/tigerhawkvok/SSAR-species-database/issues/40
   ###
   startLoad()
+  startTime = Date.now()
+  _asm.progressTracking =
+    estimate: new Array()
+  try
+    for button in $("#download-chooser .buttons paper-button")
+      p$(button).disabled = true
   $.get "#{uri.urlString}css/download-inline-bootstrap.css"
   .done (importedCSS) ->
     d = new Date()
@@ -195,9 +206,36 @@ downloadHTMLList = ->
           stopLoadError message, undefined, 10000
           return false
         if e.data.done isnt true
-          console.log "Just an update"
           unless isNull e.data.updateUser
+            console.log "Toasting: #{e.data.updateUser}"
             toastStatusMessage e.data.updateUser, 1000
+          else if isNumber e.data.progress
+            unless $("#download-progress-indicator").exists()
+              html = """
+              <paper-progress
+                class="transiting"
+                id="download-progress-indicator"
+                value="0"
+                max="1000">
+              </paper-progress>
+              <p>
+                <span class="bold">Estimated Time Remaining:</span> <span id="estimated-remaining-time">&#8734;</span>s
+              </p>
+              """
+              $("#download-chooser .dialog-content .scrollable").append html
+            p$("#download-progress-indicator").value = e.data.progress
+            timeElapsed = Date.now() - startTime
+            fractionalProgress = toFloat(e.data.progress) / 1000.0
+            totalTimeEstimate = timeElapsed / fractionalProgress
+            _asm.progressTracking.estimate.push totalTimeEstimate
+            #console.log "Total time estimate:", totalTimeEstimate
+            avgTotalTimeEstimate = _asm.progressTracking.estimate.mean()
+            #console.log "Average time estimate:", avgTotalTimeEstimate
+            estimatedTimeRemaining = avgTotalTimeEstimate - timeElapsed
+            #console.log "Estimated time remaining:", estimatedTimeRemaining
+            $("#estimated-remaining-time").text toInt estimatedTimeRemaining / 1000
+          else
+            console.log "Just an update", e.data
           return false
         htmlBody = e.data.html
         downloadable = "data:text/html;charset=utf-8,#{encodeURIComponent(htmlBody)}"
@@ -226,6 +264,11 @@ downloadHTMLList = ->
           $("body").append(dialogHtml)
         else
           $("#download-html-file").replaceWith(dialogHtml)
+        # When we close it, we want to remove it to reset the
+        # progress bar and the disabled's, etc.
+        $("#download-chooser").on "iron-overlay-closed", ->
+          delay 100, ->
+            $(this).remove()
         try
           p$("#download-chooser").close()
         if fileSizeMiB >= 2
@@ -261,6 +304,8 @@ downloadHTMLList = ->
         .always ->
           try
             $("#download-html-file #pdf-download-placeholder").remove()
+          duration = Date.now() - startTime
+          console.debug "HTML+PDF time elapsed: #{duration}ms"
         false
       worker.postMessage postMessageContent
       false
@@ -283,7 +328,7 @@ showDownloadChooser = ->
     <div class="buttons">
       <paper-button dialog-dismiss>Cancel</paper-button>
       <paper-button id="initiate-csv-download">CSV/SQL</paper-button>
-      <paper-button dialog-confirm id="initiate-html-download">HTML/PDF</paper-button>
+      <paper-button id="initiate-html-download">HTML/PDF</paper-button>
     </div>
   </paper-dialog>
   """

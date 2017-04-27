@@ -934,6 +934,7 @@ createHtmlFile = (result, htmlBody) ->
   console.debug "Got", result
   console.debug "Got body provided?", not isNull htmlBody
   total = result.count
+  progressStep = toInt total / 1000
   try
     unless result.status is true
       throw Error("Invalid Result")
@@ -948,16 +949,21 @@ createHtmlFile = (result, htmlBody) ->
     hasReadSubClade = new Array()
     for k, row of result.result
       try
-        if k %% 100 is 0 and k > 0
-          console.log "Parsing row #{k} of #{total}"
-          if k %% 500 is 0
+        if k > 0
+          if k %% progressStep is 0
             message =
               status: true
               done: false
-              updateUser: "Parsing #{k} of #{total}, please wait"
+              progress: toInt k / progressStep
             self.postMessage message
-          #   startLoad()
-          #   toastStatusMessage "Parsing #{k} of #{total}, please wait"
+          if k %% 100 is 0
+            console.log "Parsing row #{k} of #{total}"
+            if k %% 500 is 0
+              message =
+                status: true
+                done: false
+                updateUser: "Parsing #{k} of #{total}, please wait"
+              self.postMessage message
       if isNull(row.genus) or isNull(row.species)
         # Skip this clearly unfinished entry
         continue
@@ -1113,6 +1119,11 @@ createHtmlFile = (result, htmlBody) ->
     </body>
     </html>
     """
+    message =
+      status: true
+      done: false
+      progress: 100
+    self.postMessage message    
     duration = Date.now() - startTime
     console.log "HTML file prepped in #{duration}ms off-thread"
     message =
@@ -1120,6 +1131,7 @@ createHtmlFile = (result, htmlBody) ->
       status: true
       done: true
     self.postMessage message
+    console.debug "Completed worker!"
     self.close()
   catch e
     console.error "There was a problem creating your file. Please try again later."

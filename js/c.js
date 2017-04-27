@@ -199,6 +199,16 @@ Array.prototype.containsObject = function(obj) {
   }
 };
 
+Array.prototype.sum = function() {
+  return this.reduce(function(a, b) {
+    return a + b;
+  });
+};
+
+Array.prototype.mean = function() {
+  return this.sum() / this.length;
+};
+
 Object.toArray = function(obj) {
   var shadowObj;
   try {

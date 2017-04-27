@@ -1072,11 +1072,12 @@ createHtmlFile = function(result, htmlBody) {
    *
    * Requires the JSOn result from the main function.
    */
-  var authorityYears, c, duration, e, entryHtml, error1, error2, error3, error4, error5, genusAuth, genusYear, hangTimeout, hasReadClade, hasReadGenus, hasReadSubClade, htmlCredit, htmlNotes, k, message, oneOffHtml, ref, ref1, ref2, ref3, row, shortGenus, speciesAuth, speciesYear, split, startTime, taxonCreditDate, total, v, year;
+  var authorityYears, c, duration, e, entryHtml, error1, error2, error3, error4, error5, genusAuth, genusYear, hangTimeout, hasReadClade, hasReadGenus, hasReadSubClade, htmlCredit, htmlNotes, k, message, oneOffHtml, progressStep, ref, ref1, ref2, ref3, row, shortGenus, speciesAuth, speciesYear, split, startTime, taxonCreditDate, total, v, year;
   startTime = Date.now();
   console.debug("Got", result);
   console.debug("Got body provided?", !isNull(htmlBody));
   total = result.count;
+  progressStep = toInt(total / 1000);
   try {
     if (result.status !== true) {
       throw Error("Invalid Result");
@@ -1095,15 +1096,25 @@ createHtmlFile = function(result, htmlBody) {
     for (k in ref) {
       row = ref[k];
       try {
-        if (modulo(k, 100) === 0 && k > 0) {
-          console.log("Parsing row " + k + " of " + total);
-          if (modulo(k, 500) === 0) {
+        if (k > 0) {
+          if (modulo(k, progressStep) === 0) {
             message = {
               status: true,
               done: false,
-              updateUser: "Parsing " + k + " of " + total + ", please wait"
+              progress: toInt(k / progressStep)
             };
             self.postMessage(message);
+          }
+          if (modulo(k, 100) === 0) {
+            console.log("Parsing row " + k + " of " + total);
+            if (modulo(k, 500) === 0) {
+              message = {
+                status: true,
+                done: false,
+                updateUser: "Parsing " + k + " of " + total + ", please wait"
+              };
+              self.postMessage(message);
+            }
           }
         }
       } catch (undefined) {}
@@ -1233,6 +1244,12 @@ createHtmlFile = function(result, htmlBody) {
       htmlBody += entryHtml;
     }
     htmlBody += "</article>\n</div>\n</body>\n</html>";
+    message = {
+      status: true,
+      done: false,
+      progress: 100
+    };
+    self.postMessage(message);
     duration = Date.now() - startTime;
     console.log("HTML file prepped in " + duration + "ms off-thread");
     message = {
@@ -1241,6 +1258,7 @@ createHtmlFile = function(result, htmlBody) {
       done: true
     };
     self.postMessage(message);
+    console.debug("Completed worker!");
     return self.close();
   } catch (error5) {
     e = error5;

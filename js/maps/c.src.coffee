@@ -132,6 +132,13 @@ Array::containsObject = (obj) ->
     console.error "Please load underscore.js before using this."
     console.info  "https://cdnjs.cloudflare.com/ajax/libs/underscore.js/1.8.3/underscore-min.js"
 
+Array::sum = ->
+  this.reduce (a,b) ->
+    a + b
+
+Array::mean = ->
+  this.sum() / this.length
+
 Object.toArray = (obj) ->
   try
     shadowObj = obj.slice 0

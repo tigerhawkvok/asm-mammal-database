@@ -57,7 +57,7 @@ downloadCSVList = function() {
             toastStatusMessage(e.data.updateUser, 1000);
           } else if (isNumber(e.data.progress)) {
             if (!$("#download-progress-indicator").exists()) {
-              html = "<paper-progress\n  transiting\n  id=\"download-progress-indicator\"\n  value=\"0\">\n</paper-progress>";
+              html = "<paper-progress\n  class=\"transiting\"\n  id=\"download-progress-indicator\"\n  value=\"0\">\n</paper-progress>";
               $("#download-chooser .dialog-content .scrollable").append(html);
             }
             p$("#download-progress-indicator").value = e.data.progress;
@@ -79,6 +79,11 @@ downloadCSVList = function() {
         } else {
           $("#download-csv-file").replaceWith(html);
         }
+        $("#download-chooser").on("iron-overlay-closed", function() {
+          return delay(100, function() {
+            return $(this).remove();
+          });
+        });
         p$("#download-chooser").close();
         if (fileSizeMiB >= 2) {
           console.debug("Large file size triggering blob creation");
@@ -91,7 +96,7 @@ downloadCSVList = function() {
         });
         stopLoad();
         duration = Date.now() - startTime;
-        console.debug("Time elapsed: " + duration + "ms");
+        console.debug("CSV time elapsed: " + duration + "ms");
         return false;
       });
       worker.postMessage(postMessageContent);
@@ -127,7 +132,19 @@ downloadHTMLList = function() {
    * See
    * https://github.com/tigerhawkvok/SSAR-species-database/issues/40
    */
+  var button, i, len, ref, startTime;
   startLoad();
+  startTime = Date.now();
+  _asm.progressTracking = {
+    estimate: new Array()
+  };
+  try {
+    ref = $("#download-chooser .buttons paper-button");
+    for (i = 0, len = ref.length; i < len; i++) {
+      button = ref[i];
+      p$(button).disabled = true;
+    }
+  } catch (undefined) {}
   $.get(uri.urlString + "css/download-inline-bootstrap.css").done(function(importedCSS) {
     var adjMonth, args, d, dateString, day, htmlBody, month;
     d = new Date();
@@ -153,7 +170,7 @@ downloadHTMLList = function() {
         /*
          * Service worker callback
          */
-        var dialogHtml, downloadable, error, fileSizeMiB, message, pdfError;
+        var avgTotalTimeEstimate, dialogHtml, downloadable, error, estimatedTimeRemaining, fileSizeMiB, fractionalProgress, html, message, pdfError, timeElapsed, totalTimeEstimate;
         console.info("Got message back from service worker", e.data);
         if (e.data.status !== true) {
           console.warn("Got an error!");
@@ -162,9 +179,24 @@ downloadHTMLList = function() {
           return false;
         }
         if (e.data.done !== true) {
-          console.log("Just an update");
           if (!isNull(e.data.updateUser)) {
+            console.log("Toasting: " + e.data.updateUser);
             toastStatusMessage(e.data.updateUser, 1000);
+          } else if (isNumber(e.data.progress)) {
+            if (!$("#download-progress-indicator").exists()) {
+              html = "<paper-progress\n  class=\"transiting\"\n  id=\"download-progress-indicator\"\n  value=\"0\"\n  max=\"1000\">\n</paper-progress>\n<p>\n  <span class=\"bold\">Estimated Time Remaining:</span> <span id=\"estimated-remaining-time\">&#8734;</span>s\n</p>";
+              $("#download-chooser .dialog-content .scrollable").append(html);
+            }
+            p$("#download-progress-indicator").value = e.data.progress;
+            timeElapsed = Date.now() - startTime;
+            fractionalProgress = toFloat(e.data.progress) / 1000.0;
+            totalTimeEstimate = timeElapsed / fractionalProgress;
+            _asm.progressTracking.estimate.push(totalTimeEstimate);
+            avgTotalTimeEstimate = _asm.progressTracking.estimate.mean();
+            estimatedTimeRemaining = avgTotalTimeEstimate - timeElapsed;
+            $("#estimated-remaining-time").text(toInt(estimatedTimeRemaining / 1000));
+          } else {
+            console.log("Just an update", e.data);
           }
           return false;
         }
@@ -182,6 +214,11 @@ downloadHTMLList = function() {
         } else {
           $("#download-html-file").replaceWith(dialogHtml);
         }
+        $("#download-chooser").on("iron-overlay-closed", function() {
+          return delay(100, function() {
+            return $(this).remove();
+          });
+        });
         try {
           p$("#download-chooser").close();
         } catch (undefined) {}
@@ -212,9 +249,12 @@ downloadHTMLList = function() {
           console.error("Wasn't able to fetch PDF");
           return $("#download-html-file #download-html-summary").after(pdfError);
         }).always(function() {
+          var duration;
           try {
-            return $("#download-html-file #pdf-download-placeholder").remove();
+            $("#download-html-file #pdf-download-placeholder").remove();
           } catch (undefined) {}
+          duration = Date.now() - startTime;
+          return console.debug("HTML+PDF time elapsed: " + duration + "ms");
         });
         return false;
       });
@@ -232,7 +272,7 @@ downloadHTMLList = function() {
 
 showDownloadChooser = function() {
   var html;
-  html = "<paper-dialog id=\"download-chooser\" modal>\n  <h2>Select Download Type</h2>\n  <paper-dialog-scrollable class=\"dialog-content\">\n    <p>\n      Once you select a file type, it will take a moment to prepare your download. Please be patient.\n    </p>\n  </paper-dialog-scrollable>\n  <div class=\"buttons\">\n    <paper-button dialog-dismiss>Cancel</paper-button>\n    <paper-button id=\"initiate-csv-download\">CSV/SQL</paper-button>\n    <paper-button dialog-confirm id=\"initiate-html-download\">HTML/PDF</paper-button>\n  </div>\n</paper-dialog>";
+  html = "<paper-dialog id=\"download-chooser\" modal>\n  <h2>Select Download Type</h2>\n  <paper-dialog-scrollable class=\"dialog-content\">\n    <p>\n      Once you select a file type, it will take a moment to prepare your download. Please be patient.\n    </p>\n  </paper-dialog-scrollable>\n  <div class=\"buttons\">\n    <paper-button dialog-dismiss>Cancel</paper-button>\n    <paper-button id=\"initiate-csv-download\">CSV/SQL</paper-button>\n    <paper-button id=\"initiate-html-download\">HTML/PDF</paper-button>\n  </div>\n</paper-dialog>";
   if (!$("#download-chooser").exists()) {
     $("body").append(html);
   }

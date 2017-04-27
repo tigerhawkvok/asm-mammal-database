@@ -269,7 +269,7 @@ if (empty($speciesRow["common_name"])) {
             'ignore_errors' => true,
             'timeout' => 3.5, # Seconds
         ),
-    );
+        );
         $context = stream_context_create($opts);
         $response = file_get_contents($destUrl, false, $context);
         $decoded = json_decode($response, true);
@@ -300,16 +300,19 @@ $hasWellFormattedSpeciesCitation = preg_match('/\(? *([\w\. \[\]]+), *([0-9]{4})
 
 if (empty($speciesRow["genus_authority"]) && $hasWellFormattedSpeciesCitation) {
     /***
-     * See admin.coffee for an example of how to do this
+     * See admin.coffee or serviceWorker.coffee for an example of how
+     * to do this 
      *
      * EG:
-     * https://github.com/tigerhawkvok/asm-mammal-database/blob/v0.5.6-prealpha/coffee/admin.coffee#L688-L699
+     * https://github.com/tigerhawkvok/asm-mammal-database/blob/v0.5.22/coffee/serviceWorker.coffee#L222-L230
      *
      * May need to do this in case we picked up the authority from the
      * IUCN, but it hasn't been edited
      ***/
-    $authority = preg_replace('/\(? *(([\w\. \[\]]+(,|&|&amp;|&amp;amp;)?)+), *([0-9]{4}) *\)?/im', '$1', $speciesRow["species_authority"]);
-    $authorityYear = preg_replace('/\(? *(([\w\. \[\]]+(,|&|&amp;|&amp;amp;)?)+), *([0-9]{4}) *\)?/im', '$4', $speciesRow["species_authority"]);
+    $authority = preg_replace('%(</|<|&lt;|&lt;/).*?(>|&gt;)%im', '', $speciesRow["species_authority"]);
+    $authority = preg_replace('/^\(? *(([\'"])? *([0-9A-Z\x{00C0}-\x{017F}_. \[\]]+(,|&|&amp;|&amp;amp;|&#?[A-Z0-9]+;)?)+ *\2?) *, *([0-9]{4}) *\)?/uim', '$1', $authority);
+    $authority = htmlspecialchars_decode($authority);
+    $authorityYear = preg_replace('/^\(? *(([\'"])? *([0-9A-Z\x{00C0}-\x{017F}_. \[\]]+(,|&|&amp;|&amp;amp;|&#?[A-Z0-9]+;)?)+ *\2?) *, *([0-9]{4}) *\)?/uim', '$5', $speciesRow["species_authority"]);
     $speciesRow["authority_year"] = json_encode(array(
         $authorityYear => $authorityYear,
     ));

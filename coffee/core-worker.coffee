@@ -218,6 +218,9 @@ deEscape = (string) ->
     string = string.replace(/\&#62;/mg, '>')
     string = string.replace(/\&#60;/mg, '<')
     ++i
+    if i >= 10
+      console.warn "deEscape quitting after #{i} iterations"
+      break
     newString = string
   decodeURIComponent string
 

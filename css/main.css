@@ -6948,6 +6948,12 @@ main #images-block div.no-image {
 paper-dialog#set-license-value {
   width: 85vw;
 }
+paper-dialog.download-file .data-download-button {
+  margin: .25rem;
+}
+paper-dialog.download-file h3 + p {
+  margin-left: 1rem;
+}
 #modal-taxon paper-dialog-scrollable#modal-taxon-editor,
 #modal-taxon-edit paper-dialog-scrollable#modal-taxon-editor {
   max-height: 66vh;
@@ -7005,6 +7011,10 @@ html >>> .tooltip-container {
 }
 .italic {
   font-style: italic;
+}
+.bold,
+.strong {
+  font-weight: bold;
 }
 .click {
   cursor: pointer;

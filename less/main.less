@@ -338,14 +338,29 @@ main {
 // Admin page
 
 
-paper-dialog#set-license-value {
-    width: 85vw;
-}
+paper-dialog {
 
-paper-dialog#deprecated-taxon-list {
-    li {
-
+    &#set-license-value {
+        width: 85vw;
     }
+
+
+    &#deprecated-taxon-list {
+        li {
+
+        }
+    }
+    
+    &.download-file {
+        .data-download-button {
+            margin: .25rem;
+        }
+        
+        h3 + p {
+            margin-left: 1rem;
+        }
+    }
+
 }
 
 #modal-taxon, #modal-taxon-edit {
@@ -421,6 +436,9 @@ paper-dialog#modal-taxon .buttons, paper-dialog#modal-taxon-edit .buttons {
 }
 .italic {
     font-style:italic;
+}
+.bold, .strong {
+    font-weight: bold;
 }
 .click {
     cursor:pointer;

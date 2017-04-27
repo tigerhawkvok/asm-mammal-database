@@ -199,6 +199,16 @@ Array.prototype.containsObject = function(obj) {
   }
 };
 
+Array.prototype.sum = function() {
+  return this.reduce(function(a, b) {
+    return a + b;
+  });
+};
+
+Array.prototype.mean = function() {
+  return this.sum() / this.length;
+};
+
 Object.toArray = function(obj) {
   var shadowObj;
   try {
@@ -893,6 +903,9 @@ toastStatusMessage = function(message, className, duration, selector) {
     return false;
   }
   window._metaStatus.isToasting = true;
+  if (isNumber(className)) {
+    duration = className;
+  }
   if (!isNumber(duration)) {
     duration = 3000;
   }
@@ -910,9 +923,18 @@ toastStatusMessage = function(message, className, duration, selector) {
     try {
       p$(selector).show();
       return delay(duration + 500, function() {
-        $(selector).empty();
-        $(selector).removeClass(className);
-        $(selector).attr("text", "");
+        var isOpen;
+        try {
+          isOpen = p$(selector).opened;
+        } catch (undefined) {}
+        if (typeof isOpen !== "boolean") {
+          isOpen = false;
+        }
+        if (!isOpen) {
+          $(selector).empty();
+          $(selector).removeClass(className);
+          $(selector).attr("text", "");
+        }
         window._metaStatus.isToasting = false;
         return false;
       });
@@ -3486,7 +3508,23 @@ getRandomEntry = function() {
 window.getRandomEntry = getRandomEntry;
 
 doLazily = function() {
-  loadJS(uri.urlString + "js/download.min.js");
+
+  /*
+   * Load these assets lazily, but only once
+   */
+  if ((typeof _asm !== "undefined" && _asm !== null ? _asm.hasDoneLazily : void 0) !== true) {
+    if (typeof _asm !== "object") {
+      window._asm = new Object();
+    }
+    _asm.hasDoneLazily = true;
+    loadJS(uri.urlString + "js/download.min.js", function() {
+      var html;
+      html = "<paper-icon-button\n  icon=\"icons:cloud-download\"\n  class=\"click\"\n  data-fn=\"showDownloadChooser\"\n  title=\"Download Copy\"\n  data-toggle=\"tooltip\"\n  >\n</paper-icon-button>";
+      $("#git-footer").prepend(html);
+      bindClicks();
+      return false;
+    });
+  }
   return false;
 };
 

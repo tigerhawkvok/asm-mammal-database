@@ -2,7 +2,7 @@
 /*
  * Core helpers/imports for web workers
  */
-var _asm, byteCount, createHtmlFile, dateMonthToString, deEscape, decode64, delay, downloadCSVFile, encode64, generateCSVFromResults, getLocation, goTo, isArray, isBlank, isBool, isEmpty, isJson, isNull, isNumber, jsonTo64, locationData, markdown, openLink, openTab, post64, prepURI, randomInt, randomString, renderDataArray, roundNumber, roundNumberSigfig, smartUpperCasing, toFloat, toInt, toObject, uri, validateAWebTaxon, window,
+var _asm, authorityTest, byteCount, commalessTest, createCSVFile, createHtmlFile, dateMonthToString, deEscape, decode64, delay, downloadCSVFile, encode64, generateCSVFromResults, getLocation, goTo, isArray, isBlank, isBool, isEmpty, isJson, isNull, isNumber, jsonTo64, locationData, markdown, openLink, openTab, post64, prepURI, progressStepCount, randomInt, randomString, renderDataArray, roundNumber, roundNumberSigfig, smartUpperCasing, toFloat, toInt, toObject, uri, validateAWebTaxon, window,
   indexOf = [].indexOf || function(item) { for (var i = 0, l = this.length; i < l; i++) { if (i in this && this[i] === item) return i; } return -1; },
   modulo = function(a, b) { return (+a % (b = +b) + b) % b; };
 
@@ -275,6 +275,10 @@ deEscape = function(string) {
     string = string.replace(/\&#62;/mg, '>');
     string = string.replace(/\&#60;/mg, '<');
     ++i;
+    if (i >= 10) {
+      console.warn("deEscape quitting after " + i + " iterations");
+      break;
+    }
     newString = string;
   }
   return decodeURIComponent(string);
@@ -878,6 +882,12 @@ validateAWebTaxon = function(taxonObj, callback) {
  * Service worker!
  */
 
+authorityTest = /^\(? *((['"])? *([\w\u00C0-\u017F\. \-\&;\[\]]+(,|&|&amp;|&amp;amp;|&#[\w0-9]+;)?)+ *\2) *, *([0-9]{4}) *\)?/img;
+
+commalessTest = /^(\(?)(.*?[^,]) ([0-9]{4})(\)?)$/img;
+
+progressStepCount = 1000.0;
+
 if (typeof uri !== "object") {
   uri = {
     urlString: ""
@@ -901,8 +911,14 @@ self.addEventListener("message", function(e) {
       firstIteration = (ref = e.data.firstIteration.toBool()) != null ? ref : false;
       return renderDataArray(data, firstIteration, chunkSize);
     case "render-html":
-      console.log("Got info from file on thread", e.data);
+      console.log("Got HTML info from file on thread", e.data);
       return createHtmlFile(e.data.data, e.data.htmlHeader);
+    case "render-csv":
+      console.log("Got CSV info from file on thread", e.data);
+      return createCSVFile(e.data.data);
+    default:
+      console.error("No valid action recieved from worker initialization!", e.data);
+      return console.warn(e);
   }
 });
 
@@ -1062,11 +1078,13 @@ createHtmlFile = function(result, htmlBody) {
    *
    * Requires the JSOn result from the main function.
    */
-  var authorityYears, c, duration, e, entryHtml, error1, error2, error3, error4, genusAuth, genusYear, hasReadClade, hasReadGenus, hasReadSubClade, htmlCredit, htmlNotes, k, message, oneOffHtml, ref, ref1, ref2, ref3, row, shortGenus, speciesAuth, speciesYear, split, startTime, taxonCreditDate, total, v, year;
+  var authorityYears, c, duration, e, entryHtml, error1, error2, error3, error4, error5, genusAuth, genusYear, hangTimeout, hasReadClade, hasReadGenus, hasReadSubClade, htmlCredit, htmlNotes, k, message, oneOffHtml, progressStep, ref, ref1, ref2, ref3, row, shortGenus, speciesAuth, speciesYear, split, startTime, taxonCreditDate, total, v, year;
   startTime = Date.now();
   console.debug("Got", result);
   console.debug("Got body provided?", !isNull(htmlBody));
   total = result.count;
+  progressStep = total / progressStepCount;
+  console.debug("Step size", progressStep);
   try {
     if (result.status !== true) {
       throw Error("Invalid Result");
@@ -1085,15 +1103,24 @@ createHtmlFile = function(result, htmlBody) {
     for (k in ref) {
       row = ref[k];
       try {
-        if (modulo(k, 100) === 0) {
-          console.log("Parsing row " + k + " of " + total);
-          if (modulo(k, 500) === 0 && k > 0) {
+        if (k > 0) {
+          if (toInt(modulo(k, progressStep)) === 0) {
             message = {
               status: true,
               done: false,
-              updateUser: "Parsing " + k + " of " + total + ", please wait"
+              progress: toInt(k / progressStep)
             };
             self.postMessage(message);
+          }
+          if (modulo(k, 100) === 0) {
+            if (modulo(k, 500) === 0) {
+              message = {
+                status: true,
+                done: false,
+                updateUser: "Parsing " + k + " of " + total + ", please wait"
+              };
+              self.postMessage(message);
+            }
           }
         }
       } catch (undefined) {}
@@ -1101,10 +1128,48 @@ createHtmlFile = function(result, htmlBody) {
         continue;
       }
       try {
+        clearTimeout(hangTimeout);
+        hangTimeout = delay(250, function() {
+          console.warn("Possible hang on row #" + k, row);
+          return hangTimeout = delay(1000, function() {
+            message = {
+              status: false,
+              done: false,
+              updateUser: "Failure to parse row " + k
+            };
+            self.postMessage(message);
+            return self.close();
+          });
+        });
+      } catch (undefined) {}
+      try {
         if (typeof row.authority_year !== "object") {
+          authorityYears = new Object();
           try {
-            authorityYears = JSON.parse(row.authority_year);
+            if (isNumber(row.authority_year)) {
+              authorityYears[row.authority_year] = row.authority_year;
+            } else if (isNull(row.authority_year)) {
+              row.species_authority = row.species_authority.replace(/(<\/|<|&lt;|&lt;\/).*?(>|&gt;)/img, "");
+              if (commalessTest.test(row.species_authority)) {
+                row.species_authority = row.species_authority.replace(commalessTest, "$1$2, $3$4");
+              }
+              if (authorityTest.test(row.species_authority)) {
+                year = row.species_authority.replace(authorityTest, "$5");
+                row.species_authority = row.species_authority.replace(authorityTest, "$1");
+                authorityYears[year] = year;
+                row.authority_year = authorityYears;
+              } else {
+                if (!isNull(row.species_authority)) {
+                  console.warn("Failed a match on authority '" + row.species_authority + "'");
+                }
+                authorityYears["Unknown"] = "Unknown";
+              }
+            } else {
+              authorityYears = JSON.parse(row.authority_year);
+            }
           } catch (error1) {
+            e = error1;
+            console.debug("authority isnt number, null, or object, with bad species_authority '" + row.authority_year + "'");
             split = row.authority_year.split(":");
             if (split.length > 1) {
               year = split[1].slice(split[1].search("\"") + 1, -2);
@@ -1112,20 +1177,24 @@ createHtmlFile = function(result, htmlBody) {
               split[1] = "\"" + year + "\"}";
               authorityYears = JSON.parse(split.join(":"));
             } else {
-              if (isNumber(row.authority_year)) {
-                authorityYears[row.authority_year] = row.authority_year;
-              }
+              console.warn("Unable to figure out the type of data for `authority_year`: " + e.message, JSON.stringify(row));
+              console.warn(e.stack);
             }
           }
         } else {
           authorityYears = row.authority_year;
         }
-        genusYear = "";
-        speciesYear = "";
-        for (c in authorityYears) {
-          v = authorityYears[c];
-          genusYear = c.replace(/&#39;/g, "'");
-          speciesYear = v.replace(/&#39;/g, "'");
+        try {
+          genusYear = Object.keys(authorityYears)[0];
+          speciesYear = authorityYears[genusYear];
+          genusYear = genusYear.replace(/&#39;/g, "'");
+          speciesYear = speciesYear.replace(/&#39;/g, "'");
+        } catch (error2) {
+          for (c in authorityYears) {
+            v = authorityYears[c];
+            genusYear = c.replace(/&#39;/g, "'");
+            speciesYear = v.replace(/&#39;/g, "'");
+          }
         }
         if (isNull(row.genus_authority)) {
           row.genus_authority = row.species_authority;
@@ -1140,19 +1209,23 @@ createHtmlFile = function(result, htmlBody) {
         if (toInt(row.parens_auth_species).toBool()) {
           speciesAuth = "(" + speciesAuth + ")";
         }
-      } catch (error2) {
-        e = error2;
+      } catch (error3) {
+        e = error3;
         console.warn("There was a problem parsing the authority information for _" + row.genus + " " + row.species + " " + row.subspecies + "_ - " + e.message);
         console.warn(e.stack);
         console.warn("Bad parse for authority year -- tried to fix >>" + row.authority_year + "<<", authorityYears, row.authority_year);
         console.warn("We were working with", authorityYears, genusYear, genusAuth, speciesYear, speciesAuth);
       }
-      try {
-        htmlNotes = markdown.toHTML(row.notes);
-      } catch (error3) {
-        e = error3;
-        console.warn("Unable to parse Markdown for _" + row.genus + " " + row.species + " " + row.subspecies + "_");
-        htmlNotes = row.notes;
+      if (!isNull(row.entry)) {
+        try {
+          htmlNotes = markdown.toHTML(row.entry);
+        } catch (error4) {
+          e = error4;
+          console.warn("Unable to parse Markdown for _" + row.genus + " " + row.species + " " + row.subspecies + "_");
+          htmlNotes = row.entry;
+        }
+      } else {
+        htmlNotes = "";
       }
       htmlCredit = "";
       if (!(isNull(htmlNotes) || isNull(row.taxon_credit))) {
@@ -1180,6 +1253,12 @@ createHtmlFile = function(result, htmlBody) {
       htmlBody += entryHtml;
     }
     htmlBody += "</article>\n</div>\n</body>\n</html>";
+    message = {
+      status: true,
+      done: false,
+      progress: progressStepCount
+    };
+    self.postMessage(message);
     duration = Date.now() - startTime;
     console.log("HTML file prepped in " + duration + "ms off-thread");
     message = {
@@ -1188,11 +1267,224 @@ createHtmlFile = function(result, htmlBody) {
       done: true
     };
     self.postMessage(message);
+    console.debug("Completed worker!");
     return self.close();
-  } catch (error4) {
-    e = error4;
+  } catch (error5) {
+    e = error5;
     console.error("There was a problem creating your file. Please try again later.");
     console.error("Exception in createHtmlFile() - " + e.message);
+    console.warn(e.stack);
+    message = {
+      status: false,
+      done: true
+    };
+    self.postMessage(message);
+    return self.close();
+  }
+};
+
+createCSVFile = function(result) {
+  var authorityYears, boolToString, c, col, colData, csv, csvBody, csvHeader, csvLiteralRow, csvRow, dirtyCol, dirtyColData, downloadable, duration, e, error1, error2, error3, error4, error5, genusYear, i, k, l, len, makeTitleCase, message, progressStep, ref, row, showColumn, speciesYear, split, startTime, tempCol, totalCount, v, year;
+  startTime = Date.now();
+  csvBody = "  ";
+  csvHeader = new Array();
+  showColumn = ["genus", "species", "subspecies", "canonical_sciname", "common_name", "common_name_source", "image", "image_caption", "image_credit", "image_license", "major_type", "major_subtype", "simple_linnean_group", "simple_linnean_subgroup", "linnean_order", "linnean_family", "genus_authority", "parens_auth_genus", "species_authority", "parens_auth_species", "authority_year", "deprecated_scientific", "notes", "entry", "taxon_credit", "taxon_credit_date", "taxon_author", "citation", "source", "internal_id"];
+  makeTitleCase = ["genus", "common_name", "taxon_credit", "linnean_order", "linnean_family", "genus_authority", "species_authority"];
+  boolToString = ["parens_auth_genus", "parens_auth_species"];
+  i = 0;
+  console.debug("Got result");
+  totalCount = Object.size(result.result);
+  progressStep = totalCount / progressStepCount;
+  console.debug("Step size", progressStep);
+  try {
+    ref = result.result;
+    for (k in ref) {
+      row = ref[k];
+      if (k > 0) {
+        if (toInt(modulo(k, progressStep)) === 0) {
+          message = {
+            status: true,
+            done: false,
+            progress: toInt(k / progressStep)
+          };
+          self.postMessage(message);
+        }
+        if (modulo(k, 100) === 0) {
+          console.debug("CSV-ing row " + k + " of " + totalCount);
+          if (modulo(k, 500) === 0) {
+            message = {
+              status: true,
+              done: false,
+              updateUser: "Parsing " + k + " of " + totalCount + ", please wait"
+            };
+            self.postMessage(message);
+          }
+        }
+      }
+      csvRow = new Array();
+      if (isNull(row.genus) || isNull(row.species)) {
+        continue;
+      }
+      for (l = 0, len = showColumn.length; l < len; l++) {
+        dirtyCol = showColumn[l];
+        dirtyColData = row[dirtyCol];
+        col = dirtyCol.replace(/"/g, '\"\"');
+        try {
+          colData = dirtyColData.replace(/"/g, '\"\"').replace(/&#39;/g, "'");
+        } catch (error1) {
+          colData = "";
+        }
+        if (i === 0) {
+          if (indexOf.call(showColumn, col) >= 0) {
+            csvHeader.push(col.replace(/_/g, " ").toTitleCase());
+          }
+        }
+        if (indexOf.call(showColumn, col) >= 0) {
+          if (/[a-z]+_authority/.test(col)) {
+            colData = colData.unescape();
+            try {
+              if (typeof row.authority_year !== "object") {
+                authorityYears = new Object();
+                try {
+                  if (isNumber(row.authority_year)) {
+                    authorityYears[row.authority_year] = row.authority_year;
+                  } else if (isNull(row.authority_year)) {
+                    row.species_authority = row.species_authority.replace(/(<\/|<|&lt;|&lt;\/).*?(>|&gt;)/img, "");
+                    if (commalessTest.test(row.species_authority)) {
+                      row.species_authority = row.species_authority.replace(commalessTest, "$1$2, $3$4");
+                    }
+                    if (authorityTest.test(row.species_authority)) {
+                      year = row.species_authority.replace(authorityTest, "$5");
+                      row.species_authority = row.species_authority.replace(authorityTest, "$1");
+                      authorityYears[year] = year;
+                      row.authority_year = authorityYears;
+                    } else {
+                      if (!isNull(row.species_authority)) {
+                        console.warn("Failed a match on authority '" + row.species_authority + "'");
+                      }
+                      authorityYears["Unknown"] = "Unknown";
+                    }
+                  } else {
+                    authorityYears = JSON.parse(row.authority_year);
+                  }
+                } catch (error2) {
+                  e = error2;
+                  console.debug("authority isnt number, null, or object, with bad species_authority '" + row.authority_year + "'");
+                  split = row.authority_year.split(":");
+                  if (split.length > 1) {
+                    year = split[1].slice(split[1].search("\"") + 1, -2);
+                    year = year.replace(/"/g, "'");
+                    split[1] = "\"" + year + "\"}";
+                    authorityYears = JSON.parse(split.join(":"));
+                  } else {
+                    console.warn("Unable to figure out the type of data for `authority_year`: " + e.message, JSON.stringify(row));
+                    console.warn(e.stack);
+                  }
+                }
+              } else {
+                authorityYears = row.authority_year;
+              }
+              if (typeof row.authority_year === "string") {
+                row.authority_year = row.authority_year.trim();
+              }
+              if (isNull(row.authority_year)) {
+                row.authority_year = JSON.stringify(authorityYears);
+              }
+              try {
+                genusYear = Object.keys(authorityYears)[0];
+                speciesYear = authorityYears[genusYear];
+                genusYear = genusYear.replace(/&#39;/g, "'");
+                speciesYear = speciesYear.replace(/&#39;/g, "'");
+              } catch (error3) {
+                for (c in authorityYears) {
+                  v = authorityYears[c];
+                  genusYear = c.replace(/&#39;/g, "'");
+                  speciesYear = v.replace(/&#39;/g, "'");
+                }
+              }
+              if (isNull(row.genus_authority)) {
+                row.genus_authority = row.species_authority;
+              } else if (isNull(row.species_authority)) {
+                row.species_authority = row.genus_authority;
+              }
+              if (isNull(colData)) {
+                try {
+                  colData = row[dirtyCol].unescape();
+                } catch (undefined) {}
+                if (isNull(colData)) {
+                  colData = "Unknown";
+                }
+              }
+              switch (col.split("_")[0]) {
+                case "genus":
+                  tempCol = (colData.toTitleCase()) + ", " + genusYear;
+                  if (toInt(row.parens_auth_genus).toBool()) {
+                    tempCol = "(" + tempCol + ")";
+                  }
+                  break;
+                case "species":
+                  tempCol = (colData.toTitleCase()) + ", " + speciesYear;
+                  if (toInt(row.parens_auth_species).toBool()) {
+                    tempCol = "(" + tempCol + ")";
+                  }
+              }
+              colData = tempCol;
+            } catch (error4) {
+              e = error4;
+            }
+          }
+          if (dirtyCol === "authority_year") {
+            if (isNull(colData && !isNull(row[dirtyCol]))) {
+              try {
+                colData = row[dirtyCol];
+                if (typeof colData === "object") {
+                  colData = JSON.stringify(colData).replace(/"/g, '\"\"');
+                }
+              } catch (undefined) {}
+            } else {
+              console.debug("auth year '" + colData + "' is valid", isNull(colData, !isNull(row[dirtyCol], col, dirtyCol)));
+            }
+          }
+          if (indexOf.call(makeTitleCase, col) >= 0) {
+            colData = colData.toTitleCase();
+          }
+          if (col === "image" && !isNull(colData)) {
+            colData = "" + uri.urlString + colData;
+          }
+          if (indexOf.call(boolToString, col) >= 0) {
+            try {
+              colData = colData.toBool().toString();
+            } catch (undefined) {}
+          }
+          csvRow.push("\"" + colData + "\"");
+        }
+      }
+      i++;
+      csvLiteralRow = csvRow.join(",");
+      csvBody += "\n" + csvLiteralRow;
+    }
+    csv = (csvHeader.join(",")) + "\n" + csvBody;
+    downloadable = "data:text/csv;charset=utf-8," + encodeURIComponent(csv);
+    message = {
+      status: true,
+      done: false,
+      progress: progressStepCount
+    };
+    self.postMessage(message);
+    duration = Date.now() - startTime;
+    console.log("CSV file prepped in " + duration + "ms off-thread");
+    message = {
+      csv: downloadable,
+      status: true,
+      done: true
+    };
+    self.postMessage(message);
+    console.debug("Completed worker!");
+    return self.close();
+  } catch (error5) {
+    e = error5;
+    console.error("There was a problem creating your file. Please try again later.");
+    console.error("Exception in createCSVFile() - " + e.message);
     console.warn(e.stack);
     message = {
       status: false,

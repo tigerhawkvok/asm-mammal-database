@@ -1,5 +1,4 @@
-var downloadCSVList, downloadHTMLList, showDownloadChooser,
-  indexOf = [].indexOf || function(item) { for (var i = 0, l = this.length; i < l; i++) { if (i in this && this[i] === item) return i; } return -1; };
+var downloadCSVList, downloadHTMLList, showDownloadChooser;
 
 downloadCSVList = function() {
 
@@ -9,8 +8,19 @@ downloadCSVList = function() {
    * See
    * https://github.com/tigerhawkvok/SSAR-species-database/issues/39
    */
-  var adjMonth, args, d, dateString, day, month;
+  var adjMonth, args, button, d, dateString, day, i, len, month, ref, startTime;
   animateLoad();
+  startTime = Date.now();
+  _asm.progressTracking = {
+    estimate: new Array()
+  };
+  try {
+    ref = $("#download-chooser .buttons paper-button");
+    for (i = 0, len = ref.length; i < len; i++) {
+      button = ref[i];
+      p$(button).disabled = true;
+    }
+  } catch (undefined) {}
   args = "q=*";
   d = new Date();
   adjMonth = d.getMonth() + 1;
@@ -18,88 +28,94 @@ downloadCSVList = function() {
   day = d.getDate().toString().length === 1 ? "0" + (d.getDate().toString()) : d.getDate();
   dateString = (d.getUTCFullYear()) + "-" + month + "-" + day;
   $.get("" + searchParams.apiPath, args, "json").done(function(result) {
-    var authorityYears, col, colData, csv, csvBody, csvHeader, csvLiteralRow, csvRow, dirtyCol, dirtyColData, downloadable, e, error, error1, genusYear, html, i, k, makeTitleCase, ref, row, showColumn, speciesYear, tempCol, v;
+    var e, error, postMessageContent, worker;
     try {
       if (result.status !== true) {
         throw Error("Invalid Result");
       }
-      csvBody = "      ";
-      csvHeader = new Array();
-      showColumn = ["genus", "species", "subspecies", "common_name", "image", "image_credit", "image_license", "major_type", "major_common_type", "major_subtype", "minor_type", "linnean_order", "genus_authority", "species_authority", "deprecated_scientific", "notes", "taxon_credit", "taxon_credit_date"];
-      makeTitleCase = ["genus", "common_name", "taxon_author", "major_subtype", "linnean_order"];
-      i = 0;
-      ref = result.result;
-      for (k in ref) {
-        row = ref[k];
-        csvRow = new Array();
-        if (isNull(row.genus)) {
-          continue;
+      startLoad();
+      toastStatusMessage("Please be patient while we create the file for you");
+      postMessageContent = {
+        action: "render-csv",
+        data: result
+      };
+      worker = new Worker("js/serviceWorker.min.js");
+      console.info("Rendering list off-thread");
+      worker.addEventListener("message", function(e) {
+
+        /*
+         * Service worker callback
+         */
+        var avgTotalTimeEstimate, downloadable, duration, error, estimatedTimeRemaining, fileSizeMiB, fractionalProgress, html, message, timeElapsed, totalTimeEstimate;
+        console.info("Got message back from service worker", e.data);
+        if (e.data.status !== true) {
+          console.warn("Got an error!");
+          message = !isNull(e.data.updateUser) ? e.data.updateUser : "Failed to create file";
+          stopLoadError(message, void 0, 10000);
+          return false;
         }
-        for (dirtyCol in row) {
-          dirtyColData = row[dirtyCol];
-          col = dirtyCol.replace(/"/g, '\"\"');
-          colData = dirtyColData.replace(/"/g, '\"\"').replace(/&#39;/g, "'");
-          if (i === 0) {
-            if (indexOf.call(showColumn, col) >= 0) {
-              csvHeader.push(col.replace(/_/g, " ").toTitleCase());
+        if (e.data.done !== true) {
+          if (!isNull(e.data.updateUser)) {
+            console.log("Toasting: " + e.data.updateUser);
+            toastStatusMessage(e.data.updateUser, 1000);
+          } else if (isNumber(e.data.progress)) {
+            if (!$("#download-progress-indicator").exists()) {
+              html = "<paper-progress\n  class=\"transiting\"\n  id=\"download-progress-indicator\"\n  value=\"0\"\n  max=\"1000\">\n</paper-progress>\n<p>\n  <span class=\"bold\">Estimated Time Remaining:</span> <span id=\"estimated-remaining-time\">&#8734;</span>s\n</p>";
+              $("#download-chooser .dialog-content .scrollable").append(html);
             }
+            p$("#download-progress-indicator").value = e.data.progress;
+            timeElapsed = Date.now() - startTime;
+            fractionalProgress = toFloat(e.data.progress) / 1000.0;
+            totalTimeEstimate = timeElapsed / fractionalProgress;
+            _asm.progressTracking.estimate.push(totalTimeEstimate);
+            avgTotalTimeEstimate = _asm.progressTracking.estimate.mean();
+            estimatedTimeRemaining = avgTotalTimeEstimate - timeElapsed;
+            $("#estimated-remaining-time").text(toInt(estimatedTimeRemaining / 1000));
+          } else {
+            console.log("Just an update", e.data);
           }
-          if (indexOf.call(showColumn, col) >= 0) {
-            if (/[a-z]+_authority/.test(col)) {
-              try {
-                authorityYears = JSON.parse(row.authority_year);
-                genusYear = "";
-                speciesYear = "";
-                for (k in authorityYears) {
-                  v = authorityYears[k];
-                  genusYear = k.replace(/"/g, '\"\"').replace(/&#39;/g, "'");
-                  speciesYear = v.replace(/"/g, '\"\"').replace(/&#39;/g, "'");
-                }
-                switch (col.split("_")[0]) {
-                  case "genus":
-                    tempCol = (colData.toTitleCase()) + " " + genusYear;
-                    if (toInt(row.parens_auth_genus).toBool()) {
-                      tempCol = "(" + tempCol + ")";
-                    }
-                    break;
-                  case "species":
-                    tempCol = (colData.toTitleCase()) + " " + speciesYear;
-                    if (toInt(row.parens_auth_species).toBool()) {
-                      tempCol = "(" + tempCol + ")";
-                    }
-                }
-                colData = tempCol;
-              } catch (error) {
-                e = error;
-              }
-            }
-            if (indexOf.call(makeTitleCase, col) >= 0) {
-              colData = colData.toTitleCase();
-            }
-            if (col === "image" && !isNull(colData)) {
-              colData = "http://mammaldiversity.org/cndb/" + colData;
-            }
-            csvRow.push("\"" + colData + "\"");
-          }
+          return false;
         }
-        i++;
-        csvLiteralRow = csvRow.join(",");
-        csvBody += "\n" + csvLiteralRow;
-      }
-      csv = (csvHeader.join(",")) + "\n" + csvBody;
-      downloadable = "data:text/csv;charset=utf-8," + encodeURIComponent(csv);
-      html = "<paper-dialog class=\"download-file\" id=\"download-csv-file\" modal>\n  <h2>Your file is ready</h2>\n  <paper-dialog-scrollable class=\"dialog-content\">\n    <p>\n      Please note that some special characters in names may be decoded incorrectly by Microsoft Excel. If this is a problem, following the steps in <a href=\"https://github.com/SSARHERPS/SSAR-species-database/blob/master/meta/excel_unicode_readme.md\"  onclick='window.open(this.href); return false;' onkeypress='window.open(this.href); return false;'>this README <iron-icon icon=\"launch\"></iron-icon></a> to force Excel to format it correctly.\n    </p>\n    <p class=\"text-center\">\n      <a href=\"" + downloadable + "\" download=\"asm-common-names-" + dateString + ".csv\" class=\"btn btn-default\"><iron-icon icon=\"file-download\"></iron-icon> Download Now</a>\n    </p>\n  </paper-dialog-scrollable>\n  <div class=\"buttons\">\n    <paper-button dialog-dismiss>Close</paper-button>\n  </div>\n</paper-dialog>";
-      if (!$("#download-csv-file").exists()) {
-        $("body").append(html);
-      } else {
-        $("#download-csv-file").replaceWith(html);
-      }
-      $("#download-chooser").get(0).close();
-      return safariDialogHelper("#download-csv-file");
-    } catch (error1) {
-      e = error1;
+        downloadable = e.data.csv;
+        try {
+          fileSizeMiB = downloadable.length / 1024 / 1024;
+        } catch (error) {
+          fileSizeMiB = 0;
+        }
+        console.log("Downloadable size: " + fileSizeMiB + " MiB");
+        html = "<paper-dialog class=\"download-file\" id=\"download-csv-file\" modal>\n  <h2>Your files are ready</h2>\n  <paper-dialog-scrollable class=\"dialog-content\">\n    <h3>Need data analysis?</h3>\n    <p>\n      api explanation link blurb\n    </p>\n    <h3>Which file type do I want?</h3>\n    <p>\n      A CSV file is readily opened by consumer-grade programs, such as Microsoft Excel or Google Spreadsheets.\n      It has some transformations done to the raw data to make it more readable.\n      <br/><br/>\n      However, if you wish to replicate the whole database and perform queries, the SQL file is machine-readable,\n      ready for import into a MySQL or MariaDB database by running the <code>source asm-species-" + dateString + ".sql;</code> in their\n      interactive shell prompts when run from your download directory. This file has not been transformed in any way.\n    </p>\n    <h3>Excel Important Note</h3>\n    <p>\n      Please note that some special characters in names may be decoded incorrectly by Microsoft Excel. If this is a problem, following the steps in <a href=\"https://github.com/SSARHERPS/SSAR-species-database/blob/master/meta/excel_unicode_readme.md\"  onclick='window.open(this.href); return false;' onkeypress='window.open(this.href); return false;'>this README <iron-icon icon=\"launch\"></iron-icon></a> to force Excel to format it correctly.\n    </p>\n    <p class=\"text-center\">\n      <a href=\"" + downloadable + "\" download=\"asm-species-" + dateString + ".csv\" class=\"btn btn-default data-download-button\" id=\"download-csv-summary\"><iron-icon icon=\"file-download\"></iron-icon> Download CSV</a>\n      <a href=\"#\" download=\"asm-species-" + dateString + ".sql\" class=\"btn btn-default data-download-button\" id=\"download-sql-summary\" disabled><iron-icon icon=\"file-download\"></iron-icon> Download SQL</a>\n    </p>\n  </paper-dialog-scrollable>\n  <div class=\"buttons\">\n    <paper-button dialog-dismiss>Close</paper-button>\n  </div>\n</paper-dialog>";
+        if (!$("#download-csv-file").exists()) {
+          $("body").append(html);
+        } else {
+          $("#download-csv-file").replaceWith(html);
+        }
+        $("#download-chooser").on("iron-overlay-closed", function() {
+          return delay(100, function() {
+            return $(this).remove();
+          });
+        });
+        p$("#download-chooser").close();
+        if (fileSizeMiB >= 2) {
+          console.debug("Large file size triggering blob creation");
+          downloadDataUriAsBlob("#download-csv-summary");
+        } else {
+          console.debug("File size is small enough to use a data-uri");
+        }
+        delay(250, function() {
+          return safariDialogHelper("#download-csv-file");
+        });
+        stopLoad();
+        duration = Date.now() - startTime;
+        console.debug("CSV time elapsed: " + duration + "ms");
+        return false;
+      });
+      worker.postMessage(postMessageContent);
+      return false;
+    } catch (error) {
+      e = error;
       stopLoadError("There was a problem creating the CSV file. Please try again later.");
-      console.error("Exception in downloadCSVList() - " + e.message);
+      console.error("Exception in downloadCSVList ) - " + e.message);
+      console.warn(e.stack);
       return console.warn("Got", result, "from", searchParams.apiPath + "?" + args, result.status);
     }
   }).fail(function() {
@@ -126,7 +142,19 @@ downloadHTMLList = function() {
    * See
    * https://github.com/tigerhawkvok/SSAR-species-database/issues/40
    */
+  var button, i, len, ref, startTime;
   startLoad();
+  startTime = Date.now();
+  _asm.progressTracking = {
+    estimate: new Array()
+  };
+  try {
+    ref = $("#download-chooser .buttons paper-button");
+    for (i = 0, len = ref.length; i < len; i++) {
+      button = ref[i];
+      p$(button).disabled = true;
+    }
+  } catch (undefined) {}
   $.get(uri.urlString + "css/download-inline-bootstrap.css").done(function(importedCSS) {
     var adjMonth, args, d, dateString, day, htmlBody, month;
     d = new Date();
@@ -145,25 +173,40 @@ downloadHTMLList = function() {
         data: result,
         htmlHeader: htmlBody
       };
-      worker = new Worker("js/serviceWorker.js");
+      worker = new Worker("js/serviceWorker.min.js");
       console.info("Rendering list off-thread");
       worker.addEventListener("message", function(e) {
 
         /*
          * Service worker callback
          */
-        var dialogHtml, downloadable, error, fileSizeMiB, pdfError;
-        console.info("Got message back from service worker", e.data);
-        if (e.data.done !== true) {
-          console.log("Just an update");
-          if (!isNull(e.data.updateUser)) {
-            toastStatusMessage(e.data.updateUser);
-          }
-          return false;
-        }
+        var avgTotalTimeEstimate, dialogHtml, downloadable, error, estimatedTimeRemaining, fileSizeMiB, fractionalProgress, html, message, pdfError, timeElapsed, totalTimeEstimate;
         if (e.data.status !== true) {
           console.warn("Got an error!");
-          stopLoadError("Failed to create file");
+          message = !isNull(e.data.updateUser) ? e.data.updateUser : "Failed to create file";
+          stopLoadError(message, void 0, 10000);
+          return false;
+        }
+        if (e.data.done !== true) {
+          if (!isNull(e.data.updateUser)) {
+            console.log("Toasting: " + e.data.updateUser);
+            toastStatusMessage(e.data.updateUser, 1000);
+          } else if (isNumber(e.data.progress)) {
+            if (!$("#download-progress-indicator").exists()) {
+              html = "<paper-progress\n  class=\"transiting\"\n  id=\"download-progress-indicator\"\n  value=\"0\"\n  max=\"1000\">\n</paper-progress>\n<p>\n  <span class=\"bold\">Estimated Time Remaining:</span> <span id=\"estimated-remaining-time\">&#8734;</span>s\n</p>";
+              $("#download-chooser .dialog-content .scrollable").append(html);
+            }
+            p$("#download-progress-indicator").value = e.data.progress;
+            timeElapsed = Date.now() - startTime;
+            fractionalProgress = toFloat(e.data.progress) / 1000.0;
+            totalTimeEstimate = timeElapsed / fractionalProgress;
+            _asm.progressTracking.estimate.push(totalTimeEstimate);
+            avgTotalTimeEstimate = _asm.progressTracking.estimate.mean();
+            estimatedTimeRemaining = avgTotalTimeEstimate - timeElapsed;
+            $("#estimated-remaining-time").text(toInt(estimatedTimeRemaining / 1000));
+          } else {
+            console.log("Just an update", e.data);
+          }
           return false;
         }
         htmlBody = e.data.html;
@@ -174,12 +217,17 @@ downloadHTMLList = function() {
           fileSizeMiB = 0;
         }
         console.log("Downloadable size: " + fileSizeMiB + " MiB");
-        dialogHtml = "<paper-dialog  modal class=\"download-file\" id=\"download-html-file\">\n  <h2>Your file is ready</h2>\n  <paper-dialog-scrollable class=\"dialog-content\">\n    <p class=\"text-center\">\n      <a href=\"" + downloadable + "\" download=\"asm-species-" + dateString + ".html\" class=\"btn btn-default\" id=\"download-html-summary\"><iron-icon icon=\"file-download\"></iron-icon> Download HTML</a>\n      <div id=\"pdf-download-placeholder\">\n        <paper-spinner active></paper-spinner> Please wait while your PDF creation finishes ...\n      </div>\n    </p>\n  </paper-dialog-scrollable>\n  <div class=\"buttons\">\n    <paper-button dialog-dismiss>Close</paper-button>\n  </div>\n</paper-dialog>";
+        dialogHtml = "<paper-dialog  modal class=\"download-file\" id=\"download-html-file\">\n  <h2>Your file is ready</h2>\n  <paper-dialog-scrollable class=\"dialog-content\">\n    <p>\n      Please note that some taxa may have had incomplete data. Please download a CSV or SQL file for the uncombined taxon data.\n    </p>\n    <p class=\"text-center\">\n      <a href=\"" + downloadable + "\" download=\"asm-species-" + dateString + ".html\" class=\"btn btn-default data-download-button\" id=\"download-html-summary\"><iron-icon icon=\"file-download\"></iron-icon> Download HTML</a>\n      <div id=\"pdf-download-placeholder\">\n        <paper-spinner active></paper-spinner> Please wait while your PDF creation finishes ...\n      </div>\n    </p>\n  </paper-dialog-scrollable>\n  <div class=\"buttons\">\n    <paper-button dialog-dismiss>Close</paper-button>\n  </div>\n</paper-dialog>";
         if (!$("#download-html-file").exists()) {
           $("body").append(dialogHtml);
         } else {
           $("#download-html-file").replaceWith(dialogHtml);
         }
+        $("#download-chooser").on("iron-overlay-closed", function() {
+          return delay(100, function() {
+            return $(this).remove();
+          });
+        });
         try {
           p$("#download-chooser").close();
         } catch (undefined) {}
@@ -194,13 +242,13 @@ downloadHTMLList = function() {
         toastStatusMessage("Please wait while we prepare your PDF file...", "", 7000);
         pdfError = "<a href=\"#\" disabled class=\"btn btn-default\" id=\"download-pdf-summary\">PDF Creation Failed</a>";
         console.debug("Posting for PDF");
-        return $.post(uri.urlString + "pdf/pdfwrapper.php", "html=" + (encodeURIComponent(htmlBody)), "json").done(function(result) {
+        $.post(uri.urlString + "pdf/pdfwrapper.php", "html=" + (encodeURIComponent(htmlBody)), "json").done(function(result) {
           var pdfDownload, pdfDownloadPath;
           console.debug("PDF result", result);
           if (result.status) {
             pdfDownloadPath = "" + uri.urlString + result.file;
             console.debug(pdfDownloadPath);
-            pdfDownload = "<a href=\"" + pdfDownloadPath + "\" download=\"asm-species-" + dateString + ".pdf\" class=\"btn btn-default\" id=\"download-pdf-summary\"><iron-icon icon=\"file-download\"></iron-icon> Download PDF</a>";
+            pdfDownload = "<a href=\"" + pdfDownloadPath + "\" download=\"asm-species-" + dateString + ".pdf\" class=\"btn btn-default data-download-button\" id=\"download-pdf-summary\"><iron-icon icon=\"file-download\"></iron-icon> Download PDF</a>";
             return $("#download-html-file #download-html-summary").after(pdfDownload);
           } else {
             console.error("Couldn't make PDF file");
@@ -210,12 +258,17 @@ downloadHTMLList = function() {
           console.error("Wasn't able to fetch PDF");
           return $("#download-html-file #download-html-summary").after(pdfError);
         }).always(function() {
+          var duration;
           try {
-            return $("#download-html-file #pdf-download-placeholder").remove();
+            $("#download-html-file #pdf-download-placeholder").remove();
           } catch (undefined) {}
+          duration = Date.now() - startTime;
+          return console.debug("HTML+PDF time elapsed: " + duration + "ms");
         });
+        return false;
       });
-      return worker.postMessage(postMessageContent);
+      worker.postMessage(postMessageContent);
+      return false;
     }).fail(function() {
       return stopLoadError("There was a problem communicating with the server. Please try again later.");
     });
@@ -228,7 +281,7 @@ downloadHTMLList = function() {
 
 showDownloadChooser = function() {
   var html;
-  html = "<paper-dialog id=\"download-chooser\" modal>\n  <h2>Select Download Type</h2>\n  <paper-dialog-scrollable class=\"dialog-content\">\n    <p>\n      Once you select a file type, it will take a moment to prepare your download. Please be patient.\n    </p>\n  </paper-dialog-scrollable>\n  <div class=\"buttons\">\n    <paper-button dialog-dismiss>Cancel</paper-button>\n    <paper-button dialog-confirm id=\"initiate-csv-download\" disabled>CSV</paper-button>\n    <paper-button dialog-confirm id=\"initiate-html-download\">HTML/PDF</paper-button>\n  </div>\n</paper-dialog>";
+  html = "<paper-dialog id=\"download-chooser\" modal>\n  <h2>Select Download Type</h2>\n  <paper-dialog-scrollable class=\"dialog-content\">\n    <p>\n      Once you select a file type, it will take a moment to prepare your download. Please be patient.\n    </p>\n  </paper-dialog-scrollable>\n  <div class=\"buttons\">\n    <paper-button dialog-dismiss>Cancel</paper-button>\n    <paper-button id=\"initiate-csv-download\">CSV/SQL</paper-button>\n    <paper-button id=\"initiate-html-download\">HTML/PDF</paper-button>\n  </div>\n</paper-dialog>";
   if (!$("#download-chooser").exists()) {
     $("body").append(html);
   }

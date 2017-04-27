@@ -40,7 +40,6 @@ downloadCSVList = ->
         ###
         # Service worker callback
         ###
-        console.info "Got message back from service worker", e.data
         if e.data.status isnt true
           console.warn "Got an error!"
           message = unless isNull e.data.updateUser then e.data.updateUser else "Failed to create file"
@@ -158,11 +157,6 @@ downloadCSVList = ->
           $("body").append(html)
         else
           $("#download-csv-file").replaceWith(html)
-        # When we close it, we want to remove it to reset the
-        # progress bar and the disabled's, etc.
-        $("#download-chooser").on "iron-overlay-closed", ->
-          delay 100, ->
-            $(this).remove()
         p$("#download-chooser").close()
         if fileSizeMiB >= 2
           # Chrome doesn't support a data URI this big
@@ -409,5 +403,12 @@ showDownloadChooser = ->
     downloadCSVList()
   $("#initiate-html-download").click ->
     downloadHTMLList()
+  ## Close events
+  # When we close it, we want to remove it to reset the
+  # progress bar and the disabled's, etc.
+  $("#download-chooser")
+  .on "iron-overlay-closed", ->
+    delay 100, =>
+      $(this).remove()
   safariDialogHelper("#download-chooser")
   false

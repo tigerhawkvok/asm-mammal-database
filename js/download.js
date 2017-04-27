@@ -47,7 +47,6 @@ downloadCSVList = function() {
          * Service worker callback
          */
         var avgTotalTimeEstimate, delayCheckSqlButton, downloadable, duration, error, estimatedTimeRemaining, fileSizeMiB, fractionalProgress, html, message, sqlButton, timeElapsed, totalTimeEstimate;
-        console.info("Got message back from service worker", e.data);
         if (e.data.status !== true) {
           console.warn("Got an error!");
           message = !isNull(e.data.updateUser) ? e.data.updateUser : "Failed to create file";
@@ -111,11 +110,6 @@ downloadCSVList = function() {
         } else {
           $("#download-csv-file").replaceWith(html);
         }
-        $("#download-chooser").on("iron-overlay-closed", function() {
-          return delay(100, function() {
-            return $(this).remove();
-          });
-        });
         p$("#download-chooser").close();
         if (fileSizeMiB >= 2) {
           console.debug("Large file size triggering blob creation");
@@ -323,6 +317,13 @@ showDownloadChooser = function() {
   });
   $("#initiate-html-download").click(function() {
     return downloadHTMLList();
+  });
+  $("#download-chooser").on("iron-overlay-closed", function() {
+    return delay(100, (function(_this) {
+      return function() {
+        return $(_this).remove();
+      };
+    })(this));
   });
   safariDialogHelper("#download-chooser");
   return false;

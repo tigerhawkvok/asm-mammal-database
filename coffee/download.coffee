@@ -85,6 +85,41 @@ downloadCSVList = ->
         catch
           fileSizeMiB = 0
         console.log "Downloadable size: #{fileSizeMiB} MiB"
+        if _asm.sqlDumpLocation is null
+          # We're still waiting
+          sqlButton = """
+          <div id="download-sql-summary" class="data-download-button">
+            <paper-spinner active></paper-spinner> Please wait while your SQL creation finishes ...
+          </div>
+          """
+          do delayCheckSqlButton = ->
+            if _asm.sqlDumpLocation is null
+              delay 250, ->
+                delayCheckSqlButton()
+            else
+              if _asm.sqlDumpLocation is false
+                # The async check completed and failed
+                sqlButton = """
+                <a href="#" class="btn btn-danger data-download-button" id="download-sql-summary" disabled><iron-icon icon="icons:error"></iron-icon> SQL Creation Failed</a>
+                """
+              else
+                # The async check completed
+                sqlButton = """
+                <a href="#{_asm.sqlDumpLocation}" download="asm-species-#{dateString}.sql" class="btn btn-default data-download-button" id="download-sql-summary"><iron-icon icon="icons:file-download"></iron-icon> Download SQL</a>
+                """
+              $("#download-sql-summary").replaceWith sqlButton
+            false
+        else if _asm.sqlDumpLocation is false
+          # The async check completed and failed
+          sqlButton = """
+          <a href="#" class="btn btn-danger data-download-button" id="download-sql-summary" disabled><iron-icon icon="icons:error"></iron-icon> SQL Creation Failed</a>
+          """
+        else
+          # The async check completed
+          sqlButton = """
+          <a href="#{_asm.sqlDumpLocation}" download="asm-species-#{dateString}.sql" class="btn btn-default data-download-button" id="download-sql-summary"><iron-icon icon="icons:file-download"></iron-icon> Download SQL</a>
+          """
+        # Build the dialog
         html = """
         <paper-dialog class="download-file" id="download-csv-file" modal>
           <h2>Your files are ready</h2>
@@ -107,11 +142,11 @@ downloadCSVList = ->
             </p>
             <h3>Excel Important Note</h3>
             <p>
-              Please note that some special characters in names may be decoded incorrectly by Microsoft Excel. If this is a problem, following the steps in <a href="https://github.com/tigerhawkvok/asm-mammal-database/blob/master/meta/excel_unicode_readme.md"  onclick='window.open(this.href); return false;' onkeypress='window.open(this.href); return false;'>this README <iron-icon icon="launch"></iron-icon></a> to force Excel to format it correctly.
+              Please note that some special characters in names may be decoded incorrectly by Microsoft Excel. If this is a problem, following the steps in <a href="https://github.com/tigerhawkvok/asm-mammal-database/blob/master/meta/excel_unicode_readme.md"  onclick='window.open(this.href); return false;' onkeypress='window.open(this.href); return false;'>this README <iron-icon icon="icons:launch"></iron-icon></a> to force Excel to format it correctly.
             </p>
             <p class="text-center">
-              <a href="#{downloadable}" download="asm-species-#{dateString}.csv" class="btn btn-default data-download-button" id="download-csv-summary"><iron-icon icon="file-download"></iron-icon> Download CSV</a>
-              <a href="#" download="asm-species-#{dateString}.sql" class="btn btn-default data-download-button" id="download-sql-summary" disabled><iron-icon icon="file-download"></iron-icon> Download SQL</a>
+              <a href="#{downloadable}" download="asm-species-#{dateString}.csv" class="btn btn-default data-download-button" id="download-csv-summary"><iron-icon icon="icons:file-download"></iron-icon> Download CSV</a>
+              #{sqlButton}
             </p>
           </paper-dialog-scrollable>
           <div class="buttons">
@@ -150,6 +185,17 @@ downloadCSVList = ->
       console.warn "Got",result,"from","#{searchParams.apiPath}?#{args}", result.status
   .fail ->
     stopLoadError "There was a problem communicating with the server. Please try again later."
+  # Get the SQL dump location
+  _asm.sqlDumpLocation = null
+  $.get "#{uri.urlString}meta.php", "action=get_db_dump", "json"
+  .done (result) ->
+    if result.status is true
+      _asm.sqlDumpLocation = result.download_path
+    else
+      _asm.sqlDumpLocation = false
+    false
+  .fail (result, status) ->
+    false
   false
 
 
@@ -273,8 +319,8 @@ downloadHTMLList = ->
               Please note that some taxa may have had incomplete data. Please download a CSV or SQL file for the uncombined taxon data.
             </p>
             <p class="text-center">
-              <a href="#{downloadable}" download="asm-species-#{dateString}.html" class="btn btn-default data-download-button" id="download-html-summary"><iron-icon icon="file-download"></iron-icon> Download HTML</a>
-              <div id="pdf-download-placeholder">
+              <a href="#{downloadable}" download="asm-species-#{dateString}.html" class="btn btn-default data-download-button" id="download-html-summary"><iron-icon icon="icons:file-download"></iron-icon> Download HTML</a>
+              <div id="pdf-download-placeholder" class="data-download-button">
                 <paper-spinner active></paper-spinner> Please wait while your PDF creation finishes ...
               </div>
             </p>
@@ -306,7 +352,7 @@ downloadHTMLList = ->
         # Now try to fetch the PDF file
         toastStatusMessage "Please wait while we prepare your PDF file...", "", 7000
         pdfError = """
-        <a href="#" disabled class="btn btn-default" id="download-pdf-summary">PDF Creation Failed</a>
+        <a href="#" disabled class="btn btn-danger" id="download-pdf-summary"><iron-icon icon="icons:error"></iron-icon> PDF Creation Failed</a>
         """
         console.debug "Posting for PDF"
         $.post "#{uri.urlString}pdf/pdfwrapper.php", "html=#{encodeURIComponent(htmlBody)}", "json"

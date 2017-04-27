@@ -1,5 +1,17 @@
 <?php
-require_once(dirname(__FILE__)."/core/core.php");
+/***
+ * Handles the abnormal requests that don't really belong anywhere else
+ ***/
+
+#$show_debug = true;
+
+if ($show_debug === true) {
+    error_reporting(E_ALL);
+    ini_set('display_errors', 1);
+    error_log('meta is running in debug mode!');
+}
+
+require_once dirname(__FILE__)."/core/core.php";
 
 $start_script_timer = microtime_float();
 
@@ -64,7 +76,12 @@ function doUploadImage()
     $extension = array_pop(explode(".", $file));
     $newFilePath = md5($file) . "." . $extension;
     $fileWritePath = $savePath . $newFilePath;
-    return array("status"=>move_uploaded_file($temp, $fileWritePath),"original_file"=>$file,"wrote_file"=>$newFilePath,"full_path"=>$fileWritePath);
+    return array(
+        "status"=> move_uploaded_file($temp, $fileWritePath),
+        "original_file" => $file,
+        "wrote_file" => $newFilePath,
+        "full_path" => $fileWritePath
+         );
 }
 
 
@@ -72,6 +89,9 @@ if (isset($_SERVER['QUERY_STRING'])) {
     parse_str($_SERVER['QUERY_STRING'], $_REQUEST);
 }
 $do = isset($_REQUEST['do']) ? strtolower($_REQUEST['do']):null;
+if (empty($do)) {
+    $do = isset($_REQUEST['action']) ? strtolower($_REQUEST['action']):null;
+}
 
 switch ($do) {
     case "get_last_mod":
@@ -83,7 +103,24 @@ switch ($do) {
     case "get_db_dump":
         # Get a table dump
         require dirname(__FILE__)."/CONFIG.php";
-        $db = new DBHelper($default_database, $default_sql_user, $default_sql_password, $default_sql_url, $default_table, $db_cols);
+        require dirname(__FILE__). "/mysqldump/src/Ifsnop/Mysqldump/Mysqldump.php";
+        $connString = "mysql:host=".$sql_url.";dbname=".$default_database;
+        $dumpSettings = array(
+            "include-tables" => array(
+                $default_table,
+            ),
+            "add-drop-database" => true,
+            "add-drop-table" => true,
+            "default-character-set" => Ifsnop\Mysqldump\Mysqldump::UTF8MB4,
+        );
+        $dump = new Ifsnop\Mysqldump\Mysqldump($connString, $default_sql_user, $default_sql_password, $dumpSettings);
+        $filename = "asm-sadb-table-dump-".microtime_float().".sql";
+        $dumpPath = "download-temp/".$filename;
+        $dump->start($dumpPath);
+        returnAjax(array(
+            "status" => true,
+            "download_path" => $dumpPath,
+        ));
         break;
     default:
         $default_answer = array(

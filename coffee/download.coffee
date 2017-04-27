@@ -89,9 +89,12 @@ downloadCSVList = ->
         <paper-dialog class="download-file" id="download-csv-file" modal>
           <h2>Your files are ready</h2>
           <paper-dialog-scrollable class="dialog-content">
-            <h3>Need data analysis?</h3>
+            <h3>Want to do data analysis?</h3>
             <p>
-              api explanation link blurb
+              We have an open API! Read all of our parameters here:
+              <a href="https://github.com/tigerhawkvok/asm-mammal-database/blob/master/README.md#api"  onclick='window.open(this.href); return false;' onkeypress='window.open(this.href); return false;'>README API Documentation <iron-icon icon="launch"></iron-icon></a>
+              <br/><br/>
+              We also have a UI to perform permission-restricted SQL queries on the database TODO
             </p>
             <h3>Which file type do I want?</h3>
             <p>
@@ -104,7 +107,7 @@ downloadCSVList = ->
             </p>
             <h3>Excel Important Note</h3>
             <p>
-              Please note that some special characters in names may be decoded incorrectly by Microsoft Excel. If this is a problem, following the steps in <a href="https://github.com/SSARHERPS/SSAR-species-database/blob/master/meta/excel_unicode_readme.md"  onclick='window.open(this.href); return false;' onkeypress='window.open(this.href); return false;'>this README <iron-icon icon="launch"></iron-icon></a> to force Excel to format it correctly.
+              Please note that some special characters in names may be decoded incorrectly by Microsoft Excel. If this is a problem, following the steps in <a href="https://github.com/tigerhawkvok/asm-mammal-database/blob/master/meta/excel_unicode_readme.md"  onclick='window.open(this.href); return false;' onkeypress='window.open(this.href); return false;'>this README <iron-icon icon="launch"></iron-icon></a> to force Excel to format it correctly.
             </p>
             <p class="text-center">
               <a href="#{downloadable}" download="asm-species-#{dateString}.csv" class="btn btn-default data-download-button" id="download-csv-summary"><iron-icon icon="file-download"></iron-icon> Download CSV</a>

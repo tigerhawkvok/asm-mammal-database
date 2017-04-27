@@ -74,14 +74,23 @@ if (isset($_SERVER['QUERY_STRING'])) {
 $do = isset($_REQUEST['do']) ? strtolower($_REQUEST['do']):null;
 
 switch ($do) {
-case "get_last_mod":
-    returnAjax(array("last_mod"=>getUserFileModTime()));
-    break;
-case "upload_image":
-    returnAjax(doUploadImage());
-    break;
-default:
-    $default_answer = array("status"=>false, "error"=>"Invalid action", "human_error"=>"No valid action was supplied.");
-    # doUploadImage()
-    returnAjax($default_answer);
+    case "get_last_mod":
+        returnAjax(array("last_mod"=>getUserFileModTime()));
+        break;
+    case "upload_image":
+        returnAjax(doUploadImage());
+        break;
+    case "get_db_dump":
+        # Get a table dump
+        require dirname(__FILE__)."/CONFIG.php";
+        $db = new DBHelper($default_database, $default_sql_user, $default_sql_password, $default_sql_url, $default_table, $db_cols);
+        break;
+    default:
+        $default_answer = array(
+            "status"=>false,
+            "error"=>"Invalid action",
+            "human_error"=>"No valid action was supplied."
+        );
+        # doUploadImage()
+        returnAjax($default_answer);
 }

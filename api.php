@@ -56,14 +56,14 @@ if (!function_exists('elapsed')) {
        * @param float $start_time in unix epoch. See http://us1.php.net/microtime
        ***/
 
-      if (!is_numeric($start_time)) {
-          global $start_script_timer;
-          if (is_numeric($start_script_timer)) {
-              $start_time = $start_script_timer;
-          } else {
-              return false;
-          }
-      }
+        if (!is_numeric($start_time)) {
+            global $start_script_timer;
+            if (is_numeric($start_script_timer)) {
+                $start_time = $start_script_timer;
+            } else {
+                return false;
+            }
+        }
         return 1000*(microtime_float() - (float)$start_time);
     }
 }

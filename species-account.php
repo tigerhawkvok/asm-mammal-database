@@ -686,7 +686,9 @@ if (!is_numeric($creditTime) || $creditTime == 0) {
 
 $creditAuthor = empty($speciesRow["taxon_author"]) ? "your local ASM server" : $speciesRow["taxon_credit"];
 $credit = "Entry by ".$creditAuthor." on ".strftime("%d %B %Y", $creditTime);
-$entryCredits = "<section id='entry-credits' class='col-xs-12 small'><p>".$credit."</p></section>\n\n";
+$taxonCitation = $speciesRow["canonical_sciname"]." (ASM Species Account Database #".$speciesRow["internal_id"].") fetched ".date(DATE_ISO8601);
+$permalink = "https://mammaldiversity.org/species-account/id=".$speciesRow["id"];
+$entryCredits = "<section id='entry-credits' class='col-xs-12 small'><p>".$credit."</p><p class='cite-taxon'>Citation: <cite>".$taxonCitation."</cite></p><p>Permalink: <code>".$permalink."</code></section>\n\n";
 
 $content = $entryTitle . $images . $taxonomyNotes. $entryNote . $primaryEntry . $entryCredits;
 

@@ -65,3 +65,4 @@ pdf/pdf-gen/*.pdf
 *.pdnBak
 currentVersion~
 .php_cs.cache
+meta/database/asm_db_backup.sql

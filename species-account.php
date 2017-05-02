@@ -6,10 +6,23 @@
  * This page accounts for all the individual species listing
  *************/
 
+# $show_debug = true;
+$showAccountDebug = true;
+
+if ($show_debug === true) {
+    error_reporting(E_ALL);
+    ini_set('display_errors', 1);
+    error_log('Index is running in debug mode!');
+    $debug = true; # compat
+    $showAccountDebug = true; # Show all the debugging
+}  else {
+  # Rigorously avoid errors in production
+  # We'll respect if $showAccountDebug was set earlier
+  ini_set('display_errors', 0);
+}
+
 require_once("CONFIG.php");
 require_once dirname(__FILE__) . "/core/core.php";
-
-$showAccountDebug = true;
 
 $db = new DBHelper($default_database, $default_sql_user, $default_sql_password, $default_sql_url, $default_table, $db_cols);
 
@@ -301,7 +314,7 @@ $hasWellFormattedSpeciesCitation = preg_match('/\(? *([\w\. \[\]]+), *([0-9]{4})
 if (empty($speciesRow["genus_authority"]) && $hasWellFormattedSpeciesCitation) {
     /***
      * See admin.coffee or serviceWorker.coffee for an example of how
-     * to do this 
+     * to do this
      *
      * EG:
      * https://github.com/tigerhawkvok/asm-mammal-database/blob/v0.5.22/coffee/serviceWorker.coffee#L222-L230

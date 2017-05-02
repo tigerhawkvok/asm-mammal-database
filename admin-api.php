@@ -4,13 +4,17 @@
  * Handle admin-specific requests
  ***/
 
-#$debug = true;
+#$show_debug = true;
 
 
-if ($debug) {
+if ($show_debug === true) {
     error_reporting(E_ALL);
     ini_set('display_errors', 1);
     error_log('AdminAPI is running in debug mode!');
+    $debug = true; # Compat
+}   else {
+  # Rigorously avoid errors in production
+  ini_set('display_errors', 0);
 }
 
 try {

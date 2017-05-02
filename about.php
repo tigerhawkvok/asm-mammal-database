@@ -14,12 +14,13 @@ else {
 	# Rigorously avoid errors in production
 					  ini_set('display_errors', 0);
 }
+include_once dirname(__FILE__)."/CONFIG.php";
 ?>
 <html>
   <head>
     <?php
       $title = "About the Species Account Database";
-$pageDescription = "About the Species Account Database";
+      $pageDescription = "About the Species Account Database";
 ?>
     <title><?php echo $title;
 ?></title>
@@ -50,7 +51,7 @@ echo $bodyOpen;
       <h2 class="col-xs-12">Legal Notices</h2>
       <h3 class="col-xs-12">Application</h3>
       <p class="col-xs-12">
-      This software is released under the <a href="https://choosealicense.com/licenses/gpl-3.0/" class="newwindow">GNU GPL v3 license</a>, and the source code is available <a href="https://github.com/tigerhawkvok/asm-mammal-database" class="newwindow">on Github</a>.
+      This software is released under the <a href="https://choosealicense.com/licenses/gpl-3.0/" class="newwindow">GNU GPL v3 license</a>, and the source code is available <a href="<?php echo $gitUrl; ?>" class="newwindow">on Github</a>.
       </p>
       <h3 class="col-xs-12">Images</h3>
       <p class="col-xs-12">

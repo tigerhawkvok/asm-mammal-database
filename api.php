@@ -31,6 +31,12 @@
 
 #$show_debug = true;
 
+if ($show_debug !== true) {
+    # Rigorously avoid errors in production
+    ini_set('display_errors', 0);
+
+}
+
 require dirname(__FILE__)."/CONFIG.php";
 require_once(dirname(__FILE__)."/core/core.php");
 # This is a public API

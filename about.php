@@ -4,15 +4,14 @@
 
 
 if ($show_debug === true) {
-	error_reporting(E_ALL);
-	ini_set('display_errors', 1);
-	error_log('Index is running in debug mode!');
-	$debug = true;
-	# compat
-}
-else {
-	# Rigorously avoid errors in production
-												  ini_set('display_errors', 0);
+    error_reporting(E_ALL);
+    ini_set('display_errors', 1);
+    error_log('Index is running in debug mode!');
+    $debug = true;
+    # compat
+} else {
+    # Rigorously avoid errors in production
+    ini_set('display_errors', 0);
 }
 include_once dirname(__FILE__)."/CONFIG.php";
 ?>
@@ -20,7 +19,7 @@ include_once dirname(__FILE__)."/CONFIG.php";
   <head>
     <?php
       $title = "About the Species Account Database";
-$pageDescription = "About the Species Account Database";
+      $pageDescription = "About the Species Account Database";
 ?>
     <title><?php echo $title;
 ?></title>
@@ -39,9 +38,9 @@ $pageDescription = "About the Species Account Database";
       }*/
     </script>
   </head>
-  <?php
+    <?php
     require_once dirname(__FILE__)."/modular/bodyFrame.php";
-echo $bodyOpen;
+    echo $bodyOpen;
 ?>
       <h1 id="title" class="col-xs-12">
         About the  Database
@@ -76,7 +75,7 @@ echo $bodyOpen;
       <p class="col-xs-12">
       All information and content is licensed with the <a href="https://choosealicense.com/licenses/cc-by-4.0/" class="newwindow">Creative Commons BY 4.0 license</a>. A full citation for any given entry can be found on the account page, or under the <code>dcterms:bibliographicCitation</code> key on the API result for a given taxon.
       </p>
-      <?php
+        <?php
         echo $bodyClose;
 ?>
 </html>

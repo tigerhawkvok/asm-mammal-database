@@ -77,6 +77,10 @@ echo "var genusData = " . json_encode($genusBreakdown) . ";\n\n";
 
         </canvas>
       </div>
+      <p class="col-xs-12">
+        Click on a taxon above to see a more detailed breakdown.
+      </p>
+      <br/><br/>
       <h2 id="zoom-taxon-label" class="col-xs-12">
         
       </h2>

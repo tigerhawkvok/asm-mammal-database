@@ -23,6 +23,8 @@ $bodyOpen = "  <body fullbleed vertical layout class='container-fluid'>
           </span>
           <paper-icon-button icon=\"icons:dashboard\" class=\"click logged-in-values\" data-href=\"https://mammaldiversity.org/admin-page.html\" data-toggle=\"tooltip\" title=\"Administration Dashboard\" data-placement=\"bottom\" hidden> </paper-icon-button>
           <paper-icon-button icon='icons:settings-applications' class=\"click logged-in-values\" data-href=\"https://mammaldiversity.org/admin\" data-toggle=\"tooltip\" title=\"Account Settings\" data-placement=\"bottom\" hidden></paper-icon-button>
+          <paper-icon-button icon='icons:info-outline' class=\"click\" data-href=\"https://mammaldiversity.org/about\" data-toggle=\"tooltip\" title=\"About\" data-placement=\"bottom\"></paper-icon-button>
+          <paper-icon-button icon='editor:insert-chart' class=\"click\" data-href=\"https://mammaldiversity.org/summary\" data-toggle=\"tooltip\" title=\"Summary Statistics\" data-placement=\"bottom\"></paper-icon-button>
           ".$lastIcon."
           </p>
           </header>

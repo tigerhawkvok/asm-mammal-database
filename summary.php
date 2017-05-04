@@ -52,8 +52,24 @@ $db = new DBHelper($default_database, $default_sql_user, $default_sql_password, 
             $labels[] = $row["linnean_order"];
             $data[] = $row["count"];
         }
-        echo "var hlTaxonLabels = " . json_encode($labels) . ";";
-        echo "var hlTaxonData = " . json_encode($data) . ";";
+$genusBreakdown = array();
+foreach($labels as $taxon) {
+    $genusBinQuery = "select distinct `genus`, count(*) as count from `$default_table` where `linnean_order`='$taxon' group by `genus`";
+    $tmpLabels = array();
+    $tmpData = array();
+    $r = mysqli_query($db->getLink(), $genusBinQuery);
+    while($row = mysqli_fetch_assoc($r)) {
+        $tmpLabels[] = $row["genus"];
+        $tmpData[] = $row["count"];
+    }
+    $genusBreakdown[$taxon] = array(
+        "data" => $tmpData,
+        "labels" => $tmpLabels,
+    );
+}
+        echo "var hlTaxonLabels = " . json_encode($labels) . ";\n\n";
+        echo "var hlTaxonData = " . json_encode($data) . ";\n\n";
+echo "var genusData = " . json_encode($genusBreakdown) . ";\n\n";
         ?>
       </script>
       <div class="col-xs-12 clearfix" id="high-level-canvas-container">
@@ -61,6 +77,9 @@ $db = new DBHelper($default_database, $default_sql_user, $default_sql_password, 
 
         </canvas>
       </div>
+      <h2 id="zoom-taxon-label" class="col-xs-12">
+        
+      </h2>
       <div class="col-xs-12 clearfix" id="taxon-zoom-canvas-container">
         <canvas id="taxon-zoom-chart">
 

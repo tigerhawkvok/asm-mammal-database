@@ -85,7 +85,7 @@ function responseCodeMessage($code)
       echo $title;
       ?>
     </title>
-        <base href="http://localhost/~Philip/" />
+        <base href="http://mammaldiversity.org/" />
     <?php include_once dirname(__FILE__)."/modular/header.php"; ?>
 
   </head>

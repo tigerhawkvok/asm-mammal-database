@@ -1,4 +1,5 @@
 admin/CONFIG.php
 CONFIG.php
+install.php
 meta/database/asm_db_backup.sql
 meta/database/create-sql-user.sql

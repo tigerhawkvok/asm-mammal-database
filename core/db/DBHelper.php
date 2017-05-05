@@ -298,14 +298,14 @@ class DBHelper
     public function openDB()
     {
         /***
-     * @return mysqli_resource
-     ***/
-    if ($l = mysqli_connect($this->getSQLURL(), $this->getSQLUser(), $this->getSQLPW())) {
-        if (mysqli_select_db($l, $this->getDB())) {
-            $this->setLink($l);
-            return $l;
+         * @return mysqli_resource
+         ***/
+        if ($l = @mysqli_connect($this->getSQLURL(), $this->getSQLUser(), $this->getSQLPW())) {
+            if (mysqli_select_db($l, $this->getDB())) {
+                $this->setLink($l);
+                return $l;
+            }
         }
-    }
         throw(new Exception('DATABASE_CONNECTION_FAILURE'));
     }
 

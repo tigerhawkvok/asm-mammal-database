@@ -1,6 +1,6 @@
 {
   "name": "ASM Mammal Database",
-  "version": "0.6.0",
+  "version": "0.6.1",
   "homepage": "https://github.com/tigerhawkvok/asm-mammal-database",
   "authors": [
     "Philip Kahn <tigerhawkvok@gmail.com>"
@@ -42,6 +42,7 @@
     "data-elements": "PolymerElements/data-elements",
     "layout-elements": "PolymerElements/layout-elements",
     "app-elements": "PolymerElements/app-elements#^0.10.1",
-    "platinum-elements": "PolymerElements/platinum-elements#^2.0.0"
+    "platinum-elements": "PolymerElements/platinum-elements#^2.0.0",
+    "chart.js": "^2.5.0"
   }
 }

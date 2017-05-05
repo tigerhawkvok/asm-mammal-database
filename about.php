@@ -48,7 +48,7 @@ include_once dirname(__FILE__)."/CONFIG.php";
       <div class="col-xs-12 clearfix">
       <img src="assets/asm-collage-lowres.jpg" class="pull-right" alt="ASM collage"/>
       <p>
-      Development for this work was funded by the NSF Vertlife grant and commissioned by the <a href="http://www.mammalogy.org/about-asm">American Society of Mammalogists</a>.
+      Development for this work was funded by the NSF Vertlife grant and commissioned by the <a href="http://www.mammalsociety.org/about-asm">American Society of Mammalogists</a>.
       </p>
       <p>
         The American Society of Mammalogists (ASM) was founded in 1919. Its primary purpose is to encourage the study of mammals and professions studying mammals. There are over 2,500 members in the composed society,  primarily professional scientists who emphasize the importance of public policy and education.
@@ -59,7 +59,7 @@ include_once dirname(__FILE__)."/CONFIG.php";
       </div>
       <h2 class="col-xs-12">API</h2>
       <p class="col-xs-12">
-        Please view <a href="<?php echo $gitUrl; ?>/blob/master/README.md#api"><code>README.md</code> in the Github repository</a> for information on how to use our public taxon API. The API endpoint can be found at <code><a href="https://mammaldiversity.org/api/q=ursus+arctos" class="newwindow">https://mammaldiversity.org/api</a></code>.
+        Please view <a href="<?php echo $gitUrl; ?>/blob/master/README.md#api"><code>README.md</code> in the Github repository</a> for information on how to use our public taxon API. The API endpoint can be found at <code><a href="<?php echo $protocol; ?>://mammaldiversity.org/api/q=ursus+arctos" class="newwindow"><?php echo $protocol; ?>://mammaldiversity.org/api</a></code>.
         </p>
       <h2 class="col-xs-12">Legal Notices</h2>
       <h3 class="col-xs-12">Application</h3>

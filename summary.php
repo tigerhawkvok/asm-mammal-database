@@ -41,7 +41,7 @@ include_once dirname(__FILE__)."/core/core.php";
         Taxon Summary Statistics
       </h1>
       <script id="high-level-taxon-data">
-      <?php
+        <?php
         $fail = false;
         try {
             $db = new DBHelper($default_database, $default_sql_user, $default_sql_password, $default_sql_url, $default_table, $db_cols);
@@ -61,24 +61,24 @@ include_once dirname(__FILE__)."/core/core.php";
       <script>
             <?php
         }
-        if(!$fail) {
+        if (!$fail) {
             # Get the taxon details
             $linneanOrderBinQuery = "select distinct `linnean_order`, count(*) as count from `$default_table` group by `linnean_order`";
             $r = mysqli_query($db->getLink(), $linneanOrderBinQuery);
             $labels = array();
             $data = array();
-            while($row = mysqli_fetch_assoc($r)) {
-                $labels[] = $row["linnean_order"];
+            while ($row = mysqli_fetch_assoc($r)) {
+                $labels[] = ucwords($row["linnean_order"]);
                 $data[] = $row["count"];
             }
             $genusBreakdown = array();
-            foreach($labels as $taxon) {
+            foreach ($labels as $taxon) {
                 $genusBinQuery = "select distinct `genus`, count(*) as count from `$default_table` where `linnean_order`='$taxon' group by `genus`";
                 $tmpLabels = array();
                 $tmpData = array();
                 $r = mysqli_query($db->getLink(), $genusBinQuery);
-                while($row = mysqli_fetch_assoc($r)) {
-                    $tmpLabels[] = $row["genus"];
+                while ($row = mysqli_fetch_assoc($r)) {
+                    $tmpLabels[] = ucwords($row["genus"]);
                     $tmpData[] = $row["count"];
                 }
                 $genusBreakdown[$taxon] = array(

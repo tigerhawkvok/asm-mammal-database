@@ -14,7 +14,9 @@ $ ->
     hlTaxonData = Object.toArray window.hlTaxonData
     color = getRandomDataColor()
     tickCallback = (value, index, values) ->
-      value.noExponents()
+      if (index %% 4) is 0 and toFloat(value.noExponents()) >= 1
+        value.noExponents()
+      else ""
     chartConfig =
       type: "bar"
       data:

@@ -1,4 +1,5 @@
-var getRandomDataColor;
+var getRandomDataColor,
+  modulo = function(a, b) { return (+a % (b = +b) + b) % b; };
 
 getRandomDataColor = function() {
   var colorString, colors;
@@ -18,7 +19,11 @@ $(function() {
     hlTaxonData = Object.toArray(window.hlTaxonData);
     color = getRandomDataColor();
     tickCallback = function(value, index, values) {
-      return value.noExponents();
+      if ((modulo(index, 4)) === 0 && toFloat(value.noExponents()) >= 1) {
+        return value.noExponents();
+      } else {
+        return "";
+      }
     };
     chartConfig = {
       type: "bar",

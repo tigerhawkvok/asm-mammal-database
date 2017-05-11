@@ -13,6 +13,8 @@ $ ->
     hlTaxonLabels = Object.toArray window.hlTaxonLabels
     hlTaxonData = Object.toArray window.hlTaxonData
     color = getRandomDataColor()
+    tickCallback = (value, index, values) ->
+      value.noExponents()
     chartConfig =
       type: "bar"
       data:
@@ -33,6 +35,7 @@ $ ->
               display: true
             ticks:
               min: .75
+              callback: tickCallback
               # beginAtZero: true
             ]
           xAxes: [
@@ -79,12 +82,15 @@ $ ->
                 display: true
               ticks:
                 min: .75
+                callback: tickCallback
                 # beginAtZero: true
               ]
             xAxes: [
               scaleLabel:
                 labelString: "Genera in #{taxon}"
                 display: true
+              ticks:
+                fontStyle: "italic"
               ]
       zoomChartCtx = $("#taxon-zoom-chart")
       if _asm.zoomChart?

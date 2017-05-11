@@ -88,6 +88,60 @@ toInt = (str, strict = false) ->
 
 
 
+String::noExponents = (explicitNum = true) ->
+  ###
+  # Remove scientific notation from a number
+  #
+  # After
+  # http://stackoverflow.com/a/18719988/1877527
+  ###
+  data = @.split /[eE]/
+  if data.length is 1
+    return data[0]
+  # Initialize
+  z = ""
+  sign = if @.slice(0,1) is "-" then "-" else ""
+  str = data[0].replace ".", ""
+  mag = Number(data[1]) + 1
+  # Deal with negative exponents
+  if mag <= 0
+    z = sign + "0."
+    # Add zeros until we hit mag = 0
+    until mag >= 0
+      z += "0"
+      ++mag
+    # Append all the trailing digits
+    num = z + str.replace /^\-/, ""
+    if explicitNum
+      return parseFloat num
+    else
+      return num
+  # Positive exponents
+  if str.length <= mag
+    # There will be no trailing decimals
+    mag -= str.length
+    # Loop until we hit zero
+    until mag <= 0
+      z += 0
+      --mag
+    num = str + z
+    if explicitNum
+      return parseFloat num
+    else
+      return num
+  else
+    # Need to handle the trailing decimal case
+    leader = parseFloat data[0]
+    multiplier = 10 ** parseInt data[1]
+    return leader * multiplier
+    
+
+
+Number::noExponents = ->
+  strVal = String @
+  strVal.noExponents(true)
+
+
 toObject = (array) ->
   rv = new Object()
   for index, element of array

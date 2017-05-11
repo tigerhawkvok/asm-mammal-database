@@ -11,12 +11,15 @@ getRandomDataColor = function() {
 };
 
 $(function() {
-  var chartConfig, chartCtx, color, hlTaxonData, hlTaxonLabels;
+  var chartConfig, chartCtx, color, hlTaxonData, hlTaxonLabels, tickCallback;
   if ($("#high-level-taxon-data").exists()) {
     console.log("Rendering high level taxon data");
     hlTaxonLabels = Object.toArray(window.hlTaxonLabels);
     hlTaxonData = Object.toArray(window.hlTaxonData);
     color = getRandomDataColor();
+    tickCallback = function(value, index, values) {
+      return value.noExponents();
+    };
     chartConfig = {
       type: "bar",
       data: {
@@ -41,7 +44,8 @@ $(function() {
                 display: true
               },
               ticks: {
-                min: .75
+                min: .75,
+                callback: tickCallback
               }
             }
           ],
@@ -101,7 +105,8 @@ $(function() {
                   display: true
                 },
                 ticks: {
-                  min: .75
+                  min: .75,
+                  callback: tickCallback
                 }
               }
             ],
@@ -110,6 +115,9 @@ $(function() {
                 scaleLabel: {
                   labelString: "Genera in " + taxon,
                   display: true
+                },
+                ticks: {
+                  fontStyle: "italic"
                 }
               }
             ]

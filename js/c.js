@@ -141,6 +141,64 @@ toInt = function(str, strict) {
   return parseInt(str);
 };
 
+String.prototype.noExponents = function(explicitNum) {
+  var data, leader, mag, multiplier, num, sign, str, z;
+  if (explicitNum == null) {
+    explicitNum = true;
+  }
+
+  /*
+   * Remove scientific notation from a number
+   *
+   * After
+   * http://stackoverflow.com/a/18719988/1877527
+   */
+  data = this.split(/[eE]/);
+  if (data.length === 1) {
+    return data[0];
+  }
+  z = "";
+  sign = this.slice(0, 1) === "-" ? "-" : "";
+  str = data[0].replace(".", "");
+  mag = Number(data[1]) + 1;
+  if (mag <= 0) {
+    z = sign + "0.";
+    while (!(mag >= 0)) {
+      z += "0";
+      ++mag;
+    }
+    num = z + str.replace(/^\-/, "");
+    if (explicitNum) {
+      return parseFloat(num);
+    } else {
+      return num;
+    }
+  }
+  if (str.length <= mag) {
+    mag -= str.length;
+    while (!(mag <= 0)) {
+      z += 0;
+      --mag;
+    }
+    num = str + z;
+    if (explicitNum) {
+      return parseFloat(num);
+    } else {
+      return num;
+    }
+  } else {
+    leader = parseFloat(data[0]);
+    multiplier = Math.pow(10, parseInt(data[1]));
+    return leader * multiplier;
+  }
+};
+
+Number.prototype.noExponents = function() {
+  var strVal;
+  strVal = String(this);
+  return strVal.noExponents(true);
+};
+
 toObject = function(array) {
   var element, index, rv;
   rv = new Object();

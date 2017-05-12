@@ -1,4 +1,4 @@
-var getRandomDataColor,
+var getRandomDataColor, renderTaxonData,
   modulo = function(a, b) { return (+a % (b = +b) + b) % b; };
 
 getRandomDataColor = function() {
@@ -11,20 +11,44 @@ getRandomDataColor = function() {
   return colors;
 };
 
-$(function() {
-  var chartConfig, chartCtx, color, hlTaxonData, hlTaxonLabels, tickCallback;
+renderTaxonData = function() {
+
+  /*
+   *
+   */
+  var chartConfig, chartCtx, color, error, genusCountData, genusList, hlTaxonData, hlTaxonLabels, i, len, lineColor, order, tickCallback, yScaleType;
+  if ((typeof _asm !== "undefined" && _asm !== null ? _asm.chart : void 0) != null) {
+    _asm.chart.destroy();
+  }
+  tickCallback = function(value, index, values) {
+    if ((modulo(index, 4)) === 0 && toFloat(value.noExponents()) >= 1) {
+      return value.noExponents();
+    } else {
+      return "";
+    }
+  };
+  try {
+    if (p$("#log-scale").checked) {
+      yScaleType = "logarithmic";
+    } else {
+      yScaleType = "linear";
+      tickCallback = void 0;
+    }
+  } catch (error) {
+    yScaleType = "logarithmic";
+  }
   if ($("#high-level-taxon-data").exists()) {
     console.log("Rendering high level taxon data");
     hlTaxonLabels = Object.toArray(window.hlTaxonLabels);
     hlTaxonData = Object.toArray(window.hlTaxonData);
+    genusCountData = new Array();
+    for (i = 0, len = hlTaxonLabels.length; i < len; i++) {
+      order = hlTaxonLabels[i];
+      genusList = Object.toArray(window.genusData[order].labels);
+      genusCountData.push(genusList.length);
+    }
     color = getRandomDataColor();
-    tickCallback = function(value, index, values) {
-      if ((modulo(index, 4)) === 0 && toFloat(value.noExponents()) >= 1) {
-        return value.noExponents();
-      } else {
-        return "";
-      }
-    };
+    lineColor = getRandomDataColor();
     chartConfig = {
       type: "bar",
       data: {
@@ -32,9 +56,17 @@ $(function() {
         datasets: [
           {
             label: "Species Count",
+            type: "bar",
             data: hlTaxonData,
             borderColor: color.border,
             backgroundColor: color.background,
+            borderWidth: 1
+          }, {
+            label: "Genus Count",
+            type: "line",
+            data: genusCountData,
+            borderColor: lineColor.border,
+            backgroundColor: lineColor.background,
             borderWidth: 1
           }
         ]
@@ -43,14 +75,13 @@ $(function() {
         scales: {
           yAxes: [
             {
-              type: 'logarithmic',
+              type: yScaleType,
               scaleLabel: {
                 labelString: "Species",
                 display: true
               },
               ticks: {
-                min: .75,
-                callback: tickCallback
+                min: .75
               }
             }
           ],
@@ -65,6 +96,9 @@ $(function() {
         }
       }
     };
+    if (tickCallback != null) {
+      chartConfig.options.scales.yAxes[0].ticks.callback = tickCallback;
+    }
     chartCtx = $("#high-level-chart");
     if (typeof window._asm !== "object") {
       window._asm = new Object();
@@ -104,14 +138,13 @@ $(function() {
           scales: {
             yAxes: [
               {
-                type: 'logarithmic',
+                type: yScaleType,
                 scaleLabel: {
                   labelString: "Species",
                   display: true
                 },
                 ticks: {
-                  min: .75,
-                  callback: tickCallback
+                  min: .75
                 }
               }
             ],
@@ -129,6 +162,9 @@ $(function() {
           }
         }
       };
+      if (tickCallback != null) {
+        zoomChartConfig.options.scales.yAxes[0].ticks.callback = tickCallback;
+      }
       zoomChartCtx = $("#taxon-zoom-chart");
       if (_asm.zoomChart != null) {
         _asm.zoomChart.destroy();
@@ -138,6 +174,18 @@ $(function() {
     });
   }
   return false;
+};
+
+$(function() {
+  renderTaxonData();
+  try {
+    return $("#log-scale").on("iron-change", function() {
+      if ((typeof _asm !== "undefined" && _asm !== null ? _asm.chart : void 0) != null) {
+        _asm.chart.destroy();
+      }
+      return renderTaxonData.debounce();
+    });
+  } catch (undefined) {}
 });
 
 //# sourceMappingURL=maps/charts.js.map

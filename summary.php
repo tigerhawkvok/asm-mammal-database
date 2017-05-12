@@ -67,11 +67,14 @@ include_once dirname(__FILE__)."/core/core.php";
             $r = mysqli_query($db->getLink(), $linneanOrderBinQuery);
             $labels = array();
             $data = array();
+            $speciesTotal = 0;
             while ($row = mysqli_fetch_assoc($r)) {
                 $labels[] = ucwords($row["linnean_order"]);
                 $data[] = $row["count"];
+                $speciesTotal += $row["count"];
             }
             $genusBreakdown = array();
+            $genusTotal = 0;
             foreach ($labels as $taxon) {
                 $genusBinQuery = "select distinct `genus`, count(*) as count from `$default_table` where `linnean_order`='$taxon' group by `genus`";
                 $tmpLabels = array();
@@ -80,6 +83,7 @@ include_once dirname(__FILE__)."/core/core.php";
                 while ($row = mysqli_fetch_assoc($r)) {
                     $tmpLabels[] = ucwords($row["genus"]);
                     $tmpData[] = $row["count"];
+                    $genusTotal++;
                 }
                 $genusBreakdown[$taxon] = array(
                     "data" => $tmpData,
@@ -92,17 +96,55 @@ include_once dirname(__FILE__)."/core/core.php";
         }
         ?>
       </script>
-      <div class="col-xs-12 clearfix" id="high-level-canvas-container">
-        <canvas id="high-level-chart">
+      <section class="col-xs-12 clearfix">
+        <div class="table-responsive">
+          <table class="table-bordered table table-striped table-condensed">
+            <thead>
+              <tr>
+                <th>Orders</th>
+                <th>Genera</th>
+                <th>Species</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>
+                  <?php echo sizeof($labels); ?>
+                </td>
+                <td>
+                  <?php echo $genusTotal; ?>
+                </td>
+                <td>
+                  <?php echo $speciesTotal; ?>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+      <section class="col-xs-12 clearfix" id="high-level-canvas-container">
+        <aside>
+          <div class="panel panel-default">
+            <div class="panel-heading">
+              <h3 class="panel-title">
+                Chart Configuration Options
+              </h3>
+            </div>
+            <div class="panel-body">
+              <paper-toggle-button id="log-scale" checked>Log Scale</paper-toggle-button>
+            </div>
+          </aside>
+          <canvas id="high-level-chart">
 
-        </canvas>
-      </div>
+          </canvas>
+        </div>
+      </section>
       <p class="col-xs-12">
         Click on a taxon above to see a more detailed breakdown.
       </p>
       <br/><br/>
       <h2 id="zoom-taxon-label" class="col-xs-12">
-        
+
       </h2>
       <div class="col-xs-12 clearfix" id="taxon-zoom-canvas-container">
         <canvas id="taxon-zoom-chart">

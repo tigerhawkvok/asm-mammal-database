@@ -63,7 +63,7 @@ include_once dirname(__FILE__)."/core/core.php";
         }
         if (!$fail) {
             # Get the taxon details
-            $linneanOrderBinQuery = "select distinct `linnean_order`, count(*) as count from `$default_table` group by `linnean_order`";
+            $linneanOrderBinQuery = "select distinct `linnean_order`, count(*) as count from `".$db->getTable()."` group by `linnean_order`";
             $r = mysqli_query($db->getLink(), $linneanOrderBinQuery);
             $labels = array();
             $data = array();
@@ -76,7 +76,7 @@ include_once dirname(__FILE__)."/core/core.php";
             $genusBreakdown = array();
             $genusTotal = 0;
             foreach ($labels as $taxon) {
-                $genusBinQuery = "select distinct `genus`, count(*) as count from `$default_table` where `linnean_order`='$taxon' group by `genus`";
+                $genusBinQuery = "select distinct `genus`, count(*) as count from `".$db->getTable()."` where `linnean_order`='$taxon' group by `genus`";
                 $tmpLabels = array();
                 $tmpData = array();
                 $r = mysqli_query($db->getLink(), $genusBinQuery);
@@ -109,10 +109,10 @@ include_once dirname(__FILE__)."/core/core.php";
             <tbody>
               <tr>
                 <td>
-                  <?php echo sizeof($labels); ?>
+                    <?php echo sizeof($labels); ?>
                 </td>
                 <td>
-                  <?php echo $genusTotal; ?>
+                    <?php echo $genusTotal; ?>
                 </td>
                 <td>
                   <?php echo $speciesTotal; ?>
@@ -132,6 +132,19 @@ include_once dirname(__FILE__)."/core/core.php";
             </div>
             <div class="panel-body">
               <paper-toggle-button id="log-scale" checked>Log Scale</paper-toggle-button>
+              <paper-toggle-button id="default-sort-toggle" checked>Use Default Sort</paper-toggle-button>
+              <paper-dropdown-menu label="Order Sort" id="order-sort"  class="chart-param sort-options" disabled>
+                <paper-listbox class="dropdown-content" selected="0">
+                  <paper-item data-value="linnean_order">Order</paper-item>
+                  <paper-item data-value="count">Member Count</paper-item>
+                </paper-listbox>
+              </paper-dropdown-menu>
+              <paper-dropdown-menu label="Genus Sort" id="genus-sort"  class="chart-param sort-options" disabled>
+                <paper-listbox class="dropdown-content" selected="0">
+                  <paper-item data-value="genus">Genus</paper-item>
+                  <paper-item data-value="count">Member Count</paper-item>
+                </paper-listbox>
+              </paper-dropdown-menu>
             </div>
           </aside>
           <canvas id="high-level-chart">

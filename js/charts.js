@@ -1,4 +1,4 @@
-var getRandomDataColor, renderTaxonData,
+var getChartKeys, getRandomDataColor, renderTaxonData, updateTaxonomySort,
   modulo = function(a, b) { return (+a % (b = +b) + b) % b; };
 
 getRandomDataColor = function() {
@@ -9,6 +9,46 @@ getRandomDataColor = function() {
     background: colorString + ",0.2)"
   };
   return colors;
+};
+
+updateTaxonomySort = function() {
+
+  /*
+   * Do an async fetch on the taxonomy order, then re-call renderTaxonData
+   */
+  var args, error, isDefault, startTime;
+  startTime = Date.now();
+  startLoad();
+  args = {
+    action: "taxonomy"
+  };
+  try {
+    isDefault = p$("#default-sort-toggle").checked;
+  } catch (error) {
+    isDefault = true;
+  }
+  if (!isDefault) {
+    args.order_sort = orderSortVal;
+    args.genus_sort = genusSortVal;
+  }
+  $.get(uri.urlString + "api.php", objToArgs(args, "json")).done(function(result) {
+    var elapsed;
+    if (result.status === true) {
+      window.hlTaxonLabels = Object.toArray(result.taxonomy.order.labels);
+      window.hlTaxonData = Object.toArray(result.taxonomy.order.data);
+      window.genusData = result.taxonomy.genus.data;
+      elapsed = Date.now() - startTime;
+      console.debug("Taxon data fetch successful in " + elapsed + "ms");
+      renderTaxonData.debounce();
+      stopLoad();
+    }
+    return false;
+  }).fail(function(result, status) {
+    console.error(result, status);
+    stopLoadError("There was an error updating the sort of your dataset");
+    return false;
+  });
+  return false;
 };
 
 renderTaxonData = function() {
@@ -176,14 +216,56 @@ renderTaxonData = function() {
   return false;
 };
 
+getChartKeys = function() {
+  var chartOptions, dropdownVal, error, i, key, len, option, ref, results;
+  chartOptions = new Object();
+  ref = $(".chart-param");
+  results = [];
+  for (i = 0, len = ref.length; i < len; i++) {
+    option = ref[i];
+    key = $(option).attr("data-key");
+    try {
+      if (p$(option).checked != null) {
+        results.push(chartOptions[key] = p$(option).checked);
+      } else {
+        throw "Not Toggle";
+      }
+    } catch (error) {
+      try {
+        dropdownVal = $(p$(option).selectedItem).attr("data-value");
+      } catch (undefined) {}
+      results.push(chartOptions[key] = dropdownVal != null ? dropdownVal : p$(option).selectedItemLabel.toLowerCase().replace(" ", "-"));
+    }
+  }
+  return results;
+};
+
 $(function() {
   renderTaxonData();
   try {
-    return $("#log-scale").on("iron-change", function() {
+    $("#log-scale").on("iron-change", function() {
       if ((typeof _asm !== "undefined" && _asm !== null ? _asm.chart : void 0) != null) {
         _asm.chart.destroy();
       }
-      return renderTaxonData.debounce();
+      renderTaxonData.debounce();
+      return false;
+    });
+    $("#default-sort-toggle").on("iron-change", function() {
+      if (p$(this).checked) {
+        $(".sort-options").attr("disabled", "disabled");
+      } else {
+        $(".sort-options").removeAttr("disabled");
+      }
+      renderTaxonData.debounce();
+      return false;
+    });
+  } catch (undefined) {}
+  try {
+    return delayPolymerBind("paper-dropdown-menu#order-sort", function() {
+      return $("paper-dropdown-menu#order-sort paper-listbox").on("iron-select", function() {
+        console.debug(getChartKeys());
+        return false;
+      });
     });
   } catch (undefined) {}
 });

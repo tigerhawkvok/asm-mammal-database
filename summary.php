@@ -133,13 +133,13 @@ include_once dirname(__FILE__)."/core/core.php";
             <div class="panel-body">
               <paper-toggle-button id="log-scale" checked>Log Scale</paper-toggle-button>
               <paper-toggle-button id="default-sort-toggle" checked>Use Default Sort</paper-toggle-button>
-              <paper-dropdown-menu label="Order Sort" id="order-sort"  class="chart-param sort-options" disabled>
+              <paper-dropdown-menu label="Order Sort" id="order-sort"  class="chart-param sort-options" data-key="order_sort" disabled>
                 <paper-listbox class="dropdown-content" selected="0">
                   <paper-item data-value="linnean_order">Order</paper-item>
                   <paper-item data-value="count">Member Count</paper-item>
                 </paper-listbox>
               </paper-dropdown-menu>
-              <paper-dropdown-menu label="Genus Sort" id="genus-sort"  class="chart-param sort-options" disabled>
+              <paper-dropdown-menu label="Genus Sort" id="genus-sort"  class="chart-param sort-options" data-key="order_sort" disabled>
                 <paper-listbox class="dropdown-content" selected="0">
                   <paper-item data-value="genus">Genus</paper-item>
                   <paper-item data-value="count">Member Count</paper-item>

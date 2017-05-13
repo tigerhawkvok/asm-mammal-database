@@ -7,6 +7,42 @@ getRandomDataColor = ->
   colors
 
 
+updateTaxonomySort = ->
+  ###
+  # Do an async fetch on the taxonomy order, then re-call renderTaxonData
+  ###
+  startTime = Date.now()
+  startLoad()
+  args =
+    action: "taxonomy"
+  # Get the dropdown value
+  try
+    isDefault = p$("#default-sort-toggle").checked
+  catch
+    isDefault = true
+  unless isDefault
+    # Check the individual dropdowns
+    args.order_sort = orderSortVal
+    args.genus_sort = genusSortVal
+  $.get "#{uri.urlString}api.php", objToArgs args, "json"
+  .done (result) ->
+    if result.status is true
+      window.hlTaxonLabels = Object.toArray result.taxonomy.order.labels
+      window.hlTaxonData = Object.toArray result.taxonomy.order.data
+      window.genusData = result.taxonomy.genus.data
+      elapsed = Date.now() - startTime
+      console.debug "Taxon data fetch successful in #{elapsed}ms"
+      renderTaxonData.debounce()
+      stopLoad()
+    false
+  .fail (result, status) ->
+    console.error result, status
+    stopLoadError "There was an error updating the sort of your dataset"
+    false
+  false
+
+
+
 renderTaxonData = ->
   ###
   #
@@ -137,6 +173,22 @@ renderTaxonData = ->
   false
 
 
+getChartKeys = ->
+  chartOptions = new Object()
+  for option in $(".chart-param")
+    key = $(option).attr("data-key")
+    try
+      if p$(option).checked?
+        chartOptions[key] = p$(option).checked
+      else
+        throw "Not Toggle"
+    catch
+      try
+        dropdownVal = $(p$(option).selectedItem).attr "data-value"      
+      chartOptions[key] = dropdownVal ? p$(option).selectedItemLabel.toLowerCase().replace(" ", "-")
+
+
+
 $ ->
   renderTaxonData()
   try
@@ -144,3 +196,17 @@ $ ->
       if _asm?.chart?
         _asm.chart.destroy()
       renderTaxonData.debounce()
+      false
+    $("#default-sort-toggle").on "iron-change", ->
+      if p$(this).checked
+        $(".sort-options").attr "disabled", "disabled"
+      else
+        $(".sort-options").removeAttr "disabled"
+      renderTaxonData.debounce()
+      false
+  try
+    delayPolymerBind "paper-dropdown-menu#order-sort", ->
+      $("paper-dropdown-menu#order-sort paper-listbox")
+      .on "iron-select", ->
+        console.debug getChartKeys()
+        false

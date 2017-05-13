@@ -1,4 +1,4 @@
-var _metaStatus, activityIndicatorOff, activityIndicatorOn, allError, animateHoverShadows, animateLoad, bindClickTargets, bindClicks, bindDismissalRemoval, bindPaperMenuButton, browserBeware, bsAlert, buildQuery, byteCount, checkFileVersion, checkLaggedUpdate, checkLocalVersion, checkTaxonNear, clearSearch, dataUriToBlob, dateMonthToString, deEscape, decode64, deepJQuery, delay, doCORSget, doFontExceptions, doLazily, doNothing, domainPlaceholder, downloadDataUriAsBlob, e, encode64, error1, eutheriaFilterHelper, fetchMajorMinorGroups, foo, formatScientificNames, formatSearchResults, getElementHtml, getFilters, getLocation, getMaxZ, getRandomEntry, goTo, insertCORSWorkaround, insertModalImage, interval, isArray, isBlank, isBool, isEmpty, isJson, isNull, isNumber, isNumeric, jsonTo64, lightboxImages, loadJS, mapNewWindows, modalTaxon, openLink, openTab, overlayOff, overlayOn, p$, parseTaxonYear, performSearch, post64, prepURI, randomInt, ref, roundNumber, roundNumberSigfig, safariDialogHelper, safariSearchArgHelper, searchParams, setHistory, setupServiceWorker, showBadSearchErrorMessage, smartUpperCasing, sortResults, startLoad, stopLoad, stopLoadError, toFloat, toInt, toObject, toastStatusMessage, uri,
+var _metaStatus, activityIndicatorOff, activityIndicatorOn, allError, animateHoverShadows, animateLoad, bindClickTargets, bindClicks, bindDismissalRemoval, bindPaperMenuButton, browserBeware, bsAlert, buildQuery, byteCount, checkFileVersion, checkLaggedUpdate, checkLocalVersion, checkTaxonNear, clearSearch, dataUriToBlob, dateMonthToString, deEscape, decode64, deepJQuery, delay, delayPolymerBind, doCORSget, doFontExceptions, doLazily, doNothing, domainPlaceholder, downloadDataUriAsBlob, e, encode64, error1, eutheriaFilterHelper, fetchMajorMinorGroups, foo, formatScientificNames, formatSearchResults, getElementHtml, getFilters, getLocation, getMaxZ, getRandomEntry, goTo, insertCORSWorkaround, insertModalImage, interval, isArray, isBlank, isBool, isEmpty, isJson, isNull, isNumber, isNumeric, jsonTo64, lightboxImages, loadJS, mapNewWindows, modalTaxon, objToArgs, openLink, openTab, overlayOff, overlayOn, p$, parseTaxonYear, performSearch, post64, prepURI, randomInt, ref, roundNumber, roundNumberSigfig, safariDialogHelper, safariSearchArgHelper, searchParams, setHistory, setupServiceWorker, showBadSearchErrorMessage, smartUpperCasing, sortResults, startLoad, stopLoad, stopLoadError, toFloat, toInt, toObject, toastStatusMessage, uri,
   slice = [].slice,
   indexOf = [].indexOf || function(item) { for (var i = 0, l = this.length; i < l; i++) { if (i in this && this[i] === item) return i; } return -1; };
 
@@ -2002,6 +2002,23 @@ post64 = function(string) {
   return p64;
 };
 
+objToArgs = function(obj) {
+  var arg, argArray, error, key, val;
+  if (typeof obj !== "object") {
+    error = {
+      message: "INVALID_TYPE"
+    };
+    throw error;
+  }
+  argArray = new Array();
+  for (key in obj) {
+    val = obj[key];
+    arg = key + "=" + (encodeURIComponent(val));
+    argArray.push(arg);
+  }
+  return argArray.join("&");
+};
+
 dataUriToBlob = function(dataUri, callback) {
 
   /*
@@ -2064,6 +2081,67 @@ downloadDataUriAsBlob = function(selector) {
     return objUrl;
   }
   $(selector).attr("href", objUrl);
+  return false;
+};
+
+delayPolymerBind = function(selector, callback, iter) {
+  var e, element, error1, ref1, superSlowBackup, uid;
+  if (iter == null) {
+    iter = 0;
+  }
+  if (typeof window._dpb !== "object") {
+    window._dpb = new Object();
+  }
+  uid = md5(selector) + md5(callback);
+  if (isNull(window._dpb[uid])) {
+    window._dpb[uid] = false;
+  }
+  superSlowBackup = 1000;
+  if ((typeof Polymer !== "undefined" && Polymer !== null ? (ref1 = Polymer.Base) != null ? ref1.$$ : void 0 : void 0) != null) {
+    if (window._dpb[uid] === false) {
+      iter = 0;
+      window._dpb[uid] = true;
+    }
+    try {
+      element = Polymer.Base.$$(selector);
+      callback(element);
+      delay(superSlowBackup, function() {
+        console.info("Doing " + superSlowBackup + "ms delay callback for " + selector);
+        return callback(element);
+      });
+    } catch (error1) {
+      e = error1;
+      console.warn("Error trying to do the delayed polymer bind - " + e.message);
+      if (iter < 10) {
+        ++iter;
+        delay(75, function() {
+          return delayPolymerBind(selector, callback, iter);
+        });
+      } else {
+        console.error("Persistent error in polymer binding (" + e.message + ")");
+        console.error(e.stack);
+        element = $(selector).get(0);
+        callback(element);
+        delay(superSlowBackup, function() {
+          element = document.querySelector(selector);
+          console.info("Doing " + superSlowBackup + "ms delay callback for " + selector);
+          console.info("Using element", element);
+          return callback(element);
+        });
+      }
+    }
+  } else {
+    if (iter < 50) {
+      delay(100, function() {
+        ++iter;
+        return delayPolymerBind(selector, callback, iter);
+      });
+    } else {
+      console.error("Failed to verify Polymer was set up, attempting manual");
+      element = document.querySelector(selector);
+      callback(element);
+    }
+  }
   return false;
 };
 

@@ -2085,63 +2085,73 @@ downloadDataUriAsBlob = function(selector) {
 };
 
 delayPolymerBind = function(selector, callback, iter) {
-  var e, element, error1, ref1, superSlowBackup, uid;
+  var doLoad;
   if (iter == null) {
     iter = 0;
   }
-  if (typeof window._dpb !== "object") {
-    window._dpb = new Object();
+  if (typeof md5 === "undefined" || md5 === null) {
+    loadJS("bower_components/JavaScript-MD5/js/md5.min.js", function() {
+      return doLoad();
+    });
+  } else {
+    doLoad();
   }
-  uid = md5(selector) + md5(callback);
-  if (isNull(window._dpb[uid])) {
-    window._dpb[uid] = false;
-  }
-  superSlowBackup = 1000;
-  if ((typeof Polymer !== "undefined" && Polymer !== null ? (ref1 = Polymer.Base) != null ? ref1.$$ : void 0 : void 0) != null) {
-    if (window._dpb[uid] === false) {
-      iter = 0;
-      window._dpb[uid] = true;
+  doLoad = function() {
+    var e, element, error1, ref1, superSlowBackup, uid;
+    if (typeof window._dpb !== "object") {
+      window._dpb = new Object();
     }
-    try {
-      element = Polymer.Base.$$(selector);
-      callback(element);
-      delay(superSlowBackup, function() {
-        console.info("Doing " + superSlowBackup + "ms delay callback for " + selector);
-        return callback(element);
-      });
-    } catch (error1) {
-      e = error1;
-      console.warn("Error trying to do the delayed polymer bind - " + e.message);
-      if (iter < 10) {
-        ++iter;
-        delay(75, function() {
+    uid = md5(selector) + md5(callback);
+    if (isNull(window._dpb[uid])) {
+      window._dpb[uid] = false;
+    }
+    superSlowBackup = 1000;
+    if ((typeof Polymer !== "undefined" && Polymer !== null ? (ref1 = Polymer.Base) != null ? ref1.$$ : void 0 : void 0) != null) {
+      if (window._dpb[uid] === false) {
+        iter = 0;
+        window._dpb[uid] = true;
+      }
+      try {
+        element = Polymer.Base.$$(selector);
+        callback(element);
+        return delay(superSlowBackup, function() {
+          console.info("Doing " + superSlowBackup + "ms delay callback for " + selector);
+          return callback(element);
+        });
+      } catch (error1) {
+        e = error1;
+        console.warn("Error trying to do the delayed polymer bind - " + e.message);
+        if (iter < 10) {
+          ++iter;
+          return delay(75, function() {
+            return delayPolymerBind(selector, callback, iter);
+          });
+        } else {
+          console.error("Persistent error in polymer binding (" + e.message + ")");
+          console.error(e.stack);
+          element = $(selector).get(0);
+          callback(element);
+          return delay(superSlowBackup, function() {
+            element = document.querySelector(selector);
+            console.info("Doing " + superSlowBackup + "ms delay callback for " + selector);
+            console.info("Using element", element);
+            return callback(element);
+          });
+        }
+      }
+    } else {
+      if (iter < 50) {
+        return delay(100, function() {
+          ++iter;
           return delayPolymerBind(selector, callback, iter);
         });
       } else {
-        console.error("Persistent error in polymer binding (" + e.message + ")");
-        console.error(e.stack);
-        element = $(selector).get(0);
-        callback(element);
-        delay(superSlowBackup, function() {
-          element = document.querySelector(selector);
-          console.info("Doing " + superSlowBackup + "ms delay callback for " + selector);
-          console.info("Using element", element);
-          return callback(element);
-        });
+        console.error("Failed to verify Polymer was set up, attempting manual");
+        element = document.querySelector(selector);
+        return callback(element);
       }
     }
-  } else {
-    if (iter < 50) {
-      delay(100, function() {
-        ++iter;
-        return delayPolymerBind(selector, callback, iter);
-      });
-    } else {
-      console.error("Failed to verify Polymer was set up, attempting manual");
-      element = document.querySelector(selector);
-      callback(element);
-    }
-  }
+  };
   return false;
 };
 

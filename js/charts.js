@@ -16,7 +16,7 @@ updateTaxonomySort = function() {
   /*
    * Do an async fetch on the taxonomy order, then re-call renderTaxonData
    */
-  var args, error, isDefault, startTime;
+  var args, error, isDefault, sorts, startTime;
   startTime = Date.now();
   startLoad();
   args = {
@@ -28,8 +28,9 @@ updateTaxonomySort = function() {
     isDefault = true;
   }
   if (!isDefault) {
-    args.order_sort = orderSortVal;
-    args.genus_sort = genusSortVal;
+    sorts = getChartKeys();
+    args.order_sort = sorts.order_sort;
+    args.genus_sort = sorts.genus_sort;
   }
   $.get(uri.urlString + "api.php", objToArgs(args, "json")).done(function(result) {
     var elapsed;
@@ -217,30 +218,38 @@ renderTaxonData = function() {
 };
 
 getChartKeys = function() {
-  var chartOptions, dropdownVal, error, i, key, len, option, ref, results;
+  var chartOptions, dropdownVal, error, i, key, len, option, ref;
   chartOptions = new Object();
   ref = $(".chart-param");
-  results = [];
   for (i = 0, len = ref.length; i < len; i++) {
     option = ref[i];
     key = $(option).attr("data-key");
     try {
       if (p$(option).checked != null) {
-        results.push(chartOptions[key] = p$(option).checked);
+        chartOptions[key] = p$(option).checked;
       } else {
         throw "Not Toggle";
       }
     } catch (error) {
       try {
+        if (!window.debugDrop) {
+          window.debugDrop = new Object();
+        }
+        console.log("Looking at", option);
+        window.debugDrop[key] = option;
+      } catch (undefined) {}
+      try {
         dropdownVal = $(p$(option).selectedItem).attr("data-value");
       } catch (undefined) {}
-      results.push(chartOptions[key] = dropdownVal != null ? dropdownVal : p$(option).selectedItemLabel.toLowerCase().replace(" ", "-"));
+      chartOptions[key] = dropdownVal != null ? dropdownVal : p$(option).selectedItemLabel.toLowerCase().replace(" ", "-");
     }
   }
-  return results;
+  return chartOptions;
 };
 
 $(function() {
+  var e, error;
+  _asm.hasBoundDropdowns = false;
   renderTaxonData();
   try {
     $("#log-scale").on("iron-change", function() {
@@ -251,10 +260,27 @@ $(function() {
       return false;
     });
     $("#default-sort-toggle").on("iron-change", function() {
+      var dropdown, error, error1, i, j, len, len1, ref, ref1;
       if (p$(this).checked) {
-        $(".sort-options").attr("disabled", "disabled");
+        try {
+          ref = $(".sort-options");
+          for (i = 0, len = ref.length; i < len; i++) {
+            dropdown = ref[i];
+            p$(dropdown).disabled = true;
+          }
+        } catch (error) {
+          $(".sort-options").attr("disabled", "disabled");
+        }
       } else {
-        $(".sort-options").removeAttr("disabled");
+        try {
+          ref1 = $(".sort-options");
+          for (j = 0, len1 = ref1.length; j < len1; j++) {
+            dropdown = ref1[j];
+            p$(dropdown).disabled = false;
+          }
+        } catch (error1) {
+          $(".sort-options").removeAttr("disabled");
+        }
       }
       renderTaxonData.debounce();
       return false;
@@ -262,12 +288,46 @@ $(function() {
   } catch (undefined) {}
   try {
     return delayPolymerBind("paper-dropdown-menu#order-sort", function() {
-      return $("paper-dropdown-menu#order-sort paper-listbox").on("iron-select", function() {
-        console.debug(getChartKeys());
-        return false;
-      });
+      var listItemSelectEvent;
+      if (!_asm.hasBoundDropdowns) {
+        _asm.hasBoundDropdowns = true;
+        console.info("Binding events for dropdown");
+        listItemSelectEvent = function(element, event) {
+
+          /*
+           * For whatever reason, binding the event breaks the default
+           * select. So, we want to mimic the native one.
+           */
+          var config, dropdown, item, ref;
+          console.debug(element, event, event.detail.item);
+          dropdown = element.tagName.toLowerCase() !== "paper-dropdown-menu" ? $(element).parents("paper-dropdown-menu").get(0) : element;
+          item = element.tagName.toLowerCase() !== "paper-item" ? (ref = event.detail.item) != null ? ref : $(element).find("paper-item").get(0) : element;
+          console.debug(dropdown, item);
+          p$(dropdown)._setSelectedItem(item);
+          config = getChartKeys();
+          console.debug(config);
+          updateTaxonomySort();
+          return false;
+        };
+        $("paper-dropdown-menu.sort-options paper-listbox").on("iron-select", function(e) {
+          console.debug("is event for dropdown");
+          listItemSelectEvent.debounce(50, null, null, this, e);
+          return false;
+        });
+        $("paper-dropdown-menu.sort-options paper-listbox paper-item").click(function(e) {
+          console.debug("Click event for dropdown");
+          listItemSelectEvent.debounce(50, null, null, this, e);
+          return false;
+        });
+        console.log("Events bound");
+      }
+      return false;
     });
-  } catch (undefined) {}
+  } catch (error) {
+    e = error;
+    console.warn("Warning: couldn't bind polymer events - " + e.message);
+    return console.warn(e.stack);
+  }
 });
 
 //# sourceMappingURL=maps/charts.js.map

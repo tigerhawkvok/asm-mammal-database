@@ -16,7 +16,7 @@ if ($show_debug === true) {
 <html>
   <head>
     <?php
-      $title = "American Society Of Mammalogists - Species Account Database";
+      $title = "ASM Mammal Diversity Database";
       $pageDescription = "The American Society of Mammalogists' searchable database of mammals across the world. Species accounts, photos, geolocation, and more.";
       ?>
     <title><?php echo $title; ?></title>
@@ -46,7 +46,7 @@ if ($show_debug === true) {
     ?>
       <h1 id="title" class="col-xs-12">
         <span class="hidden-xs"><a href="https://mammaldiversity.org" class="newwindow"><img src="assets/logo.svg" alt="ASM logo" id="title-logo"/></a></span>
-        ASM Species <span class="hidden-xs hidden-sm">Account</span> Database
+        ASM Mammal <span class="hidden-xs hidden-sm">Diversity</span> Database
       </h1>
       <form id="search_form" onsubmit="event.preventDefault()" class="col-xs-12">
         <div class="row">

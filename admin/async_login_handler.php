@@ -1,4 +1,16 @@
 <?php
+# $show_debug = true;
+
+
+if ($show_debug === true) {
+    error_reporting(E_ALL);
+    ini_set('display_errors', 1);
+    error_log('Admin API is running in debug mode!');
+    $debug = true; # compat
+} else {
+    # Rigorously avoid errors in production
+    ini_set('display_errors', 0);
+}
 
 if (!isset($print_login_state)) {
     $print_login_state = true;

@@ -4,6 +4,9 @@ uri.urlString = uri.o.attr('protocol') + '://' + uri.o.attr('host')  + uri.o.att
 # For mod_rewrite fanciness
 try
   uri.urlString = uri.urlString.replace /(.*)\/(((&?[a-zA-Z_\-]+=[a-zA-Z_\-\+0-9%=]+)+)\/?)(.*)/img, "$1/"
+  if uri.urlString.split("/").pop().search(/\./) is -1 and uri.urlString.slice(-1) isnt "/"
+    # No extension? igore it
+    uri.urlString = uri.urlString.slice 0, uri.urlString.search(uri.urlString.split("/").pop())
 uri.query = uri.o.attr("fragment")
 domainPlaceholder = uri.o.attr("host").split "."
 # Now we pop off the last before taking the zero-index
@@ -86,6 +89,60 @@ toInt = (str, strict = false) ->
     return 0
   parseInt(str)
 
+
+
+String::noExponents = (explicitNum = true) ->
+  ###
+  # Remove scientific notation from a number
+  #
+  # After
+  # http://stackoverflow.com/a/18719988/1877527
+  ###
+  data = @.split /[eE]/
+  if data.length is 1
+    return data[0]
+  # Initialize
+  z = ""
+  sign = if @.slice(0,1) is "-" then "-" else ""
+  str = data[0].replace ".", ""
+  mag = Number(data[1]) + 1
+  # Deal with negative exponents
+  if mag <= 0
+    z = sign + "0."
+    # Add zeros until we hit mag = 0
+    until mag >= 0
+      z += "0"
+      ++mag
+    # Append all the trailing digits
+    num = z + str.replace /^\-/, ""
+    if explicitNum
+      return parseFloat num
+    else
+      return num
+  # Positive exponents
+  if str.length <= mag
+    # There will be no trailing decimals
+    mag -= str.length
+    # Loop until we hit zero
+    until mag <= 0
+      z += 0
+      --mag
+    num = str + z
+    if explicitNum
+      return parseFloat num
+    else
+      return num
+  else
+    # Need to handle the trailing decimal case
+    leader = parseFloat data[0]
+    multiplier = 10 ** parseInt data[1]
+    return leader * multiplier
+    
+
+
+Number::noExponents = ->
+  strVal = String @
+  strVal.noExponents(true)
 
 
 toObject = (array) ->
@@ -1537,6 +1594,17 @@ post64 = (string) ->
   p64
 
 
+objToArgs = (obj) ->
+  unless typeof obj is "object"
+    error =
+      message: "INVALID_TYPE"
+    throw error
+  argArray = new Array()
+  for key, val of obj
+    arg = "#{key}=#{encodeURIComponent val}"
+    argArray.push arg
+  return argArray.join "&"
+
 dataUriToBlob = (dataUri, callback) ->
   ###
   # From
@@ -1597,6 +1665,61 @@ downloadDataUriAsBlob = (selector) ->
   $(selector).attr "href", objUrl
   false
 
+
+delayPolymerBind = (selector, callback, iter = 0) ->
+  unless md5?
+    loadJS "bower_components/JavaScript-MD5/js/md5.min.js", ->
+      doLoad()
+  else
+    doLoad()
+  doLoad = ->
+    unless typeof window._dpb is "object"
+      window._dpb = new Object()
+    uid = md5(selector) + md5(callback)
+    if isNull window._dpb[uid]
+      window._dpb[uid] = false
+    superSlowBackup = 1000
+    if Polymer?.Base?.$$?
+      if window._dpb[uid] is false
+        iter = 0
+        window._dpb[uid] = true
+      try
+        element = Polymer.Base.$$(selector)
+        callback(element)
+        # Some browsers are stupid slow, do it again
+        delay superSlowBackup, ->
+          console.info "Doing #{superSlowBackup}ms delay callback for #{selector}"
+          callback(element)
+      catch e
+        console.warn "Error trying to do the delayed polymer bind - #{e.message}"
+        if iter < 10
+          ++iter
+          # Do a very short wait and try again, in case it's transient
+          delay 75, ->
+            delayPolymerBind selector, callback, iter
+        else
+          # See
+          # https://github.com/Polymer/polymer/issues/2246
+          console.error "Persistent error in polymer binding (#{e.message})"
+          console.error e.stack
+          # Attempt the last-ditch
+          element = $(selector).get(0)
+          callback(element)
+          delay superSlowBackup, ->
+            element = document.querySelector(selector)
+            console.info "Doing #{superSlowBackup}ms delay callback for #{selector}"
+            console.info "Using element", element
+            callback(element)
+    else
+      if iter < 50
+        delay 100, ->
+          ++iter
+          delayPolymerBind selector, callback, iter
+      else
+        console.error "Failed to verify Polymer was set up, attempting manual"
+        element = document.querySelector(selector)
+        callback element
+  false
 
 
 try

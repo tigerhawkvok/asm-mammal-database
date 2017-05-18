@@ -7,7 +7,7 @@
  *************/
 
 # $show_debug = true;
-$showAccountDebug = true;
+#$showAccountDebug = true;
 
 if ($show_debug === true) {
     error_reporting(E_ALL);

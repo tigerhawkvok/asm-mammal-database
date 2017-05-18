@@ -136,6 +136,100 @@ if (boolstr($_REQUEST["random"])) {
 }
 
 
+switch (strtolower($_REQUEST["action"])) {
+    case "taxonomy":
+        returnAjax(getOrderedTaxonomy($_REQUEST));
+        die();
+        break;
+    default:
+        break;
+}
+
+
+
+
+
+function getOrderedTaxonomy($get) {
+    /***
+     * Just a duplicate of what goes on in
+     * summary.php -- except async and order-able.
+     ***/
+    global $db;
+    if (isset($get["sort"])) {
+        # Set them to the same thing
+        $orderOrderBy = $get["sort"];
+        $genusOrderBy = $get["sort"];
+    } else {
+        # Set them independently
+        $orderOrderBy = isset($get["order_sort"]) ? $get["order_sort"] : "linnean_order";
+        $genusOrderBy = isset($get["genus_sort"]) ? $get["genus_sort"] : "genus";
+    }
+    $reverse = isset($get["reverse"]) ? toBool($get["reverse"]) : false;
+    $response = array(
+        "status" => true,
+        "taxonomy" => array(
+            "order" => null,
+            "genus" => null,
+        ),
+        "provided" => $get,
+    );
+    if ($orderOrderBy != "count") {
+        checkColumnExists($orderOrderBy); # Errors out on its own on fail
+    }
+    if ($genusOrderBy != "count") {
+        checkColumnExists($genusOrderBy); # Errors out on its own on fail
+    }
+    if ($reverse) {
+        $orderOrderBy .= " DESC";
+        $genusOrderBy .= " DESC";
+    }
+    $linneanOrderBinQuery = "select distinct `linnean_order`, count(*) as count from `".$db->getTable()."` group by `linnean_order` ORDER BY `$orderOrderBy`";
+    $r = mysqli_query($db->getLink(), $linneanOrderBinQuery);
+    $labels = array();
+    $data = array();
+    $speciesTotal = 0;
+    while ($row = mysqli_fetch_assoc($r)) {
+        $labels[] = ucwords($row["linnean_order"]);
+        $data[] = $row["count"];
+        $speciesTotal += $row["count"];
+    }
+    $genusBreakdown = array();
+    $genusTotal = 0;
+    foreach ($labels as $taxon) {
+        $genusBinQuery = "select distinct `genus`, count(*) as count from `".$db->getTable()."` where `linnean_order`='$taxon' group by `genus` ORDER BY `$genusOrderBy`";
+        $tmpLabels = array();
+        $tmpData = array();
+        $r = mysqli_query($db->getLink(), $genusBinQuery);
+        while ($row = mysqli_fetch_assoc($r)) {
+            $tmpLabels[] = ucwords($row["genus"]);
+            $tmpData[] = $row["count"];
+            $genusTotal++;
+        }
+        $genusBreakdown[$taxon] = array(
+            "data" => $tmpData,
+            "labels" => $tmpLabels,
+        );
+    }
+    $response["taxonomy"]["order"] = array(
+        "labels" => $labels,
+        "data" => $data,
+        "params" => array(
+            #"query" => $linneanOrderBinQuery,
+            "order" => $orderOrderBy,
+        ),
+    );
+    $response["taxonomy"]["genus"] = array(
+        "data" => $genusBreakdown,
+        "params" => array(
+            #"query" => null,
+            "order" => $genusOrderBy,
+        ),
+    );
+    returnAjax($response);
+}
+
+
+
 /*****************************
  * Setup flags
  *****************************/

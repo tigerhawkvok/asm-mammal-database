@@ -48,7 +48,7 @@ include_once dirname(__FILE__)."/CONFIG.php";
       <div class="col-xs-12 clearfix">
       <img src="assets/asm-collage-lowres.jpg" class="pull-right" alt="ASM collage"/>
       <p>
-      Development for this work was funded by the NSF Vertlife grant and commissioned by the <a href="http://www.mammalsociety.org/about-asm">American Society of Mammalogists</a>.
+        Development for this work was funded by the <a href="https://www.nsf.gov/awardsearch/showAward?AWD_ID=1441737" class="newwindow">NSF</a> <a href="http://vertlife.org/" class="newwindow">Vertlife</a> grant and commissioned by the <a href="http://www.mammalsociety.org/about-asm">American Society of Mammalogists</a>.
       </p>
       <p>
         The American Society of Mammalogists (ASM) was founded in 1919. Its primary purpose is to encourage the study of mammals and professions studying mammals. There are over 2,500 members in the composed society,  primarily professional scientists who emphasize the importance of public policy and education.

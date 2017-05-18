@@ -1,4 +1,4 @@
-var _metaStatus, activityIndicatorOff, activityIndicatorOn, allError, animateHoverShadows, animateLoad, bindClickTargets, bindClicks, bindDismissalRemoval, bindPaperMenuButton, browserBeware, bsAlert, buildQuery, byteCount, checkFileVersion, checkLaggedUpdate, checkLocalVersion, checkTaxonNear, clearSearch, dataUriToBlob, dateMonthToString, deEscape, decode64, deepJQuery, delay, doCORSget, doFontExceptions, doLazily, doNothing, domainPlaceholder, downloadDataUriAsBlob, e, encode64, error1, eutheriaFilterHelper, fetchMajorMinorGroups, foo, formatScientificNames, formatSearchResults, getElementHtml, getFilters, getLocation, getMaxZ, getRandomEntry, goTo, insertCORSWorkaround, insertModalImage, interval, isArray, isBlank, isBool, isEmpty, isJson, isNull, isNumber, isNumeric, jsonTo64, lightboxImages, loadJS, mapNewWindows, modalTaxon, openLink, openTab, overlayOff, overlayOn, p$, parseTaxonYear, performSearch, post64, prepURI, randomInt, ref, roundNumber, roundNumberSigfig, safariDialogHelper, safariSearchArgHelper, searchParams, setHistory, setupServiceWorker, showBadSearchErrorMessage, smartUpperCasing, sortResults, startLoad, stopLoad, stopLoadError, toFloat, toInt, toObject, toastStatusMessage, uri,
+var _metaStatus, activityIndicatorOff, activityIndicatorOn, allError, animateHoverShadows, animateLoad, bindClickTargets, bindClicks, bindDismissalRemoval, bindPaperMenuButton, browserBeware, bsAlert, buildQuery, byteCount, checkFileVersion, checkLaggedUpdate, checkLocalVersion, checkTaxonNear, clearSearch, dataUriToBlob, dateMonthToString, deEscape, decode64, deepJQuery, delay, delayPolymerBind, doCORSget, doFontExceptions, doLazily, doNothing, domainPlaceholder, downloadDataUriAsBlob, e, encode64, error1, eutheriaFilterHelper, fetchMajorMinorGroups, foo, formatScientificNames, formatSearchResults, getElementHtml, getFilters, getLocation, getMaxZ, getRandomEntry, goTo, insertCORSWorkaround, insertModalImage, interval, isArray, isBlank, isBool, isEmpty, isJson, isNull, isNumber, isNumeric, jsonTo64, lightboxImages, loadJS, mapNewWindows, modalTaxon, objToArgs, openLink, openTab, overlayOff, overlayOn, p$, parseTaxonYear, performSearch, post64, prepURI, randomInt, ref, roundNumber, roundNumberSigfig, safariDialogHelper, safariSearchArgHelper, searchParams, setHistory, setupServiceWorker, showBadSearchErrorMessage, smartUpperCasing, sortResults, startLoad, stopLoad, stopLoadError, toFloat, toInt, toObject, toastStatusMessage, uri,
   slice = [].slice,
   indexOf = [].indexOf || function(item) { for (var i = 0, l = this.length; i < l; i++) { if (i in this && this[i] === item) return i; } return -1; };
 
@@ -10,6 +10,9 @@ uri.urlString = uri.o.attr('protocol') + '://' + uri.o.attr('host') + uri.o.attr
 
 try {
   uri.urlString = uri.urlString.replace(/(.*)\/(((&?[a-zA-Z_\-]+=[a-zA-Z_\-\+0-9%=]+)+)\/?)(.*)/img, "$1/");
+  if (uri.urlString.split("/").pop().search(/\./) === -1 && uri.urlString.slice(-1) !== "/") {
+    uri.urlString = uri.urlString.slice(0, uri.urlString.search(uri.urlString.split("/").pop()));
+  }
 } catch (undefined) {}
 
 uri.query = uri.o.attr("fragment");
@@ -139,6 +142,64 @@ toInt = function(str, strict) {
     return 0;
   }
   return parseInt(str);
+};
+
+String.prototype.noExponents = function(explicitNum) {
+  var data, leader, mag, multiplier, num, sign, str, z;
+  if (explicitNum == null) {
+    explicitNum = true;
+  }
+
+  /*
+   * Remove scientific notation from a number
+   *
+   * After
+   * http://stackoverflow.com/a/18719988/1877527
+   */
+  data = this.split(/[eE]/);
+  if (data.length === 1) {
+    return data[0];
+  }
+  z = "";
+  sign = this.slice(0, 1) === "-" ? "-" : "";
+  str = data[0].replace(".", "");
+  mag = Number(data[1]) + 1;
+  if (mag <= 0) {
+    z = sign + "0.";
+    while (!(mag >= 0)) {
+      z += "0";
+      ++mag;
+    }
+    num = z + str.replace(/^\-/, "");
+    if (explicitNum) {
+      return parseFloat(num);
+    } else {
+      return num;
+    }
+  }
+  if (str.length <= mag) {
+    mag -= str.length;
+    while (!(mag <= 0)) {
+      z += 0;
+      --mag;
+    }
+    num = str + z;
+    if (explicitNum) {
+      return parseFloat(num);
+    } else {
+      return num;
+    }
+  } else {
+    leader = parseFloat(data[0]);
+    multiplier = Math.pow(10, parseInt(data[1]));
+    return leader * multiplier;
+  }
+};
+
+Number.prototype.noExponents = function() {
+  var strVal;
+  strVal = String(this);
+  return strVal.noExponents(true);
 };
 
 toObject = function(array) {
@@ -1944,6 +2005,23 @@ post64 = function(string) {
   return p64;
 };
 
+objToArgs = function(obj) {
+  var arg, argArray, error, key, val;
+  if (typeof obj !== "object") {
+    error = {
+      message: "INVALID_TYPE"
+    };
+    throw error;
+  }
+  argArray = new Array();
+  for (key in obj) {
+    val = obj[key];
+    arg = key + "=" + (encodeURIComponent(val));
+    argArray.push(arg);
+  }
+  return argArray.join("&");
+};
+
 dataUriToBlob = function(dataUri, callback) {
 
   /*
@@ -2006,6 +2084,77 @@ downloadDataUriAsBlob = function(selector) {
     return objUrl;
   }
   $(selector).attr("href", objUrl);
+  return false;
+};
+
+delayPolymerBind = function(selector, callback, iter) {
+  var doLoad;
+  if (iter == null) {
+    iter = 0;
+  }
+  if (typeof md5 === "undefined" || md5 === null) {
+    loadJS("bower_components/JavaScript-MD5/js/md5.min.js", function() {
+      return doLoad();
+    });
+  } else {
+    doLoad();
+  }
+  doLoad = function() {
+    var e, element, error1, ref1, superSlowBackup, uid;
+    if (typeof window._dpb !== "object") {
+      window._dpb = new Object();
+    }
+    uid = md5(selector) + md5(callback);
+    if (isNull(window._dpb[uid])) {
+      window._dpb[uid] = false;
+    }
+    superSlowBackup = 1000;
+    if ((typeof Polymer !== "undefined" && Polymer !== null ? (ref1 = Polymer.Base) != null ? ref1.$$ : void 0 : void 0) != null) {
+      if (window._dpb[uid] === false) {
+        iter = 0;
+        window._dpb[uid] = true;
+      }
+      try {
+        element = Polymer.Base.$$(selector);
+        callback(element);
+        return delay(superSlowBackup, function() {
+          console.info("Doing " + superSlowBackup + "ms delay callback for " + selector);
+          return callback(element);
+        });
+      } catch (error1) {
+        e = error1;
+        console.warn("Error trying to do the delayed polymer bind - " + e.message);
+        if (iter < 10) {
+          ++iter;
+          return delay(75, function() {
+            return delayPolymerBind(selector, callback, iter);
+          });
+        } else {
+          console.error("Persistent error in polymer binding (" + e.message + ")");
+          console.error(e.stack);
+          element = $(selector).get(0);
+          callback(element);
+          return delay(superSlowBackup, function() {
+            element = document.querySelector(selector);
+            console.info("Doing " + superSlowBackup + "ms delay callback for " + selector);
+            console.info("Using element", element);
+            return callback(element);
+          });
+        }
+      }
+    } else {
+      if (iter < 50) {
+        return delay(100, function() {
+          ++iter;
+          return delayPolymerBind(selector, callback, iter);
+        });
+      } else {
+        console.error("Failed to verify Polymer was set up, attempting manual");
+        element = document.querySelector(selector);
+        return callback(element);
+      }
+    }
+  };
   return false;
 };
 

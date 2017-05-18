@@ -10,6 +10,9 @@ uri.urlString = uri.o.attr('protocol') + '://' + uri.o.attr('host') + uri.o.attr
 
 try {
   uri.urlString = uri.urlString.replace(/(.*)\/(((&?[a-zA-Z_\-]+=[a-zA-Z_\-\+0-9%=]+)+)\/?)(.*)/img, "$1/");
+  if (uri.urlString.split("/").pop().search(/\./) === -1 && uri.urlString.slice(-1) !== "/") {
+    uri.urlString = uri.urlString.slice(0, uri.urlString.search(uri.urlString.split("/").pop()));
+  }
 } catch (undefined) {}
 
 uri.query = uri.o.attr("fragment");

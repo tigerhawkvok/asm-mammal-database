@@ -4,6 +4,9 @@ uri.urlString = uri.o.attr('protocol') + '://' + uri.o.attr('host')  + uri.o.att
 # For mod_rewrite fanciness
 try
   uri.urlString = uri.urlString.replace /(.*)\/(((&?[a-zA-Z_\-]+=[a-zA-Z_\-\+0-9%=]+)+)\/?)(.*)/img, "$1/"
+  if uri.urlString.split("/").pop().search(/\./) is -1 and uri.urlString.slice(-1) isnt "/"
+    # No extension? igore it
+    uri.urlString = uri.urlString.slice 0, uri.urlString.search(uri.urlString.split("/").pop())
 uri.query = uri.o.attr("fragment")
 domainPlaceholder = uri.o.attr("host").split "."
 # Now we pop off the last before taking the zero-index

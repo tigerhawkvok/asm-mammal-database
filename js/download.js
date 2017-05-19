@@ -302,11 +302,11 @@ downloadHTMLList = function(useLastSearch) {
             pdfDownload = "<a href=\"" + pdfDownloadPath + "\" download=\"asm-species-" + dateString + ".pdf\" class=\"btn btn-default data-download-button\" id=\"download-pdf-summary\"><iron-icon icon=\"file-download\"></iron-icon> Download PDF</a>";
             return $("#download-html-file #download-html-summary").after(pdfDownload);
           } else {
-            console.error("Couldn't make PDF file");
+            stopLoadError("Couldn't make PDF file");
             return $("#download-html-file #download-html-summary").after(pdfError);
           }
         }).error(function(result, status) {
-          console.error("Wasn't able to fetch PDF");
+          stopLoadError("Wasn't able to fetch PDF");
           return $("#download-html-file #download-html-summary").after(pdfError);
         }).always(function() {
           var duration;

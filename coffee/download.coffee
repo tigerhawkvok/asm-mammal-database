@@ -373,10 +373,10 @@ downloadHTMLList = (useLastSearch = false) ->
             """
             $("#download-html-file #download-html-summary").after pdfDownload
           else
-            console.error "Couldn't make PDF file"
+            stopLoadError "Couldn't make PDF file"
             $("#download-html-file #download-html-summary").after pdfError
         .error (result, status) ->
-          console.error "Wasn't able to fetch PDF"
+          stopLoadError "Wasn't able to fetch PDF"
           $("#download-html-file #download-html-summary").after pdfError
         .always ->
           try

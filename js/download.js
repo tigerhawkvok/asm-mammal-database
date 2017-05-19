@@ -1,6 +1,10 @@
 var downloadCSVList, downloadHTMLList, showDownloadChooser;
 
-downloadCSVList = function() {
+downloadCSVList = function(useLastSearch) {
+  var adjMonth, args, button, d, dateString, day, error, i, len, month, ref, searchString, startTime;
+  if (useLastSearch == null) {
+    useLastSearch = false;
+  }
 
   /*
    * Download a CSV file list
@@ -8,12 +12,19 @@ downloadCSVList = function() {
    * See
    * https://github.com/tigerhawkvok/SSAR-species-database/issues/39
    */
-  var adjMonth, args, button, d, dateString, day, i, len, month, ref, startTime;
   animateLoad();
   startTime = Date.now();
   _asm.progressTracking = {
     estimate: new Array()
   };
+  try {
+    searchString = useLastSearch ? searchParams.lastSearch : "*";
+    if (isNull(searchString)) {
+      searchString = "*";
+    }
+  } catch (error) {
+    searchString = "*";
+  }
   try {
     ref = $("#download-chooser .buttons paper-button");
     for (i = 0, len = ref.length; i < len; i++) {
@@ -21,14 +32,14 @@ downloadCSVList = function() {
       p$(button).disabled = true;
     }
   } catch (undefined) {}
-  args = "q=*";
+  args = "q=" + searchString;
   d = new Date();
   adjMonth = d.getMonth() + 1;
   month = adjMonth.toString().length === 1 ? "0" + adjMonth : adjMonth;
   day = d.getDate().toString().length === 1 ? "0" + (d.getDate().toString()) : d.getDate();
   dateString = (d.getUTCFullYear()) + "-" + month + "-" + day;
   $.get("" + searchParams.apiPath, args, "json").done(function(result) {
-    var e, error, postMessageContent, worker;
+    var e, error1, postMessageContent, worker;
     try {
       if (result.status !== true) {
         throw Error("Invalid Result");
@@ -46,7 +57,7 @@ downloadCSVList = function() {
         /*
          * Service worker callback
          */
-        var avgTotalTimeEstimate, delayCheckSqlButton, downloadable, duration, error, estimatedTimeRemaining, fileSizeMiB, fractionalProgress, html, message, sqlButton, timeElapsed, totalTimeEstimate;
+        var avgTotalTimeEstimate, delayCheckSqlButton, downloadable, duration, error1, estimatedTimeRemaining, fileSizeMiB, fractionalProgress, html, message, sqlButton, timeElapsed, totalTimeEstimate;
         if (e.data.status !== true) {
           console.warn("Got an error!");
           message = !isNull(e.data.updateUser) ? e.data.updateUser : "Failed to create file";
@@ -78,7 +89,7 @@ downloadCSVList = function() {
         downloadable = e.data.csv;
         try {
           fileSizeMiB = downloadable.length / 1024 / 1024;
-        } catch (error) {
+        } catch (error1) {
           fileSizeMiB = 0;
         }
         console.log("Downloadable size: " + fileSizeMiB + " MiB");
@@ -127,8 +138,8 @@ downloadCSVList = function() {
       });
       worker.postMessage(postMessageContent);
       return false;
-    } catch (error) {
-      e = error;
+    } catch (error1) {
+      e = error1;
       stopLoadError("There was a problem creating the CSV file. Please try again later.");
       console.error("Exception in downloadCSVList ) - " + e.message);
       console.warn(e.stack);
@@ -151,7 +162,11 @@ downloadCSVList = function() {
   return false;
 };
 
-downloadHTMLList = function() {
+downloadHTMLList = function(useLastSearch) {
+  var button, error, i, len, ref, searchString, startTime;
+  if (useLastSearch == null) {
+    useLastSearch = false;
+  }
 
   /*
    * Download a HTML file list
@@ -169,12 +184,19 @@ downloadHTMLList = function() {
    * See
    * https://github.com/tigerhawkvok/SSAR-species-database/issues/40
    */
-  var button, i, len, ref, startTime;
   startLoad();
   startTime = Date.now();
   _asm.progressTracking = {
     estimate: new Array()
   };
+  try {
+    searchString = useLastSearch ? searchParams.lastSearch : "*";
+    if (isNull(searchString)) {
+      searchString = "*";
+    }
+  } catch (error) {
+    searchString = "*";
+  }
   try {
     ref = $("#download-chooser .buttons paper-button");
     for (i = 0, len = ref.length; i < len; i++) {
@@ -190,7 +212,7 @@ downloadHTMLList = function() {
     day = d.getDate().toString().length === 1 ? "0" + (d.getDate().toString()) : d.getDate();
     dateString = (d.getUTCFullYear()) + "-" + month + "-" + day;
     htmlBody = "<!doctype html>\n<html lang=\"en\">\n  <head>\n    <title>ASM Species Checklist ver. " + dateString + "</title>\n    <meta http-equiv=\"X-UA-Compatible\" content=\"IE=edge\">\n    <meta charset=\"UTF-8\"/>\n    <meta name=\"theme-color\" content=\"#445e14\"/>\n    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1\" />\n    <link href='http://fonts.googleapis.com/css?family=Droid+Serif:400,700,700italic,400italic|Roboto+Slab:400,700' rel='stylesheet' type='text/css' />\n    <style type=\"text/css\" id=\"asm-checklist-inline-stylesheet\">\n      " + importedCSS + "\n    </style>\n  </head>\n  <body>\n    <div class=\"container-fluid\">\n      <article>\n        <h1 class=\"text-center\">ASM Species Checklist ver. " + dateString + "</h1>";
-    args = "q=*&order=linnean_order,linnean_family,genus,species,subspecies";
+    args = "q=" + searchString + "&order=linnean_order,linnean_family,genus,species,subspecies";
     return $.get("" + searchParams.apiPath, args, "json").done(function(result) {
       var postMessageContent, worker;
       startLoad();
@@ -207,7 +229,7 @@ downloadHTMLList = function() {
         /*
          * Service worker callback
          */
-        var avgTotalTimeEstimate, dialogHtml, downloadable, error, estimatedTimeRemaining, fileSizeMiB, fractionalProgress, html, message, pdfError, timeElapsed, totalTimeEstimate;
+        var avgTotalTimeEstimate, dialogHtml, downloadable, error1, estimatedTimeRemaining, fileSizeMiB, fractionalProgress, html, message, pdfError, timeElapsed, totalTimeEstimate;
         if (e.data.status !== true) {
           console.warn("Got an error!");
           message = !isNull(e.data.updateUser) ? e.data.updateUser : "Failed to create file";
@@ -223,7 +245,9 @@ downloadHTMLList = function() {
               html = "<paper-progress\n  class=\"transiting\"\n  id=\"download-progress-indicator\"\n  value=\"0\"\n  max=\"1000\">\n</paper-progress>\n<p>\n  <span class=\"bold\">Estimated Time Remaining:</span> <span id=\"estimated-remaining-time\">&#8734;</span>s\n</p>";
               $("#download-chooser .dialog-content .scrollable").append(html);
             }
-            p$("#download-progress-indicator").value = e.data.progress;
+            try {
+              p$("#download-progress-indicator").value = e.data.progress;
+            } catch (undefined) {}
             timeElapsed = Date.now() - startTime;
             fractionalProgress = toFloat(e.data.progress) / 1000.0;
             totalTimeEstimate = timeElapsed / fractionalProgress;
@@ -240,7 +264,7 @@ downloadHTMLList = function() {
         downloadable = "data:text/html;charset=utf-8," + (encodeURIComponent(htmlBody));
         try {
           fileSizeMiB = downloadable.length / 1024 / 1024;
-        } catch (error) {
+        } catch (error1) {
           fileSizeMiB = 0;
         }
         console.log("Downloadable size: " + fileSizeMiB + " MiB");

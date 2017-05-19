@@ -2,7 +2,7 @@
 # Depends on the service worker to do some of the load off-thread
 # See ./serviceWorker.coffee
 
-downloadCSVList = ->
+downloadCSVList = (useLastSearch = false) ->
   ###
   # Download a CSV file list
   #
@@ -14,11 +14,17 @@ downloadCSVList = ->
   _asm.progressTracking =
     estimate: new Array()
   try
+    searchString = if useLastSearch then searchParams.lastSearch else "*"
+    if isNull searchString
+      searchString = "*"
+  catch
+    searchString = "*"
+  try
     for button in $("#download-chooser .buttons paper-button")
       p$(button).disabled = true
   #filterArg = "eyJpc19hbGllbiI6MCwiYm9vbGVhbl90eXBlIjoib3IifQ"
   #args = "filter=#{filterArg}"
-  args = "q=*"
+  args = "q=#{searchString}"
   d = new Date()
   adjMonth = d.getMonth() + 1
   month = if adjMonth.toString().length is 1 then "0#{adjMonth}" else adjMonth
@@ -195,7 +201,7 @@ downloadCSVList = ->
 
 
 
-downloadHTMLList = ->
+downloadHTMLList = (useLastSearch = false) ->
   ###
   # Download a HTML file list
   #
@@ -216,6 +222,12 @@ downloadHTMLList = ->
   startTime = Date.now()
   _asm.progressTracking =
     estimate: new Array()
+  try
+    searchString = if useLastSearch then searchParams.lastSearch else "*"
+    if isNull searchString
+      searchString = "*"
+  catch
+    searchString = "*"
   try
     for button in $("#download-chooser .buttons paper-button")
       p$(button).disabled = true
@@ -245,7 +257,7 @@ downloadHTMLList = ->
               <article>
                 <h1 class="text-center">ASM Species Checklist ver. #{dateString}</h1>
     """
-    args = "q=*&order=linnean_order,linnean_family,genus,species,subspecies"
+    args = "q=#{searchString}&order=linnean_order,linnean_family,genus,species,subspecies"
     $.get "#{searchParams.apiPath}", args, "json"
     .done (result) ->
       startLoad()
@@ -284,7 +296,8 @@ downloadHTMLList = ->
               </p>
               """
               $("#download-chooser .dialog-content .scrollable").append html
-            p$("#download-progress-indicator").value = e.data.progress
+            try
+              p$("#download-progress-indicator").value = e.data.progress
             timeElapsed = Date.now() - startTime
             fractionalProgress = toFloat(e.data.progress) / 1000.0
             totalTimeEstimate = timeElapsed / fractionalProgress

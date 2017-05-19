@@ -2265,13 +2265,13 @@ $(function() {
   } catch (undefined) {}
 });
 
-searchParams = new Object();
+searchParams = {
+  lastSearch: "*",
+  targetApi: "api.php",
+  targetContainer: "#result_container"
+};
 
-searchParams.targetApi = "api.php";
-
-searchParams.targetContainer = "#result_container";
-
-searchParams.apiPath = uri.urlString + searchParams.targetApi;
+searchParams.apiPath = uri.urlString + targetApi;
 
 window._asm = new Object();
 
@@ -2518,6 +2518,7 @@ performSearch = function(stateArgs) {
   }
   animateLoad();
   console.log("Got search value " + s + ", hitting", searchParams.apiPath + "?" + args);
+  searchParams.lastSearch = s;
   return $.get(searchParams.targetApi, args, "json").done(function(result) {
     if (toInt(result.count) === 0) {
       console.error("No search results: Got search value " + s + ", from hitting", searchParams.apiPath + "?" + args);

@@ -1809,10 +1809,11 @@ $ ->
       lightboxImages()
       false
 
-searchParams = new Object()
-searchParams.targetApi = "api.php"
-searchParams.targetContainer = "#result_container"
-searchParams.apiPath = uri.urlString + searchParams.targetApi
+searchParams =
+  lastSearch: "*"
+  targetApi: "api.php"
+  targetContainer: "#result_container"
+searchParams.apiPath = uri.urlString + targetApi
 
 window._asm = new Object()
 # Base query URLs for out-of-site linkouts
@@ -2046,6 +2047,7 @@ performSearch = (stateArgs = undefined) ->
     return false
   animateLoad()
   console.log("Got search value #{s}, hitting","#{searchParams.apiPath}?#{args}")
+  searchParams.lastSearch = s
   $.get(searchParams.targetApi,args,"json")
   .done (result) ->
     # Populate the result container

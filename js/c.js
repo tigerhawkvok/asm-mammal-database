@@ -2271,7 +2271,7 @@ searchParams = {
   targetContainer: "#result_container"
 };
 
-searchParams.apiPath = uri.urlString + targetApi;
+searchParams.apiPath = uri.urlString + searchParams.targetApi;
 
 window._asm = new Object();
 
@@ -3875,6 +3875,9 @@ $(function() {
     }
   }
   if (!isNull(loadArgs) && loadArgs !== "#") {
+    try {
+      searchParams.lastSearch = loadArgs;
+    } catch (undefined) {}
     return $.get(searchParams.targetApi, "q=" + loadArgs, "json").done(function(result) {
       _asm.polymerReady = true;
       console.debug("Server query got", result);

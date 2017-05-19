@@ -332,15 +332,33 @@ downloadHTMLList = function(useLastSearch) {
 
 showDownloadChooser = function() {
   var html;
-  html = "<paper-dialog id=\"download-chooser\" modal>\n  <h2>Select Download Type</h2>\n  <paper-dialog-scrollable class=\"dialog-content\">\n    <p>\n      Once you select a file type, it will take a moment to prepare your download. Please be patient.\n    </p>\n  </paper-dialog-scrollable>\n  <div class=\"buttons\">\n    <paper-button dialog-dismiss>Cancel</paper-button>\n    <paper-button id=\"initiate-csv-download\">CSV/SQL</paper-button>\n    <paper-button id=\"initiate-html-download\">HTML/PDF</paper-button>\n  </div>\n</paper-dialog>";
+  html = "<paper-dialog id=\"download-chooser\" modal>\n  <h2>Select Download Type</h2>\n  <paper-dialog-scrollable class=\"dialog-content\">\n    <p>\n      Once you select a file type, it will take a moment to prepare your download. Please be patient.\n    </p>\n    <div>\n      <paper-toggle-button id=\"use-search\">Use current search results</paper-toggle-button>\n    </div>\n  </paper-dialog-scrollable>\n  <div class=\"buttons\">\n    <paper-button dialog-dismiss>Cancel</paper-button>\n    <paper-button id=\"initiate-csv-download\">CSV/SQL</paper-button>\n    <paper-button id=\"initiate-html-download\">HTML/PDF</paper-button>\n  </div>\n</paper-dialog>";
   if (!$("#download-chooser").exists()) {
     $("body").append(html);
   }
   $("#initiate-csv-download").click(function() {
-    return downloadCSVList();
+    var error, isChecked;
+    try {
+      isChecked = p$("#use-search").checked;
+    } catch (error) {
+      isChecked = false;
+    }
+    try {
+      p$("#use-search").disabled = true;
+    } catch (undefined) {}
+    return downloadCSVList(isChecked);
   });
   $("#initiate-html-download").click(function() {
-    return downloadHTMLList();
+    var error, isChecked;
+    try {
+      isChecked = p$("#use-search").checked;
+    } catch (error) {
+      isChecked = false;
+    }
+    try {
+      p$("#use-search").disabled = true;
+    } catch (undefined) {}
+    return downloadHTMLList(isChecked);
   });
   $("#download-chooser").on("iron-overlay-closed", function() {
     return delay(100, (function(_this) {

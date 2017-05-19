@@ -2,7 +2,7 @@ searchParams =
   lastSearch: "*"
   targetApi: "api.php"
   targetContainer: "#result_container"
-searchParams.apiPath = uri.urlString + targetApi
+searchParams.apiPath = uri.urlString + searchParams.targetApi
 
 window._asm = new Object()
 # Base query URLs for out-of-site linkouts
@@ -1530,6 +1530,8 @@ $ ->
   # Perform the initial search
   if not isNull(loadArgs) and loadArgs isnt "#"
     # console.log("Doing initial search with '#{loadArgs}', hitting","#{searchParams.apiPath}?q=#{loadArgs}")
+    try
+      searchParams.lastSearch = loadArgs
     $.get searchParams.targetApi,"q=#{loadArgs}","json"
     .done (result) ->
       # Populate the result container

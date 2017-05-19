@@ -401,6 +401,9 @@ showDownloadChooser = ->
       <p>
         Once you select a file type, it will take a moment to prepare your download. Please be patient.
       </p>
+      <div>
+        <paper-toggle-button id="use-search">Use current search results</paper-toggle-button>
+      </div>
     </paper-dialog-scrollable>
     <div class="buttons">
       <paper-button dialog-dismiss>Cancel</paper-button>
@@ -413,9 +416,21 @@ showDownloadChooser = ->
     $("body").append(html)
   $("#initiate-csv-download").click ->
     # Show a notice to docs for direct queries
-    downloadCSVList()
+    try
+      isChecked = p$("#use-search").checked
+    catch
+      isChecked = false
+    try
+      p$("#use-search").disabled = true
+    downloadCSVList(isChecked)
   $("#initiate-html-download").click ->
-    downloadHTMLList()
+    try
+      isChecked = p$("#use-search").checked
+    catch
+      isChecked = false
+    try
+      p$("#use-search").disabled = true
+    downloadHTMLList(isChecked)
   ## Close events
   # When we close it, we want to remove it to reset the
   # progress bar and the disabled's, etc.

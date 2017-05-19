@@ -2,7 +2,7 @@
 # Depends on the service worker to do some of the load off-thread
 # See ./serviceWorker.coffee
 
-downloadCSVList = ->
+downloadCSVList = (useLastSearch = false) ->
   ###
   # Download a CSV file list
   #
@@ -14,11 +14,17 @@ downloadCSVList = ->
   _asm.progressTracking =
     estimate: new Array()
   try
+    searchString = if useLastSearch then searchParams.lastSearch else "*"
+    if isNull searchString
+      searchString = "*"
+  catch
+    searchString = "*"
+  try
     for button in $("#download-chooser .buttons paper-button")
       p$(button).disabled = true
   #filterArg = "eyJpc19hbGllbiI6MCwiYm9vbGVhbl90eXBlIjoib3IifQ"
   #args = "filter=#{filterArg}"
-  args = "q=*"
+  args = "q=#{searchString}"
   d = new Date()
   adjMonth = d.getMonth() + 1
   month = if adjMonth.toString().length is 1 then "0#{adjMonth}" else adjMonth
@@ -195,7 +201,7 @@ downloadCSVList = ->
 
 
 
-downloadHTMLList = ->
+downloadHTMLList = (useLastSearch = false) ->
   ###
   # Download a HTML file list
   #
@@ -216,6 +222,12 @@ downloadHTMLList = ->
   startTime = Date.now()
   _asm.progressTracking =
     estimate: new Array()
+  try
+    searchString = if useLastSearch then searchParams.lastSearch else "*"
+    if isNull searchString
+      searchString = "*"
+  catch
+    searchString = "*"
   try
     for button in $("#download-chooser .buttons paper-button")
       p$(button).disabled = true
@@ -245,7 +257,7 @@ downloadHTMLList = ->
               <article>
                 <h1 class="text-center">ASM Species Checklist ver. #{dateString}</h1>
     """
-    args = "q=*&order=linnean_order,linnean_family,genus,species,subspecies"
+    args = "q=#{searchString}&order=linnean_order,linnean_family,genus,species,subspecies"
     $.get "#{searchParams.apiPath}", args, "json"
     .done (result) ->
       startLoad()
@@ -284,7 +296,8 @@ downloadHTMLList = ->
               </p>
               """
               $("#download-chooser .dialog-content .scrollable").append html
-            p$("#download-progress-indicator").value = e.data.progress
+            try
+              p$("#download-progress-indicator").value = e.data.progress
             timeElapsed = Date.now() - startTime
             fractionalProgress = toFloat(e.data.progress) / 1000.0
             totalTimeEstimate = timeElapsed / fractionalProgress
@@ -360,10 +373,10 @@ downloadHTMLList = ->
             """
             $("#download-html-file #download-html-summary").after pdfDownload
           else
-            console.error "Couldn't make PDF file"
+            stopLoadError "Couldn't make PDF file"
             $("#download-html-file #download-html-summary").after pdfError
         .error (result, status) ->
-          console.error "Wasn't able to fetch PDF"
+          stopLoadError "Wasn't able to fetch PDF"
           $("#download-html-file #download-html-summary").after pdfError
         .always ->
           try
@@ -388,6 +401,9 @@ showDownloadChooser = ->
       <p>
         Once you select a file type, it will take a moment to prepare your download. Please be patient.
       </p>
+      <div>
+        <paper-toggle-button id="use-search">Use current search results</paper-toggle-button>
+      </div>
     </paper-dialog-scrollable>
     <div class="buttons">
       <paper-button dialog-dismiss>Cancel</paper-button>
@@ -400,9 +416,21 @@ showDownloadChooser = ->
     $("body").append(html)
   $("#initiate-csv-download").click ->
     # Show a notice to docs for direct queries
-    downloadCSVList()
+    try
+      isChecked = p$("#use-search").checked
+    catch
+      isChecked = false
+    try
+      p$("#use-search").disabled = true
+    downloadCSVList(isChecked)
   $("#initiate-html-download").click ->
-    downloadHTMLList()
+    try
+      isChecked = p$("#use-search").checked
+    catch
+      isChecked = false
+    try
+      p$("#use-search").disabled = true
+    downloadHTMLList(isChecked)
   ## Close events
   # When we close it, we want to remove it to reset the
   # progress bar and the disabled's, etc.

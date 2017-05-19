@@ -2265,11 +2265,11 @@ $(function() {
   } catch (undefined) {}
 });
 
-searchParams = new Object();
-
-searchParams.targetApi = "api.php";
-
-searchParams.targetContainer = "#result_container";
+searchParams = {
+  lastSearch: "*",
+  targetApi: "api.php",
+  targetContainer: "#result_container"
+};
 
 searchParams.apiPath = uri.urlString + searchParams.targetApi;
 
@@ -2518,6 +2518,7 @@ performSearch = function(stateArgs) {
   }
   animateLoad();
   console.log("Got search value " + s + ", hitting", searchParams.apiPath + "?" + args);
+  searchParams.lastSearch = s;
   return $.get(searchParams.targetApi, args, "json").done(function(result) {
     if (toInt(result.count) === 0) {
       console.error("No search results: Got search value " + s + ", from hitting", searchParams.apiPath + "?" + args);
@@ -3874,6 +3875,9 @@ $(function() {
     }
   }
   if (!isNull(loadArgs) && loadArgs !== "#") {
+    try {
+      searchParams.lastSearch = loadArgs;
+    } catch (undefined) {}
     return $.get(searchParams.targetApi, "q=" + loadArgs, "json").done(function(result) {
       _asm.polymerReady = true;
       console.debug("Server query got", result);

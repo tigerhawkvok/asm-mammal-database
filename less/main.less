@@ -340,6 +340,15 @@ main {
 
 paper-dialog {
 
+    &#download-chooser {
+        paper-dialog-scrollable {
+            .scrollable {
+                // Prevents the toggle button from causing a scrollable to show up
+                padding-bottom: 2rem;
+            }
+        }
+    }
+    
     &#set-license-value {
         width: 85vw;
     }

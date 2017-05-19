@@ -1,6 +1,7 @@
-searchParams = new Object()
-searchParams.targetApi = "api.php"
-searchParams.targetContainer = "#result_container"
+searchParams =
+  lastSearch: "*"
+  targetApi: "api.php"
+  targetContainer: "#result_container"
 searchParams.apiPath = uri.urlString + searchParams.targetApi
 
 window._asm = new Object()
@@ -235,6 +236,7 @@ performSearch = (stateArgs = undefined) ->
     return false
   animateLoad()
   console.log("Got search value #{s}, hitting","#{searchParams.apiPath}?#{args}")
+  searchParams.lastSearch = s
   $.get(searchParams.targetApi,args,"json")
   .done (result) ->
     # Populate the result container
@@ -1528,6 +1530,8 @@ $ ->
   # Perform the initial search
   if not isNull(loadArgs) and loadArgs isnt "#"
     # console.log("Doing initial search with '#{loadArgs}', hitting","#{searchParams.apiPath}?q=#{loadArgs}")
+    try
+      searchParams.lastSearch = loadArgs
     $.get searchParams.targetApi,"q=#{loadArgs}","json"
     .done (result) ->
       # Populate the result container

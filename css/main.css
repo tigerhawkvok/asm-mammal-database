@@ -6945,6 +6945,9 @@ main #images-block div.no-image {
 #eutheria-extra {
   display: inline-block;
 }
+paper-dialog#download-chooser paper-dialog-scrollable .scrollable {
+  padding-bottom: 2rem;
+}
 paper-dialog#set-license-value {
   width: 85vw;
 }

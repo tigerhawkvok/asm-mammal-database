@@ -1,5 +1,6 @@
 admin/CONFIG.php
 CONFIG.php
+forum/vanilla/conf/config.php
 install.php
 meta/database/asm_db_backup.sql
 meta/database/create-sql-user.sql

@@ -2,290 +2,317 @@
 
 /*
  * Project name: Flatboard
- * Package: Flatboard Unpack version 0.7b
  * Project URL: http://flatboard.free.fr
  * Author: Frédéric Kaplon and contributors
  * All Flatboard code is released under the MIT license.
 */
-	
-if(!session_id())session_start();
-/*
- *---------------------------------------------------------------
- * LANGUAGE DETECTION
- *---------------------------------------------------------------
- */
-$language = substr($_SERVER['HTTP_ACCEPT_LANGUAGE'], 0, 5);
-$language = str_replace(',', '-', $language);
-$language = explode('-', $language);
-$language = $language[0]. '-' .strtoupper($language[1]);
 
-# Constantes	
-if (!defined('LANG')) define('LANG', $language);
-if (!defined('DS')) define('DS', DIRECTORY_SEPARATOR);
-if (!defined('APP')) define('APP', 'flatboard');
-if (!defined('COUNTDOWN')) define('COUNTDOWN', 3);
-# Mode de déboguage
-if (!defined('DEBUG_MODE')) define('DEBUG_MODE', TRUE);
-error_reporting(0); // Désactive tous les rapports d’erreur
-if(DEBUG_MODE)
+$out['self'] = 'index';
+require_once __DIR__ . '/header.php';
+
+/**
+ * LISTE DES FORUMS
+ **/
+if(Util::isGET('forum'))
 {
-	# Active tous les rapports d’erreur
-	ini_set("display_errors", 1);
-	ini_set('display_startup_errors',1);
-	ini_set("track_errors", 1);
-	ini_set("html_errors", 1);
-	error_reporting(E_ALL | E_STRICT | E_NOTICE);
+    $cur = 'forum'; # Indicateur de page
+	$out['subtitle'] = $lang['forum'];
+	$out['sub_prefix'] = User::isAdmin()? '<a href="add.php' . DS . 'forum" class="hint--top hint--rounded" data-hint="' .$lang['add_forum']. '"><i class="fa fa-plus-circle"></i></a> ' : '';
+	$forums = flatDB::readEntry('config', 'forumOrder');
+	$options = '';
+	if($forums)
+	{
+		if(User::isAdmin() && !empty($_POST) && CSRF::check($token))
+		{
+			foreach($forums as $forum)
+			{
+				$order[$forum] = Util::isPOST($forum)? $_POST[$forum] : '0';
+			}
+			asort($order);
+			$order = array_keys($order);
+			$forums = array_combine($order, $order);
+			flatDB::saveEntry('config', 'forumOrder', $forums);
+		}
+
+		$num = range(1, count($forums));
+		$options = array_combine($num, $num);
+
+		$controlStr = '';
+		$out['content'] .= '
+			<table class="bordered striped">
+				<thead class="bg-highlight">
+					<tr>
+						<th class="w5">&nbsp;</th>
+						<th class="w65">' .$lang['forum']. '</th>
+						<th class="w10">' .$lang['topic']. '</th>
+						<th class="w20">' .$lang['date']. '</th>
+					</tr>
+				</thead>
+				<tbody>';
+			#asort($forums);
+			foreach(array_values($forums) as $key => $forum)
+			{
+				$forumEntry = flatDB::readEntry('forum', $forum);
+				$lang[$forum] = $forumEntry['name'];
+				$controlStr .= HTMLForm::select($forum, $options, $key+1, 'w20');
+				$out['content'] .= '
+				<tr>
+					<td style="color:' .$forumEntry['badge_color']. '">
+						<i class="fa fa-3x ' .$forumEntry['font_icon']. '"></i>
+					</td>
+					<td>
+						' .entryLink::manageForum($forum). '<a href="view.php' . DS . 'forum' . DS . $forum. '"><b>' .$forumEntry['name']. '</b></a><br />
+					   <span class="muted"> &raquo; ' .$forumEntry['info']. '</span>
+					</td>
+					<td class="text-centered">
+						<span class="label big">' .Util::shortNum(count($forumEntry['topic'])). '</span>
+					</td>
+					<td>
+						' .($forumEntry['topic']? Util::toDate(end($forumEntry['topic'])) : '---'). '
+					</td>
+				</tr>';
+			}
+			$out['content'] .= '
+				</tbody>
+			</table>'.
+			# ON GÉNÈRE LE FORMULAIRE D’ORDONNANCE DES FORUMS
+			(User::isAdmin()? 
+			'<button data-component="toggleme" data-target="#order" data-text="' .$lang['sort_forums']. '"><i class="fa fa-sort"></i> ' .$lang['sort_forums']. '</button>
+			<div id="order" class="w50 hide">'.HTMLForm::form('index.php/forum',
+					$controlStr.
+					HTMLForm::simple_submit(). '
+			</div>') : '');	
+	}
+	else
+	{
+		$out['content'] .= '<p>' .$lang['none']. '</p>';
+	}
+}
+/*
+** AFFICHE LA PAGE D’ERREUR 404
+*/
+else if(Util::isGET('404'))
+{
+    $cur = 'error'; # Indicateur de page
+	$out['subtitle'] = 'HTTP 404';
+	$out['content'] .= '<p>' .$lang['notFound']. '</p>';
+}
+/*
+** Whois
+*/
+else if(Util::isGET('whois'))
+{
+	require_once LIB_DIR . 'Whois.lib.php';
+	$whois = new Whois;
+    $cur = 'whois'; # Indicateur de page
+	$out['subtitle'] = 'Whois Loockup';
+	$out['content'] .= (User::isWorker()? $whois->whoislookup($_GET['whois']) : 'You don\'t have permission to access on this page.');
+}
+/**
+ * PAGE D’ACCUEIL/NOUVEAUX MESSAGES
+ **/
+else
+{
+    $cur = 'home'; # Indicateur de page
+	$out['subtitle'] = $lang['new'];
+	$out['sub_prefix'] = '';
+	$config = flatDB::readEntry('config', 'config');
+
+	#$mixes = Util::_max(array_merge(flatDB::listEntry('topic'), flatDB::listEntry('reply')), $config['ItemByPage']);
+	$mixes = array_merge(flatDB::listEntry('topic'), flatDB::listEntry('reply'));
+	$nb = $config['ItemByPage'];
+	$total = Paginate::countPage($mixes, $nb);
+	$p = Paginate::pid($total);
+		
+	if($mixes)
+	{
+		rsort($mixes);
+		$topic = $mixes[0];
+		if(!flatDB::isValidEntry('topic', $topic))
+		{
+			$replyEntry = flatDB::readEntry('reply', $topic);
+			$topic = $replyEntry['topic'];
+		}
+		$topicEntry = flatDB::readEntry('topic', $topic);
+		$count = count($topicEntry['reply'])+1;
+		$width = $count <= 4 ? 12/$count : 3;
+		# ON RETOURNE LA DERNIÈRE DISCUSSION		
+		$out['content'] .= '
+			<div class="col col-12">
+			       <p class="h1">
+			    		' .Parser::title($topicEntry['title']). '
+				   </p>	    
+	               <div class="big">
+	               		' .Parser::summary(Parser::content($topicEntry['content'],true),30). '
+	               </div>
+	               <div id="action-buttons">
+	               		<p>
+	               		' .($topicEntry['locked']? 
+	               		'<a title="' .Util::lang('topic locked'). '" class="button red large" href="view.php' . DS . 'topic' . DS . $topic. '">' .$lang['more']. ' <i class="fa fa-lock"></i></a>' : 
+	               		'<a title="' .$lang['more']. '" class="button large" href="view.php' . DS . 'topic' . DS . $topic. '">' .$lang['more']. ' <i class="fa fa-arrow-circle-right"></i></a>'). '
+	               		</p>
+	               </div>
+            </div>
+            <hr />';
+            # ON LISTE LES 3 DERNIÈRES RÉPONSES S’IL Y EN A
+            if($topicEntry['reply']){
+				$out['content'] .= '			
+			<div class="row gutters">';    
+					foreach(array_slice($topicEntry['reply'], -3) as $reply)
+					{
+						$replyEntry = flatDB::readEntry('reply', $reply);
+						$out['content'] .= '
+						<div class="col col-4 small">
+							' .Plugin::hook('profile_index', $replyEntry['trip']). '
+							<a title="' .$lang['more']. '" class="float-right" href="view.php' . DS . 'topic' . DS . $replyEntry['topic']. DS. 'p'. DS . Util::onPage($reply, $topicEntry['reply']). '#' .$reply. '"><i class="fa fa-external-link-square" aria-hidden="true"></i></a>
+							<span class="user ' .$replyEntry['role']. '">'.$replyEntry['trip']. '</span>: 							' .Parser::summary(Parser::content($replyEntry['content'], true), 20). '
+						</div>';
+					}
+				$out['content'] .= '
+			</div>';					
+            }
+			$out['content'] .= '
+			<hr />
+			<div class="row gutters">
+			
+				<div class="col col-4">';
+				# LISTE DES FORUMS
+				$forums = flatDB::readEntry('config', 'forumOrder');
+				if($forums)
+				{
+					if(User::isAdmin() && !empty($_POST) && CSRF::check($token))
+					{
+						foreach($forums as $forum)
+						{
+							$order[$forum] = Util::isPOST($forum)? $_POST[$forum] : '0';
+						}
+						asort($order);
+						$order = array_keys($order);
+						$forums = array_combine($order, $order);
+						flatDB::saveEntry('config', 'forumOrder', $forums);
+					}
+			
+					$num = range(1, count($forums));
+					$options = array_combine($num, $num);
+			
+					$controlStr = '';
+					$out['content'] .= '
+					<table class="striped bordered">
+						<thead class="bg-highlight">
+							<tr>
+								<th>' .(User::isAdmin()? '<a href="add.php' . DS . 'forum" class="hint--top hint--rounded" data-hint="' .$lang['add_forum']. '"><i class="fa fa-plus-circle"></i></a> ' : '').$lang['forum']. '</th>
+							</tr>
+						</thead>
+						
+						<tbody>
+						<tr>
+							<td>
+								<ul class="unstyled">';
+								#asort($forums);
+								foreach(array_values($forums) as $key => $forum)
+								{
+									$forumEntry = flatDB::readEntry('forum', $forum);
+									$lang[$forum] = $forumEntry['name'];
+									$controlStr .= HTMLForm::select($forum, $options, $key+1, 'w20');
+									$out['content'] .= '<li>' .entryLink::manageForum($forum). '<i class="label badge" style="background-color:' .$forumEntry['badge_color']. '!important">' .count($forumEntry['topic']). '</i> <a class="hint--top hint--rounded" data-hint="' .Parser::summary($forumEntry['info'],30). '" href="view.php' . DS . 'forum' . DS . $forum. '">' .$forumEntry['name']. '</a>
+									</li>';
+								}
+								$out['content'] .= '
+								</ul>
+							</td>
+						</tr>
+						</tbody>
+					</table>'.
+					
+					# ON GÉNÈRE LE FORMULAIRE D’ORDONNANCE DES FORUMS
+					(User::isAdmin()? 
+					'<button data-component="toggleme" data-target="#order" data-text="' .$lang['sort_forums']. '"><i class="fa fa-sort"></i> ' .$lang['sort_forums']. '</button>
+					<div id="order" class="hide">'.HTMLForm::form('index.php/forum',
+								$controlStr.
+								HTMLForm::simple_submit(). '
+					</div>') : '');	
+				}
+				else
+				{
+					$out['content'] .= '<p>' .$lang['none']. '</p>';
+				}
+				
+		$out['content'] .= '
+				</div>
+				<!-- /.col col-4 -->';
+		
+				# TABLEAU DE SUGGESTION DES DERNIERS SUJETS & RÉPONSES		
+				$out['content'] .= '
+				<div class="col col-8">
+								
+					<table class="ajaxscroll striped">
+					<thead class="bg-highlight">
+						<tr>
+							<th class="w60">' .$lang['topic']. '</th>
+							<th class="w40">' .$lang['forum']. ' / Stats</th>
+						</tr>
+					</thead>
+					<tbody>';
+					rsort($mixes); // For sort the pagination!
+					foreach(Paginate::viewPage($mixes, $p, $nb) as $mix)			
+					#foreach($mixes as $mix)
+					{
+						if(flatDB::isValidEntry('topic', $mix))
+						{
+							$topic = $mix;
+							$topicEntry = flatDB::readEntry('topic', $topic);
+							$forumEntry = flatDB::readEntry('forum', $topicEntry['forum']);
+							$out['content'] .= '
+							<tr class="item">
+								<td>
+									' .entryLink::manageTopic($topic).'<a href="view.php' . DS . 'topic' . DS . $topic. '">' .Parser::title($topicEntry['title']). '</a><br />
+									' .Plugin::hook('profile_index', $topicEntry['trip']). '
+									<span class="user ' .$topicEntry['role']. '">'.$topicEntry['trip']. '</span> ' .$lang['started']. ' ' .Util::toDate($topic, $config['date_format']). '
+								</td>
+								<td>
+									<span class="float-right">' .Util::shortNum($topicEntry['view']). '&nbsp;<i class="fa fa-eye" title="' .$lang['view']. '"></i></span>
+									<a class="label badge" style="background-color:' .$forumEntry['badge_color']. '!important" href="view.php' . DS . 'forum' . DS . $topicEntry['forum']. '"><i class="fa ' .$forumEntry['font_icon']. '"></i> ' .$forumEntry['name']. '</a><br /> 		
+									<span class="float-right">' .Util::shortNum(count($topicEntry['reply'])). '&nbsp;<i class="fa fa-comment-o" title="' .$lang['reply']. '"></i></span>
+								</td>
+							</tr>';
+						}
+						else
+						{
+							$reply = $mix;
+							$replyEntry = flatDB::readEntry('reply', $reply);
+							$topicEntry = flatDB::readEntry('topic', $replyEntry['topic']);
+							$forumEntry = flatDB::readEntry('forum', $topicEntry['forum']);
+							$out['content'] .= '
+							<tr class="item">
+								<td>
+									' .entryLink::manageReply($reply).'<a href="view.php' . DS . 'topic' . DS . $replyEntry['topic']. DS. 'p'. DS . Util::onPage($reply, $topicEntry['reply']). '#' .$reply. '">' .Parser::title($topicEntry['title']). '</a><br />
+									' .Plugin::hook('profile_index', $replyEntry['trip']). '
+									<span class="user ' .$replyEntry['role']. '">'.$replyEntry['trip']. '</span> ' .$lang['replied']. ' ' .Util::toDate($reply, $config['date_format']). '
+								</td>
+								<td>
+									<span class="float-right">' .Util::shortNum($topicEntry['view']). '&nbsp;<i class="fa fa-eye" title="' .$lang['view']. '"></i></span>
+									<a class="label badge" style="background-color:' .$forumEntry['badge_color']. '!important" href="view.php' . DS . 'forum' . DS . $topicEntry['forum']. '"><i class="fa ' .$forumEntry['font_icon']. '"></i> ' .$forumEntry['name']. '</a><br /> 
+									<span class="float-right">' .Util::shortNum(count($topicEntry['reply'])). '&nbsp;<i class="fa fa-comment-o" title="' .$lang['reply']. '"></i></span>
+								</td>
+							</tr>';
+						}
+					}
+					$out['content'] .= '</tbody>
+					</table>
+					' .Paginate::pageLink($p, $total, 'index.php' . DS . 'news' . DS . 'o'). '
+				</div>
+				<!-- /.col col-8 -->
+		
+			</div>
+			<!-- /.row gutters -->';
+	}
+	else
+	{
+		$out['content'] .= '<p>' .$lang['none']. '</p>';
+	}
+
 }
 
-	// TRADUCTIONS (
-	# Français
-	$translation['fr-FR'] = array(
-	  "Flatboard unpacking" => "Décompression de Flatboard",
-	  "Because is more faster to upload just 2 files." => "Parce qu’il est plus facile et rapide de n’envoyer que 2 fichiers.",
-	  "UNPACK" => "DÉCOMPACTER",
-	  "UNPACKED !" => "TÉRMINÉ !",
-	  "Select language" => "Sélectionnez une langue",
-	  "English" => "Anglais",
-	  "French" => "Français",
-	  "Russian" => "Russe",
-	  'Oups! I couldn\'t open %file' => 'Oups! Impossible d’ouvrir %file',
-	  'YEAH! Archive properly extracted to %path.<br />You will be redirected in <span id="counter">%count</span> second(s).' => 'Cool ! Archive extraite vers %path.<br />Vous allez être redirigé dans <span id="counter">%count</span> seconde(s).',
-	  "Hello %name" => "Bonjour %name",
-	);
-	# Russe
-	$translation['ru-RU'] = array(
-	  "Flatboard unpacking" => "Распаковка Flatboard",
-	  "Because is more faster to upload just 2 files." => "Поскольку быстрее загружать всего 2 файла.",
-	  "UNPACK" => "распаковывать",
-	  "UNPACKED !" => "РАСПАКОВКА!",
-	  "Select language" => "Выберите язык",
-	  "English" => "английский",
-	  "French" => "Французский",
-	  "Russian" => "русский",
-	  'Oups! I couldn\'t open %file' => 'Oups! Не удалось открыть файл %file',	
-	  'YEAH! Archive properly extracted to %path.<br />You will be redirected in <span id="counter">%count</span> second(s).' => 'ДА! извлечен в %path.<br />Вы будете перенаправлены в <span id="counter">%count</span> секунд (ы).',  
-	  "Hello %name" => "привет %name",
-	);	
-	
-$download = (isset($_GET['download']) ? trim(htmlspecialchars($_GET['download'])) : null);
-// Look for l in query string and set as language.
-$lang = isset($_GET['l']) ? $_GET['l'] : LANG;
+require PATH_ROOT . DS . 'footer.php';
 
-	if(isset($_SESSION['msg'])) {
-	    $msg = $_SESSION['msg'];
-	    session_unset($_SESSION['msg']);
-	} else {
-	    $msg = '';
-	}		
-	
-	function unpack_() {
-		// assuming file.zip is in the same directory as the executing script.
-		$app = APP .'.zip';	
-		// get the absolute path to $file
-		$path = pathinfo(realpath($app), PATHINFO_DIRNAME);
-					
-		$zip = new ZipArchive;
-		$res = $zip->open($app);
-		if ($res === TRUE) {
-		  // extract it to the path we determined above
-		  $zip->extractTo($path);
-		  $zip->close();
-		  sleep(1);
-		  recurse_copy(APP,'./'); 
-		  sleep(1);
-		  removeDirectory(APP);
-		  sleep(1);  
-		  	flash( 'msg', t('YEAH! Archive properly extracted to %path.<br />You will be redirected in <span id="counter">%count</span> second(s).', array('%path' => $path, '%count' => COUNTDOWN)) );
-		  	// Flatboard is extracted, delete the archive now.
-		  	unlink(dirname(__FILE__) . DS . $app);
-		} else {
-			flash( 'msg', t('Oups! I couldn\'t open %file', array('%file' => $app)), 'warning' );
-		}
-	}
-
-	function recurse_copy($src, $dst) {
-	    $dir = opendir($src);
-	    @mkdir($dst);
-	    while(false !== ( $file = readdir($dir)) ) {
-	        if (( $file != '.' ) && ( $file != '..' )) {
-	            if ( is_dir($src . DS . $file) ) {
-	                recurse_copy($src . DS . $file, $dst . DS . $file);
-	            }
-	            else {
-	                copy($src . DS . $file, $dst . DS . $file);
-	            }
-	        }
-	    }
-	    closedir($dir);
-	}
-	
-	function removeDirectory($path) {
-		$files = glob($path . '/*');
-		foreach ($files as $file) {
-			is_dir($file) ? removeDirectory($file) : unlink($file);
-		}
-		rmdir($path);
-		return;
-	}
-	/**
-	 * Function to create and display error and success messages
-	 * @access public
-	 * @param string session name
-	 * @param string message
-	 * @param string display class
-	 * @return string message
-	 */
-	function flash( $name = '', $message = '', $class = 'success' )
-	{
-	    //We can only do something if the name isn't empty
-	    if( !empty( $name ) )
-	    {
-	        //No message, create it
-	        if( !empty( $message ) && empty( $_SESSION[$name] ) )
-	        {
-	            if( !empty( $_SESSION[$name] ) )
-	            {
-	                unset( $_SESSION[$name] );
-	            }
-	            if( !empty( $_SESSION[$name.'_class'] ) )
-	            {
-	                unset( $_SESSION[$name.'_class'] );
-	            }
-	
-	            $_SESSION[$name] = $message;
-	            $_SESSION[$name.'_class'] = $class;
-	        }
-	        //Message exists, display it
-	        elseif( !empty( $_SESSION[$name] ) && empty( $message ) )
-	        {
-	            $class = !empty( $_SESSION[$name.'_class'] ) ? $_SESSION[$name.'_class'] : 'success';
-	            echo '<div class="msg '.$class.'"><span class="msg-close">&times;</span><h3 class="msg-title">Information</h3><p class="msg-message">'.$_SESSION[$name].'</p></div>';
-	            unset($_SESSION[$name]);
-	            unset($_SESSION[$name.'_class']);
-	        }
-	    }
-	}
-	/**
-	 * Translate a string
-	 * Use the $translate variable to define your set of language translations.
-	 *
-	 * @param $string
-	 *  The string that is to be translated.
-	 * @param $args
-	 *  An array of placeholders that will populate the translated string.
-	 * @param $langcode
-	 *  The language you wish to translate the string to.
-	 */
-	function t($string, $args = array(), $langcode = NULL) {
-	  global $lang, $translation;
-	  
-	  // Set language code.
-	  $langcode = isset($langcode) ? $langcode : $lang;
-	  
-	  // Search for a translated string.
-	  if ( isset($translation[$langcode][$string]) ) {
-	    $string = $translation[$langcode][$string];
-	  }
-	  
-	  // Replace arguments if present.
-	  if ( empty($args) ) {
-	    return $string;
-	  } else {
-	    foreach ( $args as $key => $value ) {
-	      switch ( $key[0] ) {
-	        case '!':
-	        case '@':
-	        case '%':
-	        default: $args[$key] = $value; break;
-	      }
-	    }
-	    
-	    return strtr($string, $args);
-	  }
-	}								
 ?>
-<!DOCTYPE html>
-<html lang="<?php echo LANG ?>">
-<head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta name="description" content="<?php echo $description ?>">
-    <title><?php echo t('Flatboard unpacking') ?></title>
-    <link rel="stylesheet prefetch" href="https://fonts.googleapis.com/css?family=Raleway">
-	<style type="text/css">*{box-sizing:border-box}html{background-color:#333;text-align:center;font-family:"Raleway";color:#fff}.header{margin-top:100px}.btn{width:150px;height:50px;background-color:#F34D35;color:#fff;border-radius:30px;display:flex;align-items:center;justify-content:center;font-family:"Raleway";position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);cursor:pointer;transition:background-color .5s}.btn:hover{background-color:#ECF0F1;color:#F34D35}.bar{width:200px;height:8px;border-radius:8px;background-color:#34495e;position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);display:none}.bar .p{width:0;border-radius:8px;height:100%;background-color:#F34D35}.container{position:absolute;transform:translate(-50%,-50%);left:50%;top:35%;width:450px}.msg{max-width:450px;width:100%;border-radius:6px;box-shadow:.0625rem .0625rem .0925rem #2d794b;padding:1px;margin:10px auto;position:relative}.msg .msg-close{position:absolute;top:10px;right:10px;cursor:pointer;font-size:18px;border-radius:50px;width:18px;height:18px;line-height:15px;text-align:center}.msg .msg-title,.msg .msg-message,.msg .msg-message a{color:#fff;font-family:'Raleway',sans-serif}.msg .msg-title{font-size:18x;font-weight:600}.msg .msg-message,.msg .msg-message a{font-weight:300;font-size:14px}.success{background:#5ed490}.success .msg-close{border:1px solid #2d794b;color:#2d794b}.warning{background:#f56668}.warning .msg-close{border:1px solid #ba4849;color:#ba4849}.info{background:#2a7ac0}.info .msg-close{border:1px solid #08345b}.danger{background:#e5a300}.danger .msg-close{border:1px solid #996d00}.select{margin:0 auto;position:relative;height:47.5px;width:250px;box-shadow:0 3px 0 rgba(0,0,0,.5)}.select:after,.select:before{position:absolute;content:'';pointer-events:none}.select:after{top:0;width:0;height:0;right:10px;bottom:0;margin:auto;border-style:solid;border-width:5px 5px 0;border-color:#000 transparent transparent}.select:before{width:30px;top:1px;right:1px;bottom:1px;background:#f5f5f5}.select:hover:before{background:#1abc9c}.select select{font-size:16px;color:#fff!important;box-shadow:none;border-radius:0;background:#333;height:100%;width:100%;cursor:pointer;outline:0;padding-right:35px;padding-left:15px;border:1px solid #000;-moz-appearance:none;-webkit-appearance:none}.select select:-moz-focusring{color:transparent;text-shadow:0 0 0 #000}.select select::-ms-expand{display:none}.select select:focus{border-color:#1abc9c}@media all and (min-width:0\0) and (min-resolution:0.001dpcm){.select select{padding-right:0}.select:after,.select:before{display:none}}</style>
-</head>
-
-<body>
-	<div class="header">
-		
-		<h1><?php echo t('Flatboard unpacking') ?></h1>
-		<h3><?php echo t('Because is more faster to upload just 2 files.') ?></h3>
-
-		<div class="select">
-		  	<?php 
-				$options = array(''=>t('Select language'),'en-US'=>t('English'),'fr-FR'=>t('French'),'ru-RU'=>t('Russian') );
-				$selected = (isset($_GET['l'])) ? $_GET['l'] : LANG;			  
-		  	?>	
-		  <select onChange="document.location.href='index.php?l=' + this.value"> 
-			<?php foreach($options as $value => $option) {
-			  echo '<option value="' .$value. '"' .($value == $selected? ' selected="selected"' : ''). '>' .$option. '</option>';		  
-			} 
-			?>
-			</select>
-		</div> 		
-		
-	</div>
-
-	<div class="container">		
-		<?php 
-			if (isset($_GET['download'])) unpack_().
-			flash('msg'); 
-		?>
-	</div>
-	
-	<div class="btn">
-	  <span><?php echo t('UNPACK') ?></span>
-	</div>
-	
-	<div class="bar">
-	  <div class="p"></div>
-	</div>
-	
-	<script src="https://code.jquery.com/jquery-3.1.0.js"></script>
-	<script>
-	$(".btn").click(function(){  /*When user click the button*/
-	  window.location = "index.php?l=<?php echo $lang ?>&download=true";
-	  $("span").fadeOut(); /*Fadeout the download span*/
-	  $(".btn").animate({  
-	    width: "50px", /*Animate the width*/
-	  },function(){
-	    $(".btn").animate({
-	      top: "40%", 
-	    },function(){
-	      $(".bar").css("display","block"); 
-	      $(".btn").html('…');
-	      $(".p").animate({width:"100%"},3500,function(){
-	        $(".btn").html('✔');
-	        $(".bar").fadeOut();
-	        $(".btn").animate({top:"50%"},function(){
-	          $(".btn").animate({width:"150px"},function(){
-	            $(".btn").html("<span><?php echo t('UNPACKED !') ?></span>");
-	            $(".p").css("width","0%");
-	            /*$(".btn").hide();*/
-	          })
-	        });
-	      });
-	    })
-	  });
-	});
-	function countdown() {
-	    var i = document.getElementById('counter');
-	    if (parseInt(i.innerHTML)<=0) {
-	        location.href = 'install.php';
-	    }
-	    i.innerHTML = parseInt(i.innerHTML)-1;
-	}
-	setInterval(function(){ countdown(); },1000);	
-	</script>
-</body>
-</html>

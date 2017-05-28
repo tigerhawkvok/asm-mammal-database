@@ -7,7 +7,7 @@
       echo $title;
       ?>
     </title>
-        <base href="http://mammaldiversity.org/" />
+        <base href="https://mammaldiversity.org/" />
     <?php include_once dirname(__FILE__)."/modular/header.php"; ?>
 
   </head>

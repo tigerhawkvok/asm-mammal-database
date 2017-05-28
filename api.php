@@ -17,12 +17,13 @@
  * @param JSON filter
  * @param boolean dwc_only
  *
- * Initial version by Philip Kahn
- * Started January 2017
+ * @author Philip Kahn / tigerhawkvok@gmail.com
+ * @date January 2017
+ *
  * Forked from
  * https://github.com/SSARHERPS/SSAR-species-database/blob/v1.2.5/commonnames_api.php
  *
- * https://github.com/tigerhawkvok/asm-mammal-database
+ * @url https://github.com/tigerhawkvok/asm-mammal-database
  **********************************************************/
 
 /*****************

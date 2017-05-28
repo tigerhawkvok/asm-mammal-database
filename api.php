@@ -141,15 +141,56 @@ switch (strtolower($_REQUEST["action"])) {
         returnAjax(getOrderedTaxonomy($_REQUEST));
         die();
         break;
+    case "query":
+        returnAjax(doLiveQuery($_REQUEST));
+        die();
+        break;
     default:
         break;
 }
 
 
+function doLiveQuery($get)
+{
+    /***
+     *
+     ***/
+    $sqlQuery = decode64($get['sql_query'], true);
+    if (empty($sqlQuery)) {
+        $sqlQuery = base64_decode(urldecode($get["sql_query"]));
+    }
+    $originalQuery = $sqlQuery;
+    # If it's a "SELECT" style statement, make sure the accessing user
+    # has permissions to read this dataset
+    $searchSql = strtolower($sqlQuery);
+    # We're going to check against well-formed selects
+    $queryPattern = '/^SELECT +((?:(`?)[a-zA-Z_\-]+\g{2}(?:, *)?)+|\*) +FROM +(`?)mammal_diversity_database\g{3}( +\(?where +((?:(?:\(?(`?)[a-zA-Z_\-]+\g{6} *= *([\'"]?)[^\'"]+\g{7})(?:(?: +AND| +OR| *,| *\)(?: +AND| +OR| *,)) +)?)+|false)\)?)?[;] *$/im';
+    $statements = explode(');', $sqlQuery);
+    $effectiveKey = 0;
+    $statementsSize = sizeof($statements);
+    foreach ($statements as $k => $statement) {
+        $statement = trim($statement);
+        if (empty($statement)) {
+            unset($statements[$k]);
+            continue;
+        }
+        $effectiveKey++;
+        $sqlAction = preg_replace($queryPattern, '$1', $statement);
+        $sqlAction = strtolower(str_replace(" ", "", $sqlAction));
+        # Looking up the columns is a safe action
+        if (preg_match('/\A(?i)SELECT +\* +(?:FROM)?[ `]*mammal_diversity_database[ `]* +(WHERE FALSE)[;]?\Z/m', $statement)) {
+            # Successful match
+            unset($restrictedActions["select"]);
+            $unrestrictedActions["select"] = true;
+        }
+    }
+    return false;
+}
 
 
 
-function getOrderedTaxonomy($get) {
+function getOrderedTaxonomy($get)
+{
     /***
      * Just a duplicate of what goes on in
      * summary.php -- except async and order-able.

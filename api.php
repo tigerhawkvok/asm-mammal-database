@@ -35,7 +35,6 @@
 if ($show_debug !== true) {
     # Rigorously avoid errors in production
     ini_set('display_errors', 0);
-
 }
 
 require dirname(__FILE__)."/CONFIG.php";
@@ -154,6 +153,13 @@ function getOrderedTaxonomy($get) {
     /***
      * Just a duplicate of what goes on in
      * summary.php -- except async and order-able.
+     *
+     * @param array $get -> the args from a GET or POST request;
+     *   expects:
+     *     - str $sort -> the column to sort by for both order and genus (validates)
+     *     - str $genus_sort -> the column to sort genera (validates)
+     *     - str $order_sort -> the column to sort Linnean "orders" (validates)
+     *     - bool $reverse -> sort by DESC rather than ASC if true
      ***/
     global $db;
     if (isset($get["sort"])) {

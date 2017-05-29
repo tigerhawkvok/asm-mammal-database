@@ -162,7 +162,11 @@ switch (strtolower($_REQUEST["action"])) {
 function doLiveQuery($get)
 {
     /***
+     * Handles directly querying the database with an SQL string.
      *
+     * @param array $get -> an array containing keys:
+     *  - @key sql_query: a base64-encoded string for an SQL statement
+     *  - @key (opt) bool dwc: If true, only return DarwinCore values
      ***/
     global $show_debug;
     $sqlQuery = decode64($get['sql_query'], true);

@@ -243,8 +243,8 @@ function doLiveQuery($get)
                             $ands = array();
                             foreach ($conds as $cond) {
                                 if (!empty(trim($cond))) {
-                                    $condParts = preg_split('/ *(=|!=|is|is not) */im', $cond, -1, PREG_SPLIT_NO_EMPTY);
-                                    $glue = preg_replace('/.*?(=|!=|is|is not).*/im', '$1', $cond);
+                                    $condParts = preg_split('/ *(=|!=| is | is not ) */im', $cond, -1, PREG_SPLIT_NO_EMPTY);
+                                    $glue = preg_replace('/.*?(=|!=| is | is not ).*/im', '$1', $cond);
                                     $col = preg_replace('/^([`]?)([a-zA-Z_\-]+)\g{1}$/im', '$2', $condParts[0]);
                                     checkColumnExists($col);
                                     $ands[] = "`$col`" . $glue . " ? ";
@@ -262,11 +262,11 @@ function doLiveQuery($get)
                             $ors = array();
                             foreach ($conds as $cond) {
                                 if (!empty(trim($cond))) {
-                                    $condParts = preg_split('/ *(=|!=|is|is not) */im', $cond, -1, PREG_SPLIT_NO_EMPTY);
-                                    $glue = preg_replace('/.*?(=|!=|is|is not).*/im', '$1', $cond);
+                                    $condParts = preg_split('/ *(=|!=| is | is not ) */im', $cond, -1, PREG_SPLIT_NO_EMPTY);
+                                    $glue = preg_replace('/.*?(=|!=| is | is not ).*/im', '$1', $cond);
                                     $col = preg_replace('/^([`]?)([a-zA-Z_\-]+)\g{1}$/im', '$2', $condParts[0]);
                                     checkColumnExists($col);
-                                    $ors[] = "``$col" . $glue . " ? ";
+                                    $ors[] = "`$col`" . $glue . " ? ";
                                     $buildWhereVals[] = preg_replace('/^([\'"]?)([^\'"]+)\g{1}$/im', '$2', $condParts[1]);
                                 }
                             }
@@ -278,12 +278,12 @@ function doLiveQuery($get)
                     }
                     $buildWhere = " WHERE ".implode(")", $buildGroup).")";
                     $query .= $buildWhere;
-                    #$stmt = $pdo->prepare($query);
-                    #$stmt->execute($buildWhereVals);
+                    $stmt = $pdo->prepare($query);
+                    $stmt->execute($buildWhereVals);
                     $data = array();
-                    #foreach($stmt as $row) {
-                    #    $data[] = $row;
-                    #}
+                    foreach($stmt as $row) {
+                        $data[] = $row;
+                    }
                     return array(
                         "query" => array(
                             "where" => $buildWhere,

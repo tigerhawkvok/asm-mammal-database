@@ -34,9 +34,14 @@
 
 #$show_debug = true;
 
-if ($show_debug !== true) {
+if ($show_debug === true) {
+    error_reporting(E_ALL);
+    ini_set('display_errors', 1);
+    error_log('API is running in debug mode!');
+    $debug = true; # compat
+} else {
     # Rigorously avoid errors in production
-        ini_set('display_errors', 0);
+    ini_set('display_errors', 0);
 }
 
 require dirname(__FILE__)."/CONFIG.php";
@@ -168,7 +173,14 @@ function doLiveQuery($get)
     # has permissions to read this dataset
     $searchSql = strtolower($sqlQuery);
     # We're going to check against well-formed selects
-    $queryPattern = '/^SELECT +((?:(`?)[a-zA-Z_\-]+\g{2}(?:, *)?)+|\*) +FROM +(`?)mammal_diversity_database\g{3}( +\(?where +((?:(?:\(?(`?)[a-zA-Z_\-]+\g{6} *= *([\'"]?)[^\'"]+\g{7})(?:(?: +AND| +OR| *,| *\)(?: +AND| +OR| *,)) +)?)+|false)\)?)?[;] *$/im';
+    $queryPattern = '/^SELECT +((?:(`?)[a-zA-Z_\-]+\g{2}(?:, *)?)+|\*) +FROM +(`?)mammal_diversity_database\g{3}( +\(?where +((?:(?:\(?(`?)[a-zA-Z_\-]+\g{6} *(?:=|!=|is|is not) *([\'"]?)[^\'"]+\g{7})(?:(?: +AND| +OR| *,| *\)(?: +AND| +OR| *,)) +)?)+|false)\)?)?[;] *$/im';
+    # Purely for emacs not liking the thing above meaning it has to be
+    #commented out in dev
+    if (!isset($queryPattern)) {
+        return array(
+            "error" => "Please uncomment \$queryPattern before using"
+        );
+    }
     $statements = explode(');', $sqlQuery);
     $effectiveKey = 0;
     $statementsSize = sizeof($statements);
@@ -186,14 +198,74 @@ function doLiveQuery($get)
             $sqlAction = "SELECT";
         } elseif (preg_match('/\A(?i)SELECT +\* +(?:FROM)?[ `]*mammal_diversity_database[ `]* +(WHERE FALSE)[;]?\Z/m', $statement)) {
             # Looking up the columns is a safe action
-                        $safePreflight = true;
+            $safePreflight = true;
             $sqlAction = "LOOKUP_COLS";
         } else {
             # Unverified action
         }
         if ($safePreflight === true) {
             try {
-                # Split up statements into chunks and prep for a safe query
+                # Split up statements into chunks and prep for a safe
+                # query
+                global $db, $default_database, $default_sql_user, $default_sql_password, $default_sql_url;
+                # We're going ito use peices of PDO since this is more
+                # or less arbitrarily specifiable by users
+                $dsn = "mysql:host=$default_sql_url;dbname=$default_database;charset=utf8";
+                $opt = array(
+                    PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+                    PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
+                    PDO::ATTR_EMULATE_PREPARES   => false,
+                );
+                $pdo = new PDO($dsn, $default_sql_user, $default_sql_password, $opt);
+                $select = preg_replace('/^SELECT +((?:(`?)[a-zA-Z_\-]+\g{2}(?:, *)?)+|\*) +FROM +(`?)mammal_diversity_database\g{3}( +\(?where +((?:(?:\(?(`?)[a-zA-Z_\-]+\g{6} *(?:=|!=|is|is not) *([\'"]?)[^\'"]+\g{7})(?:(?: +AND| +OR| *,| *\)(?: +AND| +OR| *,)) +)?)+|false)\)?)?[;] *$/im', '$1', $statement);
+
+                $query = "SELECT ".$select." FROM `".$db->getTable()."`";
+                $where = preg_replace('/^SELECT +((?:(`?)[a-zA-Z_\-]+\g{2}(?:, *)?)+|\*) +FROM +(`?)mammal_diversity_database\g{3}( +\(?where +((?:(?:\(?(`?)[a-zA-Z_\-]+\g{6} *(?:=|!=|is|is not) *([\'"]?)[^\'"]+\g{7})(?:(?: +AND| +OR| *,| *\)(?: +AND| +OR| *,)) +)?)+|false)\)?)?[;] *$/im', '${4}', $statement);
+                if (!empty($where)) {
+                    # Extract parameters from the where
+                    $buildWhere = array();
+                    $buildWhereVals = array();
+                    $where = trim($where);
+                    $whereStatements = preg_replace('/ *where *(.*) *$/im', '$1', $where);
+                    $groups = explode(")", $whereStatements);
+                    $buildGroup = array();
+                    foreach ($groups as $k => $group) {
+                        # Trim any leading parens or spaces
+                        $buildGroup[$k] = "(";
+                        $group = preg_replace('/^\(? *(.*)$/im', '$1', $group);
+                        if (preg_match('/(?: |^)and /im', $group)) {
+                            # AND statements
+                            $conds = preg_split('/ *and */im', $group);
+                            $ands = array();
+                            foreach ($conds as $cond) {
+                                if (!empty(trim($cond))) {
+                                    $condParts = preg_split('/ *(=|!=|is|is not) */im', $cond, -1, PREG_SPLIT_NO_EMPTY);
+                                    $glue = preg_replace('/.*?(=|!=|is|is not).*/im', '$1', $cond);
+                                    $ands[] = $condParts[0] . $glue . " ? ";
+                                    $buildWhereVals[] = $condParts[1];
+                                }
+                            }
+                            $buildGroup[$k] .= implode(" AND ", $ands);
+                        } elseif (preg_match('/(?: |^)or /im', $group)) {
+                            # OR statements
+                            $buildGroup[$k] = "TODO OR";
+                        } else {
+                            # What?
+                            $buildGroup[$k] = "ILLEGAL_GROUP::>>>$group<<<";
+                        }
+                    }
+                    $buildWhere = "WHERE (".implode(")", $buildGroup).")";
+                    return array(
+                        "where" => $buildWhere,
+                        "raw_where" => $where,
+                        "cleaned_where" => $whereStatements,
+                        "groups" => $groups,
+                        "build_group" => $buildGroup,
+                        "last_and" => $ands,
+                        "select" => $select,
+                        "query" => $query,
+                    );
+                }
             } catch (Exception $e) {
                 $statementResult = array(
                             "result" => "ERROR",

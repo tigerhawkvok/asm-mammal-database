@@ -164,11 +164,13 @@ function doLiveQuery($get)
     /***
      *
      ***/
+    global $show_debug;
     $sqlQuery = decode64($get['sql_query'], true);
     if (empty($sqlQuery)) {
         $sqlQuery = base64_decode(urldecode($get["sql_query"]));
     }
     $originalQuery = $sqlQuery;
+    $dwcOnly = isset($get["dwc"]) ? toBool($get["dwc"]) : false;
     # If it's a "SELECT" style statement, make sure the accessing user
     # has permissions to read this dataset
     $searchSql = strtolower($sqlQuery);
@@ -298,14 +300,26 @@ function doLiveQuery($get)
                     $stmt->execute($buildWhereVals);
                     $data = array();
                     foreach($stmt as $row) {
-                        $data[] = $row;
+                        $tmp = array(
+                            "result" => array($row),
+                        );
+                        $dwc = getDarwinCore($tmp);
+                        $dwcRow = $dwc["result"][0];
+                        if ($dwcOnly) {
+                            $dwcRow = $dwcRow["dwc"];
+                        }
+                        $data[] = $dwcRow;
                     }
-                    return array(
-                        "query" => $queryInfo,
-                        "debug" => $debugInfo,
+                    # Set a statement
+                    $statementResult = array(
+                        "result" => $data,
+                        "action" => $sqlAction,
                         "provided" => $originalQuery,
-                        "data" => $data,
+                        "query" => $queryInfo,
                     );
+                    if ($show_debug === true) {
+                        $statementResult["debug"] = $debugInfo;
+                    }
                 }
             } catch (Exception $e) {
                 $statementResult = array(
@@ -320,7 +334,6 @@ function doLiveQuery($get)
                             "provided" => $originalQuery,
                             "query" => $queryInfo,
                         );
-                global $show_debug;
                 if ($show_debug === true) {
                     $statementResult["dev_error"] = array(
                         "exception" => $e->getMessage(),
@@ -349,6 +362,7 @@ function doLiveQuery($get)
     return array(
         "status" => true,
         "statements" => $statementResponse,
+        "statement_count" => sizeof($statements),
     );
 }
 

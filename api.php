@@ -173,7 +173,7 @@ function doLiveQuery($get)
     # has permissions to read this dataset
     $searchSql = strtolower($sqlQuery);
     # We're going to check against well-formed selects
-    $queryPattern = '/^SELECT +((?:(`?)[a-zA-Z_\-]+\g{2}(?:, *)?)+|\*) +FROM +(`?)mammal_diversity_database\g{3}( +\(?where +((?:(?:\(?(`?)[a-zA-Z_\-]+\g{6} *(?:=|!=|is|is not) *([\'"]?)[^\'"]+\g{7})(?:(?: +AND| +OR| *,| *\)(?: +AND| +OR| *,)) +)?)+|false)\)?)?[;] *$/im';
+    $queryPattern = '/^SELECT +((?:(`?)[a-zA-Z_\-]+\g{2}(?:, *)?)+|\*) +FROM +(`?)mammal_diversity_database\g{3}( +\(?where +((?:(?:\(?(`?)[a-zA-Z_\-]+\g{6} *(?:=|!=| is | is not | like ) *([\'"]?)[^\'"]+\g{7})(?:(?: +AND| +OR| *,| *\)(?: +AND| +OR| *,)) +)?)+|false)\)?)?[;] *$/im';
     # Purely for emacs not liking the thing above meaning it has to be
     #commented out in dev
     if (!isset($queryPattern)) {
@@ -217,10 +217,10 @@ function doLiveQuery($get)
                     PDO::ATTR_EMULATE_PREPARES   => false,
                 );
                 $pdo = new PDO($dsn, $default_sql_user, $default_sql_password, $opt);
-                $select = preg_replace('/^SELECT +((?:(`?)[a-zA-Z_\-]+\g{2}(?:, *)?)+|\*) +FROM +(`?)mammal_diversity_database\g{3}( +\(?where +((?:(?:\(?(`?)[a-zA-Z_\-]+\g{6} *(?:=|!=|is|is not) *([\'"]?)[^\'"]+\g{7})(?:(?: +AND| +OR| *,| *\)(?: +AND| +OR| *,)) +)?)+|false)\)?)?[;] *$/im', '$1', $statement);
+                $select = preg_replace('/^SELECT +((?:(`?)[a-zA-Z_\-]+\g{2}(?:, *)?)+|\*) +FROM +(`?)mammal_diversity_database\g{3}( +\(?where +((?:(?:\(?(`?)[a-zA-Z_\-]+\g{6} *(?:=|!=| is | is not | like ) *([\'"]?)[^\'"]+\g{7})(?:(?: +AND| +OR| *,| *\)(?: +AND| +OR| *,)) +)?)+|false)\)?)?[;] *$/im', '$1', $statement);
 
                 $query = "SELECT ".$select." FROM `".$db->getTable()."`";
-                $where = preg_replace('/^SELECT +((?:(`?)[a-zA-Z_\-]+\g{2}(?:, *)?)+|\*) +FROM +(`?)mammal_diversity_database\g{3}( +\(?where +((?:(?:\(?(`?)[a-zA-Z_\-]+\g{6} *(?:=|!=|is|is not) *([\'"]?)[^\'"]+\g{7})(?:(?: +AND| +OR| *,| *\)(?: +AND| +OR| *,)) +)?)+|false)\)?)?[;] *$/im', '${4}', $statement);
+                $where = preg_replace('/^SELECT +((?:(`?)[a-zA-Z_\-]+\g{2}(?:, *)?)+|\*) +FROM +(`?)mammal_diversity_database\g{3}( +\(?where +((?:(?:\(?(`?)[a-zA-Z_\-]+\g{6} *(?:=|!=| is | is not | like ) *([\'"]?)[^\'"]+\g{7})(?:(?: +AND| +OR| *,| *\)(?: +AND| +OR| *,)) +)?)+|false)\)?)?[;] *$/im', '${4}', $statement);
                 if (!empty($where)) {
                     # Extract parameters from the where
                     $buildWhere = array();
@@ -243,10 +243,10 @@ function doLiveQuery($get)
                             $ands = array();
                             foreach ($conds as $cond) {
                                 if (!empty(trim($cond))) {
-                                    $condParts = preg_split('/ *(=|!=| is | is not ) */im', $cond, -1, PREG_SPLIT_NO_EMPTY);
-                                    $glue = preg_replace('/.*?(=|!=| is | is not ).*/im', '$1', $cond);
+                                    $condParts = preg_split('/ *(=|!=| is | is not | like ) */im', $cond, -1, PREG_SPLIT_NO_EMPTY);
+                                    $glue = preg_replace('/.*?(=|!=| is | is not | like ).*/im', '$1', $cond);
                                     $col = preg_replace('/^([`]?)([a-zA-Z_\-]+)\g{1}$/im', '$2', $condParts[0]);
-                                    $realCol = getDarwinCore($result, true, true);
+                                    $realCol = getDarwinCore($col, true, true);
                                     checkColumnExists($realCol);
                                     $ands[] = "`$realCol`" . $glue . " ? ";
                                     $buildWhereVals[] = preg_replace('/^([\'"]?)([^\'"]+)\g{1}$/im', '$2', $condParts[1]);
@@ -263,10 +263,10 @@ function doLiveQuery($get)
                             $ors = array();
                             foreach ($conds as $cond) {
                                 if (!empty(trim($cond))) {
-                                    $condParts = preg_split('/ *(=|!=| is | is not ) */im', $cond, -1, PREG_SPLIT_NO_EMPTY);
-                                    $glue = preg_replace('/.*?(=|!=| is | is not ).*/im', '$1', $cond);
+                                    $condParts = preg_split('/ *(=|!=| is | is not | like ) */im', $cond, -1, PREG_SPLIT_NO_EMPTY);
+                                    $glue = preg_replace('/.*?(=|!=| is | is not | like ).*/im', '$1', $cond);
                                     $col = preg_replace('/^([`]?)([a-zA-Z_\-]+)\g{1}$/im', '$2', $condParts[0]);
-                                    $realCol = getDarwinCore($result, true, true);
+                                    $realCol = getDarwinCore($col, true, true);
                                     checkColumnExists($realCol);
                                     $ors[] = "`$realCol`" . $glue . " ? ";
                                     $buildWhereVals[] = preg_replace('/^([\'"]?)([^\'"]+)\g{1}$/im', '$2', $condParts[1]);
@@ -280,6 +280,20 @@ function doLiveQuery($get)
                     }
                     $buildWhere = " WHERE ".implode(")", $buildGroup).")";
                     $query .= $buildWhere;
+                    # Generate some values now, in case we need to debug
+                    $queryInfo = array(
+                            "where" => $buildWhere,
+                            "values" => $buildWhereVals,
+                            "full_query" => $query,
+                        );
+                    $debugInfo = array(
+                            "raw_where" => $where,
+                            "cleaned_where" => $whereStatements,
+                            "groups" => $groups,
+                            "build_group" => $buildGroup,
+                            "last_and" => $ands,
+                            "select" => $select,
+                        );
                     $stmt = $pdo->prepare($query);
                     $stmt->execute($buildWhereVals);
                     $data = array();
@@ -287,19 +301,8 @@ function doLiveQuery($get)
                         $data[] = $row;
                     }
                     return array(
-                        "query" => array(
-                            "where" => $buildWhere,
-                            "values" => $buildWhereVals,
-                            "full_query" => $query,
-                        ),
-                        "debug" => array(
-                            "raw_where" => $where,
-                            "cleaned_where" => $whereStatements,
-                            "groups" => $groups,
-                            "build_group" => $buildGroup,
-                            "last_and" => $ands,
-                            "select" => $select,
-                        ),
+                        "query" => $queryInfo,
+                        "debug" => $debugInfo,
                         "provided" => $originalQuery,
                         "data" => $data,
                     );
@@ -314,10 +317,15 @@ function doLiveQuery($get)
                             ),
                             "action" => $sqlAction,
                             "original_results" => $statementResult,
+                            "provided" => $originalQuery,
+                            "query" => $queryInfo,
                         );
                 global $show_debug;
                 if ($show_debug === true) {
-                    $statementResult["dev_error"] = $e->getMessage();
+                    $statementResult["dev_error"] = array(
+                        "exception" => $e->getMessage(),
+                        "debug" => $debugInfo,
+                    );
                 }
                 # Log to error log
             }
@@ -332,6 +340,8 @@ function doLiveQuery($get)
                             ),
                             "action" => $sqlAction,
                             "original_results" => $statementResult,
+                            "provided" => $originalQuery,
+                            "query" => $queryInfo,
                         );
         }
         $statementResponse[] = $statementResult;

@@ -1,7 +1,8 @@
 <?php
 
+
 /***********************************************************
- * ASM Species database API target
+* ASM Species database API target
  *
  * Find the full API description here:
  *
@@ -26,15 +27,16 @@
  * @url https://github.com/tigerhawkvok/asm-mammal-database
  **********************************************************/
 
+
 /*****************
- * Setup
+* Setup
  *****************/
 
 #$show_debug = true;
 
 if ($show_debug !== true) {
     # Rigorously avoid errors in production
-    ini_set('display_errors', 0);
+        ini_set('display_errors', 0);
 }
 
 require dirname(__FILE__)."/CONFIG.php";
@@ -54,14 +56,13 @@ if (!function_exists('elapsed')) {
     function elapsed($start_time = null)
     {
         /***
-       * Return the duration since the start time in
-       * milliseconds.
-       * If no start time is provided, it'll try to use the global
-       * variable $start_script_timer
-       *
-       * @param float $start_time in unix epoch. See http://us1.php.net/microtime
-       ***/
-
+         * Return the duration since the start time in
+         * milliseconds.
+         * If no start time is provided, it'll try to use the global
+         * variable $start_script_timer
+         *
+         * @param float $start_time in unix epoch. See http://us1.php.net/microtime
+         ***/
         if (!is_numeric($start_time)) {
             global $start_script_timer;
             if (is_numeric($start_script_timer)) {
@@ -73,6 +74,7 @@ if (!function_exists('elapsed')) {
         return 1000*(microtime_float() - (float)$start_time);
     }
 }
+
 
 if (!function_exists("returnAjax")) {
     function returnAjax($data)
@@ -98,6 +100,7 @@ if (!function_exists("returnAjax")) {
 }
 
 
+
 function checkColumnExists($column_list)
 {
     /***
@@ -119,15 +122,15 @@ function checkColumnExists($column_list)
     return true;
 }
 
+
+
 if (boolstr($_REQUEST["missing"]) || boolstr($_REQUEST["fetch_missing"])) {
     $save = isset($_REQUEST["prefetch"]) ? boolstr($_REQUEST["prefetch"]) : false;
     returnAjax(getTaxonIucnData($_REQUEST), $save);
 }
-
 if (boolstr($_REQUEST["get_unique"])) {
     returnAjax(getUniqueVals($_REQUEST["col"]));
 }
-
 if (boolstr($_REQUEST["random"])) {
     $query = "SELECT `genus`, `species`, `subspecies` from `".$db->getTable()."` ORDER BY RAND() LIMIT 1";
     $result = mysqli_query($db->getLink(), $query);
@@ -150,6 +153,7 @@ switch (strtolower($_REQUEST["action"])) {
 }
 
 
+
 function doLiveQuery($get)
 {
     /***
@@ -168,6 +172,7 @@ function doLiveQuery($get)
     $statements = explode(');', $sqlQuery);
     $effectiveKey = 0;
     $statementsSize = sizeof($statements);
+    $statementResponse = array();
     foreach ($statements as $k => $statement) {
         $statement = trim($statement);
         if (empty($statement)) {
@@ -175,14 +180,45 @@ function doLiveQuery($get)
             continue;
         }
         $effectiveKey++;
-        $sqlAction = preg_replace($queryPattern, '$1', $statement);
-        $sqlAction = strtolower(str_replace(" ", "", $sqlAction));
-        # Looking up the columns is a safe action
-        if (preg_match('/\A(?i)SELECT +\* +(?:FROM)?[ `]*mammal_diversity_database[ `]* +(WHERE FALSE)[;]?\Z/m', $statement)) {
-            # Successful match
-            unset($restrictedActions["select"]);
-            $unrestrictedActions["select"] = true;
+        $safePreflight = false;
+        if (preg_match($queryPattern, $statement)) {
+            $safePreflight = true;
+            $sqlAction = "SELECT";
+        } elseif (preg_match('/\A(?i)SELECT +\* +(?:FROM)?[ `]*mammal_diversity_database[ `]* +(WHERE FALSE)[;]?\Z/m', $statement)) {
+            # Looking up the columns is a safe action
+                        $safePreflight = true;
+            $sqlAction = "LOOKUP_COLS";
+        } else {
+            # Unverified action
         }
+        if ($safePreflight === true) {
+            try {
+                # Split up statements into chunks and prep for a safe query
+            } catch (Exception $e) {
+                $statementResult = array(
+                            "result" => "ERROR",
+                            "error" => array(
+                                "safety_check" => $safePreflight,
+                                "sql_response" => null,
+                                "was_server_exception" => true,
+                            ),
+                            "action" => $sqlAction,
+                        );
+                # Log to error log
+            }
+        } else {
+            $sqlAction = preg_replace('/^([a-z-A-Z]+).*$/im', '$1', $statement);
+            $statementResult = array(
+                            "result" => "ERROR",
+                            "error" => array(
+                                "safety_check" => $safePreflight,
+                                "sql_response" => null,
+                                "was_server_exception" => false,
+                            ),
+                            "action" => $sqlAction,
+                        );
+        }
+        $statementResponse[] = $statementResult;
     }
     return false;
 }
@@ -191,17 +227,18 @@ function doLiveQuery($get)
 
 function getOrderedTaxonomy($get)
 {
-    /***
-     * Just a duplicate of what goes on in
-     * summary.php -- except async and order-able.
-     *
-     * @param array $get -> the args from a GET or POST request;
-     *   expects:
-     *     - str $sort -> the column to sort by for both order and genus (validates)
-     *     - str $genus_sort -> the column to sort genera (validates)
-     *     - str $order_sort -> the column to sort Linnean "orders" (validates)
-     *     - bool $reverse -> sort by DESC rather than ASC if true
-     ***/
+
+   /***
+    * Just a duplicate of what goes on in
+    * summary.php -- except async and order-able.
+    *
+    * @param array $get -> the args from a GET or POST request;
+    *   expects:
+    *     - str $sort -> the column to sort by for both order and genus (validates)
+    *     - str $genus_sort -> the column to sort genera (validates)
+    *     - str $order_sort -> the column to sort Linnean "orders" (validates)
+    *     - bool $reverse -> sort by DESC rather than ASC if true
+    ***/
     global $db;
     if (isset($get["sort"])) {
         # Set them to the same thing
@@ -214,18 +251,20 @@ function getOrderedTaxonomy($get)
     }
     $reverse = isset($get["reverse"]) ? toBool($get["reverse"]) : false;
     $response = array(
-        "status" => true,
-        "taxonomy" => array(
-            "order" => null,
-            "genus" => null,
-        ),
-        "provided" => $get,
-    );
+            "status" => true,
+            "taxonomy" => array(
+                "order" => null,
+                "genus" => null,
+            ),
+            "provided" => $get,
+        );
     if ($orderOrderBy != "count") {
-        checkColumnExists($orderOrderBy); # Errors out on its own on fail
+        checkColumnExists($orderOrderBy);
+        # Errors out on its own on fail
     }
     if ($genusOrderBy != "count") {
-        checkColumnExists($genusOrderBy); # Errors out on its own on fail
+        checkColumnExists($genusOrderBy);
+        # Errors out on its own on fail
     }
     if ($reverse) {
         $orderOrderBy .= " DESC";
@@ -254,33 +293,34 @@ function getOrderedTaxonomy($get)
             $genusTotal++;
         }
         $genusBreakdown[$taxon] = array(
-            "data" => $tmpData,
-            "labels" => $tmpLabels,
-        );
+                    "data" => $tmpData,
+                    "labels" => $tmpLabels,
+                );
     }
     $response["taxonomy"]["order"] = array(
-        "labels" => $labels,
-        "data" => $data,
-        "params" => array(
-            #"query" => $linneanOrderBinQuery,
-            "order" => $orderOrderBy,
-        ),
-    );
+            "labels" => $labels,
+            "data" => $data,
+            "params" => array(
+                #"query" => $linneanOrderBinQuery,
+                "order" => $orderOrderBy,
+            ),
+        );
     $response["taxonomy"]["genus"] = array(
-        "data" => $genusBreakdown,
-        "params" => array(
-            #"query" => null,
-            "order" => $genusOrderBy,
-        ),
-    );
+            "data" => $genusBreakdown,
+            "params" => array(
+                #"query" => null,
+                "order" => $genusOrderBy,
+            ),
+        );
     returnAjax($response);
 }
 
 
 
+
 /*****************************
- * Setup flags
- *****************************/
+* Setup flags
+*****************************/
 
 $flag_fuzzy = boolstr($_REQUEST['fuzzy']);
 $loose = boolstr($_REQUEST['loose']);
@@ -294,19 +334,20 @@ checkColumnExists($_REQUEST['order']);
 $order_by = isset($_REQUEST['order']) ? $_REQUEST['order']:"genus,species,subspecies,common_name";
 
 $params = array();
-$boolean_type = false; # This is always set by the filter
+$boolean_type = false;
+# This is always set by the filter
 $filter_params = null;
 $extra_deprecated_params = null;
 if (isset($_REQUEST['filter'])) {
     $params = smart_decode64($_REQUEST['filter']);
     if (empty($params)) {
         # Not base 64 encoded
-        $params_temp = json_decode($_REQUEST['filter'], true);
+                $params_temp = json_decode($_REQUEST['filter'], true);
         if (!empty($params_temp)) {
             $params = array();
             foreach ($params_temp as $col => $lookup) {
                 # Smart_decode takes care of this for us
-                $params[$db->sanitize(deEscape($col))] = $db->sanitize(deEscape($lookup));
+                                $params[$db->sanitize(deEscape($col))] = $db->sanitize(deEscape($lookup));
             }
         }
     }
@@ -362,7 +403,6 @@ if (isset($_REQUEST['filter'])) {
 $search = strtolower($db->sanitize(deEscape(urldecode($_REQUEST['q']))));
 
 
-
 /*****************************
  * The actual handlers
  *****************************/
@@ -402,12 +442,15 @@ function fetchMajorMinorGroups($scientific = false)
           );
 }
 
+
 /***
  * Break out early for these special cases
  ***/
+
 if (toBool($_REQUEST["fetch-groups"])) {
     returnAjax(fetchMajorMinorGroups($_REQUEST["scientific"]));
 }
+
 
 
 function areSimilar($string1, $string2, $distance = 70, $depth = 3)
@@ -439,6 +482,8 @@ function areSimilar($string1, $string2, $distance = 70, $depth = 3)
     return false;
 }
 
+
+
 function handleParamSearch($filter_params, $loose = false, $boolean_type = "AND", $extra_params = false)
 {
     /***
@@ -464,7 +509,7 @@ function handleParamSearch($filter_params, $loose = false, $boolean_type = "AND"
             $where =  "(".$where." OR " . $extra_deprecated_params .")";
         }
         $where .= " AND (".$extra_params.")";
-      # $where .= " " . strtoupper($boolean_type) . " (".$extra_params.")";
+        # $where .= " " . strtoupper($boolean_type) . " (".$extra_params.")";
     } elseif (!empty($extra_deprecated_params)) {
         $where .= " OR (".$extra_deprecated_params.")";
     }
@@ -490,6 +535,7 @@ function handleParamSearch($filter_params, $loose = false, $boolean_type = "AND"
     }
     return $result_vector;
 }
+
 
 /*********************************************************
  *
@@ -547,7 +593,8 @@ function doSearch($overrideSearch = null)
         } elseif (is_numeric($search)) {
             $method="year_search";
             $col = "authority_year";
-            $loose = true; # Always true because of the way data is stored
+            $loose = true;
+            # Always true because of the way data is stored
             $params[$col] = $search;
             $r = $db->doQuery($params, "*", "or", $loose, true, $order_by);
             try {
@@ -819,7 +866,8 @@ function doSearch($overrideSearch = null)
                                     $where[] = "(".implode($match_glue, $fuzzy_params).")";
                                 }
                             }
-                            $params = null; # Clear it out for the return
+                            $params = null;
+                            # Clear it out for the return
                             $where_statement = implode($where_glue, $where);
                             $l = $db->openDB();
                             $query = "SELECT * FROM `".$db->getTable()."` WHERE ";
@@ -844,6 +892,7 @@ function doSearch($overrideSearch = null)
                             $error = $e;
                         }
                     }
+
                     /*
                      * If the method was
                      * space_common_fallback, let's double
@@ -912,6 +961,7 @@ function doSearch($overrideSearch = null)
     }
 }
 
+
 $result = doSearch();
 
 /***
@@ -924,11 +974,9 @@ $result = doSearch();
 
 $apiTarget = "http://apiv3.iucnredlist.org/api/v3/species/";
 $args = "token=" . $iucnToken;
-
 $iucnCanProvide = array(
     "common_name" => "main_common_name",
     "species_authority" => "authority",
-
 );
 
 function getTaxonIucnData($taxonBase, $ignoreFlagSave = false)
@@ -960,7 +1008,6 @@ function getTaxonIucnData($taxonBase, $ignoreFlagSave = false)
             break;
         }
     }
-
     if ($doIucn === true) {
         # IUCN returns an empty result unless "%20" is used to separate the
         # genus and species
@@ -987,19 +1034,35 @@ function getTaxonIucnData($taxonBase, $ignoreFlagSave = false)
             $taxon["save_result"] = $saveResult;
         }
         $taxon["did_update"] = $flagSave;
-
         $taxon["iucn"] = $iucnTaxon;
         unset($taxon["id"]);
     }
-
-    $hasWellFormattedSpeciesCitation = preg_match('/\(? *([\w\. \[\]]+), *([0-9]{4}) *\)?/im', $taxon["species_authority"]);
+    $hasWellFormattedSpeciesCitation = preg_match('/\(? *([\w\. \[\]]+), *([0-9]{
+                        4
+                    }
+                    ) *\)?/im', $taxon["species_authority"]);
     if (empty($taxon["genus_authority"]) && $hasWellFormattedSpeciesCitation) {
-        $authority = preg_replace('/\(? *(([\w\. \[\]]+(,|&|&amp;|&amp;amp;)?)+), *([0-9]{4}) *\)?/im', '$1', $taxon["species_authority"]);
-        $authorityYear = preg_replace('/\(? *(([\w\. \[\]]+(,|&|&amp;|&amp;amp;)?)+), *([0-9]{4}) *\)?/im', '$4', $taxon["species_authority"]);
+        $authority = preg_replace('/\(? *(([\w\. \[\]]+(,|&|&amp;
+                    |&amp;
+                    amp;
+                    )?)+), *([0-9]{
+                        4
+                    }
+                    ) *\)?/im', '$1', $taxon["species_authority"]);
+        $authorityYear = preg_replace('/\(? *(([\w\. \[\]]+(,|&|&amp;
+                    |&amp;
+                    amp;
+                    )?)+), *([0-9]{
+                        4
+                    }
+                    ) *\)?/im', '$4', $taxon["species_authority"]);
         $taxon["authority_year"] = json_encode(array(
             $authorityYear => $authorityYear,
         ));
-        $parensState = preg_match('/\( *([\w\. \[\]]+), *([0-9]{4}) *\)/im', $taxon["species_authority"]) ? true:false;
+        $parensState = preg_match('/\( *([\w\. \[\]]+), *([0-9]{
+                        4
+                    }
+                    ) *\)/im', $taxon["species_authority"]) ? true:false;
         $taxon["genus_authority"] = $authority;
         $taxon["species_authority"] = $authority;
         $taxon["parens_auth_genus"] = $parensState;
@@ -1054,7 +1117,6 @@ if (sizeof($result["result"]) <= 5) {
                 break;
             }
         }
-
         if ($doIucn === true) {
             # IUCN returns an empty result unless "%20" is used to separate the
             # genus and species
@@ -1093,8 +1155,6 @@ if (sizeof($result["result"]) <= 5) {
     $result["do_client_update"] = true;
 }
 
-
-
 # DarwinCore mapping
 # http://rs.tdwg.org/dwc/terms/
 $dwcResultMap = array(
@@ -1107,16 +1167,12 @@ $dwcResultMap = array(
     "linnean_order" => "order",
     "linnean_family" => "family",
 );
-
 $higherClassificationMap = array(
     "simple_linnean_group" => "cohort",
     "major_type" => "magnaorder",
     "major_subtype" => "superorder",
 );
-
-
 $dwcTotal = array();
-
 foreach ($result["result"] as $i => $taxon) {
     $dwcResult = array();
     $higherClassification = array();

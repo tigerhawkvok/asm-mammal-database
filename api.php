@@ -1272,74 +1272,88 @@ if (sizeof($result["result"]) <= 5) {
     $result["do_client_update"] = true;
 }
 
-# DarwinCore mapping
-# http://rs.tdwg.org/dwc/terms/
-$dwcResultMap = array(
-    "subspecies" => "subspecificEpithet",
-    "genus" => "genus",
-    "species" => "specificEpithet",
-    "canonical_sciname" => "scientificName",
-    "citation" => "namePublishedIn",
-    "common_name" => "vernacularName",
-    "linnean_order" => "order",
-    "linnean_family" => "family",
-);
-$higherClassificationMap = array(
-    "simple_linnean_group" => "cohort",
-    "major_type" => "magnaorder",
-    "major_subtype" => "superorder",
-);
-$dwcTotal = array();
-foreach ($result["result"] as $i => $taxon) {
-    $dwcResult = array();
-    $higherClassification = array();
-    foreach ($taxon as $key => $value) {
-        if (array_key_exists($key, $dwcResultMap)) {
-            $dwcResult[$dwcResultMap[$key]] = $value;
+function getDarwinCore($result, $mapOnly = false, $reverseMap = false) {
+    # DarwinCore mapping
+    # http://rs.tdwg.org/dwc/terms/
+    $dwcResultMap = array(
+        "subspecies" => "subspecificEpithet",
+        "genus" => "genus",
+        "species" => "specificEpithet",
+        "canonical_sciname" => "scientificName",
+        "citation" => "namePublishedIn",
+        "common_name" => "vernacularName",
+        "linnean_order" => "order",
+        "linnean_family" => "family",
+    );
+    if ($mapOnly === true) {
+        if ($reverseMap === true) {
+            foreach ($dwcResultMap as $db => $dc) {
+                if ($result == $dc) return $db;
+            }
+            return $result;
         }
-        if (array_key_exists($key, $higherClassificationMap) && !empty($value)) {
-            $higherClassification[$higherClassificationMap[$key]] = $value;
+        return $dwcResultMap[$result];
+    }
+    $higherClassificationMap = array(
+        "simple_linnean_group" => "cohort",
+        "major_type" => "magnaorder",
+        "major_subtype" => "superorder",
+    );
+    $dwcTotal = array();
+    foreach ($result["result"] as $i => $taxon) {
+        $dwcResult = array();
+        $higherClassification = array();
+        foreach ($taxon as $key => $value) {
+            if (array_key_exists($key, $dwcResultMap)) {
+                $dwcResult[$dwcResultMap[$key]] = $value;
+            }
+            if (array_key_exists($key, $higherClassificationMap) && !empty($value)) {
+                $higherClassification[$higherClassificationMap[$key]] = $value;
+            }
         }
-    }
-    # Lucky us, it's alphabetical
-    ksort($higherClassification);
-    $list = implode("|", $higherClassification);
-    $higherClassification["list"] = $list;
-    $dwcResult["higherClassification"] = $higherClassification;
-    if (isset($taxon["species_authority"])) {
-        $years = json_decode($taxon["authority_year"], true);
-        $genusYear = key($years);
-        $speciesYear = current($years);
-        $genus = empty($genusYear) ? $taxon["genus_authority"] : $taxon["genus_authority"] . ", " . $genusYear;
-        $species = empty($speciesYear) ? $taxon["species_authority"] : $taxon["species_authority"] . ", " . $speciesYear;
-        $genus = toBool($taxon["parens_auth_genus"]) ? "($genus)" : $genus;
-        $species = toBool($taxon["parens_auth_species"]) ? "($species)" : $species;
-        $dwcResult["scientificNameAuthorship"] = array(
-            "genus" => $genus,
-            "species" => $species,
-        );
-    }
-    $dwcResult["taxonRank"] = "species";
-    $dwcResult["class"] = "mammalia";
-    $dwcResult["taxonomicStatus"] = "accepted";
-    if (isset($taxon["canonical_sciname"])) {
-        $dwcResult["dcterms:bibliographicCitation"] = $taxon["canonical_sciname"]." (ASM Species Account Database #".$taxon["internal_id"].") fetched ".date(DATE_ISO8601);
-    }
-    $dwcResult["dcterms:language"] = "en";
-    if (isset($taxon["taxon_credit_date"])) {
-        $creditTime = strtotime($taxon["taxon_credit_date"]);
-        if ($creditTime === false) {
-            $creditTime = intval($taxon["taxon_credit_date"]);
+        # Lucky us, it's alphabetical
+        ksort($higherClassification);
+        $list = implode("|", $higherClassification);
+        $higherClassification["list"] = $list;
+        $dwcResult["higherClassification"] = $higherClassification;
+        if (isset($taxon["species_authority"])) {
+            $years = json_decode($taxon["authority_year"], true);
+            $genusYear = key($years);
+            $speciesYear = current($years);
+            $genus = empty($genusYear) ? $taxon["genus_authority"] : $taxon["genus_authority"] . ", " . $genusYear;
+            $species = empty($speciesYear) ? $taxon["species_authority"] : $taxon["species_authority"] . ", " . $speciesYear;
+            $genus = toBool($taxon["parens_auth_genus"]) ? "($genus)" : $genus;
+            $species = toBool($taxon["parens_auth_species"]) ? "($species)" : $species;
+            $dwcResult["scientificNameAuthorship"] = array(
+                "genus" => $genus,
+                "species" => $species,
+            );
         }
-        if (!is_numeric($creditTime) || $creditTime == 0) {
-            $creditTime = time();
+        $dwcResult["taxonRank"] = "species";
+        $dwcResult["class"] = "mammalia";
+        $dwcResult["taxonomicStatus"] = "accepted";
+        if (isset($taxon["canonical_sciname"])) {
+            $dwcResult["dcterms:bibliographicCitation"] = $taxon["canonical_sciname"]." (ASM Species Account Database #".$taxon["internal_id"].") fetched ".date(DATE_ISO8601);
         }
-        $dwcResult["dcterms:modified"] = date(DATE_ISO8601, $creditTime);
+        $dwcResult["dcterms:language"] = "en";
+        if (isset($taxon["taxon_credit_date"])) {
+            $creditTime = strtotime($taxon["taxon_credit_date"]);
+            if ($creditTime === false) {
+                $creditTime = intval($taxon["taxon_credit_date"]);
+            }
+            if (!is_numeric($creditTime) || $creditTime == 0) {
+                $creditTime = time();
+            }
+            $dwcResult["dcterms:modified"] = date(DATE_ISO8601, $creditTime);
+        }
+        $dwcResult["dcterms:license"] = "https://creativecommons.org/licenses/by-nc/4.0/legalcode";
+        $result["result"][$i]["dwc"] = $dwcResult;
+        $dwcTotal[] = $dwcResult;
     }
-    $dwcResult["dcterms:license"] = "https://creativecommons.org/licenses/by-nc/4.0/legalcode";
-    $result["result"][$i]["dwc"] = $dwcResult;
-    $dwcTotal[] = $dwcResult;
+    return $result;
 }
+
+$result = getDarwinCore($result);
 
 if (toBool($_REQUEST["dwc_only"])) {
     $result["result"] = $dwcTotal;

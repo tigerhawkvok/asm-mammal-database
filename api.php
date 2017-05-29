@@ -1,7 +1,8 @@
 <?php
 
+
 /***********************************************************
- * ASM Species database API target
+* ASM Species database API target
  *
  * Find the full API description here:
  *
@@ -26,13 +27,19 @@
  * @url https://github.com/tigerhawkvok/asm-mammal-database
  **********************************************************/
 
+
 /*****************
- * Setup
+* Setup
  *****************/
 
 #$show_debug = true;
 
-if ($show_debug !== true) {
+if ($show_debug === true) {
+    error_reporting(E_ALL);
+    ini_set('display_errors', 1);
+    error_log('API is running in debug mode!');
+    $debug = true; # compat
+} else {
     # Rigorously avoid errors in production
     ini_set('display_errors', 0);
 }
@@ -54,14 +61,13 @@ if (!function_exists('elapsed')) {
     function elapsed($start_time = null)
     {
         /***
-       * Return the duration since the start time in
-       * milliseconds.
-       * If no start time is provided, it'll try to use the global
-       * variable $start_script_timer
-       *
-       * @param float $start_time in unix epoch. See http://us1.php.net/microtime
-       ***/
-
+         * Return the duration since the start time in
+         * milliseconds.
+         * If no start time is provided, it'll try to use the global
+         * variable $start_script_timer
+         *
+         * @param float $start_time in unix epoch. See http://us1.php.net/microtime
+         ***/
         if (!is_numeric($start_time)) {
             global $start_script_timer;
             if (is_numeric($start_script_timer)) {
@@ -73,6 +79,7 @@ if (!function_exists('elapsed')) {
         return 1000*(microtime_float() - (float)$start_time);
     }
 }
+
 
 if (!function_exists("returnAjax")) {
     function returnAjax($data)
@@ -98,6 +105,7 @@ if (!function_exists("returnAjax")) {
 }
 
 
+
 function checkColumnExists($column_list)
 {
     /***
@@ -119,15 +127,15 @@ function checkColumnExists($column_list)
     return true;
 }
 
+
+
 if (boolstr($_REQUEST["missing"]) || boolstr($_REQUEST["fetch_missing"])) {
     $save = isset($_REQUEST["prefetch"]) ? boolstr($_REQUEST["prefetch"]) : false;
     returnAjax(getTaxonIucnData($_REQUEST), $save);
 }
-
 if (boolstr($_REQUEST["get_unique"])) {
     returnAjax(getUniqueVals($_REQUEST["col"]));
 }
-
 if (boolstr($_REQUEST["random"])) {
     $query = "SELECT `genus`, `species`, `subspecies` from `".$db->getTable()."` ORDER BY RAND() LIMIT 1";
     $result = mysqli_query($db->getLink(), $query);
@@ -141,26 +149,239 @@ switch (strtolower($_REQUEST["action"])) {
         returnAjax(getOrderedTaxonomy($_REQUEST));
         die();
         break;
+    case "query":
+        returnAjax(doLiveQuery($_REQUEST));
+        die();
+        break;
     default:
         break;
 }
 
 
 
-
-
-function getOrderedTaxonomy($get) {
+function doLiveQuery($get)
+{
     /***
-     * Just a duplicate of what goes on in
-     * summary.php -- except async and order-able.
      *
-     * @param array $get -> the args from a GET or POST request;
-     *   expects:
-     *     - str $sort -> the column to sort by for both order and genus (validates)
-     *     - str $genus_sort -> the column to sort genera (validates)
-     *     - str $order_sort -> the column to sort Linnean "orders" (validates)
-     *     - bool $reverse -> sort by DESC rather than ASC if true
      ***/
+    global $show_debug;
+    $sqlQuery = decode64($get['sql_query'], true);
+    if (empty($sqlQuery)) {
+        $sqlQuery = base64_decode(urldecode($get["sql_query"]));
+    }
+    $originalQuery = $sqlQuery;
+    $dwcOnly = isset($get["dwc"]) ? toBool($get["dwc"]) : false;
+    # If it's a "SELECT" style statement, make sure the accessing user
+    # has permissions to read this dataset
+    $searchSql = strtolower($sqlQuery);
+    # We're going to check against well-formed selects
+    $queryPattern = '/^SELECT +((?:(`?)[a-zA-Z_\-]+\g{2}(?:, *)?)+|\*) +FROM +(`?)mammal_diversity_database\g{3}( +\(?where +((?:(?:\(?(`?)[a-zA-Z_\-]+\g{6} *(?:=|!=| is | is not | like ) *([\'"]?)[^\'"]+\g{7})(?:(?: +AND| +OR| *,| *\)(?: +AND| +OR| *,)) +)?)+|false)\)?)?[;] *$/im';
+    # Purely for emacs not liking the thing above meaning it has to be
+    #commented out in dev
+    if (!isset($queryPattern)) {
+        return array(
+            "error" => "Please uncomment \$queryPattern before using"
+        );
+    }
+    $statements = explode(');', $sqlQuery);
+    $effectiveKey = 0;
+    $statementsSize = sizeof($statements);
+    $statementResponse = array();
+    foreach ($statements as $k => $statement) {
+        $statement = trim($statement);
+        if (empty($statement)) {
+            unset($statements[$k]);
+            continue;
+        }
+        $effectiveKey++;
+        $safePreflight = false;
+        if (preg_match($queryPattern, $statement)) {
+            $safePreflight = true;
+            $sqlAction = "SELECT";
+        } elseif (preg_match('/\A(?i)SELECT +\* +(?:FROM)?[ `]*mammal_diversity_database[ `]* +(WHERE FALSE)[;]?\Z/m', $statement)) {
+            # Looking up the columns is a safe action
+            $safePreflight = true;
+            $sqlAction = "LOOKUP_COLS";
+        } else {
+            # Unverified action
+        }
+        if ($safePreflight === true) {
+            try {
+                # Split up statements into chunks and prep for a safe
+                # query
+                global $db, $default_database, $default_sql_user, $default_sql_password, $default_sql_url;
+                # We're going ito use peices of PDO since this is more
+                # or less arbitrarily specifiable by users
+                $dsn = "mysql:host=$default_sql_url;dbname=$default_database;charset=utf8";
+                $opt = array(
+                    PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+                    PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
+                    PDO::ATTR_EMULATE_PREPARES   => false,
+                );
+                $pdo = new PDO($dsn, $default_sql_user, $default_sql_password, $opt);
+                $select = preg_replace('/^SELECT +((?:(`?)[a-zA-Z_\-]+\g{2}(?:, *)?)+|\*) +FROM +(`?)mammal_diversity_database\g{3}( +\(?where +((?:(?:\(?(`?)[a-zA-Z_\-]+\g{6} *(?:=|!=| is | is not | like ) *([\'"]?)[^\'"]+\g{7})(?:(?: +AND| +OR| *,| *\)(?: +AND| +OR| *,)) +)?)+|false)\)?)?[;] *$/im', '$1', $statement);
+
+                $query = "SELECT ".$select." FROM `".$db->getTable()."`";
+                $where = preg_replace('/^SELECT +((?:(`?)[a-zA-Z_\-]+\g{2}(?:, *)?)+|\*) +FROM +(`?)mammal_diversity_database\g{3}( +\(?where +((?:(?:\(?(`?)[a-zA-Z_\-]+\g{6} *(?:=|!=| is | is not | like ) *([\'"]?)[^\'"]+\g{7})(?:(?: +AND| +OR| *,| *\)(?: +AND| +OR| *,)) +)?)+|false)\)?)?[;] *$/im', '${4}', $statement);
+                if (!empty($where)) {
+                    # Extract parameters from the where
+                    $buildWhere = array();
+                    $buildWhereVals = array();
+                    $where = trim($where);
+                    $whereStatements = preg_replace('/ *where *(.*) *$/im', '$1', $where);
+                    $groups = explode(")", $whereStatements);
+                    $buildGroup = array();
+                    foreach ($groups as $k => $group) {
+                        # Trim any leading parens or spaces
+                        $buildGroup[$k] = "(";
+                        $group = preg_replace('/^\(? *(.*)$/im', '$1', $group);
+                        if (preg_match('/(?: |^)and /im', $group)) {
+                            # AND statements
+                            if (preg_match('/^and /im', $group)) {
+                                # The group leads with an and
+                                $buildGroup[$k] = " AND (";
+                            }
+                            $conds = preg_split('/(?: |^)and */im', $group);
+                            $ands = array();
+                            foreach ($conds as $cond) {
+                                if (!empty(trim($cond))) {
+                                    $condParts = preg_split('/ *(=|!=| is | is not | like ) */im', $cond, -1, PREG_SPLIT_NO_EMPTY);
+                                    $glue = preg_replace('/.*?(=|!=| is | is not | like ).*/im', '$1', $cond);
+                                    $col = preg_replace('/^([`]?)([a-zA-Z_\-]+)\g{1}$/im', '$2', $condParts[0]);
+                                    $realCol = getDarwinCore($col, true, true);
+                                    checkColumnExists($realCol);
+                                    $ands[] = "`$realCol`" . $glue . " ? ";
+                                    $buildWhereVals[] = preg_replace('/^([\'"]?)([^\'"]+)\g{1}$/im', '$2', $condParts[1]);
+                                }
+                            }
+                            $buildGroup[$k] .= implode(" AND ", $ands);
+                        } elseif (preg_match('/(?: |^)or /im', $group)) {
+                            # OR statements
+                            if (preg_match('/^or /im', $group)) {
+                                # The group leads with an or
+                                $buildGroup[$k] = " OR (";
+                            }
+                            $conds = preg_split('/(?: |^)or */im', $group);
+                            $ors = array();
+                            foreach ($conds as $cond) {
+                                if (!empty(trim($cond))) {
+                                    $condParts = preg_split('/ *(=|!=| is | is not | like ) */im', $cond, -1, PREG_SPLIT_NO_EMPTY);
+                                    $glue = preg_replace('/.*?(=|!=| is | is not | like ).*/im', '$1', $cond);
+                                    $col = preg_replace('/^([`]?)([a-zA-Z_\-]+)\g{1}$/im', '$2', $condParts[0]);
+                                    $realCol = getDarwinCore($col, true, true);
+                                    checkColumnExists($realCol);
+                                    $ors[] = "`$realCol`" . $glue . " ? ";
+                                    $buildWhereVals[] = preg_replace('/^([\'"]?)([^\'"]+)\g{1}$/im', '$2', $condParts[1]);
+                                }
+                            }
+                            $buildGroup[$k] .= implode(" or ", $ors);
+                        } else {
+                            # What?
+                            $buildGroup[$k] = "ILLEGAL_GROUP::>>>$group<<<";
+                        }
+                    }
+                    $buildWhere = " WHERE ".implode(")", $buildGroup).")";
+                    $query .= $buildWhere;
+                    # Generate some values now, in case we need to debug
+                    $queryInfo = array(
+                            "where" => $buildWhere,
+                            "values" => $buildWhereVals,
+                            "full_query" => $query,
+                        );
+                    $debugInfo = array(
+                            "raw_where" => $where,
+                            "cleaned_where" => $whereStatements,
+                            "groups" => $groups,
+                            "build_group" => $buildGroup,
+                            "last_and" => $ands,
+                            "select" => $select,
+                        );
+                    $stmt = $pdo->prepare($query);
+                    $stmt->execute($buildWhereVals);
+                    $data = array();
+                    foreach($stmt as $row) {
+                        $tmp = array(
+                            "result" => array($row),
+                        );
+                        $dwc = getDarwinCore($tmp);
+                        $dwcRow = $dwc["result"][0];
+                        if ($dwcOnly) {
+                            $dwcRow = $dwcRow["dwc"];
+                        }
+                        $data[] = $dwcRow;
+                    }
+                    # Set a statement
+                    $statementResult = array(
+                        "result" => $data,
+                        "action" => $sqlAction,
+                        "provided" => $originalQuery,
+                        "query" => $queryInfo,
+                    );
+                    if ($show_debug === true) {
+                        $statementResult["debug"] = $debugInfo;
+                    }
+                }
+            } catch (Exception $e) {
+                $statementResult = array(
+                            "result" => "ERROR",
+                            "error" => array(
+                                "safety_check" => $safePreflight,
+                                "sql_response" => null,
+                                "was_server_exception" => true,
+                            ),
+                            "action" => $sqlAction,
+                            "original_results" => $statementResult,
+                            "provided" => $originalQuery,
+                            "query" => $queryInfo,
+                        );
+                if ($show_debug === true) {
+                    $statementResult["dev_error"] = array(
+                        "exception" => $e->getMessage(),
+                        "debug" => $debugInfo,
+                    );
+                }
+                # Log to error log
+            }
+        } else {
+            $sqlAction = preg_replace('/^([a-z-A-Z]+).*$/im', '$1', $statement);
+            $statementResult = array(
+                            "result" => "ERROR",
+                            "error" => array(
+                                "safety_check" => $safePreflight,
+                                "sql_response" => null,
+                                "was_server_exception" => false,
+                            ),
+                            "action" => $sqlAction,
+                            "original_results" => $statementResult,
+                            "provided" => $originalQuery,
+                            "query" => $queryInfo,
+                        );
+        }
+        $statementResponse[] = $statementResult;
+    }
+    return array(
+        "status" => true,
+        "statements" => $statementResponse,
+        "statement_count" => sizeof($statements),
+    );
+}
+
+
+
+function getOrderedTaxonomy($get)
+{
+
+   /***
+    * Just a duplicate of what goes on in
+    * summary.php -- except async and order-able.
+    *
+    * @param array $get -> the args from a GET or POST request;
+    *   expects:
+    *     - str $sort -> the column to sort by for both order and genus (validates)
+    *     - str $genus_sort -> the column to sort genera (validates)
+    *     - str $order_sort -> the column to sort Linnean "orders" (validates)
+    *     - bool $reverse -> sort by DESC rather than ASC if true
+    ***/
     global $db;
     if (isset($get["sort"])) {
         # Set them to the same thing
@@ -173,18 +394,20 @@ function getOrderedTaxonomy($get) {
     }
     $reverse = isset($get["reverse"]) ? toBool($get["reverse"]) : false;
     $response = array(
-        "status" => true,
-        "taxonomy" => array(
-            "order" => null,
-            "genus" => null,
-        ),
-        "provided" => $get,
-    );
+            "status" => true,
+            "taxonomy" => array(
+                "order" => null,
+                "genus" => null,
+            ),
+            "provided" => $get,
+        );
     if ($orderOrderBy != "count") {
-        checkColumnExists($orderOrderBy); # Errors out on its own on fail
+        checkColumnExists($orderOrderBy);
+        # Errors out on its own on fail
     }
     if ($genusOrderBy != "count") {
-        checkColumnExists($genusOrderBy); # Errors out on its own on fail
+        checkColumnExists($genusOrderBy);
+        # Errors out on its own on fail
     }
     if ($reverse) {
         $orderOrderBy .= " DESC";
@@ -213,33 +436,34 @@ function getOrderedTaxonomy($get) {
             $genusTotal++;
         }
         $genusBreakdown[$taxon] = array(
-            "data" => $tmpData,
-            "labels" => $tmpLabels,
-        );
+                    "data" => $tmpData,
+                    "labels" => $tmpLabels,
+                );
     }
     $response["taxonomy"]["order"] = array(
-        "labels" => $labels,
-        "data" => $data,
-        "params" => array(
-            #"query" => $linneanOrderBinQuery,
-            "order" => $orderOrderBy,
-        ),
-    );
+            "labels" => $labels,
+            "data" => $data,
+            "params" => array(
+                #"query" => $linneanOrderBinQuery,
+                "order" => $orderOrderBy,
+            ),
+        );
     $response["taxonomy"]["genus"] = array(
-        "data" => $genusBreakdown,
-        "params" => array(
-            #"query" => null,
-            "order" => $genusOrderBy,
-        ),
-    );
+            "data" => $genusBreakdown,
+            "params" => array(
+                #"query" => null,
+                "order" => $genusOrderBy,
+            ),
+        );
     returnAjax($response);
 }
 
 
 
+
 /*****************************
- * Setup flags
- *****************************/
+* Setup flags
+*****************************/
 
 $flag_fuzzy = boolstr($_REQUEST['fuzzy']);
 $loose = boolstr($_REQUEST['loose']);
@@ -253,19 +477,20 @@ checkColumnExists($_REQUEST['order']);
 $order_by = isset($_REQUEST['order']) ? $_REQUEST['order']:"genus,species,subspecies,common_name";
 
 $params = array();
-$boolean_type = false; # This is always set by the filter
+$boolean_type = false;
+# This is always set by the filter
 $filter_params = null;
 $extra_deprecated_params = null;
 if (isset($_REQUEST['filter'])) {
     $params = smart_decode64($_REQUEST['filter']);
     if (empty($params)) {
         # Not base 64 encoded
-        $params_temp = json_decode($_REQUEST['filter'], true);
+                $params_temp = json_decode($_REQUEST['filter'], true);
         if (!empty($params_temp)) {
             $params = array();
             foreach ($params_temp as $col => $lookup) {
                 # Smart_decode takes care of this for us
-                $params[$db->sanitize(deEscape($col))] = $db->sanitize(deEscape($lookup));
+                                $params[$db->sanitize(deEscape($col))] = $db->sanitize(deEscape($lookup));
             }
         }
     }
@@ -321,7 +546,6 @@ if (isset($_REQUEST['filter'])) {
 $search = strtolower($db->sanitize(deEscape(urldecode($_REQUEST['q']))));
 
 
-
 /*****************************
  * The actual handlers
  *****************************/
@@ -361,12 +585,15 @@ function fetchMajorMinorGroups($scientific = false)
           );
 }
 
+
 /***
  * Break out early for these special cases
  ***/
+
 if (toBool($_REQUEST["fetch-groups"])) {
     returnAjax(fetchMajorMinorGroups($_REQUEST["scientific"]));
 }
+
 
 
 function areSimilar($string1, $string2, $distance = 70, $depth = 3)
@@ -398,6 +625,8 @@ function areSimilar($string1, $string2, $distance = 70, $depth = 3)
     return false;
 }
 
+
+
 function handleParamSearch($filter_params, $loose = false, $boolean_type = "AND", $extra_params = false)
 {
     /***
@@ -423,7 +652,7 @@ function handleParamSearch($filter_params, $loose = false, $boolean_type = "AND"
             $where =  "(".$where." OR " . $extra_deprecated_params .")";
         }
         $where .= " AND (".$extra_params.")";
-      # $where .= " " . strtoupper($boolean_type) . " (".$extra_params.")";
+        # $where .= " " . strtoupper($boolean_type) . " (".$extra_params.")";
     } elseif (!empty($extra_deprecated_params)) {
         $where .= " OR (".$extra_deprecated_params.")";
     }
@@ -449,6 +678,7 @@ function handleParamSearch($filter_params, $loose = false, $boolean_type = "AND"
     }
     return $result_vector;
 }
+
 
 /*********************************************************
  *
@@ -506,7 +736,8 @@ function doSearch($overrideSearch = null)
         } elseif (is_numeric($search)) {
             $method="year_search";
             $col = "authority_year";
-            $loose = true; # Always true because of the way data is stored
+            $loose = true;
+            # Always true because of the way data is stored
             $params[$col] = $search;
             $r = $db->doQuery($params, "*", "or", $loose, true, $order_by);
             try {
@@ -778,7 +1009,8 @@ function doSearch($overrideSearch = null)
                                     $where[] = "(".implode($match_glue, $fuzzy_params).")";
                                 }
                             }
-                            $params = null; # Clear it out for the return
+                            $params = null;
+                            # Clear it out for the return
                             $where_statement = implode($where_glue, $where);
                             $l = $db->openDB();
                             $query = "SELECT * FROM `".$db->getTable()."` WHERE ";
@@ -803,6 +1035,7 @@ function doSearch($overrideSearch = null)
                             $error = $e;
                         }
                     }
+
                     /*
                      * If the method was
                      * space_common_fallback, let's double
@@ -871,6 +1104,7 @@ function doSearch($overrideSearch = null)
     }
 }
 
+
 $result = doSearch();
 
 /***
@@ -883,11 +1117,9 @@ $result = doSearch();
 
 $apiTarget = "http://apiv3.iucnredlist.org/api/v3/species/";
 $args = "token=" . $iucnToken;
-
 $iucnCanProvide = array(
     "common_name" => "main_common_name",
     "species_authority" => "authority",
-
 );
 
 function getTaxonIucnData($taxonBase, $ignoreFlagSave = false)
@@ -919,7 +1151,6 @@ function getTaxonIucnData($taxonBase, $ignoreFlagSave = false)
             break;
         }
     }
-
     if ($doIucn === true) {
         # IUCN returns an empty result unless "%20" is used to separate the
         # genus and species
@@ -946,19 +1177,35 @@ function getTaxonIucnData($taxonBase, $ignoreFlagSave = false)
             $taxon["save_result"] = $saveResult;
         }
         $taxon["did_update"] = $flagSave;
-
         $taxon["iucn"] = $iucnTaxon;
         unset($taxon["id"]);
     }
-
-    $hasWellFormattedSpeciesCitation = preg_match('/\(? *([\w\. \[\]]+), *([0-9]{4}) *\)?/im', $taxon["species_authority"]);
+    $hasWellFormattedSpeciesCitation = preg_match('/\(? *([\w\. \[\]]+), *([0-9]{
+                        4
+                    }
+                    ) *\)?/im', $taxon["species_authority"]);
     if (empty($taxon["genus_authority"]) && $hasWellFormattedSpeciesCitation) {
-        $authority = preg_replace('/\(? *(([\w\. \[\]]+(,|&|&amp;|&amp;amp;)?)+), *([0-9]{4}) *\)?/im', '$1', $taxon["species_authority"]);
-        $authorityYear = preg_replace('/\(? *(([\w\. \[\]]+(,|&|&amp;|&amp;amp;)?)+), *([0-9]{4}) *\)?/im', '$4', $taxon["species_authority"]);
+        $authority = preg_replace('/\(? *(([\w\. \[\]]+(,|&|&amp;
+                    |&amp;
+                    amp;
+                    )?)+), *([0-9]{
+                        4
+                    }
+                    ) *\)?/im', '$1', $taxon["species_authority"]);
+        $authorityYear = preg_replace('/\(? *(([\w\. \[\]]+(,|&|&amp;
+                    |&amp;
+                    amp;
+                    )?)+), *([0-9]{
+                        4
+                    }
+                    ) *\)?/im', '$4', $taxon["species_authority"]);
         $taxon["authority_year"] = json_encode(array(
             $authorityYear => $authorityYear,
         ));
-        $parensState = preg_match('/\( *([\w\. \[\]]+), *([0-9]{4}) *\)/im', $taxon["species_authority"]) ? true:false;
+        $parensState = preg_match('/\( *([\w\. \[\]]+), *([0-9]{
+                        4
+                    }
+                    ) *\)/im', $taxon["species_authority"]) ? true:false;
         $taxon["genus_authority"] = $authority;
         $taxon["species_authority"] = $authority;
         $taxon["parens_auth_genus"] = $parensState;
@@ -1013,7 +1260,6 @@ if (sizeof($result["result"]) <= 5) {
                 break;
             }
         }
-
         if ($doIucn === true) {
             # IUCN returns an empty result unless "%20" is used to separate the
             # genus and species
@@ -1052,80 +1298,90 @@ if (sizeof($result["result"]) <= 5) {
     $result["do_client_update"] = true;
 }
 
-
-
-# DarwinCore mapping
-# http://rs.tdwg.org/dwc/terms/
-$dwcResultMap = array(
-    "subspecies" => "subspecificEpithet",
-    "genus" => "genus",
-    "species" => "specificEpithet",
-    "canonical_sciname" => "scientificName",
-    "citation" => "namePublishedIn",
-    "common_name" => "vernacularName",
-    "linnean_order" => "order",
-    "linnean_family" => "family",
-);
-
-$higherClassificationMap = array(
-    "simple_linnean_group" => "cohort",
-    "major_type" => "magnaorder",
-    "major_subtype" => "superorder",
-);
-
-
-$dwcTotal = array();
-
-foreach ($result["result"] as $i => $taxon) {
-    $dwcResult = array();
-    $higherClassification = array();
-    foreach ($taxon as $key => $value) {
-        if (array_key_exists($key, $dwcResultMap)) {
-            $dwcResult[$dwcResultMap[$key]] = $value;
+function getDarwinCore($result, $mapOnly = false, $reverseMap = false) {
+    # DarwinCore mapping
+    # http://rs.tdwg.org/dwc/terms/
+    $dwcResultMap = array(
+        "subspecies" => "subspecificEpithet",
+        "genus" => "genus",
+        "species" => "specificEpithet",
+        "canonical_sciname" => "scientificName",
+        "citation" => "namePublishedIn",
+        "common_name" => "vernacularName",
+        "linnean_order" => "order",
+        "linnean_family" => "family",
+    );
+    if ($mapOnly === true) {
+        if ($reverseMap === true) {
+            # Map DarwinCore to internal DB terms
+            foreach ($dwcResultMap as $db => $dc) {
+                if ($result == $dc) return $db;
+            }
+            # Return the original as a fallback
+            return $result;
         }
-        if (array_key_exists($key, $higherClassificationMap) && !empty($value)) {
-            $higherClassification[$higherClassificationMap[$key]] = $value;
+        return $dwcResultMap[$result];
+    }
+    $higherClassificationMap = array(
+        "simple_linnean_group" => "cohort",
+        "major_type" => "magnaorder",
+        "major_subtype" => "superorder",
+    );
+    $dwcTotal = array();
+    foreach ($result["result"] as $i => $taxon) {
+        $dwcResult = array();
+        $higherClassification = array();
+        foreach ($taxon as $key => $value) {
+            if (array_key_exists($key, $dwcResultMap)) {
+                $dwcResult[$dwcResultMap[$key]] = $value;
+            }
+            if (array_key_exists($key, $higherClassificationMap) && !empty($value)) {
+                $higherClassification[$higherClassificationMap[$key]] = $value;
+            }
         }
-    }
-    # Lucky us, it's alphabetical
-    ksort($higherClassification);
-    $list = implode("|", $higherClassification);
-    $higherClassification["list"] = $list;
-    $dwcResult["higherClassification"] = $higherClassification;
-    if (isset($taxon["species_authority"])) {
-        $years = json_decode($taxon["authority_year"], true);
-        $genusYear = key($years);
-        $speciesYear = current($years);
-        $genus = empty($genusYear) ? $taxon["genus_authority"] : $taxon["genus_authority"] . ", " . $genusYear;
-        $species = empty($speciesYear) ? $taxon["species_authority"] : $taxon["species_authority"] . ", " . $speciesYear;
-        $genus = toBool($taxon["parens_auth_genus"]) ? "($genus)" : $genus;
-        $species = toBool($taxon["parens_auth_species"]) ? "($species)" : $species;
-        $dwcResult["scientificNameAuthorship"] = array(
-            "genus" => $genus,
-            "species" => $species,
-        );
-    }
-    $dwcResult["taxonRank"] = "species";
-    $dwcResult["class"] = "mammalia";
-    $dwcResult["taxonomicStatus"] = "accepted";
-    if (isset($taxon["canonical_sciname"])) {
-        $dwcResult["dcterms:bibliographicCitation"] = $taxon["canonical_sciname"]." (ASM Species Account Database #".$taxon["internal_id"].") fetched ".date(DATE_ISO8601);
-    }
-    $dwcResult["dcterms:language"] = "en";
-    if (isset($taxon["taxon_credit_date"])) {
-        $creditTime = strtotime($taxon["taxon_credit_date"]);
-        if ($creditTime === false) {
-            $creditTime = intval($taxon["taxon_credit_date"]);
+        # Lucky us, it's alphabetical
+        ksort($higherClassification);
+        $list = implode("|", $higherClassification);
+        $higherClassification["list"] = $list;
+        $dwcResult["higherClassification"] = $higherClassification;
+        if (isset($taxon["species_authority"])) {
+            $years = json_decode($taxon["authority_year"], true);
+            $genusYear = key($years);
+            $speciesYear = current($years);
+            $genus = empty($genusYear) ? $taxon["genus_authority"] : $taxon["genus_authority"] . ", " . $genusYear;
+            $species = empty($speciesYear) ? $taxon["species_authority"] : $taxon["species_authority"] . ", " . $speciesYear;
+            $genus = toBool($taxon["parens_auth_genus"]) ? "($genus)" : $genus;
+            $species = toBool($taxon["parens_auth_species"]) ? "($species)" : $species;
+            $dwcResult["scientificNameAuthorship"] = array(
+                "genus" => $genus,
+                "species" => $species,
+            );
         }
-        if (!is_numeric($creditTime) || $creditTime == 0) {
-            $creditTime = time();
+        $dwcResult["taxonRank"] = "species";
+        $dwcResult["class"] = "mammalia";
+        $dwcResult["taxonomicStatus"] = "accepted";
+        if (isset($taxon["canonical_sciname"])) {
+            $dwcResult["dcterms:bibliographicCitation"] = $taxon["canonical_sciname"]." (ASM Species Account Database #".$taxon["internal_id"].") fetched ".date(DATE_ISO8601);
         }
-        $dwcResult["dcterms:modified"] = date(DATE_ISO8601, $creditTime);
+        $dwcResult["dcterms:language"] = "en";
+        if (isset($taxon["taxon_credit_date"])) {
+            $creditTime = strtotime($taxon["taxon_credit_date"]);
+            if ($creditTime === false) {
+                $creditTime = intval($taxon["taxon_credit_date"]);
+            }
+            if (!is_numeric($creditTime) || $creditTime == 0) {
+                $creditTime = time();
+            }
+            $dwcResult["dcterms:modified"] = date(DATE_ISO8601, $creditTime);
+        }
+        $dwcResult["dcterms:license"] = "https://creativecommons.org/licenses/by-nc/4.0/legalcode";
+        $result["result"][$i]["dwc"] = $dwcResult;
+        $dwcTotal[] = $dwcResult;
     }
-    $dwcResult["dcterms:license"] = "https://creativecommons.org/licenses/by-nc/4.0/legalcode";
-    $result["result"][$i]["dwc"] = $dwcResult;
-    $dwcTotal[] = $dwcResult;
+    return $result;
 }
+
+$result = getDarwinCore($result);
 
 if (toBool($_REQUEST["dwc_only"])) {
     $result["result"] = $dwcTotal;

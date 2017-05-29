@@ -235,35 +235,71 @@ function doLiveQuery($get)
                         $group = preg_replace('/^\(? *(.*)$/im', '$1', $group);
                         if (preg_match('/(?: |^)and /im', $group)) {
                             # AND statements
-                            $conds = preg_split('/ *and */im', $group);
+                            if (preg_match('/^and /im', $group)) {
+                                # The group leads with an and
+                                $buildGroup[$k] = " AND (";
+                            }
+                            $conds = preg_split('/(?: |^)and */im', $group);
                             $ands = array();
                             foreach ($conds as $cond) {
                                 if (!empty(trim($cond))) {
                                     $condParts = preg_split('/ *(=|!=|is|is not) */im', $cond, -1, PREG_SPLIT_NO_EMPTY);
                                     $glue = preg_replace('/.*?(=|!=|is|is not).*/im', '$1', $cond);
-                                    $ands[] = $condParts[0] . $glue . " ? ";
-                                    $buildWhereVals[] = $condParts[1];
+                                    $col = preg_replace('/^([`]?)([a-zA-Z_\-]+)\g{1}$/im', '$2', $condParts[0]);
+                                    checkColumnExists($col);
+                                    $ands[] = "`$col`" . $glue . " ? ";
+                                    $buildWhereVals[] = preg_replace('/^([\'"]?)([^\'"]+)\g{1}$/im', '$2', $condParts[1]);
                                 }
                             }
                             $buildGroup[$k] .= implode(" AND ", $ands);
                         } elseif (preg_match('/(?: |^)or /im', $group)) {
                             # OR statements
-                            $buildGroup[$k] = "TODO OR";
+                            if (preg_match('/^or /im', $group)) {
+                                # The group leads with an or
+                                $buildGroup[$k] = " OR (";
+                            }
+                            $conds = preg_split('/(?: |^)or */im', $group);
+                            $ors = array();
+                            foreach ($conds as $cond) {
+                                if (!empty(trim($cond))) {
+                                    $condParts = preg_split('/ *(=|!=|is|is not) */im', $cond, -1, PREG_SPLIT_NO_EMPTY);
+                                    $glue = preg_replace('/.*?(=|!=|is|is not).*/im', '$1', $cond);
+                                    $col = preg_replace('/^([`]?)([a-zA-Z_\-]+)\g{1}$/im', '$2', $condParts[0]);
+                                    checkColumnExists($col);
+                                    $ors[] = "``$col" . $glue . " ? ";
+                                    $buildWhereVals[] = preg_replace('/^([\'"]?)([^\'"]+)\g{1}$/im', '$2', $condParts[1]);
+                                }
+                            }
+                            $buildGroup[$k] .= implode(" or ", $ors);
                         } else {
                             # What?
                             $buildGroup[$k] = "ILLEGAL_GROUP::>>>$group<<<";
                         }
                     }
-                    $buildWhere = "WHERE (".implode(")", $buildGroup).")";
+                    $buildWhere = " WHERE ".implode(")", $buildGroup).")";
+                    $query .= $buildWhere;
+                    #$stmt = $pdo->prepare($query);
+                    #$stmt->execute($buildWhereVals);
+                    $data = array();
+                    #foreach($stmt as $row) {
+                    #    $data[] = $row;
+                    #}
                     return array(
-                        "where" => $buildWhere,
-                        "raw_where" => $where,
-                        "cleaned_where" => $whereStatements,
-                        "groups" => $groups,
-                        "build_group" => $buildGroup,
-                        "last_and" => $ands,
-                        "select" => $select,
-                        "query" => $query,
+                        "query" => array(
+                            "where" => $buildWhere,
+                            "values" => $buildWhereVals,
+                            "full_query" => $query,
+                        ),
+                        "debug" => array(
+                            "raw_where" => $where,
+                            "cleaned_where" => $whereStatements,
+                            "groups" => $groups,
+                            "build_group" => $buildGroup,
+                            "last_and" => $ands,
+                            "select" => $select,
+                        ),
+                        "provided" => $originalQuery,
+                        "data" => $data,
                     );
                 }
             } catch (Exception $e) {
@@ -275,7 +311,12 @@ function doLiveQuery($get)
                                 "was_server_exception" => true,
                             ),
                             "action" => $sqlAction,
+                            "original_results" => $statementResult,
                         );
+                global $show_debug;
+                if ($show_debug === true) {
+                    $statementResult["dev_error"] = $e->getMessage();
+                }
                 # Log to error log
             }
         } else {
@@ -288,11 +329,15 @@ function doLiveQuery($get)
                                 "was_server_exception" => false,
                             ),
                             "action" => $sqlAction,
+                            "original_results" => $statementResult,
                         );
         }
         $statementResponse[] = $statementResult;
     }
-    return false;
+    return array(
+        "status" => true,
+        "statements" => $statementResponse,
+    );
 }
 
 

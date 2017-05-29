@@ -246,8 +246,9 @@ function doLiveQuery($get)
                                     $condParts = preg_split('/ *(=|!=| is | is not ) */im', $cond, -1, PREG_SPLIT_NO_EMPTY);
                                     $glue = preg_replace('/.*?(=|!=| is | is not ).*/im', '$1', $cond);
                                     $col = preg_replace('/^([`]?)([a-zA-Z_\-]+)\g{1}$/im', '$2', $condParts[0]);
-                                    checkColumnExists($col);
-                                    $ands[] = "`$col`" . $glue . " ? ";
+                                    $realCol = getDarwinCore($result, true, true);
+                                    checkColumnExists($realCol);
+                                    $ands[] = "`$realCol`" . $glue . " ? ";
                                     $buildWhereVals[] = preg_replace('/^([\'"]?)([^\'"]+)\g{1}$/im', '$2', $condParts[1]);
                                 }
                             }
@@ -265,8 +266,9 @@ function doLiveQuery($get)
                                     $condParts = preg_split('/ *(=|!=| is | is not ) */im', $cond, -1, PREG_SPLIT_NO_EMPTY);
                                     $glue = preg_replace('/.*?(=|!=| is | is not ).*/im', '$1', $cond);
                                     $col = preg_replace('/^([`]?)([a-zA-Z_\-]+)\g{1}$/im', '$2', $condParts[0]);
-                                    checkColumnExists($col);
-                                    $ors[] = "`$col`" . $glue . " ? ";
+                                    $realCol = getDarwinCore($result, true, true);
+                                    checkColumnExists($realCol);
+                                    $ors[] = "`$realCol`" . $glue . " ? ";
                                     $buildWhereVals[] = preg_replace('/^([\'"]?)([^\'"]+)\g{1}$/im', '$2', $condParts[1]);
                                 }
                             }
@@ -1287,9 +1289,11 @@ function getDarwinCore($result, $mapOnly = false, $reverseMap = false) {
     );
     if ($mapOnly === true) {
         if ($reverseMap === true) {
+            # Map DarwinCore to internal DB terms
             foreach ($dwcResultMap as $db => $dc) {
                 if ($result == $dc) return $db;
             }
+            # Return the original as a fallback
             return $result;
         }
         return $dwcResultMap[$result];

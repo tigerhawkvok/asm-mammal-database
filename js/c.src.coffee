@@ -3413,54 +3413,59 @@ $ ->
 ###
 
 loadTerminalDialog = (reinit = false) ->
-  unless $("##sql-query-dialog").exists() or reinit
-    html = """
-  <paper-dialog id="sql-query-dialog" modal>
-    <paper-dialog-scrollable>
-      <div class="row query-container">
-        <form class="form">
-          <div class="form-group">
-            <textarea id="sql-input" 
-                      rows="5" 
-                      class="form-control"
-                      placeholder="SQL query here"></textarea>
-          </div>
-        </form>
-        <p class="col-xs-12">Interpreted Query:</p>
-        <code class="language-sql" id="interpreted-sql"></code>
+  getTerminalDependencies ->
+    unless $("#sql-query-dialog").exists() or reinit
+      html = """
+    <paper-dialog id="sql-query-dialog" modal>
+      <paper-dialog-scrollable>
+        <div class="row query-container">
+          <form class="form">
+            <div class="form-group">
+              <textarea id="sql-input"
+                        rows="5"
+                        class="form-control"
+                        placeholder="SQL query here"></textarea>
+            </div>
+          </form>
+          <p class="col-xs-12">Interpreted Query:</p>
+          <code class="language-sql" id="interpreted-sql"></code>
+        </div>
+      </paper-dialog-scrollable>
+      <div class="buttons">
+        <paper-button dialog-dimiss>Close</paper-button>
       </div>
-    </paper-dialog-scrollable>
-    <div class="buttons">
-      <paper-button dialog-dimiss>Close</paper-button>
-    </div>
-  </paper-dialog>
-    """
-    $("body").append html
-    # Events
-    $("#sql-query-dialog").find("form").submit (e) ->
-      e.preventDefault()
-      executeQuery()
-      false
-    $("#sql-input").keyup (e) ->
-      kc = if e.keyCode then e.keyCode else e.which
-      if kc is 13
-        return executeQuery()
-      else
-        # Copy the formatted string
-        sql = $(this).val().trim()
-        # Shortcuts
-        sql = sql.replace /@@/mig, "`mammal_diversity_database`"
-        sql = sql.replace /!@/mig, "SELECT * FROM `mammal_diversity_database`"
-        codeBox = $("#interpreted-sql").get(0)
-        $(codeBox).text sql
-        Prism.highlightElement codeBox
-  p$("#sql-query-dialog").open()
+    </paper-dialog>
+      """
+      $("body").append html
+      # Events
+      $("#sql-query-dialog").find("form").submit (e) ->
+        e.preventDefault()
+        executeQuery()
+        false
+      $("#sql-input").keyup (e) ->
+        kc = if e.keyCode then e.keyCode else e.which
+        if kc is 13
+          return executeQuery()
+        else
+          # Copy the formatted string
+          sql = $(this).val().trim()
+          # Shortcuts
+          sql = sql.replace /@@/mig, "`mammal_diversity_database`"
+          sql = sql.replace /!@/mig, "SELECT * FROM `mammal_diversity_database`"
+          codeBox = $("#interpreted-sql").get(0)
+          $(codeBox).text sql
+          Prism.highlightElement codeBox
+    p$("#sql-query-dialog").open()
   false
 
 getTerminalDependencies = (callback, args...) ->
   ###
   #
   ###
+  if _asm.terminalDependencies is true
+    console.log "Dependencies are already loaded, executing immediately"
+    if typeof callback is "function"
+      callback args...
   dependencies =
     nacl: false
     prism: false
@@ -3478,10 +3483,12 @@ getTerminalDependencies = (callback, args...) ->
     for lib, status of dependencies
       ready = ready and status
       unless ready
+        console.log "Library #{lib} isn't yet ready..."
         break
     _asm.terminalDependencies = ready
     _asm.terminalDependenciesChecking = false
     if ready
+      console.log "Dependencies loaded"
       if typeof callback is "function"
         callback args...
     ready
@@ -3497,9 +3504,10 @@ getTerminalDependencies = (callback, args...) ->
   else
     naclCallback()
   loadJS "bower_components/prism/prism.js", ->
-    dependencies.prism = true
-    $("head").append """<link href="themes/prism.css" rel="stylesheet" />"""
-    checkDependencies()
+    loadJS "bower_components/prism/components/prism-sql.js", ->
+      dependencies.prism = true
+      checkDependencies()
+    $("head").append """<link href="bower_components/prism/themes/prism.css" rel="stylesheet" />"""
   false
 
 

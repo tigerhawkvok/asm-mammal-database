@@ -3957,34 +3957,36 @@ $(function() {
  */
 
 loadTerminalDialog = function(reinit) {
-  var html;
   if (reinit == null) {
     reinit = false;
   }
-  if (!($("##sql-query-dialog").exists() || reinit)) {
-    html = "<paper-dialog id=\"sql-query-dialog\" modal>\n  <paper-dialog-scrollable>\n    <div class=\"row query-container\">\n      <form class=\"form\">\n        <div class=\"form-group\">\n          <textarea id=\"sql-input\" \n                    rows=\"5\" \n                    class=\"form-control\"\n                    placeholder=\"SQL query here\"></textarea>\n        </div>\n      </form>\n      <p class=\"col-xs-12\">Interpreted Query:</p>\n      <code class=\"language-sql\" id=\"interpreted-sql\"></code>\n    </div>\n  </paper-dialog-scrollable>\n  <div class=\"buttons\">\n    <paper-button dialog-dimiss>Close</paper-button>\n  </div>\n</paper-dialog>";
-    $("body").append(html);
-    $("#sql-query-dialog").find("form").submit(function(e) {
-      e.preventDefault();
-      executeQuery();
-      return false;
-    });
-    $("#sql-input").keyup(function(e) {
-      var codeBox, kc, sql;
-      kc = e.keyCode ? e.keyCode : e.which;
-      if (kc === 13) {
-        return executeQuery();
-      } else {
-        sql = $(this).val().trim();
-        sql = sql.replace(/@@/mig, "`mammal_diversity_database`");
-        sql = sql.replace(/!@/mig, "SELECT * FROM `mammal_diversity_database`");
-        codeBox = $("#interpreted-sql").get(0);
-        $(codeBox).text(sql);
-        return Prism.highlightElement(codeBox);
-      }
-    });
-  }
-  p$("#sql-query-dialog").open();
+  getTerminalDependencies(function() {
+    var html;
+    if (!($("#sql-query-dialog").exists() || reinit)) {
+      html = "<paper-dialog id=\"sql-query-dialog\" modal>\n  <paper-dialog-scrollable>\n    <div class=\"row query-container\">\n      <form class=\"form\">\n        <div class=\"form-group\">\n          <textarea id=\"sql-input\"\n                    rows=\"5\"\n                    class=\"form-control\"\n                    placeholder=\"SQL query here\"></textarea>\n        </div>\n      </form>\n      <p class=\"col-xs-12\">Interpreted Query:</p>\n      <code class=\"language-sql\" id=\"interpreted-sql\"></code>\n    </div>\n  </paper-dialog-scrollable>\n  <div class=\"buttons\">\n    <paper-button dialog-dimiss>Close</paper-button>\n  </div>\n</paper-dialog>";
+      $("body").append(html);
+      $("#sql-query-dialog").find("form").submit(function(e) {
+        e.preventDefault();
+        executeQuery();
+        return false;
+      });
+      $("#sql-input").keyup(function(e) {
+        var codeBox, kc, sql;
+        kc = e.keyCode ? e.keyCode : e.which;
+        if (kc === 13) {
+          return executeQuery();
+        } else {
+          sql = $(this).val().trim();
+          sql = sql.replace(/@@/mig, "`mammal_diversity_database`");
+          sql = sql.replace(/!@/mig, "SELECT * FROM `mammal_diversity_database`");
+          codeBox = $("#interpreted-sql").get(0);
+          $(codeBox).text(sql);
+          return Prism.highlightElement(codeBox);
+        }
+      });
+    }
+    return p$("#sql-query-dialog").open();
+  });
   return false;
 };
 
@@ -3995,6 +3997,12 @@ getTerminalDependencies = function() {
   /*
    *
    */
+  if (_asm.terminalDependencies === true) {
+    console.log("Dependencies are already loaded, executing immediately");
+    if (typeof callback === "function") {
+      callback.apply(null, args);
+    }
+  }
   dependencies = {
     nacl: false,
     prism: false
@@ -4018,12 +4026,14 @@ getTerminalDependencies = function() {
       status = dependencies[lib];
       ready = ready && status;
       if (!ready) {
+        console.log("Library " + lib + " isn't yet ready...");
         break;
       }
     }
     _asm.terminalDependencies = ready;
     _asm.terminalDependenciesChecking = false;
     if (ready) {
+      console.log("Dependencies loaded");
       if (typeof callback === "function") {
         callback.apply(null, args);
       }
@@ -4045,9 +4055,11 @@ getTerminalDependencies = function() {
     naclCallback();
   }
   loadJS("bower_components/prism/prism.js", function() {
-    dependencies.prism = true;
-    $("head").append("<link href=\"themes/prism.css\" rel=\"stylesheet\" />");
-    return checkDependencies();
+    loadJS("bower_components/prism/components/prism-sql.js", function() {
+      dependencies.prism = true;
+      return checkDependencies();
+    });
+    return $("head").append("<link href=\"bower_components/prism/themes/prism.css\" rel=\"stylesheet\" />");
   });
   return false;
 };

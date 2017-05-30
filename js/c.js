@@ -1,4 +1,4 @@
-var _metaStatus, activityIndicatorOff, activityIndicatorOn, allError, animateHoverShadows, animateLoad, bindClickTargets, bindClicks, bindDismissalRemoval, bindPaperMenuButton, browserBeware, bsAlert, buildQuery, byteCount, checkFileVersion, checkLaggedUpdate, checkLocalVersion, checkTaxonNear, clearSearch, dataUriToBlob, dateMonthToString, deEscape, decode64, deepJQuery, delay, delayPolymerBind, doCORSget, doFontExceptions, doLazily, doNothing, domainPlaceholder, downloadDataUriAsBlob, e, encode64, error1, eutheriaFilterHelper, fetchMajorMinorGroups, foo, formatScientificNames, formatSearchResults, getElementHtml, getFilters, getLocation, getMaxZ, getRandomEntry, goTo, insertCORSWorkaround, insertModalImage, interval, isArray, isBlank, isBool, isEmpty, isJson, isNull, isNumber, isNumeric, jsonTo64, lightboxImages, loadJS, mapNewWindows, modalTaxon, objToArgs, openLink, openTab, overlayOff, overlayOn, p$, parseTaxonYear, performSearch, post64, prepURI, randomInt, ref, roundNumber, roundNumberSigfig, safariDialogHelper, safariSearchArgHelper, searchParams, setHistory, setupServiceWorker, showBadSearchErrorMessage, smartUpperCasing, sortResults, startLoad, stopLoad, stopLoadError, toFloat, toInt, toObject, toastStatusMessage, uri,
+var _metaStatus, activityIndicatorOff, activityIndicatorOn, allError, animateHoverShadows, animateLoad, bindClickTargets, bindClicks, bindDismissalRemoval, bindPaperMenuButton, browserBeware, bsAlert, buildQuery, byteCount, checkFileVersion, checkLaggedUpdate, checkLocalVersion, checkTaxonNear, clearSearch, dataUriToBlob, dateMonthToString, deEscape, decode64, deepJQuery, delay, delayPolymerBind, doCORSget, doFontExceptions, doLazily, doNothing, domainPlaceholder, downloadDataUriAsBlob, e, encode64, error1, eutheriaFilterHelper, executeQuery, fetchMajorMinorGroups, foo, formatScientificNames, formatSearchResults, getElementHtml, getFilters, getLocation, getMaxZ, getRandomEntry, getTerminalDependencies, goTo, insertCORSWorkaround, insertModalImage, interval, isArray, isBlank, isBool, isEmpty, isJson, isNull, isNumber, isNumeric, jsonTo64, lightboxImages, loadJS, loadTerminalDialog, mapNewWindows, modalTaxon, objToArgs, openLink, openTab, overlayOff, overlayOn, p$, parseTaxonYear, performSearch, post64, prepURI, randomInt, ref, roundNumber, roundNumberSigfig, safariDialogHelper, safariSearchArgHelper, searchParams, setHistory, setupServiceWorker, showBadSearchErrorMessage, smartUpperCasing, sortResults, startLoad, stopLoad, stopLoadError, toFloat, toInt, toObject, toastStatusMessage, uri,
   slice = [].slice,
   indexOf = [].indexOf || function(item) { for (var i = 0, l = this.length; i < l; i++) { if (i in this && this[i] === item) return i; } return -1; };
 
@@ -3943,6 +3943,159 @@ $(function() {
       }
     })();
   }
+});
+
+
+/*
+ * Primary handler for SQL Live Query Input
+ *
+ * See issue
+ * https://github.com/tigerhawkvok/asm-mammal-database/issues/20
+ * https://github.com/tigerhawkvok/asm-mammal-database/projects/2
+ *
+ * @author Philip Kahn
+ */
+
+loadTerminalDialog = function(reinit) {
+  var html;
+  if (reinit == null) {
+    reinit = false;
+  }
+  if (!($("##sql-query-dialog").exists() || reinit)) {
+    html = "<paper-dialog id=\"sql-query-dialog\" modal>\n  <paper-dialog-scrollable>\n    <div class=\"row query-container\">\n      <form class=\"form\">\n        <div class=\"form-group\">\n          <textarea id=\"sql-input\" \n                    rows=\"5\" \n                    class=\"form-control\"\n                    placeholder=\"SQL query here\"></textarea>\n        </div>\n      </form>\n      <p class=\"col-xs-12\">Interpreted Query:</p>\n      <code class=\"language-sql\" id=\"interpreted-sql\"></code>\n    </div>\n  </paper-dialog-scrollable>\n  <div class=\"buttons\">\n    <paper-button dialog-dimiss>Close</paper-button>\n  </div>\n</paper-dialog>";
+    $("body").append(html);
+    $("#sql-query-dialog").find("form").submit(function(e) {
+      e.preventDefault();
+      executeQuery();
+      return false;
+    });
+    $("#sql-input").keyup(function(e) {
+      var codeBox, kc, sql;
+      kc = e.keyCode ? e.keyCode : e.which;
+      if (kc === 13) {
+        return executeQuery();
+      } else {
+        sql = $(this).val().trim();
+        sql = sql.replace(/@@/mig, "`mammal_diversity_database`");
+        sql = sql.replace(/!@/mig, "SELECT * FROM `mammal_diversity_database`");
+        codeBox = $("#interpreted-sql").get(0);
+        $(codeBox).text(sql);
+        return Prism.highlightElement(codeBox);
+      }
+    });
+  }
+  p$("#sql-query-dialog").open();
+  return false;
+};
+
+getTerminalDependencies = function() {
+  var args, callback, checkDependencies, dependencies, naclCallback;
+  callback = arguments[0], args = 2 <= arguments.length ? slice.call(arguments, 1) : [];
+
+  /*
+   *
+   */
+  dependencies = {
+    nacl: false,
+    prism: false
+  };
+  _asm.terminalDependencies = false;
+  _asm.terminalDependenciesChecking = false;
+  checkDependencies = function() {
+    var lib, ready, status;
+    if (_asm.terminalDependencies === true) {
+      return true;
+    }
+    if (_asm.terminalDependenciesChecking) {
+      delay(50, function() {
+        return checkDependencies();
+      });
+      return false;
+    }
+    _asm.terminalDependenciesChecking = true;
+    ready = true;
+    for (lib in dependencies) {
+      status = dependencies[lib];
+      ready = ready && status;
+      if (!ready) {
+        break;
+      }
+    }
+    _asm.terminalDependencies = ready;
+    _asm.terminalDependenciesChecking = false;
+    if (ready) {
+      if (typeof callback === "function") {
+        callback.apply(null, args);
+      }
+    }
+    return ready;
+  };
+  naclCallback = function() {
+    return nacl_factory.instantiate(function(nacl) {
+      _asm.nacl = nacl;
+      dependencies.nacl = true;
+      return checkDependencies();
+    });
+  };
+  if (typeof nacl_factory === "undefined" || nacl_factory === null) {
+    loadJS("bower_components/js-nacl/lib/nacl_factory.js", function() {
+      return naclCallback();
+    });
+  } else {
+    naclCallback();
+  }
+  loadJS("bower_components/prism/prism.js", function() {
+    dependencies.prism = true;
+    $("head").append("<link href=\"themes/prism.css\" rel=\"stylesheet\" />");
+    return checkDependencies();
+  });
+  return false;
+};
+
+executeQuery = function() {
+
+  /*
+   *
+   */
+  var args, darwinCoreOnly, handleSqlError, query;
+  handleSqlError = function(errorMessage) {
+    var alertId, html;
+    if (errorMessage == null) {
+      errorMessage = "Error";
+    }
+    alertId = _asm.nacl.decode_utf8(_asm.nacl.crypto_hash_string(errorMessage + Date.now()));
+    html = "<div class=\"alert alert-danger alert-dismissable col-xs-8 center-block\" role=\"alert\" id=\"" + alertId + "\">\n  <button type=\"button\" class=\"close\" data-dismiss=\"alert\" aria-label=\"Close\"><span aria-hidden=\"true\">&times;</span></button>\n  <div class=\"alert-message\">" + errorMessage + "</div>\n</div>";
+    $("#sql-input").parents("paper-dialog").find(".alert").remove();
+    $("#sql-input").parents("form").after(html);
+    stopLoadError();
+    return false;
+  };
+  try {
+    darwinCoreOnly = p$("#dwc-only").checked;
+  } catch (undefined) {}
+  query = $("#intepreted-sql").text().trim();
+  if (isNull(query)) {
+    return handleSqlError("Sorry, you can't use an empty query");
+  }
+  args = {
+    sql_query: post64(query),
+    action: query,
+    dwc: darwinCoreOnly != null ? darwinCoreOnly : false
+  };
+  $.post(uri.urlString + "api.php", buildQuery(args, "json")).done(function(result) {
+    console.log("Got result", result);
+    return false;
+  }).fail(function(result, status) {
+    console.error(result, status);
+    console.warn("Couldn't hit target");
+    handlSqlError("Problem talking to the server, please try again");
+    return false;
+  });
+  return false;
+};
+
+$(function() {
+  return false;
 });
 
 //# sourceMappingURL=maps/c.js.map

@@ -137,7 +137,7 @@ String::noExponents = (explicitNum = true) ->
     leader = parseFloat data[0]
     multiplier = 10 ** parseInt data[1]
     return leader * multiplier
-    
+
 
 
 Number::noExponents = ->
@@ -1489,7 +1489,8 @@ buildQuery = (obj) ->
   queryList = new Array()
   for k, v of obj
     key = k.replace /[^A-Za-z\-_\[\]]/img, ""
-    queryList.push """#{key}=#{encodeURIComponent v}"""
+    value = encodeURIComponent(v).replace /\%20/g, "+"
+    queryList.push """#{key}=#{value}"""
   queryList.join "&"
 
 

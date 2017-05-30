@@ -8,33 +8,49 @@
 # @author Philip Kahn
 ###
 
-loadTerminalDialog = ->
-  html = """
-<paper-dialog id="sql-query-dialog" modal>
-  <paper-dialog-scrollable>
-    <div class="row query-container">
-      <form class="form">
-        <div class="form-group">
-          <textarea id="sql-input" 
-                    rows="5" 
-                    class="form-control"
-                    placeholder="SQL query here"></textarea>
-        </div>
-      </form>
-      <p class="col-xs-12">Interpreted Query:</p>
-      <code class="language-sql" id="interpreted-sql"></code>
+loadTerminalDialog = (reinit = false) ->
+  unless $("##sql-query-dialog").exists() or reinit
+    html = """
+  <paper-dialog id="sql-query-dialog" modal>
+    <paper-dialog-scrollable>
+      <div class="row query-container">
+        <form class="form">
+          <div class="form-group">
+            <textarea id="sql-input" 
+                      rows="5" 
+                      class="form-control"
+                      placeholder="SQL query here"></textarea>
+          </div>
+        </form>
+        <p class="col-xs-12">Interpreted Query:</p>
+        <code class="language-sql" id="interpreted-sql"></code>
+      </div>
+    </paper-dialog-scrollable>
+    <div class="buttons">
+      <paper-button dialog-dimiss>Close</paper-button>
     </div>
-  </paper-dialog-scrollable>
-  <div class="buttons">
-    <paper-button dialog-dimiss>Close</paper-button>
-  </div>
-</paper-dialog>
-  """
-  # Events
-  $("#sql-query-dialog").find("form").submit (e) ->
-    e.preventDefault()
-    executeQuery()
-    false
+  </paper-dialog>
+    """
+    $("body").append html
+    # Events
+    $("#sql-query-dialog").find("form").submit (e) ->
+      e.preventDefault()
+      executeQuery()
+      false
+    $("#sql-input").keyup (e) ->
+      kc = if e.keyCode then e.keyCode else e.which
+      if kc is 13
+        return executeQuery()
+      else
+        # Copy the formatted string
+        sql = $(this).val().trim()
+        # Shortcuts
+        sql = sql.replace /@@/mig, "`mammal_diversity_database`"
+        sql = sql.replace /!@/mig, "SELECT * FROM `mammal_diversity_database`"
+        codeBox = $("#interpreted-sql").get(0)
+        $(codeBox).text sql
+        Prism.highlightElement codeBox
+  p$("#sql-query-dialog").open()
   false
 
 getTerminalDependencies = (callback, args...) ->
@@ -101,7 +117,7 @@ executeQuery = ->
     false
   try
     darwinCoreOnly = p$("#dwc-only").checked
-  query = $("#sql-input").val().trim()
+  query = $("#intepreted-sql").text().trim()
   if isNull query
     return handleSqlError "Sorry, you can't use an empty query"
   args =

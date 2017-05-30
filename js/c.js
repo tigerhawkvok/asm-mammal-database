@@ -1875,12 +1875,13 @@ doNothing = function() {
 };
 
 buildQuery = function(obj) {
-  var k, key, queryList, v;
+  var k, key, queryList, v, value;
   queryList = new Array();
   for (k in obj) {
     v = obj[k];
     key = k.replace(/[^A-Za-z\-_\[\]]/img, "");
-    queryList.push(key + "=" + (encodeURIComponent(v)));
+    value = encodeURIComponent(v).replace(/\%20/g, "+");
+    queryList.push(key + "=" + value);
   }
   return queryList.join("&");
 };

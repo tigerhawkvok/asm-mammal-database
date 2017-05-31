@@ -1,4 +1,4 @@
-var _metaStatus, activityIndicatorOff, activityIndicatorOn, allError, animateHoverShadows, animateLoad, bindClickTargets, bindClicks, bindDismissalRemoval, bindPaperMenuButton, browserBeware, bsAlert, buildQuery, byteCount, checkFileVersion, checkLaggedUpdate, checkLocalVersion, checkTaxonNear, clearSearch, dataUriToBlob, dateMonthToString, deEscape, decode64, deepJQuery, delay, delayPolymerBind, doCORSget, doFontExceptions, doLazily, doNothing, domainPlaceholder, downloadDataUriAsBlob, e, encode64, error1, eutheriaFilterHelper, executeQuery, fetchMajorMinorGroups, foo, formatScientificNames, formatSearchResults, getElementHtml, getFilters, getLocation, getMaxZ, getRandomEntry, getTerminalDependencies, goTo, insertCORSWorkaround, insertModalImage, interval, isArray, isBlank, isBool, isEmpty, isJson, isNull, isNumber, isNumeric, jsonTo64, lightboxImages, loadJS, loadTerminalDialog, mapNewWindows, modalTaxon, objToArgs, openLink, openTab, overlayOff, overlayOn, p$, parseTaxonYear, performSearch, post64, prepURI, randomInt, ref, roundNumber, roundNumberSigfig, safariDialogHelper, safariSearchArgHelper, searchParams, setHistory, setupServiceWorker, showBadSearchErrorMessage, smartUpperCasing, sortResults, startLoad, stopLoad, stopLoadError, toFloat, toInt, toObject, toastStatusMessage, uri,
+var _metaStatus, activityIndicatorOff, activityIndicatorOn, allError, animateHoverShadows, animateLoad, bindClickTargets, bindClicks, bindDismissalRemoval, bindPaperMenuButton, browserBeware, bsAlert, buildQuery, byteCount, checkFileVersion, checkLaggedUpdate, checkLocalVersion, checkTaxonNear, clearSearch, dataUriToBlob, dateMonthToString, deEscape, decode64, deepJQuery, delay, delayPolymerBind, doCORSget, doFontExceptions, doLazily, doNothing, domainPlaceholder, downloadDataUriAsBlob, e, encode64, error1, eutheriaFilterHelper, executeQuery, fetchMajorMinorGroups, foo, formatScientificNames, formatSearchResults, getElementHtml, getFilters, getLocation, getMaxZ, getRandomEntry, getTerminalDependencies, goTo, insertCORSWorkaround, insertModalImage, interval, isArray, isBlank, isBool, isEmpty, isJson, isNull, isNumber, isNumeric, jsonTo64, lightboxImages, loadJS, loadTerminalDialog, mapNewWindows, modalTaxon, objToArgs, openLink, openTab, overlayOff, overlayOn, p$, parseQuery, parseTaxonYear, performSearch, post64, prepURI, randomInt, ref, roundNumber, roundNumberSigfig, safariDialogHelper, safariSearchArgHelper, searchParams, setHistory, setupServiceWorker, showBadSearchErrorMessage, smartUpperCasing, sortResults, startLoad, stopLoad, stopLoadError, toFloat, toInt, toObject, toastStatusMessage, uri,
   slice = [].slice,
   indexOf = [].indexOf || function(item) { for (var i = 0, l = this.length; i < l; i++) { if (i in this && this[i] === item) return i; } return -1; };
 
@@ -3971,17 +3971,12 @@ loadTerminalDialog = function(reinit) {
         return false;
       });
       $("#sql-input").keyup(function(e) {
-        var codeBox, kc, sql;
+        var kc;
         kc = e.keyCode ? e.keyCode : e.which;
         if (kc === 13) {
           return executeQuery();
         } else {
-          sql = $(this).val().trim();
-          sql = sql.replace(/@@/mig, "`mammal_diversity_database`");
-          sql = sql.replace(/!@/mig, "SELECT * FROM `mammal_diversity_database`");
-          codeBox = $("#interpreted-sql").get(0);
-          $(codeBox).text(sql);
-          return Prism.highlightElement(codeBox);
+          return parseQuery(this);
         }
       });
     }
@@ -4064,6 +4059,23 @@ getTerminalDependencies = function() {
   return false;
 };
 
+parseQuery = function(selector, codeBoxSelector) {
+  var codeBox, sql;
+  if (selector == null) {
+    selector = "#sql-input";
+  }
+  if (codeBoxSelector == null) {
+    codeBoxSelector = "#interpreted-sql";
+  }
+  sql = $(selector).val().trim();
+  sql = sql.replace(/@@/mig, "`mammal_diversity_database`");
+  sql = sql.replace(/!@/mig, "SELECT * FROM `mammal_diversity_database`");
+  codeBox = $(codeBoxSelector).get(0);
+  $(codeBox).text(sql);
+  Prism.highlightElement(codeBox);
+  return sql;
+};
+
 executeQuery = function() {
 
   /*
@@ -4071,12 +4083,19 @@ executeQuery = function() {
    */
   var args, darwinCoreOnly, handleSqlError, query;
   handleSqlError = function(errorMessage) {
-    var alertId, html;
+    var alertId, error2, html;
     if (errorMessage == null) {
       errorMessage = "Error";
     }
-    alertId = _asm.nacl.decode_utf8(_asm.nacl.crypto_hash_string(errorMessage + Date.now()));
-    html = "<div class=\"alert alert-danger alert-dismissable col-xs-8 center-block\" role=\"alert\" id=\"" + alertId + "\">\n  <button type=\"button\" class=\"close\" data-dismiss=\"alert\" aria-label=\"Close\"><span aria-hidden=\"true\">&times;</span></button>\n  <div class=\"alert-message\">" + errorMessage + "</div>\n</div>";
+    try {
+      alertId = _asm.nacl.decode_utf8(_asm.nacl.crypto_hash_string(errorMessage + Date.now()));
+    } catch (error2) {
+      e = error2;
+      console.warn(e.message);
+      console.warn(e.stack);
+      alertId = "sql-query-alert";
+    }
+    html = "<div class=\"alert alert-danger alert-dismissable col-xs-8 col-offset-xs-2 center-block clear clearfix\" role=\"alert\" id=\"" + alertId + "\">\n  <button type=\"button\" class=\"close\" data-dismiss=\"alert\" aria-label=\"Close\"><span aria-hidden=\"true\">&times;</span></button>\n  <div class=\"alert-message\">" + errorMessage + "</div>\n</div>";
     $("#sql-input").parents("paper-dialog").find(".alert").remove();
     $("#sql-input").parents("form").after(html);
     stopLoadError();
@@ -4085,22 +4104,58 @@ executeQuery = function() {
   try {
     darwinCoreOnly = p$("#dwc-only").checked;
   } catch (undefined) {}
-  query = $("#intepreted-sql").text().trim();
+  query = parseQuery();
   if (isNull(query)) {
     return handleSqlError("Sorry, you can't use an empty query");
   }
   args = {
     sql_query: post64(query),
-    action: query,
+    action: "query",
     dwc: darwinCoreOnly != null ? darwinCoreOnly : false
   };
+  console.debug("Posting to target", uri.urlString + "api.php?" + (buildQuery(args)));
   $.post(uri.urlString + "api.php", buildQuery(args, "json")).done(function(result) {
+    var error, errorMessage, html, len1, len2, m, o, ref1, ref2, statement, statements;
     console.log("Got result", result);
+    $("#sql-results").remove();
+    try {
+      if (result.statements != null) {
+        statements = Object.toArray(result.statements);
+      }
+    } catch (undefined) {}
+    if (result.status !== true) {
+      if (isNull(result.statement_count)) {
+        error = (ref1 = (ref2 = result.error) != null ? ref2 : result.human_error) != null ? ref1 : "UNKNOWN_ERROR";
+        return handleSqlError(error);
+      }
+      for (m = 0, len1 = statements.length; m < len1; m++) {
+        statement = statements[m];
+        if (statement.result === "ERROR") {
+          errorMessage = "Your query <code class='language-sql'>" + statement.provided + "</code> ";
+          if (statement.error.safety_check !== true) {
+            errorMessage += "failed a sanity check.";
+          } else if (statement.error.was_server_exception) {
+            errorMessage += "generated a problem on the server and was refused to be executed. Please report this.";
+          } else {
+            errorMessage += "gave <code>UNKNOWN_QUERY_ERROR</code>";
+          }
+          errorMessage += "<br/><br/>Execution of your query was halted here.";
+          return handleSqlError(errorMessage);
+        }
+      }
+    }
+    $("#sql-input").parents("paper-dialog").find(".alert").remove();
+    html = "<div id=\"sql-results\" class=\"sql-results\">\n</div>";
+    $("#sql-input").parents("form").after(html);
+    for (o = 0, len2 = statements.length; o < len2; o++) {
+      statement = statements[o];
+      doNothing();
+    }
     return false;
   }).fail(function(result, status) {
     console.error(result, status);
     console.warn("Couldn't hit target");
-    handlSqlError("Problem talking to the server, please try again");
+    handleSqlError("Problem talking to the server, please try again");
     return false;
   });
   return false;

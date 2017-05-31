@@ -6957,6 +6957,9 @@ paper-dialog.download-file .data-download-button {
 paper-dialog.download-file h3 + p {
   margin-left: 1rem;
 }
+paper-dialog#sql-query-dialog {
+  width: 60vw;
+}
 #modal-taxon paper-dialog-scrollable#modal-taxon-editor,
 #modal-taxon-edit paper-dialog-scrollable#modal-taxon-editor {
   max-height: 66vh;
@@ -7234,8 +7237,14 @@ paper-spinner {
 #login {
   width: inherit !important;
 }
+.clear {
+  clear: both;
+}
 #login .form-group {
   clear: both;
+}
+.alert.center-block {
+  float: none;
 }
 @media (max-width: 767px) {
   #login {

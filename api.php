@@ -344,11 +344,17 @@ function doLiveQuery($get)
                     }
                 }
             } catch (Exception $e) {
+                $exceptionMessage = $e->getMessage();
+                if (strpos(strtolower($exceptionMessage), "sql syntax") !== false) {
+                    $sqlResponse = false;
+                } else {
+                    $sqlResponse = null;
+                }
                 $statementResult = array(
                             "result" => "ERROR",
                             "error" => array(
                                 "safety_check" => $safePreflight,
-                                "sql_response" => null,
+                                "sql_response" => $sqlResponse,
                                 "was_server_exception" => true,
                             ),
                             "action" => $sqlAction,
@@ -358,7 +364,7 @@ function doLiveQuery($get)
                         );
                 if ($show_debug === true) {
                     $statementResult["dev_error"] = array(
-                        "exception" => $e->getMessage(),
+                        "exception" => $exceptionMessage,
                         "debug" => $debugInfo,
                     );
                 }

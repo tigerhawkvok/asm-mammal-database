@@ -4141,7 +4141,9 @@ executeQuery = function() {
         if (statement.result === "ERROR") {
           errorMessage = "Your query <code class='language-sql'>" + statement.provided + "</code> ";
           if (statement.error.safety_check !== true) {
-            errorMessage += "failed a sanity check.";
+            errorMessage += "failed a safety check.";
+          } else if (statement.error.sql_response === false) {
+            errorMessage += "has or generated during parsing a syntax error.<br/><br/>If you believe your syntax to be valid, try simplifying it as we strictly limit the types of queries accessible here.";
           } else if (statement.error.was_server_exception) {
             errorMessage += "generated a problem on the server and was refused to be executed. Please report this.";
           } else {
@@ -4164,21 +4166,26 @@ executeQuery = function() {
     for (o = 0, len2 = statements.length; o < len2; o++) {
       statement = statements[o];
       results = Object.toArray(statement.result);
-      ++i;
-      k = 0;
-      for (p = 0, len3 = results.length; p < len3; p++) {
-        row = results[p];
-        ++k;
-        try {
-          rowData = JSON.stringify(row);
-          rowData = rowData.replace(/,"/mig, ", \"");
-          language = "json";
-        } catch (error2) {
-          rowData = "Unable to parse row";
-          language = "text";
-        }
-        rowHtml = "<div>\n  " + i + "." + k + ": \n  <code class=\"language-" + language + "\">" + rowData + "</code>\n</div>";
+      if (results.length === 0) {
+        rowHtml = "<code>ZERO_RESULTS</code>";
         rows.push(rowHtml);
+      } else {
+        ++i;
+        k = 0;
+        for (p = 0, len3 = results.length; p < len3; p++) {
+          row = results[p];
+          ++k;
+          try {
+            rowData = JSON.stringify(row);
+            rowData = rowData.replace(/,"/mig, ", \"");
+            language = "json";
+          } catch (error2) {
+            rowData = "Unable to parse row";
+            language = "text";
+          }
+          rowHtml = "<div>\n  " + i + "." + k + ": \n  <code class=\"language-" + language + "\">" + rowData + "</code>\n</div>";
+          rows.push(rowHtml);
+        }
       }
     }
     $("#sql-results").html(rows.join("<br/><br/>"));

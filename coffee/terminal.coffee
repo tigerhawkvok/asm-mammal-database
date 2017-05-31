@@ -170,9 +170,11 @@ executeQuery = ->
         if statement.result is "ERROR"
           errorMessage = "Your query <code class='language-sql'>#{statement.provided}</code> "     
           if statement.error.safety_check isnt true
-            errorMessage += "failed a sanity check."
+            errorMessage += "failed a safety check."
+          else if statement.error.sql_response is false
+            errorMessage += "has or generated during parsing a syntax error.<br/><br/>If you believe your syntax to be valid, try simplifying it as we strictly limit the types of queries accessible here."
           else if statement.error.was_server_exception
-            errorMessage += "generated a problem on the server and was refused to be executed. Please report this."
+            errorMessage += "generated a problem on the server and was refused to be executed. Please report this."          
           else
             errorMessage += "gave <code>UNKNOWN_QUERY_ERROR</code>"
           errorMessage += "<br/><br/>Execution of your query was halted here."
@@ -191,24 +193,30 @@ executeQuery = ->
     i = 0
     for statement in statements
       results = Object.toArray statement.result
-      ++i
-      k = 0
-      for row in results
-        ++k
-        try
-          rowData = JSON.stringify row
-          rowData = rowData.replace /,"/mig, ", \""
-          language = "json"
-        catch
-          rowData = "Unable to parse row"
-          language = "text"
+      if results.length is 0
         rowHtml = """
-        <div>
-          #{i}.#{k}: 
-          <code class="language-#{language}">#{rowData}</code>
-        </div>
+        <code>ZERO_RESULTS</code>
         """
         rows.push rowHtml
+      else
+        ++i
+        k = 0
+        for row in results
+          ++k
+          try
+            rowData = JSON.stringify row
+            rowData = rowData.replace /,"/mig, ", \""
+            language = "json"
+          catch
+            rowData = "Unable to parse row"
+            language = "text"
+          rowHtml = """
+          <div>
+            #{i}.#{k}: 
+            <code class="language-#{language}">#{rowData}</code>
+          </div>
+          """
+          rows.push rowHtml
     $("#sql-results").html rows.join("<br/><br/>")
     Prism.highlightAll()
     false

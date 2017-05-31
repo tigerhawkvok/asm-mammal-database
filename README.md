@@ -2,7 +2,7 @@ ASM Mammalian Diversity Database
 ======================
 
 
-You can find the most current version at http://mammaldiversity.org/
+You can find the most current version at https://mammaldiversity.org/
 
 
 ## Stateful URI
@@ -13,7 +13,7 @@ Specifically, the URI is a Base-64 encoded query string of what is loaded asynch
 
 Therefore,
 
-http://mammaldiversity.org/#dXJzdXMrYXJjdG9zJmxvb3NlPXRydWU
+https://mammaldiversity.org/#dXJzdXMrYXJjdG9zJmxvb3NlPXRydWU
 
 has the query string reconstructed from the bit after the hash:
 
@@ -234,7 +234,7 @@ The search algorithm behaves as follows:
          word-wise on `common_name`, `major_common_type`, and
          `major_subtype` (eg, for all matches that contain each word
          as a substring in any of the columns). The returned `method`
-         is `space_loose_fallback`. [Example](http://mammaldiversity.org/commonnames_api.php?q=bear&loose=true&dwc_only=true&fuzzy=true)
+         is `space_loose_fallback`. [Example](https://mammaldiversity.org/commonnames_api.php?q=bear&loose=true&dwc_only=true&fuzzy=true)
 
 
 
@@ -319,7 +319,7 @@ Please see the documentation in [the `meta/` directory](https://github.com/tiger
 #### Administration
 
 You can access the administration / editing interface by logging in at
-http://mammaldiversity.org/admin
+https://mammaldiversity.org/admin
 
 If you create a user, an exisiting superuser will need to authorize your access. **You will not be able to log in or access the admin interface until this occurs**.
 

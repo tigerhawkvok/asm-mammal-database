@@ -70,3 +70,6 @@ currentVersion~
 meta/database/asm_db_backup.sql
 meta/database/create-sql-user.sql
 install.php
+*.pack
+forum/flatboard/data/config/config.dat.php
+forum/vanilla/conf/config.php

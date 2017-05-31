@@ -30,11 +30,18 @@ ErrorDocument 505 /400.php
 # php_value error_reporting 32767
 # php_value error_log "./logs/error.log"
 
+## Abstract away the application folder that the forum is installed in
+RewriteEngine on
+RewriteCond %{REQUEST_URI} ^forum/(.*)$ [NC]
+RewriteCond %1 (?!vanilla/).* [NC]
+#RewriteCond %{REQUEST_URI} !^forum/vanilla/.* [NC]
+RewriteRule ^forum/(.*)$ forum/vanilla/$1 [NC,L,QSA]
+
 
 ## Secure domain block -- only enable with SSL available
-#RewriteEngine On
-#RewriteCond %{HTTPS} off
-#RewriteRule (.*) https://%{HTTP_HOST}%{REQUEST_URI} [R,L]
+RewriteEngine On
+RewriteCond %{HTTPS} off
+RewriteRule (.*) https://%{HTTP_HOST}%{REQUEST_URI} [R,L]
 
 #Header set Strict-Transport-Security "max-age=31536000"
 #Header append Strict-Transport-Security includeSubDomains

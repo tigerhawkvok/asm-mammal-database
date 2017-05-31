@@ -206,7 +206,7 @@ downloadHTMLList = (useLastSearch = false) ->
   # Download a HTML file list
   #
   # We want to set this up to look similar to the published list
-  # http://mammaldiversity.org/wp-content/uploads/2014/07/HC_39_7thEd.pdf
+  # https://mammaldiversity.org/wp-content/uploads/2014/07/HC_39_7thEd.pdf
   # Starting with page 11
   #
   # Configured Bootstrap:

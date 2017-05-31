@@ -56,6 +56,7 @@ if (isset($_SERVER['QUERY_STRING'])) {
 }
 
 $start_script_timer = microtime_float();
+$_REQUEST = array_merge($_REQUEST, $_GET, $_POST);
 
 if (!function_exists('elapsed')) {
     function elapsed($start_time = null)
@@ -121,7 +122,11 @@ function checkColumnExists($column_list)
     $cols = $db->getCols();
     foreach (explode(",", $column_list) as $column) {
         if (!array_key_exists($column, $cols)) {
-            returnAjax(array("status"=>false,"error"=>"Invalid column. If it exists, it may be an illegal lookup column.","human_error"=>"Sorry, you specified a lookup criterion that doesn't exist. Please try again.","columns"=>$column_list,"bad_column"=>$column));
+            try {
+                returnAjax(array("status"=>false,"error"=>"Invalid column '$column'. If it exists, it may be an illegal lookup column.","human_error"=>"Sorry, you specified a lookup criterion that doesn't exist. Please try again.","columns"=>$column_list,"bad_column"=>$column));
+            } catch (Exception $e) {
+                returnAjax(array("status"=>false,"error"=>"Invalid column. If it exists, it may be an illegal lookup column.","human_error"=>"Sorry, you specified a lookup criterion that doesn't exist. Please try again.","columns"=>$column_list,"bad_column"=>$column));
+            }
         }
     }
     return true;
@@ -162,7 +167,11 @@ switch (strtolower($_REQUEST["action"])) {
 function doLiveQuery($get)
 {
     /***
+     * Handles directly querying the database with an SQL string.
      *
+     * @param array $get -> an array containing keys:
+     *  - @key sql_query: a base64-encoded string for an SQL statement
+     *  - @key (opt) bool dwc: If true, only return DarwinCore values
      ***/
     global $show_debug;
     $sqlQuery = decode64($get['sql_query'], true);
@@ -187,6 +196,7 @@ function doLiveQuery($get)
     $effectiveKey = 0;
     $statementsSize = sizeof($statements);
     $statementResponse = array();
+    $status = true;
     foreach ($statements as $k => $statement) {
         $statement = trim($statement);
         if (empty($statement)) {
@@ -204,6 +214,8 @@ function doLiveQuery($get)
             $sqlAction = "LOOKUP_COLS";
         } else {
             # Unverified action
+            $safePreflight = false;
+            $sqlAction = "UNVERIFIED";
         }
         if ($safePreflight === true) {
             try {
@@ -276,8 +288,18 @@ function doLiveQuery($get)
                             }
                             $buildGroup[$k] .= implode(" or ", $ors);
                         } else {
-                            # What?
-                            $buildGroup[$k] = "ILLEGAL_GROUP::>>>$group<<<";
+                            if (sizeof($groups) === 1) {
+                                $condParts = preg_split('/ *(=|!=| is | is not | like ) */im', $group, -1, PREG_SPLIT_NO_EMPTY);
+                                $glue = preg_replace('/.*?(=|!=| is | is not | like ).*/im', '$1', $group);
+                                $col = preg_replace('/^([`]?)([a-zA-Z_\-]+)\g{1}$/im', '$2', $condParts[0]);
+                                $realCol = getDarwinCore($col, true, true);
+                                checkColumnExists($realCol);
+                                $buildGroup[$k] = "(`$realCol` $glue ?";
+                                $buildWhereVals[] = preg_replace('/^([\'"]?)([^\'"]+)\g{1}$/im', '$2', $condParts[1]);
+                            } else {
+                                # What?
+                                $buildGroup[$k] = "ILLEGAL_GROUP::>>>$group<<<";
+                            }
                         }
                     }
                     $buildWhere = " WHERE ".implode(")", $buildGroup).")";
@@ -322,11 +344,17 @@ function doLiveQuery($get)
                     }
                 }
             } catch (Exception $e) {
+                $exceptionMessage = $e->getMessage();
+                if (strpos(strtolower($exceptionMessage), "sql syntax") !== false) {
+                    $sqlResponse = false;
+                } else {
+                    $sqlResponse = null;
+                }
                 $statementResult = array(
                             "result" => "ERROR",
                             "error" => array(
                                 "safety_check" => $safePreflight,
-                                "sql_response" => null,
+                                "sql_response" => $sqlResponse,
                                 "was_server_exception" => true,
                             ),
                             "action" => $sqlAction,
@@ -336,11 +364,12 @@ function doLiveQuery($get)
                         );
                 if ($show_debug === true) {
                     $statementResult["dev_error"] = array(
-                        "exception" => $e->getMessage(),
+                        "exception" => $exceptionMessage,
                         "debug" => $debugInfo,
                     );
                 }
-                # Log to error log
+                # TODO log to error log
+                $status = false;
             }
         } else {
             $sqlAction = preg_replace('/^([a-z-A-Z]+).*$/im', '$1', $statement);
@@ -356,11 +385,13 @@ function doLiveQuery($get)
                             "provided" => $originalQuery,
                             "query" => $queryInfo,
                         );
+            $status = false;
         }
         $statementResponse[] = $statementResult;
+        if ($status !== true) break;
     }
     return array(
-        "status" => true,
+        "status" => $status,
         "statements" => $statementResponse,
         "statement_count" => sizeof($statements),
     );

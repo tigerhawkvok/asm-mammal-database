@@ -39,6 +39,7 @@
   "dependencies": {
     "bower": "^1.8.0",
     "grunt-php-cs-fixer": "^1.0.0",
-    "grunt-phpcs": "^0.4.0"
+    "grunt-phpcs": "^0.4.0",
+    "js-nacl": "^1.2.2"
   }
 }

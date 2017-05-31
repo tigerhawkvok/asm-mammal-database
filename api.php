@@ -56,6 +56,7 @@ if (isset($_SERVER['QUERY_STRING'])) {
 }
 
 $start_script_timer = microtime_float();
+$_REQUEST = array_merge($_REQUEST, $_GET, $_POST);
 
 if (!function_exists('elapsed')) {
     function elapsed($start_time = null)
@@ -280,8 +281,18 @@ function doLiveQuery($get)
                             }
                             $buildGroup[$k] .= implode(" or ", $ors);
                         } else {
-                            # What?
-                            $buildGroup[$k] = "ILLEGAL_GROUP::>>>$group<<<";
+                            if (sizeof($groups) === 1) {
+                                $condParts = preg_split('/ *(=|!=| is | is not | like ) */im', $group, -1, PREG_SPLIT_NO_EMPTY);
+                                $glue = preg_replace('/.*?(=|!=| is | is not | like ).*/im', '$1', $group);
+                                $col = preg_replace('/^([`]?)([a-zA-Z_\-]+)\g{1}$/im', '$2', $condParts[0]);
+                                $realCol = getDarwinCore($col, true, true);
+                                checkColumnExists($realCol);
+                                $buildGroup[$k] = "`$realCol` $glue ?";
+                                $buildWhereVals[] = preg_replace('/^([\'"]?)([^\'"]+)\g{1}$/im', '$2', $condParts[1]);
+                            } else {
+                                # What?
+                                $buildGroup[$k] = "ILLEGAL_GROUP::>>>$group<<<";
+                            }
                         }
                     }
                     $buildWhere = " WHERE ".implode(")", $buildGroup).")";

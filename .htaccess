@@ -32,15 +32,16 @@ ErrorDocument 505 /400.php
 
 ## Abstract away the application folder that the forum is installed in
 RewriteEngine on
-RewriteCond %{REQUEST_URI} ^forum/(.*)$ [NC]
-RewriteCond %1 (?!vanilla/).* [NC]
-#RewriteCond %{REQUEST_URI} !^forum/vanilla/.* [NC]
+RewriteCond %{REQUEST_URI}  ^/forum/(.*)$ [NC]
+#RewriteCond %1 (?!vanilla/).* [NC]
+RewriteCond %{REQUEST_URI} !^/forum/vanilla(/.*|$) [NC]
 RewriteRule ^forum/(.*)$ forum/vanilla/$1 [NC,L,QSA]
 
 
 ## Secure domain block -- only enable with SSL available
 RewriteEngine On
 RewriteCond %{HTTPS} off
+RewriteCond %{HTTP_HOST} !^localhost$
 RewriteRule (.*) https://%{HTTP_HOST}%{REQUEST_URI} [R,L]
 
 #Header set Strict-Transport-Security "max-age=31536000"

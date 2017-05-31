@@ -3428,11 +3428,12 @@ loadTerminalDialog = (reinit = false) ->
             </div>
           </form>
           <p class="col-xs-12">Interpreted Query:</p>
-          <code class="language-sql" id="interpreted-sql"></code>
+          <code class="language-sql col-xs-11 col-xs-offset-1" id="interpreted-sql"></code>
         </div>
       </paper-dialog-scrollable>
       <div class="buttons">
-        <paper-button dialog-dimiss>Close</paper-button>
+        <paper-button id="clear-sql-results">Clear Results</paper-button>
+        <paper-button dialog-dismiss>Close</paper-button>
       </div>
     </paper-dialog>
       """
@@ -3445,10 +3446,15 @@ loadTerminalDialog = (reinit = false) ->
       $("#sql-input").keyup (e) ->
         kc = if e.keyCode then e.keyCode else e.which
         if kc is 13
+          e.preventDefault()
           return executeQuery()
         else
           # Copy the formatted string
           parseQuery this
+        false
+      $("#clear-sql-results").click ->
+        $("#sql-results").remove()
+        false
     p$("#sql-query-dialog").open()
   false
 
@@ -3574,10 +3580,13 @@ executeQuery = ->
     # The query worked
     $("#sql-input").parents("paper-dialog").find(".alert").remove()
     html = """
-    <div id="sql-results" class="sql-results">
+    <div id="sql-results" class="sql-results col-xs-12">
     </div>
     """
-    $("#sql-input").parents("form").after html
+    if $("#interpreted-sql").exists()
+      $("#interpreted-sql").after html
+    else
+      $("#sql-input").parents("form").after html
     rows = new Array()
     i = 0
     for statement in statements
@@ -3612,4 +3621,11 @@ executeQuery = ->
 
 
 $ ->
+  html = """
+  <paper-icon-button icon="icons:code" id="launch-term" title="Directly Query Database" data-toggle="tooltip">
+  </paper-icon-button>
+  """
+  $("#git-footer").append html
+  $("#launch-term").click ->
+    loadTerminalDialog.debounce()
   false

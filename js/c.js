@@ -3963,7 +3963,7 @@ loadTerminalDialog = function(reinit) {
   getTerminalDependencies(function() {
     var html;
     if (!($("#sql-query-dialog").exists() || reinit)) {
-      html = "<paper-dialog id=\"sql-query-dialog\" modal>\n  <paper-dialog-scrollable>\n    <div class=\"row query-container\">\n      <form class=\"form\">\n        <div class=\"form-group\">\n          <textarea id=\"sql-input\"\n                    rows=\"5\"\n                    class=\"form-control\"\n                    placeholder=\"SQL query here\"></textarea>\n        </div>\n      </form>\n      <p class=\"col-xs-12\">Interpreted Query:</p>\n      <code class=\"language-sql\" id=\"interpreted-sql\"></code>\n    </div>\n  </paper-dialog-scrollable>\n  <div class=\"buttons\">\n    <paper-button dialog-dimiss>Close</paper-button>\n  </div>\n</paper-dialog>";
+      html = "<paper-dialog id=\"sql-query-dialog\" modal>\n  <paper-dialog-scrollable>\n    <div class=\"row query-container\">\n      <form class=\"form\">\n        <div class=\"form-group\">\n          <textarea id=\"sql-input\"\n                    rows=\"5\"\n                    class=\"form-control\"\n                    placeholder=\"SQL query here\"></textarea>\n        </div>\n      </form>\n      <p class=\"col-xs-12\">Interpreted Query:</p>\n      <code class=\"language-sql col-xs-11 col-xs-offset-1\" id=\"interpreted-sql\"></code>\n    </div>\n  </paper-dialog-scrollable>\n  <div class=\"buttons\">\n    <paper-button id=\"clear-sql-results\">Clear Results</paper-button>\n    <paper-button dialog-dismiss>Close</paper-button>\n  </div>\n</paper-dialog>";
       $("body").append(html);
       $("#sql-query-dialog").find("form").submit(function(e) {
         e.preventDefault();
@@ -3974,10 +3974,16 @@ loadTerminalDialog = function(reinit) {
         var kc;
         kc = e.keyCode ? e.keyCode : e.which;
         if (kc === 13) {
+          e.preventDefault();
           return executeQuery();
         } else {
-          return parseQuery(this);
+          parseQuery(this);
         }
+        return false;
+      });
+      $("#clear-sql-results").click(function() {
+        $("#sql-results").remove();
+        return false;
       });
     }
     return p$("#sql-query-dialog").open();
@@ -4147,8 +4153,12 @@ executeQuery = function() {
       }
     }
     $("#sql-input").parents("paper-dialog").find(".alert").remove();
-    html = "<div id=\"sql-results\" class=\"sql-results\">\n</div>";
-    $("#sql-input").parents("form").after(html);
+    html = "<div id=\"sql-results\" class=\"sql-results col-xs-12\">\n</div>";
+    if ($("#interpreted-sql").exists()) {
+      $("#interpreted-sql").after(html);
+    } else {
+      $("#sql-input").parents("form").after(html);
+    }
     rows = new Array();
     i = 0;
     for (o = 0, len2 = statements.length; o < len2; o++) {
@@ -4184,6 +4194,12 @@ executeQuery = function() {
 };
 
 $(function() {
+  var html;
+  html = "<paper-icon-button icon=\"icons:code\" id=\"launch-term\" title=\"Directly Query Database\" data-toggle=\"tooltip\">\n</paper-icon-button>";
+  $("#git-footer").append(html);
+  $("#launch-term").click(function() {
+    return loadTerminalDialog.debounce();
+  });
   return false;
 });
 

@@ -101,11 +101,12 @@
 
 
 <script type="text/javascript" src="js/purl.min.js"></script>
-<script type="text/javascript" src="js/xmlToJSON.min.js"></script>
+<script type="text/javascript" src="js/xmlToJSON.min.js" async></script>
 <script type="text/javascript" src="bower_components/js-base64/base64.min.js"></script>
 <script type="text/javascript" src="bower_components/picturefill/dist/picturefill.min.js"></script>
 <script src="bower_components/imagelightbox/dist/imagelightbox.min.js"></script>
 <script src="bower_components/markdown/lib/markdown.js"></script>
+<script src="bower_components/js-nacl/lib/nacl_factory.js" async></script>
 <script type="text/javascript" src="js/c.min.js"></script>
 
 <?php include_once dirname(__FILE__) ."/social.php"; ?>

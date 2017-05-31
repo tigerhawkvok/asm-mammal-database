@@ -6882,8 +6882,20 @@ header#header-bar {
   width: 100%;
   z-index: 999;
 }
-header#header-bar paper-icon-button {
+header#header-bar paper-icon-button,
+header#header-bar paper-button {
   color: #fff;
+}
+header#header-bar paper-button.hidden-xs {
+  text-transform: capitalize;
+}
+header#header-bar paper-button.hidden-xs iron-icon {
+  margin-left: 5px;
+}
+@media (max-width: 767px) {
+  header#header-bar paper-icon-button.visible-xs {
+    display: inline-block !important;
+  }
 }
 header#header-bar + main {
   margin-top: 3em;

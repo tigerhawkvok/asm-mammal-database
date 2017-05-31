@@ -229,7 +229,7 @@ paper-dialog-scrollable {
     padding: 2rem !important;
 }
 
-@media (max-width: 767px) {
+@media (max-width: @screen-xs-max) {
     paper-dialog-scrollable {
         //height: 50vh;
     }
@@ -257,8 +257,22 @@ header#header-bar {
     box-shadow: 3px 3px 3px rgba(0,0,0,.3);
     width: 100%;
     z-index: 999;
-    paper-icon-button {
+    paper-icon-button, paper-button {
         color: #fff;
+    }
+    
+    paper-button.hidden-xs {
+        // Just the alternates
+        text-transform: capitalize;
+        iron-icon {
+            margin-left: 5px;
+        }
+    }
+    
+    paper-icon-button.visible-xs {
+        @media(max-width: @screen-xs-max) {
+            display: inline-block !important;
+        }
     }
 
     & + main {
@@ -561,7 +575,7 @@ header {
 }
 
 
-@media (max-width: 767px) {
+@media (max-width: @screen-xs-max) {
     #modal-taxon {
         min-width: 85vw;
         left: -3.25vw;
@@ -735,7 +749,7 @@ paper-toast, paper-spinner {
     float: none;
 }
 
-@media(max-width: 767px) {
+@media(max-width: @screen-xs-max) {
     #login {
         margin-left:0!important;
     }

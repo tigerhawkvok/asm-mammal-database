@@ -122,7 +122,11 @@ function checkColumnExists($column_list)
     $cols = $db->getCols();
     foreach (explode(",", $column_list) as $column) {
         if (!array_key_exists($column, $cols)) {
-            returnAjax(array("status"=>false,"error"=>"Invalid column. If it exists, it may be an illegal lookup column.","human_error"=>"Sorry, you specified a lookup criterion that doesn't exist. Please try again.","columns"=>$column_list,"bad_column"=>$column));
+            try {
+                returnAjax(array("status"=>false,"error"=>"Invalid column '$column'. If it exists, it may be an illegal lookup column.","human_error"=>"Sorry, you specified a lookup criterion that doesn't exist. Please try again.","columns"=>$column_list,"bad_column"=>$column));
+            } catch (Exception $e) {
+                returnAjax(array("status"=>false,"error"=>"Invalid column. If it exists, it may be an illegal lookup column.","human_error"=>"Sorry, you specified a lookup criterion that doesn't exist. Please try again.","columns"=>$column_list,"bad_column"=>$column));
+            }
         }
     }
     return true;
@@ -192,6 +196,7 @@ function doLiveQuery($get)
     $effectiveKey = 0;
     $statementsSize = sizeof($statements);
     $statementResponse = array();
+    $status = true;
     foreach ($statements as $k => $statement) {
         $statement = trim($statement);
         if (empty($statement)) {
@@ -209,6 +214,8 @@ function doLiveQuery($get)
             $sqlAction = "LOOKUP_COLS";
         } else {
             # Unverified action
+            $safePreflight = false;
+            $sqlAction = "UNVERIFIED";
         }
         if ($safePreflight === true) {
             try {
@@ -287,7 +294,7 @@ function doLiveQuery($get)
                                 $col = preg_replace('/^([`]?)([a-zA-Z_\-]+)\g{1}$/im', '$2', $condParts[0]);
                                 $realCol = getDarwinCore($col, true, true);
                                 checkColumnExists($realCol);
-                                $buildGroup[$k] = "`$realCol` $glue ?";
+                                $buildGroup[$k] = "(`$realCol` $glue ?";
                                 $buildWhereVals[] = preg_replace('/^([\'"]?)([^\'"]+)\g{1}$/im', '$2', $condParts[1]);
                             } else {
                                 # What?
@@ -355,7 +362,8 @@ function doLiveQuery($get)
                         "debug" => $debugInfo,
                     );
                 }
-                # Log to error log
+                # TODO log to error log
+                $status = false;
             }
         } else {
             $sqlAction = preg_replace('/^([a-z-A-Z]+).*$/im', '$1', $statement);
@@ -371,11 +379,13 @@ function doLiveQuery($get)
                             "provided" => $originalQuery,
                             "query" => $queryInfo,
                         );
+            $status = false;
         }
         $statementResponse[] = $statementResult;
+        if ($status !== true) break;
     }
     return array(
-        "status" => true,
+        "status" => $status,
         "statements" => $statementResponse,
         "statement_count" => sizeof($statements),
     );

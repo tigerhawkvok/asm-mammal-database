@@ -1,9 +1,0 @@
-User-Agent: *
-Disallow: 
-Disallow: /backups
-Disallow: /data
-Disallow: /lang
-Disallow: /lib
-Disallow: /plugin
-Disallow: /theme
-Disallow: /uploads

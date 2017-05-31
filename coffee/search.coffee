@@ -326,7 +326,7 @@ formatSearchResults = (result, container = searchParams.targetContainer, callbac
   #
   # See
   #
-  # http://mammaldiversity.org/api.php?q=ursus+arctos&loose=true
+  # https://mammaldiversity.org/api.php?q=ursus+arctos&loose=true
   #
   # for a sample search result return.
   ###

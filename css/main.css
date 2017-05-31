@@ -6957,6 +6957,25 @@ paper-dialog.download-file .data-download-button {
 paper-dialog.download-file h3 + p {
   margin-left: 1rem;
 }
+paper-dialog#sql-query-dialog {
+  width: 60vw;
+}
+paper-dialog#sql-query-dialog paper-dialog-scrollable div.scrollable {
+  max-height: 50vh;
+}
+paper-dialog#sql-query-dialog paper-dialog-scrollable #sql-results {
+  max-width: 100%;
+}
+paper-dialog#sql-query-dialog paper-dialog-scrollable #sql-results,
+paper-dialog#sql-query-dialog paper-dialog-scrollable #interpreted-sql {
+  margin-bottom: 2rem;
+}
+paper-dialog#sql-query-dialog paper-dialog-scrollable .text-muted {
+  margin-top: 5px;
+}
+paper-dialog#sql-query-dialog paper-dialog-scrollable .text-muted kbd {
+  opacity: .5;
+}
 #modal-taxon paper-dialog-scrollable#modal-taxon-editor,
 #modal-taxon-edit paper-dialog-scrollable#modal-taxon-editor {
   max-height: 66vh;
@@ -7234,8 +7253,14 @@ paper-spinner {
 #login {
   width: inherit !important;
 }
+.clear {
+  clear: both;
+}
 #login .form-group {
   clear: both;
+}
+.alert.center-block {
+  float: none;
 }
 @media (max-width: 767px) {
   #login {

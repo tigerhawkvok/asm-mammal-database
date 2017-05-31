@@ -35,6 +35,7 @@
     "commit": "22df673c472d52fbd1f9ab2656c7186fcbc47c0b"
   },
   "_source": "https://github.com/LeaVerou/prism.git",
-  "_target": "*",
-  "_originalSource": "prism"
+  "_target": "^1.6.0",
+  "_originalSource": "prism",
+  "_direct": true
 }

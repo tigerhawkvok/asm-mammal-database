@@ -369,6 +369,31 @@ paper-dialog {
             margin-left: 1rem;
         }
     }
+    
+    &#sql-query-dialog {
+        width: 60vw;
+        paper-dialog-scrollable {
+            div.scrollable {
+                max-height:50vh;
+            }
+            
+            #sql-results {
+                max-width: 100%;
+                
+            }
+            
+            #sql-results, #interpreted-sql {
+                margin-bottom:2rem;
+            }
+            
+            .text-muted {
+                margin-top: 5px;
+                kbd {
+                    opacity: .5;
+                }
+            }
+        }
+    }
 
 }
 
@@ -697,9 +722,19 @@ paper-toast, paper-spinner {
     // Override otp
     width: inherit !important;
 }
-#login .form-group {
+.clear {
     clear: both;
 }
+
+
+#login .form-group {
+    .clear;
+}
+
+.alert.center-block {
+    float: none;
+}
+
 @media(max-width: 767px) {
     #login {
         margin-left:0!important;

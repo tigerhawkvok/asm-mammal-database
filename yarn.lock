@@ -1481,6 +1481,10 @@ js-base64@^2.1.9:
   version "2.1.9"
   resolved "https://registry.yarnpkg.com/js-base64/-/js-base64-2.1.9.tgz#f0e80ae039a4bd654b5f281fc93f04a914a7fcce"
 
+js-nacl@^1.2.2:
+  version "1.2.2"
+  resolved "https://registry.yarnpkg.com/js-nacl/-/js-nacl-1.2.2.tgz#c4633dbfa67dc62f6b73033e5118e564e5abb987"
+
 js-yaml@~2.0.5:
   version "2.0.5"
   resolved "https://registry.yarnpkg.com/js-yaml/-/js-yaml-2.0.5.tgz#a25ae6509999e97df278c6719da11bd0687743a8"

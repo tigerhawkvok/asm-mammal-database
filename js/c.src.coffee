@@ -3424,7 +3424,11 @@ loadTerminalDialog = (reinit = false) ->
               <textarea id="sql-input"
                         rows="5"
                         class="form-control"
-                        placeholder="SQL query here"></textarea>
+                        placeholder="SQL query here"
+                        autofocus></textarea>
+              <p class="text-muted">
+                <strong>Tip:</strong> Use <kbd>@@</kbd> to represent the database table and <kbd>!@</kbd> to represent <code class="language-null">SELECT * FROM table</code>. You can search columns using DarwinCore or columns specified in Github.
+              </p>
             </div>
           </form>
           <p class="col-xs-12">Interpreted Query:</p>

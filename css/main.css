@@ -6970,6 +6970,12 @@ paper-dialog#sql-query-dialog paper-dialog-scrollable #sql-results,
 paper-dialog#sql-query-dialog paper-dialog-scrollable #interpreted-sql {
   margin-bottom: 2rem;
 }
+paper-dialog#sql-query-dialog paper-dialog-scrollable .text-muted {
+  margin-top: 5px;
+}
+paper-dialog#sql-query-dialog paper-dialog-scrollable .text-muted kbd {
+  opacity: .5;
+}
 #modal-taxon paper-dialog-scrollable#modal-taxon-editor,
 #modal-taxon-edit paper-dialog-scrollable#modal-taxon-editor {
   max-height: 66vh;

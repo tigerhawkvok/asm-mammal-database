@@ -6961,7 +6961,7 @@ paper-dialog#sql-query-dialog {
   width: 60vw;
 }
 paper-dialog#sql-query-dialog paper-dialog-scrollable div.scrollable {
-  max-height: 30vh;
+  max-height: 50vh;
 }
 paper-dialog#sql-query-dialog paper-dialog-scrollable #sql-results {
   max-width: 100%;

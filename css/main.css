@@ -6960,6 +6960,12 @@ paper-dialog.download-file h3 + p {
 paper-dialog#sql-query-dialog {
   width: 60vw;
 }
+paper-dialog#sql-query-dialog paper-dialog-scrollable div.scrollable {
+  max-height: 30vh;
+}
+paper-dialog#sql-query-dialog paper-dialog-scrollable #sql-results {
+  max-width: 100%;
+}
 #modal-taxon paper-dialog-scrollable#modal-taxon-editor,
 #modal-taxon-edit paper-dialog-scrollable#modal-taxon-editor {
   max-height: 66vh;

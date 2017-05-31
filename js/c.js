@@ -305,15 +305,15 @@ Object.size = function(obj) {
 };
 
 Object.doOnSortedKeys = function(obj, fn) {
-  var data, key, len1, m, results, sortedKeys;
+  var data, key, len1, m, results1, sortedKeys;
   sortedKeys = Object.keys(obj).sort();
-  results = [];
+  results1 = [];
   for (m = 0, len1 = sortedKeys.length; m < len1; m++) {
     key = sortedKeys[m];
     data = obj[key];
-    results.push(fn(data));
+    results1.push(fn(data));
   }
-  return results;
+  return results1;
 };
 
 delay = function(ms, f) {
@@ -4052,7 +4052,9 @@ getTerminalDependencies = function() {
   loadJS("bower_components/prism/prism.js", function() {
     loadJS("bower_components/prism/components/prism-sql.js", function() {
       dependencies.prism = true;
-      return checkDependencies();
+      loadJS("bower_components/prism/components/prism-json.js");
+      checkDependencies();
+      return false;
     });
     return $("head").append("<link href=\"bower_components/prism/themes/prism.css\" rel=\"stylesheet\" />");
   });
@@ -4115,7 +4117,7 @@ executeQuery = function() {
   };
   console.debug("Posting to target", uri.urlString + "api.php?" + (buildQuery(args)));
   $.post(uri.urlString + "api.php", buildQuery(args, "json")).done(function(result) {
-    var error, errorMessage, html, len1, len2, m, o, ref1, ref2, statement, statements;
+    var error, error2, errorMessage, html, i, k, language, len1, len2, len3, m, o, p, ref1, ref2, results, row, rowData, rowHtml, rows, statement, statements;
     console.log("Got result", result);
     $("#sql-results").remove();
     try {
@@ -4147,10 +4149,30 @@ executeQuery = function() {
     $("#sql-input").parents("paper-dialog").find(".alert").remove();
     html = "<div id=\"sql-results\" class=\"sql-results\">\n</div>";
     $("#sql-input").parents("form").after(html);
+    rows = new Array();
+    i = 0;
     for (o = 0, len2 = statements.length; o < len2; o++) {
       statement = statements[o];
-      doNothing();
+      results = Object.toArray(statement.result);
+      ++i;
+      k = 0;
+      for (p = 0, len3 = results.length; p < len3; p++) {
+        row = results[p];
+        ++k;
+        try {
+          rowData = JSON.stringify(row);
+          rowData = rowData.replace(/,"/mig, ", \"");
+          language = "json";
+        } catch (error2) {
+          rowData = "Unable to parse row";
+          language = "text";
+        }
+        rowHtml = "<div>\n  " + i + "." + k + ": \n  <code class=\"language-" + language + "\">" + rowData + "</code>\n</div>";
+        rows.push(rowHtml);
+      }
     }
+    $("#sql-results").html(rows.join("<br/><br/>"));
+    Prism.highlightAll();
     return false;
   }).fail(function(result, status) {
     console.error(result, status);

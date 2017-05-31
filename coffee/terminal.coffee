@@ -96,7 +96,9 @@ getTerminalDependencies = (callback, args...) ->
   loadJS "bower_components/prism/prism.js", ->
     loadJS "bower_components/prism/components/prism-sql.js", ->
       dependencies.prism = true
+      loadJS "bower_components/prism/components/prism-json.js"
       checkDependencies()
+      false
     $("head").append """<link href="bower_components/prism/themes/prism.css" rel="stylesheet" />"""
   false
 
@@ -172,8 +174,30 @@ executeQuery = ->
     </div>
     """
     $("#sql-input").parents("form").after html
+    rows = new Array()
+    i = 0
     for statement in statements
-      doNothing()
+      results = Object.toArray statement.result
+      ++i
+      k = 0
+      for row in results
+        ++k
+        try
+          rowData = JSON.stringify row
+          rowData = rowData.replace /,"/mig, ", \""
+          language = "json"
+        catch
+          rowData = "Unable to parse row"
+          language = "text"
+        rowHtml = """
+        <div>
+          #{i}.#{k}: 
+          <code class="language-#{language}">#{rowData}</code>
+        </div>
+        """
+        rows.push rowHtml
+    $("#sql-results").html rows.join("<br/><br/>")
+    Prism.highlightAll()
     false
   .fail (result, status) ->
     console.error result, status

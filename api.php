@@ -173,7 +173,7 @@ function doLiveQuery($get)
      *  - @key sql_query: a base64-encoded string for an SQL statement
      *  - @key (opt) bool dwc: If true, only return DarwinCore values
      ***/
-    global $show_debug;
+    global $show_debug, $db;
     $sqlQuery = decode64($get['sql_query'], true);
     if (empty($sqlQuery)) {
         $sqlQuery = base64_decode(urldecode($get["sql_query"]));
@@ -184,7 +184,7 @@ function doLiveQuery($get)
     # has permissions to read this dataset
     $searchSql = strtolower($sqlQuery);
     # We're going to check against well-formed selects
-    $queryPattern = '/^SELECT +((?:(`?)[a-zA-Z_\-]+\g{2}(?:, *)?)+|\*) +FROM +(`?)mammal_diversity_database\g{3}( +\(?where +((?:(?:\(?(`?)[a-zA-Z_\-]+\g{6} *(?:=|!=| is | is not | like ) *([\'"]?)[^\'"]+\g{7})(?:(?: +AND| +OR| *,| *\)(?: +AND| +OR| *,)) +)?)+|false)\)?)?[;] *$/im';
+    $queryPattern = '/^SELECT +((?:(?:(`?)[a-zA-Z_\-]+\g{2}|count\(\*\))(?: +as +[a-zA-Z\_]+)?(?:, *)?)+|\*)(?<!,) +FROM +(`?)'.$db->getTable().'\g{3}( +\(?where +((?:(?:\(?(`?)[a-zA-Z_\-]+\g{6} *(?:=|!=| is | is not | like ) *([\'"]?)[^\'"`;]+\g{7})(?:(?: +AND| +OR| *,| *\)(?: +AND| +OR| *,)) +)?)+|false)\)?)?( +GROUP BY +(?:(`?)[a-zA-Z_\-]+\g{9}(?:, *)?)+(?<!,))?( +ORDER BY +(?:(`?)[a-zA-Z_\-]+\g{11}(?:, *)?)+(?<!,))? *; *$/im';
     # Purely for emacs not liking the thing above meaning it has to be
     #commented out in dev
     if (!isset($queryPattern)) {
@@ -192,23 +192,26 @@ function doLiveQuery($get)
             "error" => "Please uncomment \$queryPattern before using"
         );
     }
-    $statements = explode(');', $sqlQuery);
+    $statements = explode(';', $sqlQuery);
     $effectiveKey = 0;
     $statementsSize = sizeof($statements);
     $statementResponse = array();
     $status = true;
     foreach ($statements as $k => $statement) {
+        $queryInfo = array();
         $statement = trim($statement);
         if (empty($statement)) {
             unset($statements[$k]);
             continue;
+        } else {
+            $statement .= ";";
         }
         $effectiveKey++;
         $safePreflight = false;
         if (preg_match($queryPattern, $statement)) {
             $safePreflight = true;
             $sqlAction = "SELECT";
-        } elseif (preg_match('/\A(?i)SELECT +\* +(?:FROM)?[ `]*mammal_diversity_database[ `]* +(WHERE FALSE)[;]?\Z/m', $statement)) {
+        } elseif (preg_match('/\A(?i)SELECT +\* +(?:FROM)?[ `]*'.$db->getTable().'[ `]* +(WHERE FALSE)[;]?\Z/m', $statement)) {
             # Looking up the columns is a safe action
             $safePreflight = true;
             $sqlAction = "LOOKUP_COLS";
@@ -231,10 +234,10 @@ function doLiveQuery($get)
                     PDO::ATTR_EMULATE_PREPARES   => false,
                 );
                 $pdo = new PDO($dsn, $default_sql_user, $default_sql_password, $opt);
-                $select = preg_replace('/^SELECT +((?:(`?)[a-zA-Z_\-]+\g{2}(?:, *)?)+|\*) +FROM +(`?)mammal_diversity_database\g{3}( +\(?where +((?:(?:\(?(`?)[a-zA-Z_\-]+\g{6} *(?:=|!=| is | is not | like ) *([\'"]?)[^\'"]+\g{7})(?:(?: +AND| +OR| *,| *\)(?: +AND| +OR| *,)) +)?)+|false)\)?)?[;] *$/im', '$1', $statement);
+                $select = preg_replace($queryPattern, '$1', $statement);
 
                 $query = "SELECT ".$select." FROM `".$db->getTable()."`";
-                $where = preg_replace('/^SELECT +((?:(`?)[a-zA-Z_\-]+\g{2}(?:, *)?)+|\*) +FROM +(`?)mammal_diversity_database\g{3}( +\(?where +((?:(?:\(?(`?)[a-zA-Z_\-]+\g{6} *(?:=|!=| is | is not | like ) *([\'"]?)[^\'"]+\g{7})(?:(?: +AND| +OR| *,| *\)(?: +AND| +OR| *,)) +)?)+|false)\)?)?[;] *$/im', '${4}', $statement);
+                $where = preg_replace($queryPattern, '${4}', $statement);
                 if (!empty($where)) {
                     # Extract parameters from the where
                     $buildWhere = array();
@@ -243,9 +246,18 @@ function doLiveQuery($get)
                     $whereStatements = preg_replace('/ *where *(.*) *$/im', '$1', $where);
                     $groups = explode(")", $whereStatements);
                     $buildGroup = array();
+                    $orConds = array();
+                    $andConds = array();
                     foreach ($groups as $k => $group) {
                         # Trim any leading parens or spaces
-                        $buildGroup[$k] = "(";
+                        if (empty($group)) continue;
+                        if (preg_match('/^ *(and|or) +.*$/im', $group)) {
+                            $glue = preg_replace('/^ *(and|or) +.*$/im', '$1', $group);
+                            $group = preg_replace('/^ *(and|or) +(.*)$/im', '$2', $group);
+                            $buildGroup[$k] = " $glue (";
+                        } else {
+                            $buildGroup[$k] =  "(";
+                        }
                         $group = preg_replace('/^\(? *(.*)$/im', '$1', $group);
                         if (preg_match('/(?: |^)and /im', $group)) {
                             # AND statements
@@ -254,6 +266,7 @@ function doLiveQuery($get)
                                 $buildGroup[$k] = " AND (";
                             }
                             $conds = preg_split('/(?: |^)and */im', $group);
+                            $andConds = $conds;
                             $ands = array();
                             foreach ($conds as $cond) {
                                 if (!empty(trim($cond))) {
@@ -274,6 +287,7 @@ function doLiveQuery($get)
                                 $buildGroup[$k] = " OR (";
                             }
                             $conds = preg_split('/(?: |^)or */im', $group);
+                            $orConds = $conds;
                             $ors = array();
                             foreach ($conds as $cond) {
                                 if (!empty(trim($cond))) {
@@ -296,19 +310,20 @@ function doLiveQuery($get)
                                 checkColumnExists($realCol);
                                 $buildGroup[$k] = "(`$realCol` $glue ?";
                                 $buildWhereVals[] = preg_replace('/^([\'"]?)([^\'"]+)\g{1}$/im', '$2', $condParts[1]);
-                            } else {
+                            } elseif (!empty($group)){
                                 # What?
                                 $buildGroup[$k] = "ILLEGAL_GROUP::>>>$group<<<";
                             }
                         }
                     }
-                    $buildWhere = " WHERE ".implode(")", $buildGroup).")";
+                    $buildWhere = " WHERE ".implode(") ", $buildGroup).")";
                     $query .= $buildWhere;
                     # Generate some values now, in case we need to debug
                     $queryInfo = array(
                             "where" => $buildWhere,
                             "values" => $buildWhereVals,
                             "full_query" => $query,
+                            "used_statement" => $statement,
                         );
                     $debugInfo = array(
                             "raw_where" => $where,
@@ -317,7 +332,12 @@ function doLiveQuery($get)
                             "build_group" => $buildGroup,
                             "last_and" => $ands,
                             "select" => $select,
+                            "conds" => array(
+                                "or" => $orConds,
+                                "and" => $andConds,
+                            ),
                         );
+                    //return array_merge($queryInfo, $debugInfo);
                     $stmt = $pdo->prepare($query);
                     $stmt->execute($buildWhereVals);
                     $data = array();
@@ -336,7 +356,6 @@ function doLiveQuery($get)
                     $statementResult = array(
                         "result" => $data,
                         "action" => $sqlAction,
-                        "provided" => $originalQuery,
                         "query" => $queryInfo,
                     );
                     if ($show_debug === true) {
@@ -394,6 +413,7 @@ function doLiveQuery($get)
         "status" => $status,
         "statements" => $statementResponse,
         "statement_count" => sizeof($statements),
+        "provided" => $originalQuery,
     );
 }
 

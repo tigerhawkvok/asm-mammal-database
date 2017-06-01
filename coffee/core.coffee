@@ -1,3 +1,5 @@
+import "es6-promise/auto"
+
 uri = new Object()
 uri.o = $.url()
 uri.urlString = uri.o.attr('protocol') + '://' + uri.o.attr('host')  + uri.o.attr("directory")

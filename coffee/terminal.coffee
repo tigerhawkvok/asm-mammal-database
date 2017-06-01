@@ -43,15 +43,16 @@ loadTerminalDialog = (reinit = false) ->
         e.preventDefault()
         executeQuery()
         false
-      $("#sql-input").keyup (e) ->
+      $("#sql-input").keydown (e) ->
         kc = if e.keyCode then e.keyCode else e.which
         if kc is 13
           e.preventDefault()
-          return executeQuery()
+          executeQuery()
+          return false
         else
           # Copy the formatted string
           parseQuery this
-        false
+        true
       $("#clear-sql-results").click ->
         $("#sql-results").remove()
         false

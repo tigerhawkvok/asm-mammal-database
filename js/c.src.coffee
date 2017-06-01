@@ -2138,7 +2138,7 @@ formatSearchResults = (result, container = searchParams.targetContainer, callbac
   #
   # See
   #
-  # http://mammaldiversity.org/api.php?q=ursus+arctos&loose=true
+  # https://mammaldiversity.org/api.php?q=ursus+arctos&loose=true
   #
   # for a sample search result return.
   ###
@@ -3447,15 +3447,16 @@ loadTerminalDialog = (reinit = false) ->
         e.preventDefault()
         executeQuery()
         false
-      $("#sql-input").keyup (e) ->
+      $("#sql-input").keydown (e) ->
         kc = if e.keyCode then e.keyCode else e.which
         if kc is 13
           e.preventDefault()
-          return executeQuery()
+          executeQuery()
+          return false
         else
           # Copy the formatted string
           parseQuery this
-        false
+        true
       $("#clear-sql-results").click ->
         $("#sql-results").remove()
         false

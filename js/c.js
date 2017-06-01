@@ -2626,7 +2626,7 @@ formatSearchResults = function(result, container, callback) {
    *
    * See
    *
-   * http://mammaldiversity.org/api.php?q=ursus+arctos&loose=true
+   * https://mammaldiversity.org/api.php?q=ursus+arctos&loose=true
    *
    * for a sample search result return.
    */
@@ -3970,16 +3970,17 @@ loadTerminalDialog = function(reinit) {
         executeQuery();
         return false;
       });
-      $("#sql-input").keyup(function(e) {
+      $("#sql-input").keydown(function(e) {
         var kc;
         kc = e.keyCode ? e.keyCode : e.which;
         if (kc === 13) {
           e.preventDefault();
-          return executeQuery();
+          executeQuery();
+          return false;
         } else {
           parseQuery(this);
         }
-        return false;
+        return true;
       });
       $("#clear-sql-results").click(function() {
         $("#sql-results").remove();

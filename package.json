@@ -1,6 +1,6 @@
 {
   "name": "asm-mammal-database",
-  "version": "1.3.2",
+  "version": "1.3.3",
   "description": "ASM Mammal Database",
   "main": "api.php",
   "scripts": {
@@ -19,13 +19,13 @@
   "devDependencies": {
     "autoprefixer-core": "^6.0.1",
     "bootlint": "^0.14.2",
-    "coffee-script": "^1.9.3",
+    "coffee-script": "^1.12.6",
     "grunt": "^1.0.1",
     "grunt-bootlint": "^0.10.2",
     "grunt-contrib-coffee": "^1.0.0",
-    "grunt-contrib-cssmin": "^2.0.0",
+    "grunt-contrib-cssmin": "^2.2.0",
     "grunt-contrib-less": "^1.0.1",
-    "grunt-contrib-uglify": "^2.1.0",
+    "grunt-contrib-uglify": "^3.0.1",
     "grunt-contrib-watch": "^1.0.0",
     "grunt-html": "^8.3.2",
     "grunt-phplint": "^0.1.0",
@@ -38,8 +38,10 @@
   },
   "dependencies": {
     "bower": "^1.8.0",
+    "es6-promise": "^4.1.0",
     "grunt-php-cs-fixer": "^1.0.0",
     "grunt-phpcs": "^0.4.0",
-    "js-nacl": "^1.2.2"
+    "js-nacl": "^1.2.2",
+    "webpack": "^2.6.1"
   }
 }

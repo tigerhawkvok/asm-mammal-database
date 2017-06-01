@@ -135,12 +135,12 @@ if ($show_debug === true) {
             <!-- Now, elements that are hidden by default -->
             <paper-button data-toggle="collapse" data-target="#collapse-advanced" aria-expanded="false" aria-controls="collapse-advanced" class="asm-blue-light" id="collapse-button" raised>Advanced Options <iron-icon icon="icons:unfold-more" id="collapse-icon"></iron-icon></paper-button>
             <div class="collapse form-group" id="collapse-advanced">
-              <!-- Clade -->
+              <!-- Clade: DWC cohort, magnaorder, and superorder -->
               <paper-input label="Clade" id="major-type-filter" name="major-type-filter" class="cndb-filter col-md-4 col-xs-6" data-column="major_type"></paper-input>
               <!-- Subtype -->
-              <paper-input label="Subtype" id="major-subtype-filter" name="major-subtype-filter" class="cndb-filter col-md-4 col-xs-6" data-column="major_subtype"></paper-input>
+              <paper-input label="Linnean Order" id="major-subtype-filter" name="major-subtype-filter" class="cndb-filter col-md-4 col-xs-6" data-column="linnean_order"></paper-input>
               <!-- Family -->
-              <paper-input label="Minor Type / Family" id="minor-type-filter" name="minor-type-filter" class="cndb-filter col-md-4 col-xs-6" data-column="minor_type"></paper-input>
+              <paper-input label="Linnean Family" id="minor-type-filter" name="minor-type-filter" class="cndb-filter col-md-4 col-xs-6" data-column="linnean_family"></paper-input>
               <!-- Genus authority -->
               <paper-input label="Genus Authority" id="genus-authority-filter" name="species-authority-filter" class="cndb-filter col-md-4 col-xs-6" data-column="genus_authority"></paper-input>
               <!-- Species authority -->

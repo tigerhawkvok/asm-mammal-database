@@ -93,9 +93,6 @@ module.exports = (grunt) ->
       options:
         rules: "@PSR2"
     uglify:
-      options:
-        mangle:
-          except:['jQuery']
       vulcanize:
         options:
           sourceMap:true

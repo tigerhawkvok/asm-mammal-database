@@ -121,6 +121,9 @@ function checkColumnExists($column_list)
     global $db;
     $cols = $db->getCols();
     foreach (explode(",", $column_list) as $column) {
+        if (strtolower($column) == "count(*)") {
+            continue;
+        }
         if (!array_key_exists($column, $cols)) {
             try {
                 returnAjax(array("status"=>false,"error"=>"Invalid column '$column'. If it exists, it may be an illegal lookup column.","human_error"=>"Sorry, you specified a lookup criterion that doesn't exist. Please try again.","columns"=>$column_list,"bad_column"=>$column));
@@ -237,11 +240,11 @@ function doLiveQuery($get)
                 $select = preg_replace($queryPattern, '$1', $statement);
                 $selectCols = explode(",", $select);
                 $realSelect = array();
-                foreach($selectCols as $colStatement) {
+                foreach ($selectCols as $colStatement) {
                     $col = preg_replace('/^([`]?)([a-zA-Z_\-]+)\g{1}$/im', '$2', $colStatement);
                     $realCol = getDarwinCore($col, true, true);
                     checkColumnExists($realCol);
-                    $realSelect[] = "`$realCol`";
+                    $realSelect[] = strtolower($realCol) == "count(*)" ? $realCol : "`$realCol`";
                 }
                 $query = "SELECT ".implode(",", $realSelect)." FROM `".$db->getTable()."`";
                 $where = preg_replace($queryPattern, '${4}', $statement);
@@ -257,7 +260,9 @@ function doLiveQuery($get)
                     $andConds = array();
                     foreach ($groups as $k => $group) {
                         # Trim any leading parens or spaces
-                        if (empty($group)) continue;
+                        if (empty($group)) {
+                            continue;
+                        }
                         if (preg_match('/^ *(and|or) +.*$/im', $group)) {
                             $glue = preg_replace('/^ *(and|or) +.*$/im', '$1', $group);
                             $group = preg_replace('/^ *(and|or) +(.*)$/im', '$2', $group);
@@ -317,7 +322,7 @@ function doLiveQuery($get)
                                 checkColumnExists($realCol);
                                 $buildGroup[$k] = "(`$realCol` $glue ?";
                                 $buildWhereVals[] = preg_replace('/^([\'"]?)([^\'"]+)\g{1}$/im', '$2', $condParts[1]);
-                            } elseif (!empty($group)){
+                            } elseif (!empty($group)) {
                                 # What?
                                 $buildGroup[$k] = "ILLEGAL_GROUP::>>>$group<<<";
                             }
@@ -348,7 +353,7 @@ function doLiveQuery($get)
                     $stmt = $pdo->prepare($query);
                     $stmt->execute($buildWhereVals);
                     $data = array();
-                    foreach($stmt as $row) {
+                    foreach ($stmt as $row) {
                         $tmp = array(
                             "result" => array($row),
                         );
@@ -414,7 +419,9 @@ function doLiveQuery($get)
             $status = false;
         }
         $statementResponse[] = $statementResult;
-        if ($status !== true) break;
+        if ($status !== true) {
+            break;
+        }
     }
     return array(
         "status" => $status,
@@ -548,7 +555,7 @@ if (isset($_REQUEST['filter'])) {
             $params = array();
             foreach ($params_temp as $col => $lookup) {
                 # Smart_decode takes care of this for us
-                                $params[$db->sanitize(deEscape($col))] = $db->sanitize(deEscape($lookup));
+                $params[$db->sanitize(deEscape($col))] = $db->sanitize(deEscape($lookup));
             }
         }
     }
@@ -593,6 +600,12 @@ if (isset($_REQUEST['filter'])) {
                 $extra_deprecated_params = "LOWER(`deprecated_scientific`) LIKE '%".$deprecated_params."%'";
             }
         }
+        if (isset($params["major_type"])) {
+            # We want to search all the higherClassification
+            $extra_deprecated_params = "`major_type`='".$params["major_type"]."' OR `major_subtype`='".$params["major_type"]."' OR `simple_linnean_group`='".$params["major_type"]."'";
+        }
+        //print_r($params);
+        //print_r($extra_deprecated_params);
         # Do all the columns exist?
         foreach ($params as $col => $lookup) {
             checkColumnExists($col);
@@ -1125,7 +1138,10 @@ function doSearch($overrideSearch = null)
             }
         }
     } else {
-        $result_vector = handleParamSearch($params, $loose, $boolean_type);
+        $method = "param_queryless";
+        global $extra_deprecated_params;
+        $useFilter = !empty($extra_deprecated_params) ? true : null;
+        $result_vector = handleParamSearch($params, $loose, $boolean_type, $useFilter);
     }
     if (isset($error)) {
         return array("status"=>false,"error"=>$error,"human_error"=>"There was a problem performing this query. Please try again.","method"=>$method);
@@ -1356,7 +1372,8 @@ if (sizeof($result["result"]) <= 5) {
     $result["do_client_update"] = true;
 }
 
-function getDarwinCore($result, $mapOnly = false, $reverseMap = false) {
+function getDarwinCore($result, $mapOnly = false, $reverseMap = false)
+{
     # DarwinCore mapping
     # http://rs.tdwg.org/dwc/terms/
     $dwcResultMap = array(
@@ -1373,7 +1390,9 @@ function getDarwinCore($result, $mapOnly = false, $reverseMap = false) {
         if ($reverseMap === true) {
             # Map DarwinCore to internal DB terms
             foreach ($dwcResultMap as $db => $dc) {
-                if ($result == $dc) return $db;
+                if ($result == $dc) {
+                    return $db;
+                }
             }
             # Return the original as a fallback
             return $result;

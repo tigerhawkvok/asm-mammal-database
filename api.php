@@ -235,8 +235,15 @@ function doLiveQuery($get)
                 );
                 $pdo = new PDO($dsn, $default_sql_user, $default_sql_password, $opt);
                 $select = preg_replace($queryPattern, '$1', $statement);
-
-                $query = "SELECT ".$select." FROM `".$db->getTable()."`";
+                $selectCols = explode(",", $select);
+                $realSelect = array();
+                foreach($selectCols as $colStatement) {
+                    $col = preg_replace('/^([`]?)([a-zA-Z_\-]+)\g{1}$/im', '$2', $colStatement);
+                    $realCol = getDarwinCore($col, true, true);
+                    checkColumnExists($realCol);
+                    $realSelect[] = "`$realCol`";
+                }
+                $query = "SELECT ".implode(",", $realSelect)." FROM `".$db->getTable()."`";
                 $where = preg_replace($queryPattern, '${4}', $statement);
                 if (!empty($where)) {
                     # Extract parameters from the where

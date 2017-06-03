@@ -121,7 +121,7 @@ function checkColumnExists($column_list)
     global $db;
     $cols = $db->getCols();
     foreach (explode(",", $column_list) as $column) {
-        if (strtolower($column) == "count(*)") {
+        if (strtolower($column) == "count(*)" || $column == "*") {
             continue;
         }
         if (!array_key_exists($column, $cols)) {
@@ -227,7 +227,7 @@ function doLiveQuery($get)
             try {
                 # Split up statements into chunks and prep for a safe
                 # query
-                global $db, $default_database, $default_sql_user, $default_sql_password, $default_sql_url;
+                global $db, $default_database, $readonly_sql_user, $readonly_sql_password, $default_sql_url, $default_sql_user, $default_sql_password;
                 # We're going ito use peices of PDO since this is more
                 # or less arbitrarily specifiable by users
                 $dsn = "mysql:host=$default_sql_url;dbname=$default_database;charset=utf8";
@@ -236,15 +236,20 @@ function doLiveQuery($get)
                     PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
                     PDO::ATTR_EMULATE_PREPARES   => false,
                 );
-                $pdo = new PDO($dsn, $default_sql_user, $default_sql_password, $opt);
+                $pdo = new PDO($dsn, $readonly_sql_user, $readonly_sql_password, $opt);
+                #$pdo = new PDO($dsn, $default_sql_user, $default_sql_password, $opt);
                 $select = preg_replace($queryPattern, '$1', $statement);
                 $selectCols = explode(",", $select);
                 $realSelect = array();
+                $dontQuote = array(
+                    "count(*)",
+                    "*",
+                );
                 foreach ($selectCols as $colStatement) {
                     $col = preg_replace('/^([`]?)([a-zA-Z_\-]+)\g{1}$/im', '$2', $colStatement);
                     $realCol = getDarwinCore($col, true, true);
                     checkColumnExists($realCol);
-                    $realSelect[] = strtolower($realCol) == "count(*)" ? $realCol : "`$realCol`";
+                    $realSelect[] = in_array($realCol, $dontQuote) ? $realCol : "`$realCol`";
                 }
                 $query = "SELECT ".implode(",", $realSelect)." FROM `".$db->getTable()."`";
                 $where = preg_replace($queryPattern, '${4}', $statement);

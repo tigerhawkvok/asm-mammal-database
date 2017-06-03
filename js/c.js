@@ -3977,7 +3977,12 @@ loadTerminalDialog = function(reinit) {
           e.preventDefault();
           executeQuery();
           return false;
-        } else {
+        }
+      });
+      $("#sql-input").keyup(function(e) {
+        var kc;
+        kc = e.keyCode ? e.keyCode : e.which;
+        if (kc !== 13) {
           parseQuery(this);
         }
         return true;
@@ -4184,7 +4189,7 @@ executeQuery = function() {
             rowData = "Unable to parse row";
             language = "text";
           }
-          rowHtml = "<div>\n  " + i + "." + k + ": \n  <code class=\"language-" + language + "\">" + rowData + "</code>\n</div>";
+          rowHtml = "<div>\n  " + i + "." + k + ":\n  <code class=\"language-" + language + "\">" + rowData + "</code>\n</div>";
           rows.push(rowHtml);
         }
       }

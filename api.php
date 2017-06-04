@@ -775,20 +775,45 @@ function doSearch($overrideSearch = null, $enforceGlobalSearch = null)
     if ($enforceGlobalSearch) {
         # Check out all the columns
         global $show_debug;
+        $method = "global";
         $isLoose = toBool($_REQUEST["loose"]);
         $cols = $db->getCols();
         $searchBuilder = array();
         $boolean_type = "OR";
-        foreach ($cols as $col) {
+        foreach ($cols as $col=>$type) {
             $searchBuilder[$col] = $search;
         }
 
-        $results = $db->getQueryResults($searchBuilder, "*", $boolean_type, $isLoose, true, $order_by, $show_debug === true);
+        $result_vector = $db->getQueryResults($searchBuilder, "*", $boolean_type, $isLoose, true, $order_by, $show_debug === true);
+        if ($result_vector["status"] === false) {
+            # It's an error
+            $response = array(
+                "status" => false,
+                "result" => $result_vector["result_provided"],
+                "error" => "SEARCH_EXCEPTION",
+                "human_error" => "There was a server error executing your search",
+            );
+            if ($show_debug === true) {
+                $response["exception"] = $result_vector["error"];
+            }
+            return $response;
+        } elseif (empty($result_vector)) {
+            $result_vector = "ZERO_RESULTS";
+        }
 
-
+    } else {
+        $result_vector = array();
     }
-    $result_vector = array();
-    if (empty($params) || !empty($search)) {
+    // return array(
+    //         "request" => $_REQUEST,
+    //         "loose" => $isLoose,
+    //         "global" => $enforceGlobalSearch,
+    //         "empty" => empty($result_vector),
+    //         "size" => sizeof($result_vector),
+    //         "builder" => $searchBuilder,
+    //     );
+    # Do the basic search
+    if ((empty($params) || !empty($search)) && empty($result_vector)) {
         # There was either a parsing failure, or no filter set.
         if (empty($search)) {
             # For the full list, just return scientific data
@@ -1161,15 +1186,21 @@ function doSearch($overrideSearch = null, $enforceGlobalSearch = null)
                 }
             }
         }
-    } else {
+    } elseif (empty($result_vector)) {
         $method = "param_queryless";
         global $extra_deprecated_params;
         $useFilter = !empty($extra_deprecated_params) ? true : null;
         $result_vector = handleParamSearch($params, $loose, $boolean_type, $useFilter);
+    } else {
+        # We already have a result vector from the global search
     }
     if (isset($error)) {
         return array("status"=>false,"error"=>$error,"human_error"=>"There was a problem performing this query. Please try again.","method"=>$method);
     } else {
+        if ($result_vector == "ZERO_RESULTS") {
+            $result_vector = array();
+            $filter_params = $searchBuilder;
+        }
         foreach ($result_vector as $k => $v) {
             if (is_array($v)) {
                 foreach ($v as $rk => $vk) {

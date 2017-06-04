@@ -841,8 +841,8 @@ function doSearch($overrideSearch = null)
                     $extra_params["genus"] = $search;
                     $extra_params["species"] = $search;
                     $extra_params["subspecies"] = $search;
-                    $extra_params["major_common_type"] = $search;
-                    $extra_params["major_subtype"] = $search;
+                    $extra_params["major_type"] = $search;
+                    $extra_params["linnean_order"] = $search;
                     $extra_params["deprecated_scientific"] = $search;
                 } else {
                     foreach (explode(",", $_REQUEST['only']) as $column) {
@@ -1059,7 +1059,7 @@ function doSearch($overrideSearch = null)
                              */
                             $method = "space_loose_fallback";
                             $where = array();
-                            $search_cols = array("common_name","major_common_type","major_subtype");
+                            $search_cols = array("common_name","major_type","linnean_order");
                             $search_words = explode(" ", $search);
                             $where_glue = " or ";
                             $match_glue = " and ";

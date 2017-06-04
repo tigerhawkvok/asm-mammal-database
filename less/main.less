@@ -624,13 +624,21 @@ header {
     }
 }
 
-#search {
-    position:relative;
-    font-size: 220%;
-    top: -2rem;
-}
 #search_form {
     position:relative;
+    #search {
+        position:relative;
+        font-size: 220%;
+        top: -2rem;
+    }
+    .search-control-container {
+        paper-fab {
+            float: left;
+            &:not(:last-of-type) {
+                margin-right: 1rem;
+            }
+        }
+    }
 }
 #loader {
     position:fixed;

@@ -780,7 +780,7 @@ function doSearch($overrideSearch = null, $enforceGlobalSearch = null)
         $cols = $db->getCols();
         $searchBuilder = array();
         $boolean_type = "OR";
-        foreach ($cols as $col=>$type) {
+        foreach ($cols as $col => $type) {
             $searchBuilder[$col] = $search;
         }
 
@@ -798,9 +798,9 @@ function doSearch($overrideSearch = null, $enforceGlobalSearch = null)
             }
             return $response;
         } elseif (empty($result_vector)) {
+            # We'll use this as a placeholder
             $result_vector = "ZERO_RESULTS";
         }
-
     } else {
         $result_vector = array();
     }

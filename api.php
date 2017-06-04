@@ -42,6 +42,7 @@ if ($show_debug === true) {
 } else {
     # Rigorously avoid errors in production
     ini_set('display_errors', 0);
+    $debug = false;
 }
 
 require dirname(__FILE__)."/CONFIG.php";
@@ -762,11 +763,29 @@ function handleParamSearch($filter_params, $loose = false, $boolean_type = "AND"
  *
  *********************************************************/
 
-function doSearch($overrideSearch = null)
+function doSearch($overrideSearch = null, $enforceGlobalSearch = null)
 {
     global $search, $flag_fuzzy, $loose, $limit, $order_by, $params, $boolean_type, $filter_params, $db, $method;
     if (!empty($overrideSearch)) {
         $search = $overrideSearch;
+    }
+    if (empty($enforceGlobalSearch)) {
+        $enforceGlobalSearch = toBool($_REQUEST["global_search"]);
+    }
+    if ($enforceGlobalSearch) {
+        # Check out all the columns
+        global $show_debug;
+        $isLoose = toBool($_REQUEST["loose"]);
+        $cols = $db->getCols();
+        $searchBuilder = array();
+        $boolean_type = "OR";
+        foreach ($cols as $col) {
+            $searchBuilder[$col] = $search;
+        }
+
+        $results = $db->getQueryResults($searchBuilder, "*", $boolean_type, $isLoose, true, $order_by, $show_debug === true);
+
+
     }
     $result_vector = array();
     if (empty($params) || !empty($search)) {

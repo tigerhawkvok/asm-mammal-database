@@ -781,6 +781,9 @@ function doSearch($overrideSearch = null, $enforceGlobalSearch = null)
         $searchBuilder = array();
         $boolean_type = "OR";
         foreach ($cols as $col => $type) {
+            if ($type == "boolean") {
+                continue;
+            }
             $searchBuilder[$col] = $search;
         }
 

@@ -50,7 +50,7 @@ if ($show_debug === true) {
       </h1>
       <form id="search_form" onsubmit="event.preventDefault()" class="col-xs-12">
         <div class="row">
-          <paper-input label="Search" id="search" name="search" required autofocus floatingLabel class="col-xs-7 col-sm-9"></paper-input>
+          <paper-input label="Search" id="search" name="search" autofocus floatingLabel class="col-xs-7 col-sm-9"></paper-input>
           <div class="col-xs-5 col-sm-3 search-control-container">
             <paper-fab id="do-search" icon="search" raisedButton class="asm-blue"></paper-fab>
             <paper-fab id="do-search-all" icon="list" raisedButton class="asm-blue hidden-xs" data-toggle="tooltip" title="Show all results" data-placement="bottom"></paper-fab>
@@ -60,21 +60,28 @@ if ($show_debug === true) {
         <fieldset class="">
           <legend>Options</legend>
           <section id="search-options-container" class="row">
-            <div class="col-md-3 col-xs-6 toggle-container">
+            <div class="col-md-3 col-xs-6 toggle-container bool-search-option">
               <div class="row">
-                <label for="loose" class="col-xs-3">Loose</label>
-                <paper-icon-button icon="info-outline" data-toggle="tooltip" title="Check this to do a partial-string search, rather than a strict exact match." class="col-xs-3"></paper-icon-button>
+                <label for="global_search" class="col-xs-4">All Fields</label>
+                <paper-icon-button icon="info-outline" data-toggle="tooltip" title="Check this to search all fields with the general search, rather than just scientific and common names. Otherwise, use the advanced options below." class="col-xs-3"></paper-icon-button>
+                <paper-toggle-button id="global_search" class="col-xs-4"></paper-toggle-button>
+              </div>
+            </div>
+            <div class="col-md-3 col-lg-2 col-xs-6 toggle-container bool-search-option">
+              <div class="row">
+                <label for="loose" class="col-xs-3">Partial</label>
+                <paper-icon-button icon="info-outline" data-toggle="tooltip" title="Check this to do a partial-string search, rather than a exact match." class="col-xs-3"></paper-icon-button>
                 <paper-toggle-button id="loose" class="col-xs-4"></paper-toggle-button>
                </div>
             </div>
-            <div class="col-md-3 col-xs-6 toggle-container">
+            <div class="col-md-3 col-lg-2 col-xs-6 toggle-container bool-search-option">
               <div class="row">
               <label for="fuzzy" class="col-xs-3">Fuzzy</label>
               <paper-icon-button icon="info-outline" data-toggle="tooltip" title="Check this to do a 'close match' search. Check this if you're unsure of your spelling or only have part of the name, for example." class="col-xs-3"></paper-icon-button>
               <paper-toggle-button id="fuzzy" class="col-xs-4"></paper-toggle-button>
               </div>
             </div>
-            <div class="col-md-6 col-sm-6 col-xs-12">
+            <div class="col-md-5 col-sm-6 col-xs-12">
               <!-- This is a filter column. We need a radio button for
                    AND/OR, and then to walk through the filters and append the object to the query. -->
               <div class="row">
@@ -132,6 +139,7 @@ if ($show_debug === true) {
             </div>
           </section>
           <section id="default-hidden-search-option-container">
+            <p class="text-muted">Click below to search specific fields</p>
             <!-- Now, elements that are hidden by default -->
             <paper-button data-toggle="collapse" data-target="#collapse-advanced" aria-expanded="false" aria-controls="collapse-advanced" class="asm-blue-light" id="collapse-button" raised>Advanced Options <iron-icon icon="icons:unfold-more" id="collapse-icon"></iron-icon></paper-button>
             <div class="collapse form-group" id="collapse-advanced">

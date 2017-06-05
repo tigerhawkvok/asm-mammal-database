@@ -2474,7 +2474,7 @@ checkLaggedUpdate = function(result) {
 };
 
 performSearch = function(stateArgs) {
-  var args, filters, s, sOrig;
+  var argOption, args, filters, len1, m, ref1, s, sOrig, toggle;
   if (stateArgs == null) {
     stateArgs = void 0;
   }
@@ -2495,11 +2495,13 @@ performSearch = function(stateArgs) {
     $("#search").blur();
     s = s.replace(/\./g, "");
     s = prepURI(s);
-    if ($("#loose").polymerChecked()) {
-      s = s + "&loose=true";
-    }
-    if ($("#fuzzy").polymerChecked()) {
-      s = s + "&fuzzy=true";
+    ref1 = $("#search_form #search-options-container .bool-search-option paper-toggle-button");
+    for (m = 0, len1 = ref1.length; m < len1; m++) {
+      toggle = ref1[m];
+      if ($(toggle).polymerChecked()) {
+        argOption = $(toggle).attr("id");
+        s += "&" + argOption + "=true";
+      }
     }
     if (!isNull(filters)) {
       s = s + "&filter=" + filters;
@@ -2525,6 +2527,9 @@ performSearch = function(stateArgs) {
       console.error("No search results: Got search value " + s + ", from hitting", searchParams.apiPath + "?" + args);
       showBadSearchErrorMessage.debounce(null, null, null, result);
       clearSearch(true);
+      delay(500, function() {
+        return stopLoadError();
+      });
       return false;
     }
     if (result.status === true) {

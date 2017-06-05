@@ -46,7 +46,7 @@ class DBHelper
     {
         if (empty($this->table)) {
             #empty chairs?
-        throw(new Exception('No table has been defined for this object.'));
+            throw(new Exception('No table has been defined for this object.'));
         }
 
         return $this->table;
@@ -174,9 +174,9 @@ class DBHelper
     private function createTable($detail = false)
     {
         /***
-     * @return bool
-     ***/
-    $query = 'CREATE TABLE `'.$this->getTable().'` (id int(10) NOT NULL auto_increment';
+         * @return bool
+         ***/
+        $query = 'CREATE TABLE `'.$this->getTable().'` (id int(10) NOT NULL auto_increment';
         foreach ($this->getCols() as $col => $type) {
             $query .= ', '.$this->sanitize($col, true).' '.$type;
         }
@@ -203,10 +203,10 @@ class DBHelper
     public static function cleanInput($input, $strip_html = true)
     {
         $search = array(
-      '@<script[^>]*?>.*?</script>@si',   // Strip out javascript
-      '@<style[^>]*?>.*?</style>@siU',    // Strip style tags properly
-      '@<![\s\S]*?--[ \t\n\r]*>@',         // Strip multi-line comments
-    );
+            '@<script[^>]*?>.*?</script>@si',   // Strip out javascript
+            '@<style[^>]*?>.*?</style>@siU',    // Strip style tags properly
+            '@<![\s\S]*?--[ \t\n\r]*>@',         // Strip multi-line comments
+        );
         if ($strip_html) {
             $search[] = '@<[\/\!]*?[^<>]*?>@si'; // Strip out HTML tags
         }
@@ -217,8 +217,13 @@ class DBHelper
         return $output;
     }
 
+    // @codingStandardsIgnoreStart
     protected static function mysql_escape_mimic($inp)
     {
+        /***
+         *
+         ***/
+        // @codingStandardsIgnoreEnd
         if (is_array($inp)) {
             return array_map(__METHOD__, $inp);
         }
@@ -228,11 +233,20 @@ class DBHelper
 
         return $inp;
     }
+    
+    protected static function mysqlEscapeMimic($inp)
+    {
+        /***
+         * Maps mysql_escape_mimic to proper camel-case without
+         * breaking compat
+         ***/
+        return self::mysql_escape_mimic($inp);
+    }
 
     public function sanitize($input, $dirty_entities = false)
     {
         # Emails get mutilated here -- let's check that first
-    $preg = "/[a-z0-9!#$%&'*+=?^_`{|}~-]+(?:\.[a-z0-9!#$%&'*+=?^_`{|}~-]+)*@(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\.)+(?:[a-z]{2}|com|org|net|edu|gov|mil|biz|info|mobi|name|aero|asia|jobs|museum)\b/";
+        $preg = "/[a-z0-9!#$%&'*+=?^_`{|}~-]+(?:\.[a-z0-9!#$%&'*+=?^_`{|}~-]+)*@(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\.)+(?:[a-z]{2}|com|org|net|edu|gov|mil|biz|info|mobi|name|aero|asia|jobs|museum)\b/";
         if (preg_match($preg, $input) === 1) {
             # It's an email, let's escape it and be done with it
             $output = mysqli_real_escape_string($this->getLink(), $input);
@@ -268,7 +282,7 @@ class DBHelper
     public static function staticSanitize($input, $strip_html = true)
     {
         # Emails get mutilated here -- let's check that first
-    $preg = "/[a-z0-9!#$%&'*+=?^_`{|}~-]+(?:\.[a-z0-9!#$%&'*+=?^_`{|}~-]+)*@(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\.)+(?:[a-z]{2}|com|org|net|edu|gov|mil|biz|info|mobi|name|aero|asia|jobs|museum)\b/";
+        $preg = "/[a-z0-9!#$%&'*+=?^_`{|}~-]+(?:\.[a-z0-9!#$%&'*+=?^_`{|}~-]+)*@(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\.)+(?:[a-z]{2}|com|org|net|edu|gov|mil|biz|info|mobi|name|aero|asia|jobs|museum)\b/";
         if (is_array($input)) {
             foreach ($input as $var => $val) {
                 $output[$var] = self::staticSanitize($val);
@@ -276,7 +290,7 @@ class DBHelper
         } else {
             if (preg_match($preg, $input) === 1) {
                 # It's an email, let's escape it and be done with it
-          $output = self::mysql_escape_mimic($input);
+                $output = self::mysql_escape_mimic($input);
 
                 return $output;
             }
@@ -330,8 +344,13 @@ class DBHelper
         return $this->is_entry($item, $field_name, $precleaned, $test);
     }
 
+    // @codingStandardsIgnoreStart
     public function is_entry($item, $field_name = null, $precleaned = false, $test = false)
     {
+        /***
+         *
+         ***/
+        // @codingStandardsIgnoreEnd
         if ($field_name == null) {
             $field_name = 'id';
         }
@@ -570,23 +589,23 @@ class DBHelper
     public function doQuery($search, $cols = '*', $boolean_type = 'AND', $loose = false, $precleaned = false, $order_by = false, $debug_query = false)
     {
         /***
-   * Do a query.
-   *
-   * @param $search
-   * @param $cols
-   * @param $boolean_type
-   * @param $loose
-   * @param $precleaned
-   * @param $order_by
-   * @param $debug_query
-   ***/
-  if (!is_array($search)) {
-      if ($debug_query === true) {
-          return array('status' => false,'debug' => true,'error' => 'Bad search array','search' => $search,'is_array' => is_array($search));
-      }
-
-      return false;
-  }
+        * Do a query.
+        *
+        * @param $search
+        * @param $cols
+        * @param $boolean_type
+        * @param $loose
+        * @param $precleaned
+        * @param $order_by
+        * @param $debug_query
+        ***/
+        if (!is_array($search)) {
+            if ($debug_query === true) {
+                return array('status' => false,'debug' => true,'error' => 'Bad search array','search' => $search,'is_array' => is_array($search));
+            }
+            
+            return false;
+        }
         if ($precleaned !== true) {
             foreach ($search as $col => $crit) {
                 $search[$this->sanitize($col)] = $this->sanitize($crit);
@@ -673,15 +692,15 @@ class DBHelper
     public function updateEntry($value, $unq_id, $field_name = null, $precleaned = false)
     {
         /***
-       *
-       * @param string|array $value new value to fill $field_name, or column=>value pairs
-       * @param array $unq_id a 1-element array of col=>val to designate the matching criteria
-       * @param string|array $field_name column(s) to be updated
-       * @param bool $precleaned if the input elements have been presanitized
-       ***/
-      if (!is_array($unq_id)) {
-          throw(new Exception('Invalid argument for unq_id'));
-      }
+         *
+         * @param string|array $value new value to fill $field_name, or column=>value pairs
+         * @param array $unq_id a 1-element array of col=>val to designate the matching criteria
+         * @param string|array $field_name column(s) to be updated
+         * @param bool $precleaned if the input elements have been presanitized
+         ***/
+        if (!is_array($unq_id)) {
+            throw(new Exception('Invalid argument for unq_id'));
+        }
         $column = key($unq_id);
         $uval = current($unq_id);
         $this->invalidateLink();
@@ -698,35 +717,35 @@ class DBHelper
                 $method = "array field";
                 foreach ($field_name as $key) {
                     # Map each field name onto the value of the current value item
-            $item = current($value);
+                    $item = current($value);
                     $key = $precleaned ? mysqli_real_escape_string($this->getLink(), $key) : $this->sanitize($key);
                     $values[$key] = $precleaned ? mysqli_real_escape_string($this->getLink(), $item) : $this->sanitize($item);
                     next($value);
                 }
             } else {
                 # $field_name isn't an array. Let's make sure $value isn't
-          # either
-          $method = "string pair";
+                # either
+                $method = "string pair";
                 if (!is_array($value)) {
                     $key = $precleaned ? mysqli_real_escape_string($this->getLink(), $field_name) : $this->sanitize($field_name);
                     $values[$key] = $precleaned ? mysqli_real_escape_string($this->getLink(), $value) : $this->sanitize($value);
                 } else {
                     # Mismatched types
-            throw(new Exception("Mismatched types for \$value and \$field_name"));
+                    throw(new Exception("Mismatched types for \$value and \$field_name"));
                 }
             }
         } elseif (empty($field_name)) {
             # Make sure that $value is an array
-        # Preferred way to input
-        $method = "array value";
+            # Preferred way to input
+            $method = "array value";
             if (is_array($value) && is_string(key($value))) {
                 $method = "array value match";
                 $this->invalidateLink();
                 foreach ($value as $key => $val) {
                     $key = $precleaned ?
-                 mysqli_real_escape_string($this->getLink(), $key) : $this->sanitize($key);
+                         mysqli_real_escape_string($this->getLink(), $key) : $this->sanitize($key);
                     $values[$key] = $precleaned ?
-                          mysqli_real_escape_string($this->getLink(), $val) : $this->sanitize($val);
+                                  mysqli_real_escape_string($this->getLink(), $val) : $this->sanitize($val);
                 }
             } else {
                 throw(new Exception("No column found for \$value"));

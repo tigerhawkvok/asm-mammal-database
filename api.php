@@ -42,6 +42,7 @@ if ($show_debug === true) {
 } else {
     # Rigorously avoid errors in production
     ini_set('display_errors', 0);
+    $debug = false;
 }
 
 require dirname(__FILE__)."/CONFIG.php";
@@ -762,14 +763,60 @@ function handleParamSearch($filter_params, $loose = false, $boolean_type = "AND"
  *
  *********************************************************/
 
-function doSearch($overrideSearch = null)
+function doSearch($overrideSearch = null, $enforceGlobalSearch = null)
 {
     global $search, $flag_fuzzy, $loose, $limit, $order_by, $params, $boolean_type, $filter_params, $db, $method;
     if (!empty($overrideSearch)) {
         $search = $overrideSearch;
     }
-    $result_vector = array();
-    if (empty($params) || !empty($search)) {
+    if (empty($enforceGlobalSearch)) {
+        $enforceGlobalSearch = toBool($_REQUEST["global_search"]);
+    }
+    if ($enforceGlobalSearch) {
+        # Check out all the columns
+        global $show_debug;
+        $method = "global";
+        $isLoose = toBool($_REQUEST["loose"]);
+        $cols = $db->getCols();
+        $searchBuilder = array();
+        $boolean_type = "OR";
+        foreach ($cols as $col => $type) {
+            if ($type == "boolean") {
+                continue;
+            }
+            $searchBuilder[$col] = $search;
+        }
+
+        $result_vector = $db->getQueryResults($searchBuilder, "*", $boolean_type, $isLoose, true, $order_by, $show_debug === true);
+        if ($result_vector["status"] === false) {
+            # It's an error
+            $response = array(
+                "status" => false,
+                "result" => $result_vector["result_provided"],
+                "error" => "SEARCH_EXCEPTION",
+                "human_error" => "There was a server error executing your search",
+            );
+            if ($show_debug === true) {
+                $response["exception"] = $result_vector["error"];
+            }
+            return $response;
+        } elseif (empty($result_vector)) {
+            # We'll use this as a placeholder
+            $result_vector = "ZERO_RESULTS";
+        }
+    } else {
+        $result_vector = array();
+    }
+    // return array(
+    //         "request" => $_REQUEST,
+    //         "loose" => $isLoose,
+    //         "global" => $enforceGlobalSearch,
+    //         "empty" => empty($result_vector),
+    //         "size" => sizeof($result_vector),
+    //         "builder" => $searchBuilder,
+    //     );
+    # Do the basic search
+    if ((empty($params) || !empty($search)) && empty($result_vector)) {
         # There was either a parsing failure, or no filter set.
         if (empty($search)) {
             # For the full list, just return scientific data
@@ -841,8 +888,8 @@ function doSearch($overrideSearch = null)
                     $extra_params["genus"] = $search;
                     $extra_params["species"] = $search;
                     $extra_params["subspecies"] = $search;
-                    $extra_params["major_common_type"] = $search;
-                    $extra_params["major_subtype"] = $search;
+                    $extra_params["major_type"] = $search;
+                    $extra_params["linnean_order"] = $search;
                     $extra_params["deprecated_scientific"] = $search;
                 } else {
                     foreach (explode(",", $_REQUEST['only']) as $column) {
@@ -1059,7 +1106,7 @@ function doSearch($overrideSearch = null)
                              */
                             $method = "space_loose_fallback";
                             $where = array();
-                            $search_cols = array("common_name","major_common_type","major_subtype");
+                            $search_cols = array("common_name","major_type","linnean_order");
                             $search_words = explode(" ", $search);
                             $where_glue = " or ";
                             $match_glue = " and ";
@@ -1142,15 +1189,21 @@ function doSearch($overrideSearch = null)
                 }
             }
         }
-    } else {
+    } elseif (empty($result_vector)) {
         $method = "param_queryless";
         global $extra_deprecated_params;
         $useFilter = !empty($extra_deprecated_params) ? true : null;
         $result_vector = handleParamSearch($params, $loose, $boolean_type, $useFilter);
+    } else {
+        # We already have a result vector from the global search
     }
     if (isset($error)) {
         return array("status"=>false,"error"=>$error,"human_error"=>"There was a problem performing this query. Please try again.","method"=>$method);
     } else {
+        if ($result_vector == "ZERO_RESULTS") {
+            $result_vector = array();
+            $filter_params = $searchBuilder;
+        }
         foreach ($result_vector as $k => $v) {
             if (is_array($v)) {
                 foreach ($v as $rk => $vk) {

@@ -37,6 +37,7 @@ You can generate links that way, corresponding to the options given in the follo
 3. `loose`: **boolean** Don't check for strict matches, allow partials and
    case-insensitivity *Application default `true`; API default
    `false`*
+3. `global_search`: **boolean** Check all non-boolean columns for the search string simultaneously. *Default `false`*
 4. `only`: **string** restrict search to this csv column list. Return an error if
    invalid column specified.
 5. `include`: **string** Include additional search columns in this csv

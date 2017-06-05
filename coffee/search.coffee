@@ -211,10 +211,10 @@ performSearch = (stateArgs = undefined) ->
     # Remove periods from the search
     s = s.replace(/\./g,"")
     s = prepURI(s)
-    if $("#loose").polymerChecked()
-      s = "#{s}&loose=true"
-    if $("#fuzzy").polymerChecked()
-      s = "#{s}&fuzzy=true"
+    for toggle in $("#search_form #search-options-container .bool-search-option paper-toggle-button")
+      if $(toggle).polymerChecked()
+        argOption = $(toggle).attr "id"
+        s += "&#{argOption}=true"
     # Add on the filters
     unless isNull(filters)
       # console.log("Got filters - #{filters}")
@@ -245,6 +245,8 @@ performSearch = (stateArgs = undefined) ->
       console.error "No search results: Got search value #{s}, from hitting","#{searchParams.apiPath}?#{args}"
       showBadSearchErrorMessage.debounce null, null, null, result
       clearSearch(true)
+      delay 500, ->
+        stopLoadError()
       return false
     if result.status is true
       console.log "Server response:", result

@@ -7165,13 +7165,19 @@ form .paper-element-container {
   -ms-flex-align: center;
       align-items: center;
 }
-#search {
+#search_form {
+  position: relative;
+}
+#search_form #search {
   position: relative;
   font-size: 220%;
   top: -2rem;
 }
-#search_form {
-  position: relative;
+#search_form .search-control-container paper-fab {
+  float: left;
+}
+#search_form .search-control-container paper-fab:not(:last-of-type) {
+  margin-right: 1rem;
 }
 #loader {
   position: fixed;

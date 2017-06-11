@@ -50,11 +50,17 @@ if ($show_debug === true) {
       </h1>
       <form id="search_form" onsubmit="event.preventDefault()" class="col-xs-12">
         <div class="row">
-          <paper-input label="Search" id="search" name="search" autofocus floatingLabel class="col-xs-7 col-sm-9"></paper-input>
+          <paper-input
+            label="Search"
+            id="search"
+            class="col-xs-7 col-sm-9"
+            name="search"
+            placeholder="Search term, eg, Ursus arctos"
+            autofocus floatingLabel></paper-input>
           <div class="col-xs-5 col-sm-3 search-control-container">
             <paper-fab id="do-search" icon="search" raisedButton class="asm-blue"></paper-fab>
             <paper-fab id="do-search-all" icon="list" raisedButton class="asm-blue hidden-xs" data-toggle="tooltip" title="Show all results" data-placement="bottom"></paper-fab>
-            <paper-fab id="do-reset-search" icon="cancel" raisedButton class="asm-blue" data-toggle="tooltip" title="Reset search" data-placement="right"></paper-fab>
+            <paper-fab id="do-reset-search" icon="cancel" raisedButton class="asm-blue" data-toggle="tooltip" title="Reset search" data-placement="bottom"></paper-fab>
           </div>
         </div>
         <fieldset class="">
@@ -129,10 +135,10 @@ if ($show_debug === true) {
             </div>
           </section>
           <section id="default-hidden-search-option-container">
-            <p class="text-muted">Click below to search specific fields</p>
             <!-- Now, elements that are hidden by default -->
-            <paper-button data-toggle="collapse" data-target="#collapse-advanced" aria-expanded="false" aria-controls="collapse-advanced" class="asm-blue-light" id="collapse-button" raised>Advanced Options <iron-icon icon="icons:unfold-more" id="collapse-icon"></iron-icon></paper-button>
-            <div class="collapse form-group" id="collapse-advanced">
+            <paper-button data-toggle="collapse" data-target="#collapse-advanced" aria-expanded="false" aria-controls="collapse-advanced" class="asm-blue-light pull-left" id="collapse-button" raised>Advanced Options <iron-icon icon="icons:unfold-more" id="collapse-icon"></iron-icon></paper-button>
+            <p class="text-muted pull-left">Click to search in specific fields</p>
+            <div class="collapse form-group clearfix clear" id="collapse-advanced">
               <!-- Clade: DWC cohort, magnaorder, and superorder -->
               <paper-input label="Clade" id="major-type-filter" name="major-type-filter" class="cndb-filter col-md-4 col-xs-6" data-column="major_type"></paper-input>
               <!-- Subtype -->

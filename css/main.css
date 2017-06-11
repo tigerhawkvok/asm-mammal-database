@@ -7166,6 +7166,9 @@ main #images-block div.no-image {
     margin-top: 1.5em;
   }
 }
+#search_form #default-hidden-search-option-container > p.text-muted {
+  margin-top: 1em;
+}
 .toggle-container paper-icon-button {
   margin-top: calc(-0.5em - 5px);
 }

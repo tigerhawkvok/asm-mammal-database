@@ -260,7 +260,7 @@ header#header-bar {
     paper-icon-button, paper-button {
         color: #fff;
     }
-    
+
     paper-button.hidden-xs {
         // Just the alternates
         text-transform: capitalize;
@@ -268,7 +268,7 @@ header#header-bar {
             margin-left: 5px;
         }
     }
-    
+
     paper-icon-button.visible-xs {
         @media(max-width: @screen-xs-max) {
             display: inline-block !important;
@@ -352,12 +352,12 @@ main {
             }
         }
     }
-    
+
     #search-options-container {
         paper-menu-button {
             margin-top: -1.5em;
         }
-        
+
         @media(max-width: @screen-sm-max) {
             .taxon-dropdown-container {
                 & > .row {
@@ -365,7 +365,7 @@ main {
                     .panel-default;
                     margin-right: 0;
                 }
-                
+
                 paper-menu-button {
                     margin-top: 0;
                 }
@@ -375,12 +375,18 @@ main {
             }
         }
     }
+        
+    #default-hidden-search-option-container {
+        & > p.text-muted {
+                margin-top: 1em;
+        }
+    }
 }
 
 .toggle-container {
     paper-icon-button {
         margin-top: calc( -.5em ~"-" 5px);
-        
+
         & + paper-toggle-button, & + .tooltip + paper-toggle-button {
             margin-top: -.25em;
         }
@@ -406,7 +412,7 @@ paper-dialog {
             }
         }
     }
-    
+
     &#set-license-value {
         width: 85vw;
     }
@@ -417,33 +423,33 @@ paper-dialog {
 
         }
     }
-    
+
     &.download-file {
         .data-download-button {
             margin: .25rem;
         }
-        
+
         h3 + p {
             margin-left: 1rem;
         }
     }
-    
+
     &#sql-query-dialog {
         width: 60vw;
         paper-dialog-scrollable {
             div.scrollable {
                 max-height:50vh;
             }
-            
+
             #sql-results {
                 max-width: 100%;
-                
+
             }
-            
+
             #sql-results, #interpreted-sql {
                 margin-bottom:2rem;
             }
-            
+
             .text-muted {
                 margin-top: 5px;
                 kbd {

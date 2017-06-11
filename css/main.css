@@ -7633,6 +7633,9 @@ label + paper-icon-button {
   box-shadow: -1px 0 5px rgba(0, 0, 0, 0.25);
   border-radius: 50%;
 }
+#social-menu > paper-icon-button iron-icon {
+  color: #1DA1F2;
+}
 .clade {
   text-transform: title-case;
 }

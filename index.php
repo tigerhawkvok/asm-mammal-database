@@ -60,34 +60,24 @@ if ($show_debug === true) {
         <fieldset class="">
           <legend>Options</legend>
           <section id="search-options-container" class="row">
-            <div class="col-md-3 col-xs-6 toggle-container bool-search-option">
-              <div class="row">
-                <label for="global_search" class="col-xs-4">All Fields</label>
-                <paper-icon-button icon="info-outline" data-toggle="tooltip" title="Check this to search all fields with the general search, rather than just scientific and common names. Otherwise, use the advanced options below." class="col-xs-3"></paper-icon-button>
-                <paper-toggle-button id="global_search" class="col-xs-4"></paper-toggle-button>
-              </div>
+            <div class="col-md-3 col-xs-6 toggle-container bool-search-option clearfix">
+              <paper-icon-button icon="info-outline" data-toggle="tooltip" title="Check this to search all fields with the general search, rather than just scientific and common names. Otherwise, use the advanced options below." class="pull-left"></paper-icon-button>
+              <paper-toggle-button id="global_search" class="pull-left">All Fields</paper-toggle-button>
             </div>
             <div class="col-md-3 col-lg-2 col-xs-6 toggle-container bool-search-option">
-              <div class="row">
-                <label for="loose" class="col-xs-3">Partial</label>
-                <paper-icon-button icon="info-outline" data-toggle="tooltip" title="Check this to do a partial-string search, rather than a exact match." class="col-xs-3"></paper-icon-button>
-                <paper-toggle-button id="loose" class="col-xs-4"></paper-toggle-button>
-               </div>
+              <paper-icon-button icon="info-outline" data-toggle="tooltip" title="Check this to do a partial-string search, rather than a exact match." class="pull-left"></paper-icon-button>
+              <paper-toggle-button id="loose" class="pull-left">Partial</paper-toggle-button>
             </div>
             <div class="col-md-3 col-lg-2 col-xs-6 toggle-container bool-search-option">
-              <div class="row">
-              <label for="fuzzy" class="col-xs-3">Fuzzy</label>
-              <paper-icon-button icon="info-outline" data-toggle="tooltip" title="Check this to do a 'close match' search. Check this if you're unsure of your spelling or only have part of the name, for example." class="col-xs-3"></paper-icon-button>
-              <paper-toggle-button id="fuzzy" class="col-xs-4"></paper-toggle-button>
-              </div>
+              <paper-icon-button icon="info-outline" data-toggle="tooltip" title="Check this to do a 'close match' search. Check this if you're unsure of your spelling or only have part of the name, for example." class="pull-left"></paper-icon-button>
+              <paper-toggle-button id="fuzzy" class="pull-left">Fuzzy</paper-toggle-button>
             </div>
             <div class="col-md-5 col-sm-6 col-xs-12">
               <!-- This is a filter column. We need a radio button for
                    AND/OR, and then to walk through the filters and append the object to the query. -->
               <div class="row">
-                <div class="toggle-container col-xs-6 col-md-2">
-                  <label for="use-scientific" class="">Scientific</label>
-                  <paper-toggle-button id="use-scientific" class="" checked></paper-toggle-button>
+                <div class="toggle-container col-xs-6 col-md-4">
+                  <paper-toggle-button id="use-scientific" class="" checked>Scientific</paper-toggle-button>
                 </div>
                 <?php
                 $renderPage = true;

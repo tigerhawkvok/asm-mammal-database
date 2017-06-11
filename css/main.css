@@ -6951,8 +6951,29 @@ main #images-block div.no-image {
   -ms-flex-align: center;
       align-items: center;
 }
+#search_form {
+  position: relative;
+}
+#search_form #search {
+  position: relative;
+  font-size: 220%;
+  top: -2rem;
+}
+#search_form .search-control-container paper-fab {
+  float: left;
+}
+#search_form .search-control-container paper-fab:not(:last-of-type) {
+  margin-right: 1rem;
+}
+#search_form #search-options-container paper-menu-button {
+  margin-top: -1.5em;
+}
 .toggle-container paper-icon-button {
   margin-top: calc(-0.5em - 5px);
+}
+.toggle-container paper-icon-button + paper-toggle-button,
+.toggle-container paper-icon-button + .tooltip + paper-toggle-button {
+  margin-top: -0.25em;
 }
 #eutheria-extra {
   display: inline-block;
@@ -7164,20 +7185,6 @@ form .paper-element-container {
       justify-content: center;
   -ms-flex-align: center;
       align-items: center;
-}
-#search_form {
-  position: relative;
-}
-#search_form #search {
-  position: relative;
-  font-size: 220%;
-  top: -2rem;
-}
-#search_form .search-control-container paper-fab {
-  float: left;
-}
-#search_form .search-control-container paper-fab:not(:last-of-type) {
-  margin-right: 1rem;
 }
 #loader {
   position: fixed;

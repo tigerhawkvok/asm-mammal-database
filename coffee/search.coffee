@@ -1364,6 +1364,10 @@ doLazily = ->
       $("#git-footer").prepend html
       bindClicks()
       mobileCollapsable()
+      loadJS "#{uri.urlString}js/terminal.min.js", ->
+        bindClicks()
+        console.debug "Terminal file loaded"
+        stopLoad()
       false
   false
 

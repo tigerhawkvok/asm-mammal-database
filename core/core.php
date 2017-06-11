@@ -276,7 +276,7 @@ if (!function_exists('shuffle_assoc')) {
     }
 }
 
-if (!function_exists('displayDebug')) {
+if (!function_exists('displayDebug') && !function_exists("debugDisplay")) {
     function displayDebug($string, $background = true)
     {
         # alias

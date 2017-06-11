@@ -107,7 +107,7 @@ eutheriaFilterHelper = (skipFetch = false) ->
           scientific = true
       column = if scientific then "linnean_order" else "simple_linnean_subgroup"
       html = """
-        <div id="eutheria-extra"  class="col-xs-6 col-md-4">
+        <div id="eutheria-extra"  class="col-xs-12 col-md-5">
             <label for="type" class="sr-only">Eutheria Filter</label>
             <div class="row">
             <paper-menu-button class="col-xs-12" id="eutheria-subfilter">

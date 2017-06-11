@@ -2202,7 +2202,7 @@ loadSocialMediaSlideoutBar = function(handles, selector, appendTo) {
       }
       contentHtml += "\n" + serviceHtml + "\n";
     }
-    html = "<paper-material id=\"social-menu\" class=\"out\">\n  <paper-icon-button icon=\"glyphicon-social:twitter\" class=\"show-social\"></paper-icon-button>\n  <div class=\"slideout-content\">\n    " + contentHtml + "\n  </div>\n</paper-material>";
+    html = "<paper-material id=\"social-menu\" class=\"out\" elevation=\"4\">\n  <paper-icon-button icon=\"glyphicon-social:twitter\" class=\"show-social\"></paper-icon-button>\n  <div class=\"slideout-content\">\n    " + contentHtml + "\n  </div>\n</paper-material>";
     showButton = "    ";
     $(appendTo).append(html);
     $(".show-social").click(function() {
@@ -2518,7 +2518,8 @@ checkLaggedUpdate = function(result) {
           var elapsed;
           if (j === k && finishedLoop) {
             elapsed = Date.now() - start;
-            return console.log("Finished async IUCN taxa check in " + elapsed + "ms");
+            console.log("Finished async IUCN taxa check in " + elapsed + "ms");
+            return stopLoad();
           }
         });
       }
@@ -2528,6 +2529,8 @@ checkLaggedUpdate = function(result) {
       console.warn("Couldn't do client update -- " + e.message);
       console.warn(e.stack);
     }
+  } else {
+    stopLoad();
   }
   return false;
 };

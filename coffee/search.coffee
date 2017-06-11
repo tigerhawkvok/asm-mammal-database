@@ -185,10 +185,13 @@ checkLaggedUpdate = (result) ->
           if j is k and finishedLoop
             elapsed = Date.now() - start
             console.log "Finished async IUCN taxa check in #{elapsed}ms"
+            stopLoad()
       finishedLoop = true
     catch e
       console.warn "Couldn't do client update -- #{e.message}"
       console.warn e.stack
+  else
+    stopLoad()
   false
 
 

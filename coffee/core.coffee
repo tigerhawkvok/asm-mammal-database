@@ -1762,7 +1762,7 @@ loadSocialMediaSlideoutBar = (handles, selector = "#social-menu", appendTo = "ma
           serviceHtml = ""
       contentHtml += "\n#{serviceHtml}\n"
     html = """
-<paper-material id="social-menu" class="out">
+<paper-material id="social-menu" class="out" elevation="4">
   <paper-icon-button icon="glyphicon-social:twitter" class="show-social"></paper-icon-button>
   <div class="slideout-content">
     #{contentHtml}

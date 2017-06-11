@@ -1762,7 +1762,7 @@ loadSocialMediaSlideoutBar = (handles, selector = "#social-menu", appendTo = "ma
           serviceHtml = ""
       contentHtml += "\n#{serviceHtml}\n"
     html = """
-<paper-material id="social-menu" class="out">
+<paper-material id="social-menu" class="out" elevation="4">
   <paper-icon-button icon="glyphicon-social:twitter" class="show-social"></paper-icon-button>
   <div class="slideout-content">
     #{contentHtml}
@@ -2056,10 +2056,13 @@ checkLaggedUpdate = (result) ->
           if j is k and finishedLoop
             elapsed = Date.now() - start
             console.log "Finished async IUCN taxa check in #{elapsed}ms"
+            stopLoad()
       finishedLoop = true
     catch e
       console.warn "Couldn't do client update -- #{e.message}"
       console.warn e.stack
+  else
+    stopLoad()
   false
 
 

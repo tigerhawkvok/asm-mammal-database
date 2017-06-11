@@ -7312,8 +7312,18 @@ footer {
 footer.row {
   left: 15px;
 }
+@media (max-width: 767px) and (max-width: 767px) {
+  footer.row #git-footer paper-icon-button + paper-icon-button[icon='glyphicon-social:github'] {
+    display: none !important;
+  }
+}
 footer copyright-statement {
   top: 0.71428571em;
+}
+@media (max-width: 767px) {
+  footer copyright-statement .visible-xs {
+    display: inline-block !important;
+  }
 }
 header .logo-container {
   width: 16.66666667%;

@@ -581,10 +581,24 @@ footer {
     box-shadow: 5px 5px 8px 5px rgba(0,0,0,.5);
     &.row {
         left: 15px;
+        @media (max-width: @screen-xs-max) {
+            
+            #git-footer {
+                paper-icon-button + paper-icon-button[icon='glyphicon-social:github'] {
+                    // Only hide it if the other ones successfully load
+                    .hidden-xs;
+                }
+            }
+        }
     }
 
     copyright-statement {
         top: @line-height-base / 2em;
+        @media (max-width: @screen-xs-max) {
+            .visible-xs {
+                display: inline-block !important;
+            }
+        }
     }
 }
 

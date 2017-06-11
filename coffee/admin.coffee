@@ -1392,7 +1392,8 @@ saveEditorEntry = (performMode = "save") ->
       # If there were any error strings assigned, display an error.
       if error?
         escapeCompletion = true
-        console.warn "#{authYearDeepInputSelector} failed its validity checks for `#{yearString}`!"
+        completionErrorMessage = "#{authYearDeepInputSelector} failed its validity checks for `#{yearString}`!"
+        console.warn completionErrorMessage
         unless directYear
           # Populate the paper-input errors
           # See
@@ -1491,7 +1492,9 @@ saveEditorEntry = (performMode = "save") ->
     # We have a taxon credit, need a date for it
     requiredNotEmpty.push("taxon-credit-date")
   for k, id of examineIds
-    # console.log(k,id)
+    if typeof id isnt "string"
+      continue
+    console.log(k,id)
     try
       col = id.replace(/-/g,"_")
     catch
@@ -1559,6 +1562,7 @@ saveEditorEntry = (performMode = "save") ->
           .attr("error-message",error)
           .attr("invalid","invalid")
           escapeCompletion = true
+          completionErrorMessage = "invalid gss"
       when "common-name", "major-type", "linnean-order", "genus-authority", "species-authority"
         # I'd love to syntactically clean this up via the empty array
         # requiredNotEmpty above, but that's pending
@@ -1571,6 +1575,7 @@ saveEditorEntry = (performMode = "save") ->
           .attr("error-message",error)
           .attr("invalid","invalid")
           escapeCompletion = true
+          completionErrorMessage = "invalid cmmlgs"
       else
         if id in requiredNotEmpty
           selectorSample = "#edit-#{id}"
@@ -1594,6 +1599,7 @@ saveEditorEntry = (performMode = "save") ->
             .attr("error-message",spilloverError)
             .attr("invalid","invalid")
             escapeCompletion = true
+            completionErrorMessage = "REQUIRED_FIELD_EMPTY"
     # Finally, tack it on to the saveObject
     saveObject[col] = val
   # Some other save object items...
@@ -1606,7 +1612,7 @@ saveEditorEntry = (performMode = "save") ->
   if escapeCompletion
     animateLoad()
     consoleError = completionErrorMessage ? "Bad characters in entry. Stopping ..."
-    completionErrorMessage ?= "There was a problem with your entry. Please correct your entry and try again."
+    completionErrorMessage = "There was a problem with your entry. Please correct your entry and try again. #{completionErrorMessage}"
     stopLoadError(completionErrorMessage)
     console.error(consoleError)
     console.warn "Save object so far:", saveObject

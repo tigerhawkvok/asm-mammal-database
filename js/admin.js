@@ -1292,7 +1292,7 @@ saveEditorEntry = function(performMode) {
   d$("paper-input").removeAttr("invalid");
   try {
     testAuthorityYear = function(authYearDeepInputSelector, directYear) {
-      var altYear, authorityRegex, d, error, linnaeusYear, nextYear, ref, yearString, years;
+      var altYear, authorityRegex, completionErrorMessage, d, error, linnaeusYear, nextYear, ref, yearString, years;
       if (directYear == null) {
         directYear = false;
       }
@@ -1340,7 +1340,8 @@ saveEditorEntry = function(performMode) {
       }
       if (error != null) {
         escapeCompletion = true;
-        console.warn(authYearDeepInputSelector + " failed its validity checks for `" + yearString + "`!");
+        completionErrorMessage = authYearDeepInputSelector + " failed its validity checks for `" + yearString + "`!";
+        console.warn(completionErrorMessage);
         if (!directYear) {
           d$("" + authYearDeepInputSelector).attr("error-message", error).attr("invalid", "invalid");
         } else {
@@ -1421,6 +1422,10 @@ saveEditorEntry = function(performMode) {
   }
   for (k in examineIds) {
     id = examineIds[k];
+    if (typeof id !== "string") {
+      continue;
+    }
+    console.log(k, id);
     try {
       col = id.replace(/-/g, "_");
     } catch (error4) {
@@ -1500,6 +1505,7 @@ saveEditorEntry = function(performMode) {
         if (/[^A-Za-z]/m.test(val) || nullTest) {
           d$("#edit-" + id).attr("error-message", error).attr("invalid", "invalid");
           escapeCompletion = true;
+          completionErrorMessage = "invalid gss";
         }
         break;
       case "common-name":
@@ -1511,6 +1517,7 @@ saveEditorEntry = function(performMode) {
         if (isNull(val)) {
           $("#edit-" + id).attr("error-message", error).attr("invalid", "invalid");
           escapeCompletion = true;
+          completionErrorMessage = "invalid cmmlgs";
         }
         break;
       default:
@@ -1534,6 +1541,7 @@ saveEditorEntry = function(performMode) {
           if (isNull(val)) {
             d$("#edit-" + id).attr("error-message", spilloverError).attr("invalid", "invalid");
             escapeCompletion = true;
+            completionErrorMessage = "REQUIRED_FIELD_EMPTY";
           }
         }
     }
@@ -1546,9 +1554,7 @@ saveEditorEntry = function(performMode) {
   if (escapeCompletion) {
     animateLoad();
     consoleError = completionErrorMessage != null ? completionErrorMessage : "Bad characters in entry. Stopping ...";
-    if (completionErrorMessage == null) {
-      completionErrorMessage = "There was a problem with your entry. Please correct your entry and try again.";
-    }
+    completionErrorMessage = "There was a problem with your entry. Please correct your entry and try again. " + completionErrorMessage;
     stopLoadError(completionErrorMessage);
     console.error(consoleError);
     console.warn("Save object so far:", saveObject);

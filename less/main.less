@@ -357,6 +357,23 @@ main {
         paper-menu-button {
             margin-top: -1.5em;
         }
+        
+        @media(max-width: @screen-sm-max) {
+            .taxon-dropdown-container {
+                & > .row {
+                    .panel;
+                    .panel-default;
+                    margin-right: 0;
+                }
+                
+                paper-menu-button {
+                    margin-top: 0;
+                }
+                paper-toggle-button {
+                    margin-top: 1.5em;
+                }
+            }
+        }
     }
 }
 

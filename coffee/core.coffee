@@ -1723,6 +1723,43 @@ delayPolymerBind = (selector, callback, iter = 0) ->
   false
 
 
+
+
+loadSocialMediaSlideoutBar = (selector = "#social-menu", appendTo = "main") ->
+  ###
+  #
+  ###
+  toggleSocialSlideoutBar = ->
+    if $(selector).hasClass "out"
+      $(selector)
+      .removeClass "out"
+      .addClass "in"
+    else
+      $(selector)
+      .removeClass "in"
+      .addClass "out"
+    false
+  window.toggleSocialSlideoutBar = toggleSocialSlideoutBar
+  unless $(selector).exists()
+    html = """
+<paper-material id="social-menu" class="out">
+  <paper-icon-button icon="glyphicon-social:twitter" class="show-social"></paper-icon-button>
+  <div class="slideout-content">
+    
+  </div>
+</paper-material>
+    """
+    showButton = """
+    """
+    $(appendTo).append html
+    $(".show-social").click ->
+      toggleSocialSlideoutBar.debounce 50
+      false
+  false
+
+
+
+
 try
   $()
 catch e
@@ -1785,6 +1822,8 @@ $ ->
         p$(md).markdown = mdText
   browserBeware()
   checkFileVersion()
+  try
+    loadSocialMediaSlideoutBar()
   try
     for caption in $("figcaption .caption-description")
       captionValue = $(caption).text().unescape()

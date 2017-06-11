@@ -1,4 +1,4 @@
-var _metaStatus, activityIndicatorOff, activityIndicatorOn, allError, animateHoverShadows, animateLoad, bindClickTargets, bindClicks, bindDismissalRemoval, bindPaperMenuButton, browserBeware, bsAlert, buildQuery, byteCount, checkFileVersion, checkLaggedUpdate, checkLocalVersion, checkTaxonNear, clearSearch, dataUriToBlob, dateMonthToString, deEscape, decode64, deepJQuery, delay, delayPolymerBind, doCORSget, doFontExceptions, doLazily, doNothing, domainPlaceholder, downloadDataUriAsBlob, e, encode64, error1, eutheriaFilterHelper, executeQuery, fetchMajorMinorGroups, foo, formatScientificNames, formatSearchResults, getElementHtml, getFilters, getLocation, getMaxZ, getRandomEntry, getTerminalDependencies, goTo, insertCORSWorkaround, insertModalImage, interval, isArray, isBlank, isBool, isEmpty, isJson, isNull, isNumber, isNumeric, jsonTo64, lightboxImages, loadJS, loadTerminalDialog, mapNewWindows, modalTaxon, objToArgs, openLink, openTab, overlayOff, overlayOn, p$, parseQuery, parseTaxonYear, performSearch, post64, prepURI, randomInt, ref, roundNumber, roundNumberSigfig, safariDialogHelper, safariSearchArgHelper, searchParams, setHistory, setupServiceWorker, showBadSearchErrorMessage, smartUpperCasing, sortResults, startLoad, stopLoad, stopLoadError, toFloat, toInt, toObject, toastStatusMessage, uri,
+var _metaStatus, activityIndicatorOff, activityIndicatorOn, allError, animateHoverShadows, animateLoad, bindClickTargets, bindClicks, bindDismissalRemoval, bindPaperMenuButton, browserBeware, bsAlert, buildQuery, byteCount, checkFileVersion, checkLaggedUpdate, checkLocalVersion, checkTaxonNear, clearSearch, dataUriToBlob, dateMonthToString, deEscape, decode64, deepJQuery, delay, delayPolymerBind, doCORSget, doFontExceptions, doLazily, doNothing, domainPlaceholder, downloadDataUriAsBlob, e, encode64, error1, eutheriaFilterHelper, executeQuery, fetchMajorMinorGroups, foo, formatScientificNames, formatSearchResults, getElementHtml, getFilters, getLocation, getMaxZ, getRandomEntry, getTerminalDependencies, goTo, insertCORSWorkaround, insertModalImage, interval, isArray, isBlank, isBool, isEmpty, isJson, isNull, isNumber, isNumeric, jsonTo64, lightboxImages, loadJS, loadSocialMediaSlideoutBar, loadTerminalDialog, mapNewWindows, modalTaxon, objToArgs, openLink, openTab, overlayOff, overlayOn, p$, parseQuery, parseTaxonYear, performSearch, post64, prepURI, randomInt, ref, roundNumber, roundNumberSigfig, safariDialogHelper, safariSearchArgHelper, searchParams, setHistory, setupServiceWorker, showBadSearchErrorMessage, smartUpperCasing, sortResults, startLoad, stopLoad, stopLoadError, toFloat, toInt, toObject, toastStatusMessage, uri,
   slice = [].slice,
   indexOf = [].indexOf || function(item) { for (var i = 0, l = this.length; i < l; i++) { if (i in this && this[i] === item) return i; } return -1; };
 
@@ -2159,6 +2159,39 @@ delayPolymerBind = function(selector, callback, iter) {
   return false;
 };
 
+loadSocialMediaSlideoutBar = function(selector, appendTo) {
+  var html, showButton, toggleSocialSlideoutBar;
+  if (selector == null) {
+    selector = "#social-menu";
+  }
+  if (appendTo == null) {
+    appendTo = "main";
+  }
+
+  /*
+   *
+   */
+  toggleSocialSlideoutBar = function() {
+    if ($(selector).hasClass("out")) {
+      $(selector).removeClass("out").addClass("in");
+    } else {
+      $(selector).removeClass("in").addClass("out");
+    }
+    return false;
+  };
+  window.toggleSocialSlideoutBar = toggleSocialSlideoutBar;
+  if (!$(selector).exists()) {
+    html = "<paper-material id=\"social-menu\" class=\"out\">\n  <paper-icon-button icon=\"glyphicon-social:twitter\" class=\"show-social\"></paper-icon-button>\n  <div class=\"slideout-content\">\n    \n  </div>\n</paper-material>";
+    showButton = "    ";
+    $(appendTo).append(html);
+    $(".show-social").click(function() {
+      toggleSocialSlideoutBar.debounce(50);
+      return false;
+    });
+  }
+  return false;
+};
+
 try {
   $();
 } catch (error1) {
@@ -2229,6 +2262,9 @@ $(function() {
   } catch (undefined) {}
   browserBeware();
   checkFileVersion();
+  try {
+    loadSocialMediaSlideoutBar();
+  } catch (undefined) {}
   try {
     ref2 = $("figcaption .caption-description");
     for (o = 0, len2 = ref2.length; o < len2; o++) {

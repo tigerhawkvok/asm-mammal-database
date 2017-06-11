@@ -6718,6 +6718,7 @@ button.close {
  ***/
 body {
   padding: 2rem;
+  overflow-x: hidden;
 }
 .sample-change-also {
   text: #F44336;
@@ -6900,6 +6901,8 @@ header#header-bar paper-button.hidden-xs iron-icon {
 header#header-bar + main {
   margin-top: 3em;
   padding-bottom: 3em;
+  max-width: 100vw;
+  overflow-x: hidden;
 }
 .person {
   text-transform: capitalize;
@@ -7600,6 +7603,35 @@ iron-label {
 iron-label + paper-icon-button,
 label + paper-icon-button {
   padding-left: 0;
+}
+#social-menu {
+  width: 30vw;
+  min-width: 30vw;
+  background: #fff;
+  height: calc(100vh - 6em - 5em);
+  position: absolute;
+  top: calc(3em + 30px);
+  transition: 0.5s all ease-in-out;
+}
+@media (max-width: 991px) {
+  #social-menu {
+    width: 90vw !important;
+  }
+  #social-menu.out {
+    right: -90vw !important;
+  }
+}
+#social-menu.out {
+  right: -30vw;
+}
+#social-menu.in {
+  right: -1em;
+}
+#social-menu > paper-icon-button {
+  margin-left: -30px;
+  background: #fff;
+  box-shadow: -1px 0 5px rgba(0, 0, 0, 0.25);
+  border-radius: 50%;
 }
 .clade {
   text-transform: title-case;

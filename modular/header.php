@@ -79,6 +79,7 @@
 <link rel="import" href="bower_components/paper-input/paper-input.html"/>
 <link rel="import" href="bower_components/paper-spinner/paper-spinner.html"/>
 <link rel="import" href="bower_components/paper-menu/paper-menu.html"/>
+<link rel="import" href="bower_components/paper-material/paper-material.html"/>
 <link rel="import" href="bower_components/paper-menu-button/paper-menu-button.html"/>
 <link rel="import" href="bower_components/paper-dialog/paper-dialog.html"/>
 <link rel="import" href="bower_components/paper-dialog-scrollable/paper-dialog-scrollable.html"/>

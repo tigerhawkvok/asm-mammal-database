@@ -62,7 +62,7 @@ if ($show_debug === true) {
           <section id="search-options-container" class="row">
             <div class="col-md-3 col-xs-6 toggle-container bool-search-option clearfix">
               <paper-icon-button icon="info-outline" data-toggle="tooltip" title="Check this to search all fields with the general search, rather than just scientific and common names. Otherwise, use the advanced options below." class="pull-left"></paper-icon-button>
-              <paper-toggle-button id="global_search" class="pull-left">All Fields</paper-toggle-button>
+              <paper-toggle-button id="global_search" class="pull-left" checked>All Fields</paper-toggle-button>
             </div>
             <div class="col-md-3 col-lg-2 col-xs-6 toggle-container bool-search-option">
               <paper-icon-button icon="info-outline" data-toggle="tooltip" title="Check this to do a partial-string search, rather than a exact match." class="pull-left"></paper-icon-button>

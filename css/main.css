@@ -6894,7 +6894,7 @@ header#header-bar paper-button.hidden-xs iron-icon {
   margin-left: 5px;
 }
 @media (max-width: 767px) {
-  header#header-bar paper-icon-button.visible-xs {
+  header#header-bar paper-icon-button.visible-xs:not([hidden]) {
     display: inline-block !important;
   }
 }

@@ -95,6 +95,7 @@ verifyLoginCredentials = function(callback) {
     console.log("Server called back from login credential verification", result);
     if (result.status === true) {
       $(".logged-in-values").removeAttr("hidden");
+      $(".logged-in-hidden").attr("hidden", "hidden");
       cookieFullName = uri.domain + "_fullname";
       $("header .fill-user-fullname").text($.cookie(cookieFullName));
       if (typeof callback === "function") {

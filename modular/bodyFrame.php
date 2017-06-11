@@ -2,7 +2,8 @@
 
 $protocol = isset($_SERVER['HTTPS']) ? "https" : "http";
 
-$lastIcon = "<paper-button class=\"click hidden-xs\" data-fn=\"getRandomEntry\">Random <iron-icon icon=\"glyphicon-social:playing-dice\"></iron-icon></paper-button>";
+$lastIcon = "<paper-icon-button icon=\"glyphicon-social:playing-dice\" class=\"click visible-xs logged-in-hidden\" data-fn=\"getRandomEntry\" data-toggle=\"tooltip\" title=\"Random Entry\" data-placement=\"bottom\"></paper-icon-button>
+<paper-button class=\"click hidden-xs\" data-fn=\"getRandomEntry\">Random <iron-icon icon=\"glyphicon-social:playing-dice\"></iron-icon></paper-button>";
 
 if (basename($_SERVER["PHP_SELF"]) == "index.php") {
     # lastIcon is fine

@@ -2519,7 +2519,10 @@ checkLaggedUpdate = function(result) {
           if (j === k && finishedLoop) {
             elapsed = Date.now() - start;
             console.log("Finished async IUCN taxa check in " + elapsed + "ms");
-            return stopLoad();
+            stopLoad();
+            return delay(500, function() {
+              return stopLoad();
+            });
           }
         });
       }

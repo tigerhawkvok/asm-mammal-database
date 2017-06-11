@@ -1,4 +1,4 @@
-var _metaStatus, activityIndicatorOff, activityIndicatorOn, allError, animateHoverShadows, animateLoad, bindClickTargets, bindClicks, bindDismissalRemoval, bindPaperMenuButton, browserBeware, bsAlert, buildQuery, byteCount, checkFileVersion, checkLaggedUpdate, checkLocalVersion, checkTaxonNear, clearSearch, dataUriToBlob, dateMonthToString, deEscape, decode64, deepJQuery, delay, delayPolymerBind, doCORSget, doFontExceptions, doLazily, doNothing, domainPlaceholder, downloadDataUriAsBlob, e, encode64, error1, eutheriaFilterHelper, executeQuery, fetchMajorMinorGroups, foo, formatScientificNames, formatSearchResults, getElementHtml, getFilters, getLocation, getMaxZ, getRandomEntry, getTerminalDependencies, goTo, insertCORSWorkaround, insertModalImage, interval, isArray, isBlank, isBool, isEmpty, isJson, isNull, isNumber, isNumeric, jsonTo64, lightboxImages, loadJS, loadSocialMediaSlideoutBar, loadTerminalDialog, mapNewWindows, modalTaxon, objToArgs, openLink, openTab, overlayOff, overlayOn, p$, parseQuery, parseTaxonYear, performSearch, post64, prepURI, randomInt, ref, roundNumber, roundNumberSigfig, safariDialogHelper, safariSearchArgHelper, searchParams, setHistory, setupServiceWorker, showBadSearchErrorMessage, smartUpperCasing, sortResults, startLoad, stopLoad, stopLoadError, toFloat, toInt, toObject, toastStatusMessage, uri,
+var _metaStatus, activityIndicatorOff, activityIndicatorOn, allError, animateHoverShadows, animateLoad, bindClickTargets, bindClicks, bindDismissalRemoval, bindPaperMenuButton, browserBeware, bsAlert, buildQuery, byteCount, checkFileVersion, checkLaggedUpdate, checkLocalVersion, checkTaxonNear, clearSearch, dataUriToBlob, dateMonthToString, deEscape, decode64, deepJQuery, delay, delayPolymerBind, doCORSget, doFontExceptions, doLazily, doNothing, domainPlaceholder, downloadDataUriAsBlob, e, encode64, error1, eutheriaFilterHelper, executeQuery, fetchMajorMinorGroups, foo, formatScientificNames, formatSearchResults, getElementHtml, getFilters, getLocation, getMaxZ, getRandomEntry, getTerminalDependencies, goTo, insertCORSWorkaround, insertModalImage, interval, isArray, isBlank, isBool, isEmpty, isJson, isNull, isNumber, isNumeric, jsonTo64, lightboxImages, loadJS, loadSocialMediaSlideoutBar, loadTerminalDialog, mapNewWindows, mobileCollapsable, modalTaxon, objToArgs, openLink, openTab, overlayOff, overlayOn, p$, parseQuery, parseTaxonYear, performSearch, post64, prepURI, randomInt, ref, roundNumber, roundNumberSigfig, safariDialogHelper, safariSearchArgHelper, searchParams, setHistory, setupServiceWorker, showBadSearchErrorMessage, smartUpperCasing, sortResults, startLoad, stopLoad, stopLoadError, toFloat, toInt, toObject, toastStatusMessage, uri,
   slice = [].slice,
   indexOf = [].indexOf || function(item) { for (var i = 0, l = this.length; i < l; i++) { if (i in this && this[i] === item) return i; } return -1; };
 
@@ -40,6 +40,8 @@ if (typeof window._asm !== "object") {
 _asm.socialHandles = {
   twitter: "mammalogists"
 };
+
+_asm.mobileBreakpoint = 767;
 
 isBool = function(str) {
   return str === true || str === false;
@@ -3743,10 +3745,82 @@ doLazily = function() {
       html = "<paper-icon-button\n  icon=\"icons:cloud-download\"\n  class=\"click\"\n  data-fn=\"showDownloadChooser\"\n  title=\"Download Copy\"\n  data-toggle=\"tooltip\"\n  >\n</paper-icon-button>";
       $("#git-footer").prepend(html);
       bindClicks();
+      mobileCollapsable();
       return false;
     });
   }
   return false;
+};
+
+mobileCollapsable = function(selector, breakpoint, debounceInterval) {
+  var clearDebounce, hasDoneInitialCollapse, ref1;
+  if (selector == null) {
+    selector = ".search-options-panel";
+  }
+  if (breakpoint == null) {
+    breakpoint = (ref1 = typeof _asm !== "undefined" && _asm !== null ? _asm.mobileBreakpoint : void 0) != null ? ref1 : 767;
+  }
+  if (debounceInterval == null) {
+    debounceInterval = 250;
+  }
+
+  /*
+   * Collapse all sections inside of selector, using the legend as a trigger
+   */
+  console.debug("Checking mobile status");
+  if ($(window).width() <= breakpoint) {
+    if (typeof (typeof core !== "undefined" && core !== null ? core.debouncers : void 0) !== "object") {
+      if (typeof core !== "object") {
+        window.core = new Object();
+      }
+      core.debouncers = new Object();
+    }
+    if (core.debouncers.mobileCollapsable != null) {
+      if (Date.now() - core.debouncers.mobileCollapsable <= debounceInterval) {
+        return false;
+      }
+      delete core.debouncers.mobileCollapsable;
+      clearTimeout(core.debouncers.mobileCollapseableTimeout);
+    }
+    core.debouncers.mobileCollapsable = Date.now();
+    clearDebounce = 2 * debounceInterval;
+    core.debouncers.mobileCollapseableTimeout = delay(clearDebounce, function() {
+      return delete core.debouncers.mobileCollapsable;
+    });
+    $(selector).find("section").collapse();
+    hasDoneInitialCollapse = false;
+    $($(selector).find("section").get(0)).on("shown.bs.collapse", function() {
+      if (!hasDoneInitialCollapse) {
+        delay(50, function() {
+          var len1, m, ref2, results1, section;
+          ref2 = $(selector).find("section");
+          results1 = [];
+          for (m = 0, len1 = ref2.length; m < len1; m++) {
+            section = ref2[m];
+            results1.push($(section).collapse("hide"));
+          }
+          return results1;
+        });
+        hasDoneInitialCollapse = true;
+      }
+      return false;
+    });
+    $(selector).find("legend").text("Show Options").addClass("btn btn-default").click(function() {
+      var isCollapsed;
+      isCollapsed = !$(selector).find("section").hasClass("in");
+      if (isCollapsed) {
+        $(this).text("Hide Options");
+        return $(selector).find("section").collapse("show");
+      } else {
+        $(this).text("Show Options");
+        return $(selector).find("section").collapse("hide");
+      }
+    });
+    return true;
+  } else {
+    console.debug("Not a mobile viewport");
+    return false;
+  }
 };
 
 $(function() {

@@ -365,6 +365,12 @@ main {
     }
 
     #search-options-container {
+        &.collapse, &.collapsing {
+            .bool-search-option {
+                padding-top: .5rem;
+                padding-bottom: .5rem;
+            }
+        }
         .bool-search-option {
             @media(max-width: @screen-xs-max) {
                 paper-icon-button[data-toggle='tooltip'] {
@@ -394,7 +400,7 @@ main {
             }
         }
     }
-        
+
     #default-hidden-search-option-container {
         & > p.text-muted {
                 margin-top: 1em;

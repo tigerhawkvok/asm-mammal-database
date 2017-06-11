@@ -1363,9 +1363,55 @@ doLazily = ->
       """
       $("#git-footer").prepend html
       bindClicks()
+      mobileCollapsable()
       false
   false
 
+
+
+mobileCollapsable = (selector = ".search-options-panel", breakpoint = _asm?.mobileBreakpoint ? 767, debounceInterval = 250) ->
+  ###
+  # Collapse all sections inside of selector, using the legend as a trigger
+  ###
+  console.debug "Checking mobile status"
+  if $(window).width() <= breakpoint
+    unless typeof core?.debouncers is "object"
+      unless typeof core is "object"
+        window.core = new Object()
+      core.debouncers = new Object()
+    if core.debouncers.mobileCollapsable?
+      if Date.now() - core.debouncers.mobileCollapsable <= debounceInterval
+        return false
+      delete core.debouncers.mobileCollapsable
+      clearTimeout core.debouncers.mobileCollapseableTimeout
+    core.debouncers.mobileCollapsable = Date.now()
+    clearDebounce = 2 * debounceInterval
+    core.debouncers.mobileCollapseableTimeout = delay clearDebounce, ->
+      delete core.debouncers.mobileCollapsable
+    $(selector).find("section").collapse()
+    hasDoneInitialCollapse = false
+    $($(selector).find("section").get(0)).on "shown.bs.collapse", ->
+      unless hasDoneInitialCollapse
+        delay 50, ->
+          for section in $(selector).find("section")
+            $(section).collapse("hide")
+        hasDoneInitialCollapse = true
+      false
+    $(selector).find("legend")
+    .text "Show Options"
+    .addClass "btn btn-default"
+    .click ->
+      isCollapsed = not $(selector).find("section").hasClass "in"
+      if isCollapsed
+        $(this).text "Hide Options"
+        $(selector).find("section").collapse("show")
+      else
+        $(this).text "Show Options"
+        $(selector).find("section").collapse("hide")
+    true
+  else
+    console.debug "Not a mobile viewport"
+    false
 
 
 $ ->

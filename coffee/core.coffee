@@ -30,6 +30,9 @@ unless typeof window._asm is "object"
 _asm.socialHandles =
   twitter: "mammalogists"
 
+# Breakpoint in px
+_asm.mobileBreakpoint = 767
+
 
 isBool = (str) -> str is true or str is false
 

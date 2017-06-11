@@ -6976,6 +6976,16 @@ main #images-block div.no-image {
     margin-top: 1em;
   }
 }
+#search_form #search-options-container.collapse .bool-search-option,
+#search_form #search-options-container.collapsing .bool-search-option {
+  padding-top: .5rem;
+  padding-bottom: .5rem;
+}
+@media (max-width: 767px) {
+  #search_form #search-options-container .bool-search-option paper-icon-button[data-toggle='tooltip'] {
+    display: none;
+  }
+}
 #search_form #search-options-container paper-menu-button {
   margin-top: -1.5em;
 }

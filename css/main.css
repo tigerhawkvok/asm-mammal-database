@@ -7628,7 +7628,7 @@ label + paper-icon-button {
   right: -1em;
 }
 #social-menu div {
-  max-height: calc(100vh - 6em - 6em);
+  max-height: calc(100% - 3em);
   overflow-y: scroll;
 }
 #social-menu > paper-icon-button {

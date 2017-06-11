@@ -4,7 +4,8 @@ searchParams =
   targetContainer: "#result_container"
 searchParams.apiPath = uri.urlString + searchParams.targetApi
 
-window._asm = new Object()
+unless typeof window._asm is "object"
+  window._asm = new Object()
 # Base query URLs for out-of-site linkouts
 _asm.affiliateQueryUrl =
   iucnRedlist: "http://apiv3.iucnredlist.org/api/v3/species/"

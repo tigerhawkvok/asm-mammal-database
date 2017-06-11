@@ -4,7 +4,8 @@ searchParams =
   targetContainer: "#result_container"
 searchParams.apiPath = uri.urlString + searchParams.targetApi
 
-window._asm = new Object()
+unless typeof window._asm is "object"
+  window._asm = new Object()
 # Base query URLs for out-of-site linkouts
 _asm.affiliateQueryUrl =
   iucnRedlist: "http://apiv3.iucnredlist.org/api/v3/species/"
@@ -184,10 +185,15 @@ checkLaggedUpdate = (result) ->
           if j is k and finishedLoop
             elapsed = Date.now() - start
             console.log "Finished async IUCN taxa check in #{elapsed}ms"
+            stopLoad()
+            delay 500, ->
+              stopLoad()
       finishedLoop = true
     catch e
       console.warn "Couldn't do client update -- #{e.message}"
       console.warn e.stack
+  else
+    stopLoad()
   false
 
 
@@ -1357,9 +1363,59 @@ doLazily = ->
       """
       $("#git-footer").prepend html
       bindClicks()
+      mobileCollapsable()
+      loadJS "#{uri.urlString}js/terminal.min.js", ->
+        bindClicks()
+        console.debug "Terminal file loaded"
+        stopLoad()
       false
   false
 
+
+
+mobileCollapsable = (selector = ".search-options-panel", breakpoint = _asm?.mobileBreakpoint ? 767, debounceInterval = 250) ->
+  ###
+  # Collapse all sections inside of selector, using the legend as a trigger
+  ###
+  console.debug "Checking mobile status"
+  if $(window).width() <= breakpoint
+    unless typeof core?.debouncers is "object"
+      unless typeof core is "object"
+        window.core = new Object()
+      core.debouncers = new Object()
+    if core.debouncers.mobileCollapsable?
+      if Date.now() - core.debouncers.mobileCollapsable <= debounceInterval
+        return false
+      delete core.debouncers.mobileCollapsable
+      clearTimeout core.debouncers.mobileCollapseableTimeout
+    core.debouncers.mobileCollapsable = Date.now()
+    clearDebounce = 2 * debounceInterval
+    core.debouncers.mobileCollapseableTimeout = delay clearDebounce, ->
+      delete core.debouncers.mobileCollapsable
+    $(selector).find("section").collapse()
+    hasDoneInitialCollapse = false
+    $($(selector).find("section").get(0)).on "shown.bs.collapse", ->
+      unless hasDoneInitialCollapse
+        delay 50, ->
+          for section in $(selector).find("section")
+            $(section).collapse("hide")
+        hasDoneInitialCollapse = true
+      false
+    $(selector).find("legend")
+    .text "Show Options"
+    .addClass "btn btn-default"
+    .click ->
+      isCollapsed = not $(selector).find("section").hasClass "in"
+      if isCollapsed
+        $(this).text "Hide Options"
+        $(selector).find("section").collapse("show")
+      else
+        $(this).text "Show Options"
+        $(selector).find("section").collapse("hide")
+    true
+  else
+    console.debug "Not a mobile viewport"
+    false
 
 
 $ ->

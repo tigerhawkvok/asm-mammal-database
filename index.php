@@ -63,7 +63,7 @@ if ($show_debug === true) {
             <paper-fab id="do-reset-search" icon="cancel" raisedButton class="asm-blue" data-toggle="tooltip" title="Reset search" data-placement="bottom"></paper-fab>
           </div>
         </div>
-        <fieldset class="">
+        <fieldset class="search-options-panel">
           <legend>Options</legend>
           <section id="search-options-container" class="row">
             <div class="col-md-3 col-xs-6 toggle-container bool-search-option clearfix">
@@ -137,7 +137,7 @@ if ($show_debug === true) {
           <section id="default-hidden-search-option-container">
             <!-- Now, elements that are hidden by default -->
             <paper-button data-toggle="collapse" data-target="#collapse-advanced" aria-expanded="false" aria-controls="collapse-advanced" class="asm-blue-light pull-left" id="collapse-button" raised>Advanced Options <iron-icon icon="icons:unfold-more" id="collapse-icon"></iron-icon></paper-button>
-            <p class="text-muted pull-left">Click to search in specific fields</p>
+            <p class="text-muted pull-left hidden-xs">Click to search in specific fields</p>
             <div class="collapse form-group clearfix clear" id="collapse-advanced">
               <!-- Clade: DWC cohort, magnaorder, and superorder -->
               <paper-input label="Clade" id="major-type-filter" name="major-type-filter" class="cndb-filter col-md-4 col-xs-6" data-column="major_type"></paper-input>

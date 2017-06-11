@@ -2,7 +2,7 @@
 
 $protocol = isset($_SERVER['HTTPS']) ? "https" : "http";
 
-$lastIcon = "<paper-icon-button icon=\"glyphicon-social:playing-dice\" class=\"click visible-xs\" data-fn=\"getRandomEntry\" data-toggle=\"tooltip\" title=\"Random Entry\" data-placement=\"bottom\"></paper-icon-button>
+$lastIcon = "<paper-icon-button icon=\"glyphicon-social:playing-dice\" class=\"click visible-xs logged-in-hidden\" data-fn=\"getRandomEntry\" data-toggle=\"tooltip\" title=\"Random Entry\" data-placement=\"bottom\"></paper-icon-button>
 <paper-button class=\"click hidden-xs\" data-fn=\"getRandomEntry\">Random <iron-icon icon=\"glyphicon-social:playing-dice\"></iron-icon></paper-button>";
 
 if (basename($_SERVER["PHP_SELF"]) == "index.php") {
@@ -22,10 +22,10 @@ $bodyOpen = "  <body fullbleed vertical layout class='container-fluid'>
           </div>
           <p class=\"col-xs-10 text-right\">
           <span class=\"logged-in-values\" hidden>
-          Logged in as <span class=\"fill-user-fullname header-bar-user-name\"></span>
+          <span class='hidden-xs'>Logged in as </span><span class=\"fill-user-fullname header-bar-user-name click\" data-href=\"$protocol://mammaldiversity.org/admin-page.html\" ></span>
           </span>
-          <paper-icon-button icon=\"icons:dashboard\" class=\"click logged-in-values\" data-href=\"$protocol://mammaldiversity.org/admin-page.html\" data-toggle=\"tooltip\" title=\"Administration Dashboard\" data-placement=\"bottom\" hidden> </paper-icon-button>
-          <paper-icon-button icon='icons:settings-applications' class=\"click logged-in-values\" data-href=\"$protocol://mammaldiversity.org/admin\" data-toggle=\"tooltip\" title=\"Account Settings\" data-placement=\"bottom\" hidden></paper-icon-button>
+          <paper-icon-button icon=\"icons:dashboard\" class=\"click logged-in-values hidden-xs\" data-href=\"$protocol://mammaldiversity.org/admin-page.html\" data-toggle=\"tooltip\" title=\"Administration Dashboard\" data-placement=\"bottom\" hidden> </paper-icon-button>
+          <paper-icon-button icon='icons:settings-applications' class=\"click logged-in-values hidden-xs\" data-href=\"$protocol://mammaldiversity.org/admin\" data-toggle=\"tooltip\" title=\"Account Settings\" data-placement=\"bottom\" hidden></paper-icon-button>
           <paper-icon-button icon='icons:info-outline' class=\"click visible-xs\" data-href=\"$protocol://mammaldiversity.org/about\" data-toggle=\"tooltip\" title=\"About\" data-placement=\"bottom\"></paper-icon-button>
           <paper-button class=\"click hidden-xs\" data-href=\"$protocol://mammaldiversity.org/about\">About <iron-icon icon='icons:info-outline'></iron-icon></paper-button>
           <paper-icon-button icon='editor:insert-chart' class=\"click visible-xs\" data-href=\"$protocol://mammaldiversity.org/summary\" data-toggle=\"tooltip\" title=\"Summary Statistics\" data-placement=\"bottom\"></paper-icon-button>

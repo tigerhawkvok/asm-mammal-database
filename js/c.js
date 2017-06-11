@@ -1,4 +1,4 @@
-var _metaStatus, activityIndicatorOff, activityIndicatorOn, allError, animateHoverShadows, animateLoad, bindClickTargets, bindClicks, bindDismissalRemoval, bindPaperMenuButton, browserBeware, bsAlert, buildQuery, byteCount, checkFileVersion, checkLaggedUpdate, checkLocalVersion, checkTaxonNear, clearSearch, dataUriToBlob, dateMonthToString, deEscape, decode64, deepJQuery, delay, delayPolymerBind, doCORSget, doFontExceptions, doLazily, doNothing, domainPlaceholder, downloadDataUriAsBlob, e, encode64, error1, eutheriaFilterHelper, executeQuery, fetchMajorMinorGroups, foo, formatScientificNames, formatSearchResults, getElementHtml, getFilters, getLocation, getMaxZ, getRandomEntry, getTerminalDependencies, goTo, insertCORSWorkaround, insertModalImage, interval, isArray, isBlank, isBool, isEmpty, isJson, isNull, isNumber, isNumeric, jsonTo64, lightboxImages, loadJS, loadTerminalDialog, mapNewWindows, modalTaxon, objToArgs, openLink, openTab, overlayOff, overlayOn, p$, parseQuery, parseTaxonYear, performSearch, post64, prepURI, randomInt, ref, roundNumber, roundNumberSigfig, safariDialogHelper, safariSearchArgHelper, searchParams, setHistory, setupServiceWorker, showBadSearchErrorMessage, smartUpperCasing, sortResults, startLoad, stopLoad, stopLoadError, toFloat, toInt, toObject, toastStatusMessage, uri,
+var _metaStatus, activityIndicatorOff, activityIndicatorOn, allError, animateHoverShadows, animateLoad, bindClickTargets, bindClicks, bindDismissalRemoval, bindPaperMenuButton, browserBeware, bsAlert, buildQuery, byteCount, checkFileVersion, checkLaggedUpdate, checkLocalVersion, checkTaxonNear, clearSearch, dataUriToBlob, dateMonthToString, deEscape, decode64, deepJQuery, delay, delayPolymerBind, doCORSget, doFontExceptions, doLazily, doNothing, domainPlaceholder, downloadDataUriAsBlob, e, encode64, error1, eutheriaFilterHelper, fetchMajorMinorGroups, foo, formatScientificNames, formatSearchResults, getElementHtml, getFilters, getLocation, getMaxZ, getRandomEntry, goTo, insertCORSWorkaround, insertModalImage, interval, isArray, isBlank, isBool, isEmpty, isJson, isNull, isNumber, isNumeric, jsonTo64, lightboxImages, loadJS, loadSocialMediaSlideoutBar, mapNewWindows, mobileCollapsable, modalTaxon, objToArgs, openLink, openTab, overlayOff, overlayOn, p$, parseTaxonYear, performSearch, post64, prepURI, randomInt, ref, roundNumber, roundNumberSigfig, safariDialogHelper, safariSearchArgHelper, searchParams, setHistory, setupServiceWorker, showBadSearchErrorMessage, smartUpperCasing, sortResults, startLoad, stopLoad, stopLoadError, toFloat, toInt, toObject, toastStatusMessage, uri,
   slice = [].slice,
   indexOf = [].indexOf || function(item) { for (var i = 0, l = this.length; i < l; i++) { if (i in this && this[i] === item) return i; } return -1; };
 
@@ -32,6 +32,16 @@ locationData.params = {
 };
 
 locationData.last = void 0;
+
+if (typeof window._asm !== "object") {
+  window._asm = new Object();
+}
+
+_asm.socialHandles = {
+  twitter: "mammalogists"
+};
+
+_asm.mobileBreakpoint = 767;
 
 isBool = function(str) {
   return str === true || str === false;
@@ -305,15 +315,15 @@ Object.size = function(obj) {
 };
 
 Object.doOnSortedKeys = function(obj, fn) {
-  var data, key, len1, m, results1, sortedKeys;
+  var data, key, len1, m, results, sortedKeys;
   sortedKeys = Object.keys(obj).sort();
-  results1 = [];
+  results = [];
   for (m = 0, len1 = sortedKeys.length; m < len1; m++) {
     key = sortedKeys[m];
     data = obj[key];
-    results1.push(fn(data));
+    results.push(fn(data));
   }
-  return results1;
+  return results;
 };
 
 delay = function(ms, f) {
@@ -2159,6 +2169,52 @@ delayPolymerBind = function(selector, callback, iter) {
   return false;
 };
 
+loadSocialMediaSlideoutBar = function(handles, selector, appendTo) {
+  var contentHtml, handle, html, service, serviceHtml, showButton, toggleSocialSlideoutBar;
+  if (selector == null) {
+    selector = "#social-menu";
+  }
+  if (appendTo == null) {
+    appendTo = "main";
+  }
+
+  /*
+   *
+   * @param obj handles -> an object with keys as service and value as handle
+   */
+  toggleSocialSlideoutBar = function() {
+    if ($(selector).hasClass("out")) {
+      $(selector).removeClass("out").addClass("in");
+    } else {
+      $(selector).removeClass("in").addClass("out");
+    }
+    return false;
+  };
+  window.toggleSocialSlideoutBar = toggleSocialSlideoutBar;
+  if (!$(selector).exists()) {
+    contentHtml = "";
+    for (service in handles) {
+      handle = handles[service];
+      switch (service) {
+        case "twitter":
+          serviceHtml = "<a class=\"twitter-timeline\" data-link-color=\"#1DA1F2\" href=\"https://twitter.com/" + handle + "\">Tweets by @" + handle + "</a> <script async src=\"//platform.twitter.com/widgets.js\" charset=\"utf-8\"></script>          ";
+          break;
+        default:
+          serviceHtml = "";
+      }
+      contentHtml += "\n" + serviceHtml + "\n";
+    }
+    html = "<paper-material id=\"social-menu\" class=\"out\" elevation=\"4\">\n  <paper-icon-button icon=\"glyphicon-social:twitter\" class=\"show-social\"></paper-icon-button>\n  <div class=\"slideout-content\">\n    " + contentHtml + "\n  </div>\n</paper-material>";
+    showButton = "    ";
+    $(appendTo).append(html);
+    $(".show-social").click(function() {
+      toggleSocialSlideoutBar.debounce(50);
+      return false;
+    });
+  }
+  return false;
+};
+
 try {
   $();
 } catch (error1) {
@@ -2230,6 +2286,9 @@ $(function() {
   browserBeware();
   checkFileVersion();
   try {
+    loadSocialMediaSlideoutBar(_asm.socialHandles);
+  } catch (undefined) {}
+  try {
     ref2 = $("figcaption .caption-description");
     for (o = 0, len2 = ref2.length; o < len2; o++) {
       caption = ref2[o];
@@ -2274,7 +2333,9 @@ searchParams = {
 
 searchParams.apiPath = uri.urlString + searchParams.targetApi;
 
-window._asm = new Object();
+if (typeof window._asm !== "object") {
+  window._asm = new Object();
+}
 
 _asm.affiliateQueryUrl = {
   iucnRedlist: "http://apiv3.iucnredlist.org/api/v3/species/",
@@ -2459,7 +2520,11 @@ checkLaggedUpdate = function(result) {
           var elapsed;
           if (j === k && finishedLoop) {
             elapsed = Date.now() - start;
-            return console.log("Finished async IUCN taxa check in " + elapsed + "ms");
+            console.log("Finished async IUCN taxa check in " + elapsed + "ms");
+            stopLoad();
+            return delay(500, function() {
+              return stopLoad();
+            });
           }
         });
       }
@@ -2469,6 +2534,8 @@ checkLaggedUpdate = function(result) {
       console.warn("Couldn't do client update -- " + e.message);
       console.warn(e.stack);
     }
+  } else {
+    stopLoad();
   }
   return false;
 };
@@ -3678,10 +3745,87 @@ doLazily = function() {
       html = "<paper-icon-button\n  icon=\"icons:cloud-download\"\n  class=\"click\"\n  data-fn=\"showDownloadChooser\"\n  title=\"Download Copy\"\n  data-toggle=\"tooltip\"\n  >\n</paper-icon-button>";
       $("#git-footer").prepend(html);
       bindClicks();
+      mobileCollapsable();
+      loadJS(uri.urlString + "js/terminal.min.js", function() {
+        bindClicks();
+        console.debug("Terminal file loaded");
+        return stopLoad();
+      });
       return false;
     });
   }
   return false;
+};
+
+mobileCollapsable = function(selector, breakpoint, debounceInterval) {
+  var clearDebounce, hasDoneInitialCollapse, ref1;
+  if (selector == null) {
+    selector = ".search-options-panel";
+  }
+  if (breakpoint == null) {
+    breakpoint = (ref1 = typeof _asm !== "undefined" && _asm !== null ? _asm.mobileBreakpoint : void 0) != null ? ref1 : 767;
+  }
+  if (debounceInterval == null) {
+    debounceInterval = 250;
+  }
+
+  /*
+   * Collapse all sections inside of selector, using the legend as a trigger
+   */
+  console.debug("Checking mobile status");
+  if ($(window).width() <= breakpoint) {
+    if (typeof (typeof core !== "undefined" && core !== null ? core.debouncers : void 0) !== "object") {
+      if (typeof core !== "object") {
+        window.core = new Object();
+      }
+      core.debouncers = new Object();
+    }
+    if (core.debouncers.mobileCollapsable != null) {
+      if (Date.now() - core.debouncers.mobileCollapsable <= debounceInterval) {
+        return false;
+      }
+      delete core.debouncers.mobileCollapsable;
+      clearTimeout(core.debouncers.mobileCollapseableTimeout);
+    }
+    core.debouncers.mobileCollapsable = Date.now();
+    clearDebounce = 2 * debounceInterval;
+    core.debouncers.mobileCollapseableTimeout = delay(clearDebounce, function() {
+      return delete core.debouncers.mobileCollapsable;
+    });
+    $(selector).find("section").collapse();
+    hasDoneInitialCollapse = false;
+    $($(selector).find("section").get(0)).on("shown.bs.collapse", function() {
+      if (!hasDoneInitialCollapse) {
+        delay(50, function() {
+          var len1, m, ref2, results, section;
+          ref2 = $(selector).find("section");
+          results = [];
+          for (m = 0, len1 = ref2.length; m < len1; m++) {
+            section = ref2[m];
+            results.push($(section).collapse("hide"));
+          }
+          return results;
+        });
+        hasDoneInitialCollapse = true;
+      }
+      return false;
+    });
+    $(selector).find("legend").text("Show Options").addClass("btn btn-default").click(function() {
+      var isCollapsed;
+      isCollapsed = !$(selector).find("section").hasClass("in");
+      if (isCollapsed) {
+        $(this).text("Hide Options");
+        return $(selector).find("section").collapse("show");
+      } else {
+        $(this).text("Show Options");
+        return $(selector).find("section").collapse("hide");
+      }
+    });
+    return true;
+  } else {
+    console.debug("Not a mobile viewport");
+    return false;
+  }
 };
 
 $(function() {
@@ -3948,277 +4092,6 @@ $(function() {
       }
     })();
   }
-});
-
-
-/*
- * Primary handler for SQL Live Query Input
- *
- * See issue
- * https://github.com/tigerhawkvok/asm-mammal-database/issues/20
- * https://github.com/tigerhawkvok/asm-mammal-database/projects/2
- *
- * @author Philip Kahn
- */
-
-loadTerminalDialog = function(reinit) {
-  if (reinit == null) {
-    reinit = false;
-  }
-  getTerminalDependencies(function() {
-    var html;
-    if (!($("#sql-query-dialog").exists() || reinit)) {
-      html = "<paper-dialog id=\"sql-query-dialog\" modal>\n  <paper-dialog-scrollable>\n    <div class=\"row query-container\">\n      <form class=\"form\">\n        <div class=\"form-group\">\n          <textarea id=\"sql-input\"\n                    rows=\"5\"\n                    class=\"form-control\"\n                    placeholder=\"SQL query here\"\n                    autofocus></textarea>\n          <p class=\"text-muted\">\n            <strong>Tip:</strong> Use <kbd>@@</kbd> to represent the database table and <kbd>!@</kbd> to represent <code class=\"language-null\">SELECT * FROM table</code>. You can search columns using DarwinCore or columns specified in Github.\n          </p>\n        </div>\n      </form>\n      <p class=\"col-xs-12\">Interpreted Query:</p>\n      <code class=\"language-sql col-xs-11 col-xs-offset-1\" id=\"interpreted-sql\"></code>\n    </div>\n  </paper-dialog-scrollable>\n  <div class=\"buttons\">\n    <paper-button id=\"clear-sql-results\">Clear Results</paper-button>\n    <paper-button dialog-dismiss>Close</paper-button>\n  </div>\n</paper-dialog>";
-      $("body").append(html);
-      $("#sql-query-dialog").find("form").submit(function(e) {
-        e.preventDefault();
-        executeQuery();
-        return false;
-      });
-      $("#sql-input").keydown(function(e) {
-        var kc;
-        kc = e.keyCode ? e.keyCode : e.which;
-        if (kc === 13) {
-          e.preventDefault();
-          executeQuery();
-          return false;
-        }
-      });
-      $("#sql-input").keyup(function(e) {
-        var kc;
-        kc = e.keyCode ? e.keyCode : e.which;
-        if (kc !== 13) {
-          parseQuery(this);
-        }
-        return true;
-      });
-      $("#clear-sql-results").click(function() {
-        $("#sql-results").remove();
-        return false;
-      });
-    }
-    return p$("#sql-query-dialog").open();
-  });
-  return false;
-};
-
-getTerminalDependencies = function() {
-  var args, callback, checkDependencies, dependencies, naclCallback;
-  callback = arguments[0], args = 2 <= arguments.length ? slice.call(arguments, 1) : [];
-
-  /*
-   *
-   */
-  if (_asm.terminalDependencies === true) {
-    console.log("Dependencies are already loaded, executing immediately");
-    if (typeof callback === "function") {
-      callback.apply(null, args);
-    }
-  }
-  dependencies = {
-    nacl: false,
-    prism: false
-  };
-  _asm.terminalDependencies = false;
-  _asm.terminalDependenciesChecking = false;
-  checkDependencies = function() {
-    var lib, ready, status;
-    if (_asm.terminalDependencies === true) {
-      return true;
-    }
-    if (_asm.terminalDependenciesChecking) {
-      delay(50, function() {
-        return checkDependencies();
-      });
-      return false;
-    }
-    _asm.terminalDependenciesChecking = true;
-    ready = true;
-    for (lib in dependencies) {
-      status = dependencies[lib];
-      ready = ready && status;
-      if (!ready) {
-        console.log("Library " + lib + " isn't yet ready...");
-        break;
-      }
-    }
-    _asm.terminalDependencies = ready;
-    _asm.terminalDependenciesChecking = false;
-    if (ready) {
-      console.log("Dependencies loaded");
-      if (typeof callback === "function") {
-        callback.apply(null, args);
-      }
-    }
-    return ready;
-  };
-  naclCallback = function() {
-    return nacl_factory.instantiate(function(nacl) {
-      _asm.nacl = nacl;
-      dependencies.nacl = true;
-      return checkDependencies();
-    });
-  };
-  if (typeof nacl_factory === "undefined" || nacl_factory === null) {
-    loadJS("bower_components/js-nacl/lib/nacl_factory.js", function() {
-      return naclCallback();
-    });
-  } else {
-    naclCallback();
-  }
-  loadJS("bower_components/prism/prism.js", function() {
-    loadJS("bower_components/prism/components/prism-sql.js", function() {
-      dependencies.prism = true;
-      loadJS("bower_components/prism/components/prism-json.js");
-      checkDependencies();
-      return false;
-    });
-    return $("head").append("<link href=\"bower_components/prism/themes/prism.css\" rel=\"stylesheet\" />");
-  });
-  return false;
-};
-
-parseQuery = function(selector, codeBoxSelector) {
-  var codeBox, sql;
-  if (selector == null) {
-    selector = "#sql-input";
-  }
-  if (codeBoxSelector == null) {
-    codeBoxSelector = "#interpreted-sql";
-  }
-  sql = $(selector).val().trim();
-  sql = sql.replace(/@@/mig, "`mammal_diversity_database`");
-  sql = sql.replace(/!@/mig, "SELECT * FROM `mammal_diversity_database`");
-  codeBox = $(codeBoxSelector).get(0);
-  $(codeBox).text(sql);
-  Prism.highlightElement(codeBox);
-  return sql;
-};
-
-executeQuery = function() {
-
-  /*
-   *
-   */
-  var args, darwinCoreOnly, handleSqlError, query;
-  handleSqlError = function(errorMessage) {
-    var alertId, error2, html;
-    if (errorMessage == null) {
-      errorMessage = "Error";
-    }
-    try {
-      alertId = _asm.nacl.decode_utf8(_asm.nacl.crypto_hash_string(errorMessage + Date.now()));
-    } catch (error2) {
-      e = error2;
-      console.warn(e.message);
-      console.warn(e.stack);
-      alertId = "sql-query-alert";
-    }
-    html = "<div class=\"alert alert-danger alert-dismissable col-xs-8 col-offset-xs-2 center-block clear clearfix\" role=\"alert\" id=\"" + alertId + "\">\n  <button type=\"button\" class=\"close\" data-dismiss=\"alert\" aria-label=\"Close\"><span aria-hidden=\"true\">&times;</span></button>\n  <div class=\"alert-message\">" + errorMessage + "</div>\n</div>";
-    $("#sql-input").parents("paper-dialog").find(".alert").remove();
-    $("#sql-input").parents("form").after(html);
-    stopLoadError();
-    return false;
-  };
-  try {
-    darwinCoreOnly = p$("#dwc-only").checked;
-  } catch (undefined) {}
-  query = parseQuery();
-  if (isNull(query)) {
-    return handleSqlError("Sorry, you can't use an empty query");
-  }
-  args = {
-    sql_query: post64(query),
-    action: "query",
-    dwc: darwinCoreOnly != null ? darwinCoreOnly : false
-  };
-  console.debug("Posting to target", uri.urlString + "api.php?" + (buildQuery(args)));
-  $.post(uri.urlString + "api.php", buildQuery(args, "json")).done(function(result) {
-    var error, error2, errorMessage, html, i, k, language, len1, len2, len3, m, o, p, ref1, ref2, results, row, rowData, rowHtml, rows, statement, statements;
-    console.log("Got result", result);
-    $("#sql-results").remove();
-    try {
-      if (result.statements != null) {
-        statements = Object.toArray(result.statements);
-      }
-    } catch (undefined) {}
-    if (result.status !== true) {
-      if (isNull(result.statement_count)) {
-        error = (ref1 = (ref2 = result.error) != null ? ref2 : result.human_error) != null ? ref1 : "UNKNOWN_ERROR";
-        return handleSqlError(error);
-      }
-      for (m = 0, len1 = statements.length; m < len1; m++) {
-        statement = statements[m];
-        if (statement.result === "ERROR") {
-          errorMessage = "Your query <code class='language-sql'>" + statement.provided + "</code> ";
-          if (statement.error.safety_check !== true) {
-            errorMessage += "failed a safety check.";
-          } else if (statement.error.sql_response === false) {
-            errorMessage += "has or generated during parsing a syntax error.<br/><br/>If you believe your syntax to be valid, try simplifying it as we strictly limit the types of queries accessible here.";
-          } else if (statement.error.was_server_exception) {
-            errorMessage += "generated a problem on the server and was refused to be executed. Please report this.";
-          } else {
-            errorMessage += "gave <code>UNKNOWN_QUERY_ERROR</code>";
-          }
-          errorMessage += "<br/><br/>Execution of your query was halted here.";
-          return handleSqlError(errorMessage);
-        }
-      }
-    }
-    $("#sql-input").parents("paper-dialog").find(".alert").remove();
-    html = "<div id=\"sql-results\" class=\"sql-results col-xs-12\">\n</div>";
-    if ($("#interpreted-sql").exists()) {
-      $("#interpreted-sql").after(html);
-    } else {
-      $("#sql-input").parents("form").after(html);
-    }
-    rows = new Array();
-    i = 0;
-    for (o = 0, len2 = statements.length; o < len2; o++) {
-      statement = statements[o];
-      results = Object.toArray(statement.result);
-      if (results.length === 0) {
-        rowHtml = "<code>ZERO_RESULTS</code>";
-        rows.push(rowHtml);
-      } else {
-        ++i;
-        k = 0;
-        for (p = 0, len3 = results.length; p < len3; p++) {
-          row = results[p];
-          ++k;
-          try {
-            rowData = JSON.stringify(row);
-            rowData = rowData.replace(/,"/mig, ", \"");
-            language = "json";
-          } catch (error2) {
-            rowData = "Unable to parse row";
-            language = "text";
-          }
-          rowHtml = "<div>\n  " + i + "." + k + ":\n  <code class=\"language-" + language + "\">" + rowData + "</code>\n</div>";
-          rows.push(rowHtml);
-        }
-      }
-    }
-    $("#sql-results").html(rows.join("<br/><br/>"));
-    Prism.highlightAll();
-    return false;
-  }).fail(function(result, status) {
-    console.error(result, status);
-    console.warn("Couldn't hit target");
-    handleSqlError("Problem talking to the server, please try again");
-    return false;
-  });
-  return false;
-};
-
-$(function() {
-  var html;
-  html = "<paper-icon-button icon=\"icons:code\" id=\"launch-term\" title=\"Directly Query Database\" data-toggle=\"tooltip\">\n</paper-icon-button>";
-  $("#git-footer").append(html);
-  $("#launch-term").click(function() {
-    return loadTerminalDialog.debounce();
-  });
-  return false;
 });
 
 //# sourceMappingURL=maps/c.js.map

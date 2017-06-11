@@ -76,7 +76,7 @@ if ($show_debug === true) {
               <!-- This is a filter column. We need a radio button for
                    AND/OR, and then to walk through the filters and append the object to the query. -->
               <div class="row">
-                <div class="toggle-container col-xs-6 col-md-4">
+                <div class="toggle-container col-xs-6 col-md-3">
                   <paper-toggle-button id="use-scientific" class="" checked>Scientific</paper-toggle-button>
                 </div>
                 <?php

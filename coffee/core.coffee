@@ -1753,7 +1753,10 @@ loadSocialMediaSlideoutBar = (handles, selector = "#social-menu", appendTo = "ma
     for service, handle of handles
       switch service
         when "twitter"
+          # https://dev.twitter.com/web/embedded-timelines
+          # https://publish.twitter.com/#
           serviceHtml = """
+          <a class="twitter-timeline" data-link-color="#1DA1F2" href="https://twitter.com/#{handle}">Tweets by @#{handle}</a> <script async src="//platform.twitter.com/widgets.js" charset="utf-8"></script>          
           """
         else
           serviceHtml = ""

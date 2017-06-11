@@ -23,6 +23,14 @@ locationData.params =
   enableHighAccuracy: true
 locationData.last = undefined
 
+
+unless typeof window._asm is "object"
+  window._asm = new Object()
+
+_asm.socialHandles =
+  twitter: "mammalogists"
+
+
 isBool = (str) -> str is true or str is false
 
 isEmpty = (str) -> not str or str.length is 0
@@ -1724,10 +1732,10 @@ delayPolymerBind = (selector, callback, iter = 0) ->
 
 
 
-
-loadSocialMediaSlideoutBar = (selector = "#social-menu", appendTo = "main") ->
+loadSocialMediaSlideoutBar = (handles, selector = "#social-menu", appendTo = "main") ->
   ###
   #
+  # @param obj handles -> an object with keys as service and value as handle
   ###
   toggleSocialSlideoutBar = ->
     if $(selector).hasClass "out"
@@ -1741,11 +1749,23 @@ loadSocialMediaSlideoutBar = (selector = "#social-menu", appendTo = "main") ->
     false
   window.toggleSocialSlideoutBar = toggleSocialSlideoutBar
   unless $(selector).exists()
+    contentHtml = ""
+    for service, handle of handles
+      switch service
+        when "twitter"
+          # https://dev.twitter.com/web/embedded-timelines
+          # https://publish.twitter.com/#
+          serviceHtml = """
+          <a class="twitter-timeline" data-link-color="#1DA1F2" href="https://twitter.com/#{handle}">Tweets by @#{handle}</a> <script async src="//platform.twitter.com/widgets.js" charset="utf-8"></script>          
+          """
+        else
+          serviceHtml = ""
+      contentHtml += "\n#{serviceHtml}\n"
     html = """
 <paper-material id="social-menu" class="out">
   <paper-icon-button icon="glyphicon-social:twitter" class="show-social"></paper-icon-button>
   <div class="slideout-content">
-    
+    #{contentHtml}
   </div>
 </paper-material>
     """
@@ -1823,7 +1843,7 @@ $ ->
   browserBeware()
   checkFileVersion()
   try
-    loadSocialMediaSlideoutBar()
+    loadSocialMediaSlideoutBar(_asm.socialHandles)
   try
     for caption in $("figcaption .caption-description")
       captionValue = $(caption).text().unescape()
@@ -1855,7 +1875,8 @@ searchParams =
   targetContainer: "#result_container"
 searchParams.apiPath = uri.urlString + searchParams.targetApi
 
-window._asm = new Object()
+unless typeof window._asm is "object"
+  window._asm = new Object()
 # Base query URLs for out-of-site linkouts
 _asm.affiliateQueryUrl =
   iucnRedlist: "http://apiv3.iucnredlist.org/api/v3/species/"

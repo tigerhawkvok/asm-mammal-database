@@ -931,7 +931,8 @@ iron-label + paper-icon-button, label + paper-icon-button {
         right: -1em;
     }
     div {
-        
+        max-height: calc(100vh ~"-" @body-header-offset*2 ~"-" 6em);
+        overflow-y: scroll;
     }
     & > paper-icon-button {
         margin-left: -30px;

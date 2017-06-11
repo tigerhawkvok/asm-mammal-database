@@ -33,6 +33,14 @@ locationData.params = {
 
 locationData.last = void 0;
 
+if (typeof window._asm !== "object") {
+  window._asm = new Object();
+}
+
+_asm.socialHandles = {
+  twitter: "mammalogists"
+};
+
 isBool = function(str) {
   return str === true || str === false;
 };
@@ -2159,8 +2167,8 @@ delayPolymerBind = function(selector, callback, iter) {
   return false;
 };
 
-loadSocialMediaSlideoutBar = function(selector, appendTo) {
-  var html, showButton, toggleSocialSlideoutBar;
+loadSocialMediaSlideoutBar = function(handles, selector, appendTo) {
+  var contentHtml, handle, html, service, serviceHtml, showButton, toggleSocialSlideoutBar;
   if (selector == null) {
     selector = "#social-menu";
   }
@@ -2170,6 +2178,7 @@ loadSocialMediaSlideoutBar = function(selector, appendTo) {
 
   /*
    *
+   * @param obj handles -> an object with keys as service and value as handle
    */
   toggleSocialSlideoutBar = function() {
     if ($(selector).hasClass("out")) {
@@ -2181,7 +2190,19 @@ loadSocialMediaSlideoutBar = function(selector, appendTo) {
   };
   window.toggleSocialSlideoutBar = toggleSocialSlideoutBar;
   if (!$(selector).exists()) {
-    html = "<paper-material id=\"social-menu\" class=\"out\">\n  <paper-icon-button icon=\"glyphicon-social:twitter\" class=\"show-social\"></paper-icon-button>\n  <div class=\"slideout-content\">\n    \n  </div>\n</paper-material>";
+    contentHtml = "";
+    for (service in handles) {
+      handle = handles[service];
+      switch (service) {
+        case "twitter":
+          serviceHtml = "<a class=\"twitter-timeline\" data-link-color=\"#1DA1F2\" href=\"https://twitter.com/" + handle + "\">Tweets by @" + handle + "</a> <script async src=\"//platform.twitter.com/widgets.js\" charset=\"utf-8\"></script>          ";
+          break;
+        default:
+          serviceHtml = "";
+      }
+      contentHtml += "\n" + serviceHtml + "\n";
+    }
+    html = "<paper-material id=\"social-menu\" class=\"out\">\n  <paper-icon-button icon=\"glyphicon-social:twitter\" class=\"show-social\"></paper-icon-button>\n  <div class=\"slideout-content\">\n    " + contentHtml + "\n  </div>\n</paper-material>";
     showButton = "    ";
     $(appendTo).append(html);
     $(".show-social").click(function() {
@@ -2263,7 +2284,7 @@ $(function() {
   browserBeware();
   checkFileVersion();
   try {
-    loadSocialMediaSlideoutBar();
+    loadSocialMediaSlideoutBar(_asm.socialHandles);
   } catch (undefined) {}
   try {
     ref2 = $("figcaption .caption-description");
@@ -2310,7 +2331,9 @@ searchParams = {
 
 searchParams.apiPath = uri.urlString + searchParams.targetApi;
 
-window._asm = new Object();
+if (typeof window._asm !== "object") {
+  window._asm = new Object();
+}
 
 _asm.affiliateQueryUrl = {
   iucnRedlist: "http://apiv3.iucnredlist.org/api/v3/species/",

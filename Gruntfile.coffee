@@ -110,8 +110,8 @@ module.exports = (grunt) ->
             fileId = fileNameArr.join(".")
             "js/maps/#{fileId}.js.map"
         files:
-          "js/combined.min.js":["js/c.js","js/admin.js", "js/charts.js","bower_components/purl/purl.js","bower_components/xmlToJSON/lib/xmlToJSON.js","bower_components/jquery-cookie/jquery.cookie.js"]
-          "js/app.min.js":["js/c.js","js/admin.js", "js/charts.js"]
+          "js/combined.min.js":["js/c.js","js/admin.js", "js/charts.js","js/download.js","bower_components/purl/purl.js","bower_components/xmlToJSON/lib/xmlToJSON.js","bower_components/jquery-cookie/jquery.cookie.js"]
+          "js/app.min.js":["js/c.js","js/admin.js", "js/charts.js", "js/download.js"]
       dist:
         options:
           sourceMap:true
@@ -138,6 +138,7 @@ module.exports = (grunt) ->
         files:
           "js/c.min.js":["js/c.js"]
           "js/download.min.js":["js/download.js"]
+          "js/terminal.min.js":["js/terminal.js"]
           "js/admin.min.js":["js/admin.js"]
           "js/serviceWorker.min.js":["js/serviceWorker.js"]
           "js/charts.min.js":["js/charts.js"]
@@ -191,6 +192,7 @@ module.exports = (grunt) ->
           sourceMap: true
         files:
           "js/c.js":["coffee/core.coffee","coffee/search.coffee","coffee/terminal.coffee"]
+          "js/terminal.js": ["coffee/terminal.coffee"]
           "js/download.js":["coffee/download.coffee"]
           "js/admin.js":"coffee/admin.coffee"
           "js/serviceWorker.js":["coffee/core-worker.coffee","coffee/serviceWorker.coffee"]

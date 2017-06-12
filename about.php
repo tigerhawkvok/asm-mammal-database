@@ -18,8 +18,8 @@ include_once dirname(__FILE__)."/CONFIG.php";
 <html>
   <head>
     <?php
-      $title = "About the Species Account Database";
-      $pageDescription = "About the Species Account Database";
+      $title = "About the Mammal Diversity Database";
+      $pageDescription = "About the Mammal Diversity Database";
 ?>
     <title><?php echo $title;
 ?></title>
@@ -46,16 +46,16 @@ include_once dirname(__FILE__)."/CONFIG.php";
         About the  Database
       </h1>
       <div class="col-xs-12 clearfix">
-      <img src="assets/asm-collage-lowres.jpg" class="pull-right" alt="ASM collage"/>
-      <p>
-        Development for this work was funded by the <a href="https://www.nsf.gov/awardsearch/showAward?AWD_ID=1441737" class="newwindow">NSF</a> <a href="http://vertlife.org/" class="newwindow">Vertlife</a> grant and commissioned by the <a href="http://www.mammalsociety.org/about-asm">American Society of Mammalogists</a>.
-      </p>
-      <p>
-        The American Society of Mammalogists (ASM) was founded in 1919. Its primary purpose is to encourage the study of mammals and professions studying mammals. There are over 2,500 members in the composed society,  primarily professional scientists who emphasize the importance of public policy and education.
-      </p>
-      <p>
-      There are several ASM meetings held each year and the society maintains several publications. The flagship publication of the ASM is <i><a href="https://academic.oup.com/jmammal" class="newwindow">The Journal of Mammalogy</a></i>, published six times a year. Other journals include <i>Special Publications</i> and <i><a href="https://academic.oup.com/mspecies" class="newwindow">Mammalian Species</a></i>.
-      </p>
+        <img src="assets/asm-collage-lowres.jpg" class="pull-right" alt="ASM collage"/>
+        <p>
+          Development for this work was funded by the <a href="https://www.nsf.gov/awardsearch/showAward?AWD_ID=1441737" class="newwindow">NSF</a> <a href="http://vertlife.org/" class="newwindow">Vertlife</a> grant and commissioned by the <a href="http://www.mammalsociety.org/about-asm">American Society of Mammalogists</a>.
+        </p>
+        <p>
+          The American Society of Mammalogists (ASM) was founded in 1919. Its primary purpose is to encourage the study of mammals and professions studying mammals. There are over 2,500 members in the composed society,  primarily professional scientists who emphasize the importance of public policy and education.
+        </p>
+        <p>
+          There are several ASM meetings held each year and the society maintains several publications. The flagship publication of the ASM is <i><a href="https://academic.oup.com/jmammal" class="newwindow">The Journal of Mammalogy</a></i>, published six times a year. Other journals include <i>Special Publications</i> and <i><a href="https://academic.oup.com/mspecies" class="newwindow">Mammalian Species</a></i>.
+        </p>
       </div>
       <h2 class="col-xs-12">API</h2>
       <p class="col-xs-12">

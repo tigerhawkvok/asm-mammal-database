@@ -24,9 +24,6 @@ module.exports = (grunt) ->
       movesrc:
         command: ["mv js/c.src.coffee js/maps/c.src.coffee"].join("&&")
     uglify:
-      options:
-        mangle:
-          except:['jQuery']
       combine:
         options:
           sourceMap:true
@@ -41,6 +38,8 @@ module.exports = (grunt) ->
           sourceMapName:"js/maps/c.map"
           sourceMapIncludeSources:true
           sourceMapIn:"js/maps/c.js.map"
+          compress:
+            drop_console: true
         files:
           "js/c.min.js":["js/c.js"]
       minzxcvbn:

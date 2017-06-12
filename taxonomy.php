@@ -2,7 +2,7 @@
 <?php
 
 /***
- * 
+ *
  *
  * See:
  * https://github.com/tigerhawkvok/asm-mammal-database/issues/50
@@ -21,12 +21,13 @@ if ($show_debug === true) {
     # Rigorously avoid errors in production
     ini_set('display_errors', 0);
 }
-include_once dirname(__FILE__)."/CONFIG.php";
-  
-  
-  
+require dirname(__FILE__)."/CONFIG.php";
+require_once(dirname(__FILE__)."/core/core.php");
+$db = new DBHelper($default_database, $default_sql_user, $default_sql_password, $default_sql_url, $default_table, $db_cols);
+
+
 $updatesSinceAssessmentYear = 2005;
-  
+
 ?>
 <html>
   <head>
@@ -65,12 +66,35 @@ $updatesSinceAssessmentYear = 2005;
          * To find new taxa, check the authories newer than $updatesSinceAssessmentYear
          ***/
         $yearsToCheck = array();
+        # Because of the way we stored the authorities,
+        # we want to enumerate all the years between then and now
+        $thisYear = date("Y");
+        $examinedYear = $updatesSinceAssessmentYear;
+        while ($examinedYear < $thisYear) {
+            $examinedYear++;
+            $yearsToCheck[] = $examinedYear;
+        }
+        $taxa = array();
+        foreach ($yearsToCheck as $year) {
+            $searchCriteria = array(
+                "authority_year" => strval($year),
+                "species_authority" => strval($year),
+                "genus_authority" => strval($year),
+            );
+            $results = $db->getQueryResults($searchCriteria, "*", "OR", true, true);
+            $taxa = array_merge($taxa, $results);
+        }
+        echo "<h3>There have been ".sizeof($taxa)." taxa changes since $updatesSinceAssessmentYear</h3> <ul>";
+        foreach ($taxa as $taxon) {
+            echo "<li><span class='sciname'><span class='genus'>".$taxon["genus"]."</span> <span class='species'>".$taxon["species"]."</span></span> by PARSE OUT CHANGE HERE</li>";
+        }
+        echo "</ul>";
         /***
          * To find migrations, find species with species authories
          * younger than the modified date, but genus authories newer
          ***/
         ?>
-      </div>      
+      </div>
         <?php
         echo $bodyClose;
 ?>

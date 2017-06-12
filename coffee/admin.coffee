@@ -510,12 +510,14 @@ loadModalTaxonEditor = (extraHtml = "", affirmativeText = "Save") ->
   #{_asm.dropdownPopulation.simple_linnean_subgroup.html}
   <paper-input label="Genus authority" id="edit-genus-authority" name="edit-genus-authority" class="genus_authority" floatingLabel></paper-input>
   <paper-input label="Genus authority year" id="edit-gauthyear" name="edit-gauthyear" floatingLabel></paper-input>
+  <paper-input label="Genus authority citation" id="edit-genus-authority-citation" name="edit-genus-authority-citation" class="citation-input" floatingLabel></paper-input>
   <iron-label>
     Use Parenthesis for Genus Authority
     <paper-toggle-button id="genus-authority-parens"  checked="false"></paper-toggle-button>
   </iron-label>
   <paper-input label="Species authority" id="edit-species-authority" name="edit-species-authority" class="species_authority" floatingLabel></paper-input>
   <paper-input label="Species authority year" id="edit-sauthyear" name="edit-sauthyear" floatingLabel></paper-input>
+  <paper-input label="Species authority citation" id="edit-species-authority-citation" name="edit-species-authority-citation" class="citation-input" floatingLabel></paper-input>
   <iron-label>
     Use Parenthesis for Species Authority
     <paper-toggle-button id="species-authority-parens" checked="false"></paper-toggle-button>
@@ -596,6 +598,9 @@ loadModalTaxonEditor = (extraHtml = "", affirmativeText = "Save") ->
   catch e
     console.warn "Couldn't set deprecated helper: #{e.message}"
     console.warn e.stack
+  try
+    $(".citation-input").keyup ->
+      validateCitation this
   handleDragDropImage()
   # # Bind the autogrow
   # # https://elements.polymer-project.org/elements/iron-autogrow-textarea
@@ -1299,6 +1304,45 @@ lookupEditorSpecies = (taxon = undefined) ->
   false
 
 
+validateCitation = (citation) ->
+  ###
+  # Check a citation for validity
+  ###
+  markInvalid = false
+  try
+    if $(citation).exists()
+      selector = citation
+      if typeof p$(citation).validate is "function"
+        markInvalid = true
+        citation = p$(selector).value
+      else
+        citation = $(selector).val()
+  cleanup = (result, replacement) ->
+    if markInvalid
+      if result is false
+        p$(selector).errorMessage = "Please enter a valid DOI or ISBN"
+      else
+        unless isNull replacement
+          p$(selector).value = replacement
+      p$(selector).invalid = not result
+    return result
+  # DOIs
+  doi = /^(?:doi\:|https?:\/\/dx.doi.org\/)?(10.\d{4,9}\/[-._;()\/:A-Z0-9]+|10.1002\/[^\s]+|10.\d{4}\/\d+-\d+X?(\d+)\d+<[\d\w]+:[\d\w]*>\d+.\d+.\w+;\d|10.1207\/[\w\d]+\&\d+_\d+)$/im
+  if doi.test(citation)
+    # Picked up via
+    # https://www.crossref.org/blog/dois-and-matching-regular-expressions/
+    replace = citation.replace doi, "$1"
+    return cleanup true, replace
+  # ISBNs
+  if citation.search(/isbn/i) is 0
+    # Via https://gist.github.com/oscarmorrison/3744fa216dcfdb3d0bcb
+    isbn10 = /^(?:ISBN(?:-10)?:?\ )?(?=[0-9X]{10}$|(?=(?:[0-9]+[-\ ]){3})[-\ 0-9X]{13}$)[0-9]{1,5}[-\ ]?[0-9]+[-\ ]?[0-9]+[-\ ]?[0-9X]$/
+    isbn13 = /^(?:ISBN(?:-13)?:?\ )?(?=[0-9]{13}$|(?=(?:[0-9]+[-\ ]){4})[-\ 0-9]{17}$)97[89][-\ ]?[0-9]{1,5}[-\ ]?[0-9]+[-\ ]?[0-9]+[-\ ]?[0-9]$/
+    return cleanup isbn10.test(citation) and isbn13.test(citation)
+  # Generic journal formatting
+  cleanup false
+
+
 
 
 saveEditorEntry = (performMode = "save") ->
@@ -1333,6 +1377,8 @@ saveEditorEntry = (performMode = "save") ->
     "internal-id"
     "source"
     "citation"
+    "species-authority-citation"
+    "genus-authority-citation"
     ]
   saveObject = new Object()
   escapeCompletion = false
@@ -1474,6 +1520,10 @@ saveEditorEntry = (performMode = "save") ->
     "image_credit"
     "image_license"
     "image_caption"
+    "species-authority-citation"
+    "species_authority_citation"
+    "genus-authority-citation"
+    "genus_authority_citation"
     ]
   # List of IDs that can't be empty
   # Reserved use pending

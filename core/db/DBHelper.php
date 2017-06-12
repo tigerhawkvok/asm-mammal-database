@@ -140,9 +140,9 @@ class DBHelper
         $this->cols = $shadow;
     }
 
-    public function getCols()
+    public function getCols($forceDB = false)
     {
-        if (!is_array($this->cols)) {
+        if (!is_array($this->cols) || $forceDB) {
             try {
                 $cols = array();
                 $query = "SHOW COLUMNS FROM `".$this->getTable()."`";
@@ -233,7 +233,7 @@ class DBHelper
 
         return $inp;
     }
-    
+
     protected static function mysqlEscapeMimic($inp)
     {
         /***
@@ -603,7 +603,7 @@ class DBHelper
             if ($debug_query === true) {
                 return array('status' => false,'debug' => true,'error' => 'Bad search array','search' => $search,'is_array' => is_array($search));
             }
-            
+
             return false;
         }
         if ($precleaned !== true) {
@@ -718,7 +718,11 @@ class DBHelper
                 foreach ($field_name as $key) {
                     # Map each field name onto the value of the current value item
                     $item = current($value);
-                    $key = $precleaned ? mysqli_real_escape_string($this->getLink(), $key) : $this->sanitize($key);
+                    if ($precleaned === true) {
+                        $key = mysqli_real_escape_string($this->getLink(), $key);
+                    } else {
+                        $key = in_array($key, $this->getCols(true)) ? mysqli_real_escape_string($this->getLink(), $key) : $this->sanitize($key);
+                    }
                     $values[$key] = $precleaned ? mysqli_real_escape_string($this->getLink(), $item) : $this->sanitize($item);
                     next($value);
                 }
@@ -727,7 +731,11 @@ class DBHelper
                 # either
                 $method = "string pair";
                 if (!is_array($value)) {
-                    $key = $precleaned ? mysqli_real_escape_string($this->getLink(), $field_name) : $this->sanitize($field_name);
+                    if ($precleaned === true) {
+                        $key = mysqli_real_escape_string($this->getLink(), $key);
+                    } else {
+                        $key = in_array($key, $this->getCols(true)) ? mysqli_real_escape_string($this->getLink(), $key) : $this->sanitize($key);
+                    }
                     $values[$key] = $precleaned ? mysqli_real_escape_string($this->getLink(), $value) : $this->sanitize($value);
                 } else {
                     # Mismatched types
@@ -742,8 +750,11 @@ class DBHelper
                 $method = "array value match";
                 $this->invalidateLink();
                 foreach ($value as $key => $val) {
-                    $key = $precleaned ?
-                         mysqli_real_escape_string($this->getLink(), $key) : $this->sanitize($key);
+                    if ($precleaned === true) {
+                        $key = mysqli_real_escape_string($this->getLink(), $key);
+                    } else {
+                        $key = in_array($key, $this->getCols(true)) ? mysqli_real_escape_string($this->getLink(), $key) : $this->sanitize($key);
+                    }
                     $values[$key] = $precleaned ?
                                   mysqli_real_escape_string($this->getLink(), $val) : $this->sanitize($val);
                 }
@@ -766,9 +777,16 @@ class DBHelper
 
             return true;
         } else {
-            $error = mysqli_error($this->getLink())." - for $query (basis: ".print_r($values, true)."; method = $method)";
+            # - for $query (basis: ".print_r($values, true)."
+            $error = mysqli_error($this->getLink())." ; method = $method)";
             mysqli_query($this->getLink(), 'ROLLBACK');
-
+            $colTest = array();
+            foreach ($this->getCols() as $col => $type) {
+                $colTest[$col] = strbool(isset($values[$col]));
+                unset($values[$col]);
+            }
+            $error .= "\n\n Cols Set ".print_r($colTest, true);
+            $error .= "\n\n Cols Mismatched ".print_r($values, true);
             return $error;
         }
     }

@@ -635,7 +635,7 @@ if (isset($_REQUEST['filter'])) {
 
 
 $search = strtolower($db->sanitize(deEscape(urldecode($_REQUEST['q']))));
-
+$search = trim($search);
 
 /*****************************
  * The actual handlers
@@ -1495,8 +1495,10 @@ function getDarwinCore($result, $mapOnly = false, $reverseMap = false)
         $dwcResult["higherClassification"] = $higherClassification;
         if (isset($taxon["species_authority"])) {
             $years = json_decode($taxon["authority_year"], true);
-            $genusYear = key($years);
-            $speciesYear = current($years);
+            if (is_array($years)) {
+                $genusYear = key($years);
+                $speciesYear = current($years);
+            }
             $genus = empty($genusYear) ? $taxon["genus_authority"] : $taxon["genus_authority"] . ", " . $genusYear;
             $species = empty($speciesYear) ? $taxon["species_authority"] : $taxon["species_authority"] . ", " . $speciesYear;
             $genus = toBool($taxon["parens_auth_genus"]) ? "($genus)" : $genus;

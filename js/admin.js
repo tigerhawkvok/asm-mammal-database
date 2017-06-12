@@ -263,10 +263,8 @@ renderAdminSearchResults = function(overrideSearch, containerSelector) {
     var error;
     console.error("There was an error performing the search");
     console.warn(result, error, result.statusText);
-    error = result.status + " - " + result.statusText;
-    $("#search-status").attr("text", "Couldn't execute the search - " + error);
-    $("#search-status")[0].show();
-    return stopLoadError();
+    error = result.status + "::" + result.statusText;
+    return stopLoadError("Couldn't execute the search - " + error);
   });
 };
 
@@ -1034,7 +1032,7 @@ lookupEditorSpecies = function(taxon) {
     console.warn("Pinging with", "" + uri.urlString + searchParams.targetApi + "?q=" + taxon);
   }
   $.get(searchParams.targetApi, args, "json").done(function(result) {
-    var category, col, colAsDropdownExists, colSplit, d, data, dropdownTentativeSelector, e, error1, error2, error3, fieldSelector, hasParens, j, jstr, license, licenseUrl, modalElement, speciesString, tempSelector, textAreas, textarea, today, toggleColumns, whoEdited, width, year;
+    var category, col, colAsDropdownExists, colSplit, d, data, dropdownTentativeSelector, e, error1, error2, error3, fieldSelector, hasParens, j, jstr, license, licenseUrl, modalElement, speciesString, tempSelector, textAreas, textarea, today, toggleColumns, unformattedAuthorityRe, unformattedAuthorityReOrig, whoEdited, width, year;
     try {
       console.debug("Admin lookup rending editor UI for", result);
       data = result.result[0];
@@ -1063,6 +1061,8 @@ lookupEditorSpecies = function(taxon) {
         data.deprecated_scientific[(originalNames.genus.toTitleCase()) + " " + speciesString] = "AUTHORITY: YEAR";
       }
       toggleColumns = ["parens_auth_genus", "parens_auth_species"];
+      console.debug("Using data", data);
+      console.debug(JSON.stringify(data));
       for (col in data) {
         d = data[col];
         try {
@@ -1086,18 +1086,22 @@ lookupEditorSpecies = function(taxon) {
           $(dropdownTentativeSelector).polymerSelected(d, true);
         }
         if (col === "species_authority" || col === "genus_authority") {
-          if (/^\(? *((['"])? *([\w\u00C0-\u017F\. \-\&;\[\]]+(,|&|&amp;|&amp;amp;|&#[\w0-9]+;)?)+ *\2) *, *([0-9]{4}) *\)?/im.test(d)) {
-            hasParens = d.search(/\(/) >= 0 && d.search(/\)/) >= 0;
-            year = d.replace(/^\(? *((['"])? *([\w\u00C0-\u017F\.\-\&; \[\]]+(,|&|&amp;|&amp;amp;|&#[\w0-9]+;)?)+ *\2) *, *([0-9]{4}) *\)?/ig, "$5");
-            d = d.replace(/^\(? *((['"])? *([\w\u00C0-\u017F\.\-\&; \[\]]+(,|&|&amp;|&amp;amp;|&#[\w0-9]+;)?)+ *\2) *, *([0-9]{4}) *\)?/ig, "$1");
-            if (col === "genus_authority") {
-              $("#edit-gauthyear").attr("value", year);
-            }
-            if (col === "species_authority") {
-              $("#edit-sauthyear").attr("value", year);
-            }
-            if (hasParens) {
-              p$("#" + (col.replace(/\_/g, "-")) + "-parens").checked = true;
+          if (/[0-9]{4}/im.test(d)) {
+            unformattedAuthorityRe = /^\(? *((['"])? *(?:\b[a-z\u00C0-\u017F\.\-\[\]]+(?:,| *&| *&amp;| *&amp;amp;| *&#[a-z0-9]+;)? *)+ *\2) *, *([0-9]{4}) *\)?$/img;
+            unformattedAuthorityReOrig = /^\(? *((['"])? *([\w\u00C0-\u017F\. \-\&;\[\]]+(,|&|&amp;|&amp;amp;|&#[\w0-9]+;)?)+ *\2) *, *([0-9]{4}) *\)?/im;
+            if (unformattedAuthorityRe.test(d)) {
+              hasParens = d.search(/\(/) >= 0 && d.search(/\)/) >= 0;
+              year = d.replace(unformattedAuthorityRe, "$3");
+              d = d.replace(unformattedAuthorityRe, "$1");
+              if (col === "genus_authority") {
+                $("#edit-gauthyear").attr("value", year);
+              }
+              if (col === "species_authority") {
+                $("#edit-sauthyear").attr("value", year);
+              }
+              if (hasParens) {
+                p$("#" + (col.replace(/\_/g, "-")) + "-parens").checked = true;
+              }
             }
           }
         }
@@ -1163,6 +1167,11 @@ lookupEditorSpecies = function(taxon) {
               d = "";
             }
           }
+          try {
+            if (typeof d === "string") {
+              d = d.unescape();
+            }
+          } catch (undefined) {}
           textAreas = ["notes", "entry"];
           if (indexOf.call(textAreas, col) < 0) {
             d$(fieldSelector).attr("value", d);
@@ -1313,7 +1322,7 @@ validateCitation = function(citation) {
     }
     return result;
   };
-  doi = /^(?:doi\:|https?:\/\/dx.doi.org\/)?(10.\d{4,9}\/[-._;()\/:A-Z0-9]+|10.1002\/[^\s]+|10.\d{4}\/\d+-\d+X?(\d+)\d+<[\d\w]+:[\d\w]*>\d+.\d+.\w+;\d|10.1207\/[\w\d]+\&\d+_\d+)$/im;
+  doi = /^(?:doi:|https?:\/\/dx.doi.org\/)?(10.\d{4,9}\/[-._;()\/:A-Z0-9]+|10.1002\/[^\s]+|10.\d{4}\/\d+-\d+X?(\d+)\d+<[\d\w]+:[\d\w]*>\d+.\d+.\w+;\d|10.1207\/[\w\d]+\&\d+_\d+)$/im;
   if (doi.test(citation)) {
     replace = citation.replace(doi, "$1");
     return cleanup(true, replace);

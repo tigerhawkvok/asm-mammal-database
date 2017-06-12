@@ -247,10 +247,8 @@ renderAdminSearchResults = (overrideSearch, containerSelector = "#search-results
   .fail (result,status) ->
     console.error("There was an error performing the search")
     console.warn(result,error,result.statusText)
-    error = "#{result.status} - #{result.statusText}"
-    $("#search-status").attr("text","Couldn't execute the search - #{error}")
-    $("#search-status")[0].show()
-    stopLoadError()
+    error = "#{result.status}::#{result.statusText}"
+    stopLoadError("Couldn't execute the search - #{error}")
 
 
 
@@ -1115,6 +1113,8 @@ lookupEditorSpecies = (taxon = undefined) ->
         "parens_auth_genus"
         "parens_auth_species"
         ]
+      console.debug "Using data", data
+      console.debug JSON.stringify data
       for col, d of data
         # For each column, replace _ with - and prepend "edit"
         # This should be the selector
@@ -1136,19 +1136,21 @@ lookupEditorSpecies = (taxon = undefined) ->
         if col is "species_authority" or col is "genus_authority"
           # Check if the authority is in full format, eg, "(Linnaeus, 1758)"
           #unless isNull d.match /\(? *([\w\. \[\]]+), *([0-9]{4}) *\)?/g
-          if /^\(? *((['"])? *([\w\u00C0-\u017F\. \-\&;\[\]]+(,|&|&amp;|&amp;amp;|&#[\w0-9]+;)?)+ *\2) *, *([0-9]{4}) *\)?/im.test d
-            hasParens = d.search(/\(/) >= 0 and d.search(/\)/) >= 0
-            #authorityParts = d.replace(/[\(\)]/g,"").split(",")
-            #d = authorityParts[0].trim()
-            #year = toInt(authorityParts[1])
-            year = d.replace /^\(? *((['"])? *([\w\u00C0-\u017F\.\-\&; \[\]]+(,|&|&amp;|&amp;amp;|&#[\w0-9]+;)?)+ *\2) *, *([0-9]{4}) *\)?/ig, "$5"
-            d = d.replace /^\(? *((['"])? *([\w\u00C0-\u017F\.\-\&; \[\]]+(,|&|&amp;|&amp;amp;|&#[\w0-9]+;)?)+ *\2) *, *([0-9]{4}) *\)?/ig, "$1"
-            if col is "genus_authority"
-              $("#edit-gauthyear").attr("value",year)
-            if col is "species_authority"
-              $("#edit-sauthyear").attr("value",year)
-            if hasParens
-              p$("##{col.replace(/\_/g,"-")}-parens").checked = true
+          if /[0-9]{4}/im.test d
+            unformattedAuthorityRe = /^\(? *((['"])? *(?:\b[a-z\u00C0-\u017F\.\-\[\]]+(?:,| *&| *&amp;| *&amp;amp;| *&#[a-z0-9]+;)? *)+ *\2) *, *([0-9]{4}) *\)?$/img
+            unformattedAuthorityReOrig = /^\(? *((['"])? *([\w\u00C0-\u017F\. \-\&;\[\]]+(,|&|&amp;|&amp;amp;|&#[\w0-9]+;)?)+ *\2) *, *([0-9]{4}) *\)?/im
+            if unformattedAuthorityRe.test d
+              hasParens = d.search(/\(/) >= 0 and d.search(/\)/) >= 0
+              #year = d.replace /^\(? *((['"])? *([\w\u00C0-\u017F\.\-\&; \[\]]+(,|&|&amp;|&amp;amp;|&#[\w0-9]+;)?)+ *\2) *, *([0-9]{4}) *\)?/ig, "$5"
+              year = d.replace unformattedAuthorityRe, "$3"
+              #d = d.replace /^\(? *((['"])? *([\w\u00C0-\u017F\.\-\&; \[\]]+(,|&|&amp;|&amp;amp;|&#[\w0-9]+;)?)+ *\2) *, *([0-9]{4}) *\)?/ig, "$1"
+              d = d.replace unformattedAuthorityRe, "$1"
+              if col is "genus_authority"
+                $("#edit-gauthyear").attr("value",year)
+              if col is "species_authority"
+                $("#edit-sauthyear").attr("value",year)
+              if hasParens
+                p$("##{col.replace(/\_/g,"-")}-parens").checked = true
         if col is "authority_year"
           # Parse it out
           year = parseTaxonYear(d)
@@ -1208,6 +1210,9 @@ lookupEditorSpecies = (taxon = undefined) ->
             d = d.replace(/}/,"")
             if d is '""'
               d = ""
+          try
+            if typeof d is "string"
+              d = d.unescape()
           textAreas = [
             "notes"
             "entry"
@@ -1327,7 +1332,7 @@ validateCitation = (citation) ->
       p$(selector).invalid = not result
     return result
   # DOIs
-  doi = /^(?:doi\:|https?:\/\/dx.doi.org\/)?(10.\d{4,9}\/[-._;()\/:A-Z0-9]+|10.1002\/[^\s]+|10.\d{4}\/\d+-\d+X?(\d+)\d+<[\d\w]+:[\d\w]*>\d+.\d+.\w+;\d|10.1207\/[\w\d]+\&\d+_\d+)$/im
+  doi = /^(?:doi:|https?:\/\/dx.doi.org\/)?(10.\d{4,9}\/[-._;()\/:A-Z0-9]+|10.1002\/[^\s]+|10.\d{4}\/\d+-\d+X?(\d+)\d+<[\d\w]+:[\d\w]*>\d+.\d+.\w+;\d|10.1207\/[\w\d]+\&\d+_\d+)$/im
   if doi.test(citation)
     # Picked up via
     # https://www.crossref.org/blog/dois-and-matching-regular-expressions/

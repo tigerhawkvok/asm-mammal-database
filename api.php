@@ -215,10 +215,23 @@ function doLiveQuery($get)
         if (preg_match($queryPattern, $statement)) {
             $safePreflight = true;
             $sqlAction = "SELECT";
-        } elseif (preg_match('/\A(?i)SELECT +\* +(?:FROM)?[ `]*'.$db->getTable().'[ `]* +(WHERE FALSE)[;]?\Z/m', $statement)) {
+        } elseif (preg_match('/\A(?i)SELECT +\* +(?:FROM)?[ `]*'.$db->getTable().'[ `]* +(WHERE FALSE)[;]?\Z/m', $statement) || preg_match('/^show +columns +from +(`?)'.$db->getTable().'\g{1} *;?$/im', $statement)) {
             # Looking up the columns is a safe action
             $safePreflight = true;
             $sqlAction = "LOOKUP_COLS";
+            # We'll just do this now
+            $query = "SHOW COLUMNS FROM `".$db->getTable()."`";
+            $r = mysqli_query($db->getLink(), $query);
+            $cols = array();
+            while ($row = mysqli_fetch_row($r)) {
+                $cols[] = $row[0];
+            }
+            $statementResult = array(
+                "result" => $cols,
+                "action" => $sqlAction,
+            );
+            $statementResponse[] = $statementResult;
+            continue;
         } else {
             # Unverified action
             $safePreflight = false;
@@ -248,6 +261,7 @@ function doLiveQuery($get)
                 );
                 foreach ($selectCols as $colStatement) {
                     $col = preg_replace('/^([`]?)([a-zA-Z_\-]+)\g{1}$/im', '$2', $colStatement);
+                    $col = trim($col);
                     $realCol = getDarwinCore($col, true, true);
                     checkColumnExists($realCol);
                     $realSelect[] = in_array($realCol, $dontQuote) ? $realCol : "`$realCol`";

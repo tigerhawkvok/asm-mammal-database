@@ -84,15 +84,53 @@ $updatesSinceAssessmentYear = 2005;
             $results = $db->getQueryResults($searchCriteria, "*", "OR", true, true);
             $taxa = array_merge($taxa, $results);
         }
-        echo "<h3>There have been ".sizeof($taxa)." taxa changes since $updatesSinceAssessmentYear</h3> <ul>";
+
+        $buffer = "";
+        $migratedTaxa = array();
+        $novelTaxa = array();
         foreach ($taxa as $taxon) {
-            echo "<li><span class='sciname'><span class='genus'>".$taxon["genus"]."</span> <span class='species'>".$taxon["species"]."</span></span> by PARSE OUT CHANGE HERE</li>";
+            $years = json_decode($taxon["authority_year"], true);
+            if (!is_array($years)) {
+                $gYear = preg_replace('/^.*?([0-9]{4}).*$/im', '$1', $taxon["genus_authority"]);
+                $sYear = preg_replace('/^.*?([0-9]{4}).*$/im', '$1', $taxon["species_authority"]);
+            } else {
+                $gYear = key($years);
+                $sYear = current($years);
+            }
+            if (empty($gYear)) {
+                $gYear = $sYear;
+            } elseif (empty($sYear)) {
+                $sYear = $gYear;
+            }
+            $sYear = intval($sYear);
+            $gYear = intval($gYear);
+            if ($sYear < $gYear) {
+                # This is a migrated taxon
+                $migratedTaxa[] = $taxon;
+                continue;
+            } else {
+                # Either this was added to an existing genus
+                # Or created at the same time
+                # In either case, we want the species authority
+                $novelTaxa[] = $taxon;
+                $authority = preg_replace('/^(.*?)[,;:]? *(?:[0-9]{4})? *$/im', '$1', $taxon["species_authority"]);
+                $authority = html_entity_decode($authority);
+            }
+            $year = $sYear > $gYear ? $sYear : $gYear;
+            $buffer .= "\n<li><span class='sciname'><span class='genus'>".$taxon["genus"]."</span> <span class='species'>".$taxon["species"]."</span></span> in <span class='has-authority' data-toggle='tooltip' title='$authority'>$year</span></li>";
         }
+        echo "<h3>There have been ".sizeof($novelTaxa)." taxa changes since $updatesSinceAssessmentYear</h3> <ul>";
+        echo $buffer;
         echo "</ul>";
         /***
          * To find migrations, find species with species authories
          * younger than the modified date, but genus authories newer
          ***/
+         echo "<h3>There have been ".sizeof($migratedTaxa)." taxa with genus migrations since $updatesSinceAssessmentYear</h3> <ul>";
+         foreach ($migratedTaxa as $taxon) {
+            # Do the thing, Ju-Li!
+         }
+         echo "</ul>"
         ?>
       </div>
         <?php

@@ -118,7 +118,11 @@ $updatesSinceAssessmentYear = 2005;
             }
             $year = $sYear > $gYear ? $sYear : $gYear;
             if (!empty($taxon["species_authority_citation"])) {
-                $citation = "<a href='http://dx.doi.org/".$taxon["species_authority_citation"]."' class='newwindow doi btn btn-xs btn-primary'>doi:".$taxon["species_authority_citation"]."</a>";
+                if (stripos($taxon["species_authority_citation"], "isbn")) {
+                    $citation = $taxon["species_authority_citation"];
+                } else {
+                    $citation = "<a href='http://dx.doi.org/".$taxon["species_authority_citation"]."' class='newwindow doi btn btn-xs btn-primary'>doi:".$taxon["species_authority_citation"]."</a>";
+                }
             } else {
                 $citation = "";
             }
@@ -131,11 +135,12 @@ $updatesSinceAssessmentYear = 2005;
          * To find migrations, find species with species authories
          * younger than the modified date, but genus authories newer
          ***/
-         echo "<h3>There have been ".sizeof($migratedTaxa)." taxa with genus migrations since $updatesSinceAssessmentYear</h3> <ul>";
-         foreach ($migratedTaxa as $taxon) {
+        echo "<h3>There have been ".sizeof($migratedTaxa)." taxa with genus migrations since $updatesSinceAssessmentYear</h3> <ul>";
+        foreach ($migratedTaxa as $taxon) {
             # Do the thing, Ju-Li!
-         }
-         echo "</ul>"
+            continue;
+        }
+        echo "</ul>"
         ?>
       </div>
         <?php

@@ -368,7 +368,7 @@ if (!empty($speciesRow["genus_authority"])) {
     # Do we need to provide a citation reference?
     if (!empty($speciesRow["genus_authority_citation"])) {
         if (stripos($speciesRow["genus_authority_citation"], "isbn")) {
-            $citationRef = $speciesRow["genus_authority_citation"];
+            $citationRef = "<small class='isbn'>".$speciesRow["genus_authority_citation"]."</small>";
         } else {
             $citationRef = "<paper-icon-button data-href='http://dx.doi.org/".$speciesRow["genus_authority_citation"]."' class='newwindow doi' data-toggle='tooltip' title='doi:".$speciesRow["genus_authority_citation"]."' icon='av:library-books' data-placement='bottom'></paper-icon-button>";
         }
@@ -398,7 +398,7 @@ if (!empty($speciesRow["species_authority"])) {
                 # We have a citation for species but not genus.
                 # Here, that's OK since they're one and the same.
                 if (stripos($speciesRow["species_authority_citation"], "isbn")) {
-                    $citationRef = $speciesRow["species_authority_citation"];
+                    $citationRef = "<small class='isbn'>".$speciesRow["species_authority_citation"]."</small>";
                 } else {
                     $citationRef = "<paper-icon-button data-href='http://dx.doi.org/".$speciesRow["species_authority_citation"]."' class='newwindow doi' data-toggle='tooltip' title='doi:".$speciesRow["species_authority_citation"]."' icon='av:library-books' data-placement='bottom'></paper-icon-button>";
                 }
@@ -414,7 +414,7 @@ if (!empty($speciesRow["species_authority"])) {
         # Do we need to provide a citation reference?
         if (!empty($speciesRow["species_authority_citation"])) {
             if (stripos($speciesRow["species_authority_citation"], "isbn")) {
-                $citationRef = $speciesRow["species_authority_citation"];
+                $citationRef = "<small class='isbn'>".$speciesRow["species_authority_citation"]."</small>";
             } else {
                 $citationRef = "<paper-icon-button data-href='http://dx.doi.org/".$speciesRow["species_authority_citation"]."' class='newwindow doi' data-toggle='tooltip' title='doi:".$speciesRow["species_authority_citation"]."' icon='av:library-books' data-placement='bottom'></paper-icon-button>";
             }

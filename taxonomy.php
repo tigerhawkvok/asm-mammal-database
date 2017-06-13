@@ -117,7 +117,12 @@ $updatesSinceAssessmentYear = 2005;
                 $authority = html_entity_decode($authority);
             }
             $year = $sYear > $gYear ? $sYear : $gYear;
-            $buffer .= "\n<li><span class='sciname'><span class='genus'>".$taxon["genus"]."</span> <span class='species'>".$taxon["species"]."</span></span> in <span class='has-authority' data-toggle='tooltip' title='$authority'>$year</span></li>";
+            if (!empty($taxon["species_authority_citation"])) {
+                $citation = "<a href='http://dx.doi.org/".$taxon["species_authority_citation"]."' class='newwindow doi btn btn-xs btn-primary'>doi:".$taxon["species_authority_citation"]."</a>";
+            } else {
+                $citation = "";
+            }
+            $buffer .= "\n<li><span class='sciname'><span class='genus'>".$taxon["genus"]."</span> <span class='species'>".$taxon["species"]."</span></span> in <span class='has-authority' data-toggle='tooltip' title='$authority'>$year</span> $citation</li>";
         }
         echo "<h3>There have been ".sizeof($novelTaxa)." taxa changes since $updatesSinceAssessmentYear</h3> <ul>";
         echo $buffer;

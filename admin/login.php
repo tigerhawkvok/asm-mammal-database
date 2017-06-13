@@ -397,7 +397,7 @@ if ($_REQUEST['q']=='submitlogin') {
                         $durl = $redirect_url;
                     }
                 }
-                
+
                 # Double check the cookie setting
                 if (isset($_COOKIE[$cookieuser]) || $logged_in===true) {
                     $cookiedebug.=" cookie-enter";
@@ -459,7 +459,7 @@ if ($_REQUEST['q']=='submitlogin') {
                             $cookiedebug.="\nWould wipe here";
                         }
                     }
-                    
+
                     # Force two factor
                     if (!$user->has2FA() && $require_two_factor === true) {
                         # If require two factor is on, always force it post login
@@ -482,7 +482,7 @@ if ($_REQUEST['q']=='submitlogin') {
                     $logged_in=false;
                     $cookiedebug.='cookies not set for '.$domain;
                 }
-                
+
                 if ($debug) {
                     echo "<pre>CookieDebug:\n";
                     echo $cookiedebug;
@@ -630,7 +630,7 @@ if ($_REQUEST['q']=='submitlogin') {
         if ($_REQUEST['s']=='next') {
             $email_preg="/[a-z0-9!#$%&'*+=?^_`{|}~-]+(?:\.[a-z0-9!#$%&'*+=?^_`{|}~-]+)*@(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\.)+(?:[a-z]{2}|com|org|net|edu|gov|mil|biz|info|mobi|name|aero|asia|jobs|museum)\b/";
             if (!empty($_POST['honey'])) {
-                $login_ouptut.="<div class='alert alert-warning'><button type='button' class='close' data-dismiss='alert' aria-label='Close'><span aria-hidden='true'>&times;</span></button><p><strong>Whoops!</strong> You tripped one of our bot tests. If you are not a bot, please go back and try again. Read your fields carefully!</p></div>";
+                $login_output.="<div class='alert alert-warning'><button type='button' class='close' data-dismiss='alert' aria-label='Close'><span aria-hidden='true'>&times;</span></button><p><strong>Whoops!</strong> You tripped one of our bot tests. If you are not a bot, please go back and try again. Read your fields carefully!</p></div>";
                 $_POST['email']='bob';
             }
             # https://developers.google.com/recaptcha/docs/verify
@@ -648,7 +648,11 @@ if ($_REQUEST['q']=='submitlogin') {
                 if ($debug) {
                     $login_output .= "<pre>Bare output: ".displayDebug($bareResponse)."</pre>";
                 }
-                $resp = json_decode($bareResponse, true);
+                if (!is_array($bareResponse)) {
+                    $resp = json_decode($bareResponse, true);
+                } else {
+                    $resp = $bareResponse["response"];
+                }
                 if (empty($bareResponse) || $bareResponse === false) {
                     throw new Exception("Bad Response");
                 }
@@ -656,6 +660,9 @@ if ($_REQUEST['q']=='submitlogin') {
                     $login_output .= "<pre>Parsed output: ".displayDebug($resp)."</pre>";
                 }
             } catch (Exception $e) {
+                if (!is_array($resp)) {
+                    $resp = array();
+                }
                 $resp["success"] = false;
                 $resp["post-error"] = $e->getMessage();
                 $resp["full_error"] = $e;
@@ -669,7 +676,7 @@ if ($_REQUEST['q']=='submitlogin') {
                 if (empty($error)) {
                     $error = "Unknown Error";
                 }
-                $login_output.= "<div class='alert alert-danger'><button type='button' class='close' data-dismiss='alert' aria-label='Close'><span aria-hidden='true'>&times;</span></button>The reCAPTCHA wasn't entered correctly. Go back and try it again." . " (reCAPTCHA said: " . $error . ")</div>";
+                $login_output .= "<div class='alert alert-danger'><button type='button' class='close' data-dismiss='alert' aria-label='Close'><span aria-hidden='true'>&times;</span></button>The reCAPTCHA wasn't entered correctly. Go back and try it again." . " (reCAPTCHA said: " . $error . ")</div>";
                 if ($debug) {
                     $login_output .= "<pre>".displayDebug($resp)."</pre>";
                 }

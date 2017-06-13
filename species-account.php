@@ -456,7 +456,7 @@ $taxonomyNotes = "<section id='taxonomy' class='col-xs-12'>
 </section>\n\n";
 
 # Any aside / note for this species.
-$entryNote = empty($speciesRow["notes"]) ? "" : "<section id='species-note' class='col-xs-12'><h3>Taxon Notes</h3><marked-element><div class='markdown-html'></div><script type='text/markdown'>".$speciesRow["notes"]."</script></marked-element></section>\n\n"; #"<section id='species-note' class='col-xs-12'><marked-element><div class='markdown-html'></div><script type='text/markdown'>".$speciesRow["notes"]."</script></marked-element></section>\n\n";
+$entryNote = empty($speciesRow["notes"]) ? "" : "<section id='species-note' class='col-xs-12'><h3>Taxon Notes</h3><marked-element id='taxon-notes'><div class='markdown-html'></div><script type='text/markdown'>".$speciesRow["notes"]."</script></marked-element></section>\n\n"; #"<section id='species-note' class='col-xs-12'><marked-element><div class='markdown-html'></div><script type='text/markdown'>".$speciesRow["notes"]."</script></marked-element></section>\n\n";
 
 
 
@@ -710,7 +710,7 @@ $speciesRow["entry"] = empty($speciesRow["entry"]) ? "No entry exists for this t
 
 # The main entry.
 #  col-md-10 col-lg-6 col-md-offset-2 col-lg-offset-3
-$primaryEntry = "<section id='species-account' class='col-xs-12'><h3>Taxon Entry</h3><marked-element><div class='markdown-html'></div><script type='text/markdown'>".$speciesRow["entry"]."</script></marked-element></section>\n\n";
+$primaryEntry = "<section id='species-account' class='col-xs-12'><h3>Taxon Entry</h3><marked-element id='taxon-primary-entry'><div class='markdown-html'></div><script type='text/markdown'>".$speciesRow["entry"]."</script></marked-element></section>\n\n";
 
 # Credits
 $creditTime = strtotime($speciesRow["taxon_credit_date"]);
@@ -723,10 +723,14 @@ if (!is_numeric($creditTime) || $creditTime == 0) {
 
 
 $creditAuthor = empty($speciesRow["taxon_author"]) ? "your local ASM server" : $speciesRow["taxon_credit"];
-$credit = "Entry by ".$creditAuthor." on ".strftime("%d %B %Y", $creditTime);
+$credit = "<p>Entry by ".$creditAuthor." on ".strftime("%d %B %Y", $creditTime)."</p>";
+if (!empty($speciesRow["citation"])) {
+    $credit .= "<marked-element id='taxon-citation-credit'><div class='markdown-html'></div><script type='text/markdown'>".$speciesRow["citation"]."</script></marked-element>";
+}
+
 $taxonCitation = $speciesRow["canonical_sciname"]." (ASM Species Account Database #".$speciesRow["internal_id"].") fetched ".date(DATE_ISO8601);
 $permalink = "https://mammaldiversity.org/species-account/id=".$speciesRow["id"];
-$entryCredits = "<section id='entry-credits' class='col-xs-12 small'><p>".$credit."</p><p class='cite-taxon'>Citation: <cite>".$taxonCitation."</cite></p><p>Permalink: <code>".$permalink."</code></section>\n\n";
+$entryCredits = "<section id='entry-credits' class='col-xs-12 small'><div>".$credit."</div><p class='cite-taxon'>Citation: <cite>".$taxonCitation."</cite></p><p>Permalink: <code>".$permalink."</code></section>\n\n";
 
 $content = $entryTitle . $images . $taxonomyNotes. $entryNote . $primaryEntry . $entryCredits;
 

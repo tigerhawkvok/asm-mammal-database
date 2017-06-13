@@ -7,10 +7,9 @@ $lastIcon = "<paper-icon-button icon=\"glyphicon-social:playing-dice\" class=\"c
 <paper-button class=\"click hidden-xs\" data-fn=\"getRandomEntry\">Random <iron-icon icon=\"glyphicon-social:playing-dice\"></iron-icon></paper-button>";
 
 if (basename($_SERVER["PHP_SELF"]) == "index.php") {
-	# lastIcon is fine
-}
-else {
-	$lastIcon .= "<paper-icon-button icon=\"icons:home\" class=\"click\" data-href=\"$protocol://$domain\" data-toggle=\"tooltip\" title=\"Home\" data-placement=\"bottom\"></paper-icon-button>";
+    # lastIcon is fine
+} else {
+    $lastIcon .= "<paper-icon-button icon=\"icons:home\" class=\"click\" data-href=\"$protocol://$domain\" data-toggle=\"tooltip\" title=\"Home\" data-placement=\"bottom\"></paper-icon-button>";
 }
 
 $bodyOpen = "  <body fullbleed vertical layout class='container-fluid'>

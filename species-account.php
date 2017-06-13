@@ -353,6 +353,7 @@ if (empty($speciesRow["genus_authority"]) && $hasWellFormattedSpeciesCitation) {
 
 $nameCitation = "";
 $citationYears = json_decode($speciesRow["authority_year"], true);
+$citationRef = null;
 if (!empty($speciesRow["genus_authority"])) {
     if (!empty($citationYears)) {
         $citation = $speciesRow["genus_authority"].", ".key($citationYears);
@@ -362,9 +363,21 @@ if (!empty($speciesRow["genus_authority"])) {
     } else {
         $citation = "";
     }
+    # Start building the whole citation for the taxon name
     $nameCitation = "<span class='genus'>".$speciesRow["genus"]."</span>, <span class='citation person $iucnCitation'>".$citation."</span>; ";
+    # Do we need to provide a citation reference?
+    if (!empty($speciesRow["genus_authority_citation"])) {
+        if (stripos($speciesRow["genus_authority_citation"], "isbn")) {
+            $citationRef = $speciesRow["genus_authority_citation"];
+        } else {
+            $citationRef = "<paper-icon-button data-href='http://dx.doi.org/".$speciesRow["genus_authority_citation"]."' class='newwindow doi' data-toggle='tooltip' title='doi:".$speciesRow["genus_authority_citation"]."' icon='av:library-books' data-placement='bottom'></paper-icon-button>";
+        }
+        $nameCitation .= $citationRef;
+    }
 }
+# Save this for a reference
 $genusCitation = $citation;
+# Should we expand the citation for a separate species authority?
 if (!empty($speciesRow["species_authority"])) {
     if (!empty($citationYears)) {
         $citation = $speciesRow["species_authority"].", ".current($citationYears);
@@ -378,9 +391,34 @@ if (!empty($speciesRow["species_authority"])) {
         if ($citation == $genusCitation) {
             # We shouldn't double up on this. Just say that it's the
             # whole darn citation.
-            $nameCitation = "<span class='genus'>".$speciesRow["genus"]."</span> <span class='species'>".$speciesRow["species"]."</span>, <span class='citation person $iucnCitation'>".$citation."</span>; ";
+            $nameCitation = "<span class='genus'>".$speciesRow["genus"]."</span> <span class='species'>".$speciesRow["species"]."</span>, <span class='citation person $iucnCitation'>".$citation."</span>";
+            if (!empty($citationRef)) {
+                $nameCitation .= $citationRef;
+            } elseif (empty($citationRef) && !empty($speciesRow["species_authority_citation"])) {
+                # We have a citation for species but not genus.
+                # Here, that's OK since they're one and the same.
+                if (stripos($speciesRow["species_authority_citation"], "isbn")) {
+                    $citationRef = $speciesRow["species_authority_citation"];
+                } else {
+                    $citationRef = "<paper-icon-button data-href='http://dx.doi.org/".$speciesRow["species_authority_citation"]."' class='newwindow doi' data-toggle='tooltip' title='doi:".$speciesRow["species_authority_citation"]."' icon='av:library-books' data-placement='bottom'></paper-icon-button>";
+                }
+                $nameCitation .= $citationRef;
+            }
         } else {
+            # Append a new citation for the species
             $nameCitation .= "<span class='species'>".$speciesRow["species"]."</span>, <span class='citation person $iucnCitation'>".$citation."</span>";
+            if (empty($speciesRow["species_authority_citation"]) && !empty($speciesRow["genus_authority_citation"])) {
+                $speciesRow["species_authority_citation"] = $speciesRow["genus_authority_citation"];
+            }
+        }
+        # Do we need to provide a citation reference?
+        if (!empty($speciesRow["species_authority_citation"])) {
+            if (stripos($speciesRow["species_authority_citation"], "isbn")) {
+                $citationRef = $speciesRow["species_authority_citation"];
+            } else {
+                $citationRef = "<paper-icon-button data-href='http://dx.doi.org/".$speciesRow["species_authority_citation"]."' class='newwindow doi' data-toggle='tooltip' title='doi:".$speciesRow["species_authority_citation"]."' icon='av:library-books' data-placement='bottom'></paper-icon-button>";
+            }
+            $nameCitation .= $citationRef;
         }
     } else {
         # What if we got it from the IUCN?

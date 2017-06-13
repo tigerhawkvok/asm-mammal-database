@@ -73,6 +73,7 @@
 <link rel="import" href="bower_components/iron-icons/editor-icons.html"/>
 <link rel="import" href="bower_components/iron-icons/communication-icons.html"/>
 <link rel="import" href="bower_components/iron-icons/maps-icons.html"/>
+<link rel="import" href="bower_components/iron-icons/av-icons.html"/>
 
 <link rel="import" href="bower_components/paper-toggle-button/paper-toggle-button.html"/>
 <link rel="import" href="bower_components/paper-toast/paper-toast.html"/>

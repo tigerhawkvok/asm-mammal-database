@@ -15,10 +15,10 @@ if ($show_debug === true) {
     error_log('Index is running in debug mode!');
     $debug = true; # compat
     $showAccountDebug = true; # Show all the debugging
-}  else {
-  # Rigorously avoid errors in production
-  # We'll respect if $showAccountDebug was set earlier
-  ini_set('display_errors', 0);
+} else {
+    # Rigorously avoid errors in production
+    # We'll respect if $showAccountDebug was set earlier
+    ini_set('display_errors', 0);
 }
 
 require_once("CONFIG.php");

@@ -9,18 +9,18 @@ class UserFunctions extends DBHelper
     public function __construct($username = null, $lookup_column = null, $db_params = null)
     {
         /***
-     * @param string $username the user to be instanced with
-     * @param string $lookup_column the column to look them up in.
-     *                              Ignored if $username is null, defaults to $user_column
-     * @param array $db_params Optional override database parameters.
-     *                         The required keys are:
-     *                         (string)"user" for SQL username,
-     *                         (string)"database" as the SQL database,
-     *                         and (string)"password" for SQL password,
-     *                         with optional keys
-     *                         (string)"url" (defaults to "localhost")
-     *                         and (array)"cols" of type "column_name"=>"type".
-     ***/
+         * @param string $username -> the user to be instanced with
+         * @param string $lookup_column -> the column to look them up in.
+         *                              Ignored if $username is null, defaults to $user_column
+         * @param array $db_params -> Optional override database parameters.
+         *                         The required keys are:
+         *                         (string)"user" for SQL username,
+         *                         (string)"database" as the SQL database,
+         *                         and (string)"password" for SQL password,
+         *                         with optional keys
+         *                         (string)"url" (defaults to "localhost")
+         *                         and (array)"cols" of type "column_name"=>"type".
+         ***/
         global $user_data_storage,$profile_picture_storage,$site_security_token,$service_email,$minimum_password_length,$password_threshold_length,$db_cols,$default_user_table,$default_user_database,$password_column,$cookie_ver_column,$user_column,$totp_column,$totp_steps,$temporary_storage,$needs_manual_authentication,$totp_rescue,$ip_record,$default_user_database,$default_sql_user,$default_sql_password,$sql_url,$default_user_table,$baseurl,$twilio_sid,$twilio_token,$twilio_number,$site_name,$link_column,$app_column, $allowedEmailDomains, $allowedEmailTLDs;
     # Set up the parameters in CONFIG.php
     $config_path = dirname(__FILE__).'/../CONFIG.php';
@@ -61,7 +61,7 @@ class UserFunctions extends DBHelper
 
         try {
             # Configure the database
-        $this->setSQLUser($default_sql_user);
+            $this->setSQLUser($default_sql_user);
             $this->setDB($default_user_database);
             $this->setSQLPW($default_sql_password);
             $this->setSQLURL($sql_url);
@@ -73,8 +73,8 @@ class UserFunctions extends DBHelper
             throw(new Exception($message));
         }
 
-    # Check it
-    $details = $this->testSettings(null, true);
+        # Check it
+        $details = $this->testSettings(null, true);
         if (!$details['status'] && $details != true) {
             # There's a database problem
         throw(new Exception('Database configuration problem - '.json_encode($details)));
@@ -129,19 +129,19 @@ class UserFunctions extends DBHelper
             $baseurl .= $_SERVER['HTTP_HOST'];
         }
 
-    # Get the domain and tld
+        # Get the domain and tld
 
-    $base_long = str_replace('http://', '', strtolower($baseurl));
+        $base_long = str_replace('http://', '', strtolower($baseurl));
         $base_long = str_replace('https://', '', strtolower($base_long));
         $base_arr = explode('/', $base_long);
         $base = $base_arr[0];
         $url_parts = explode('.', $base);
         $tld = array_pop($url_parts);
         if ($url_parts[0] == 'www') {
-            $domain = array_pop($url_parts);
-        } else {
-            $domain = implode('.', $url_parts);
+            array_shift($url_parts);
         }
+        
+        $domain = implode('.', $url_parts);
         $shorturl = $domain.'.'.$tld;
 
         $this->domain = $domain;

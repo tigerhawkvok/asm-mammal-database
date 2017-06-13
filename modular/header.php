@@ -1,4 +1,6 @@
-<?php ?>
+<?php 
+  require dirname(__FILE__) . "/../CONFIG.php";
+  ?>
 <meta http-equiv="X-UA-Compatible" content="IE=edge"/>
 <meta charset="utf-8"/>
 <meta name="theme-color" content="#446f74"/>

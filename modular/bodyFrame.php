@@ -1,4 +1,5 @@
 <?php
+require dirname(__FILE__) . "/../CONFIG.php";
 
 $protocol = isset($_SERVER['HTTPS']) ? "https" : "http";
 
@@ -6,9 +7,10 @@ $lastIcon = "<paper-icon-button icon=\"glyphicon-social:playing-dice\" class=\"c
 <paper-button class=\"click hidden-xs\" data-fn=\"getRandomEntry\">Random <iron-icon icon=\"glyphicon-social:playing-dice\"></iron-icon></paper-button>";
 
 if (basename($_SERVER["PHP_SELF"]) == "index.php") {
-    # lastIcon is fine
-} else {
-    $lastIcon .= "<paper-icon-button icon=\"icons:home\" class=\"click\" data-href=\"$protocol://mammaldiversity.org\" data-toggle=\"tooltip\" title=\"Home\" data-placement=\"bottom\"></paper-icon-button>";
+	# lastIcon is fine
+}
+else {
+	$lastIcon .= "<paper-icon-button icon=\"icons:home\" class=\"click\" data-href=\"$protocol://$domain\" data-toggle=\"tooltip\" title=\"Home\" data-placement=\"bottom\"></paper-icon-button>";
 }
 
 $bodyOpen = "  <body fullbleed vertical layout class='container-fluid'>
@@ -22,16 +24,16 @@ $bodyOpen = "  <body fullbleed vertical layout class='container-fluid'>
           </div>
           <p class=\"col-xs-10 text-right\">
           <span class=\"logged-in-values\" hidden>
-          <span class='hidden-xs'>Logged in as </span><span class=\"fill-user-fullname header-bar-user-name click\" data-href=\"$protocol://mammaldiversity.org/admin-page.html\" ></span>
+          <span class='hidden-xs'>Logged in as </span><span class=\"fill-user-fullname header-bar-user-name click\" data-href=\"$protocol://$domain/admin-page.html\" ></span>
           </span>
-          <paper-icon-button icon=\"icons:dashboard\" class=\"click logged-in-values hidden-xs\" data-href=\"$protocol://mammaldiversity.org/admin-page.html\" data-toggle=\"tooltip\" title=\"Administration Dashboard\" data-placement=\"bottom\" hidden> </paper-icon-button>
-          <paper-icon-button icon='icons:settings-applications' class=\"click logged-in-values hidden-xs\" data-href=\"$protocol://mammaldiversity.org/admin\" data-toggle=\"tooltip\" title=\"Account Settings\" data-placement=\"bottom\" hidden></paper-icon-button>
-          <paper-icon-button icon='icons:info-outline' class=\"click visible-xs\" data-href=\"$protocol://mammaldiversity.org/about\" data-toggle=\"tooltip\" title=\"About\" data-placement=\"bottom\"></paper-icon-button>
-          <paper-button class=\"click hidden-xs\" data-href=\"$protocol://mammaldiversity.org/about\">About <iron-icon icon='icons:info-outline'></iron-icon></paper-button>
-          <paper-icon-button icon='editor:insert-chart' class=\"click visible-xs\" data-href=\"$protocol://mammaldiversity.org/summary\" data-toggle=\"tooltip\" title=\"Summary Statistics\" data-placement=\"bottom\"></paper-icon-button>
-          <paper-button class=\"click hidden-xs\" data-href=\"$protocol://mammaldiversity.org/summary\" >Statistics <iron-icon icon='editor:insert-chart'></iron-icon></paper-button>
-          <paper-icon-button icon='social:people' class=\"click visible-xs\" data-href=\"$protocol://forum.mammaldiversity.org\" data-toggle=\"tooltip\" title=\"Forum\" data-placement=\"bottom\"></paper-icon-button>
-          <paper-button class=\"click hidden-xs\" data-href=\"$protocol://forum.mammaldiversity.org\" >Forum <iron-icon icon='social:people'></iron-icon></paper-button>
+          <paper-icon-button icon=\"icons:dashboard\" class=\"click logged-in-values hidden-xs\" data-href=\"$protocol://$domain/admin-page.html\" data-toggle=\"tooltip\" title=\"Administration Dashboard\" data-placement=\"bottom\" hidden> </paper-icon-button>
+          <paper-icon-button icon='icons:settings-applications' class=\"click logged-in-values hidden-xs\" data-href=\"$protocol://$domain/admin\" data-toggle=\"tooltip\" title=\"Account Settings\" data-placement=\"bottom\" hidden></paper-icon-button>
+          <paper-icon-button icon='icons:info-outline' class=\"click visible-xs\" data-href=\"$protocol://$domain/about\" data-toggle=\"tooltip\" title=\"About\" data-placement=\"bottom\"></paper-icon-button>
+          <paper-button class=\"click hidden-xs\" data-href=\"$protocol://$domain/about\">About <iron-icon icon='icons:info-outline'></iron-icon></paper-button>
+          <paper-icon-button icon='editor:insert-chart' class=\"click visible-xs\" data-href=\"$protocol://$domain/summary\" data-toggle=\"tooltip\" title=\"Summary Statistics\" data-placement=\"bottom\"></paper-icon-button>
+          <paper-button class=\"click hidden-xs\" data-href=\"$protocol://$domain/summary\" >Statistics <iron-icon icon='editor:insert-chart'></iron-icon></paper-button>
+          <paper-icon-button icon='social:people' class=\"click visible-xs\" data-href=\"$protocol://forum.$domain\" data-toggle=\"tooltip\" title=\"Forum\" data-placement=\"bottom\"></paper-icon-button>
+          <paper-button class=\"click hidden-xs\" data-href=\"$protocol://forum.$domain\" >Forum <iron-icon icon='social:people'></iron-icon></paper-button>
           ".$lastIcon."
           </p>
           </header>

@@ -2467,7 +2467,12 @@ eutheriaFilterHelper = function(skipFetch) {
 };
 
 checkLaggedUpdate = function(result) {
+
+  /*
+   *
+   */
   var args, error2, finishedLoop, i, iucnCanProvide, j, k, key, len1, m, ref1, shouldSkip, start, taxon;
+  console.debug("Executing lagged update check ...");
   iucnCanProvide = ["common_name", "species_authority"];
   start = Date.now();
   if (result.do_client_update === true) {
@@ -2524,8 +2529,16 @@ checkLaggedUpdate = function(result) {
             stopLoad();
             return delay(500, function() {
               stopLoad();
+              console.debug("About to try a data walk");
               return $.get(uri.urlString + "datawalk.php", "", "json").done(function(result) {
-                return console.log("Completed data walk in " + result.execution_time + "ms");
+                if (result.status === true) {
+                  return console.log("Completed data walk in " + result.execution_time + "ms");
+                } else {
+                  console.warn("Data walk executed, but failed to complete");
+                  return console.warn(result);
+                }
+              }).fail(function(result, status) {
+                return console.warn("Couldn't execute data walk", result, status);
               });
             });
           }
@@ -2538,6 +2551,7 @@ checkLaggedUpdate = function(result) {
       console.warn(e.stack);
     }
   } else {
+    console.debug("Lagged update check unneeded.");
     stopLoad();
   }
   return false;
@@ -2605,7 +2619,7 @@ performSearch = function(stateArgs) {
     if (result.status === true) {
       console.log("Server response:", result);
       formatSearchResults(result, void 0, function() {
-        return checkLaggedUpdate(result);
+        return checkLaggedUpdate.debounce(1000, null, null, result);
       });
       return false;
     }

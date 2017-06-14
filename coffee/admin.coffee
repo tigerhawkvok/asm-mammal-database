@@ -247,10 +247,8 @@ renderAdminSearchResults = (overrideSearch, containerSelector = "#search-results
   .fail (result,status) ->
     console.error("There was an error performing the search")
     console.warn(result,error,result.statusText)
-    error = "#{result.status} - #{result.statusText}"
-    $("#search-status").attr("text","Couldn't execute the search - #{error}")
-    $("#search-status")[0].show()
-    stopLoadError()
+    error = "#{result.status}::#{result.statusText}"
+    stopLoadError("Couldn't execute the search - #{error}")
 
 
 
@@ -510,12 +508,14 @@ loadModalTaxonEditor = (extraHtml = "", affirmativeText = "Save") ->
   #{_asm.dropdownPopulation.simple_linnean_subgroup.html}
   <paper-input label="Genus authority" id="edit-genus-authority" name="edit-genus-authority" class="genus_authority" floatingLabel></paper-input>
   <paper-input label="Genus authority year" id="edit-gauthyear" name="edit-gauthyear" floatingLabel></paper-input>
+  <paper-input label="Genus authority citation" id="edit-genus-authority-citation" name="edit-genus-authority-citation" class="citation-input" floatingLabel></paper-input>
   <iron-label>
     Use Parenthesis for Genus Authority
     <paper-toggle-button id="genus-authority-parens"  checked="false"></paper-toggle-button>
   </iron-label>
   <paper-input label="Species authority" id="edit-species-authority" name="edit-species-authority" class="species_authority" floatingLabel></paper-input>
   <paper-input label="Species authority year" id="edit-sauthyear" name="edit-sauthyear" floatingLabel></paper-input>
+  <paper-input label="Species authority citation" id="edit-species-authority-citation" name="edit-species-authority-citation" class="citation-input" floatingLabel></paper-input>
   <iron-label>
     Use Parenthesis for Species Authority
     <paper-toggle-button id="species-authority-parens" checked="false"></paper-toggle-button>
@@ -541,7 +541,7 @@ loadModalTaxonEditor = (extraHtml = "", affirmativeText = "Save") ->
     <div class="markdown-html"></div>
   </marked-element>
   <paper-input label="Data Source" id="edit-source" name="edit-source" floatingLabel></paper-input>
-  <paper-input label="Data Citation" id="edit-citation" name="edit-source" floatingLabel></paper-input>
+  <paper-input label="Data Citation (Markdown Allowed)" id="edit-citation" name="edit-citation" floatingLabel></paper-input>
   <div id="upload-image"></div>
   <span class="help-block" id="upload-image-help">You can drag and drop an image above, or enter its server path below.</span>
   <paper-input label="Image" id="edit-image" name="edit-image" floatingLabel aria-describedby="imagehelp"></paper-input>
@@ -596,6 +596,9 @@ loadModalTaxonEditor = (extraHtml = "", affirmativeText = "Save") ->
   catch e
     console.warn "Couldn't set deprecated helper: #{e.message}"
     console.warn e.stack
+  try
+    $(".citation-input").keyup ->
+      validateCitation this
   handleDragDropImage()
   # # Bind the autogrow
   # # https://elements.polymer-project.org/elements/iron-autogrow-textarea
@@ -1110,6 +1113,8 @@ lookupEditorSpecies = (taxon = undefined) ->
         "parens_auth_genus"
         "parens_auth_species"
         ]
+      console.debug "Using data", data
+      console.debug JSON.stringify data
       for col, d of data
         # For each column, replace _ with - and prepend "edit"
         # This should be the selector
@@ -1131,19 +1136,21 @@ lookupEditorSpecies = (taxon = undefined) ->
         if col is "species_authority" or col is "genus_authority"
           # Check if the authority is in full format, eg, "(Linnaeus, 1758)"
           #unless isNull d.match /\(? *([\w\. \[\]]+), *([0-9]{4}) *\)?/g
-          if /^\(? *((['"])? *([\w\u00C0-\u017F\. \-\&;\[\]]+(,|&|&amp;|&amp;amp;|&#[\w0-9]+;)?)+ *\2) *, *([0-9]{4}) *\)?/im.test d
-            hasParens = d.search(/\(/) >= 0 and d.search(/\)/) >= 0
-            #authorityParts = d.replace(/[\(\)]/g,"").split(",")
-            #d = authorityParts[0].trim()
-            #year = toInt(authorityParts[1])
-            year = d.replace /^\(? *((['"])? *([\w\u00C0-\u017F\.\-\&; \[\]]+(,|&|&amp;|&amp;amp;|&#[\w0-9]+;)?)+ *\2) *, *([0-9]{4}) *\)?/ig, "$5"
-            d = d.replace /^\(? *((['"])? *([\w\u00C0-\u017F\.\-\&; \[\]]+(,|&|&amp;|&amp;amp;|&#[\w0-9]+;)?)+ *\2) *, *([0-9]{4}) *\)?/ig, "$1"
-            if col is "genus_authority"
-              $("#edit-gauthyear").attr("value",year)
-            if col is "species_authority"
-              $("#edit-sauthyear").attr("value",year)
-            if hasParens
-              p$("##{col.replace(/\_/g,"-")}-parens").checked = true
+          if /[0-9]{4}/im.test d
+            unformattedAuthorityRe = /^\(? *((['"]?) *(?:\b[a-z\u00C0-\u017F\.\-\[\]]+(?:,| *&| *&amp;| *&amp;amp;| *&([a-z]|#[0-9])+;)? *)+ *\2) *, *([0-9]{4}) *\)?$/img
+            unformattedAuthorityReOrig = /^\(? *((['"])? *([\w\u00C0-\u017F\. \-\&;\[\]]+(,|&|&amp;|&amp;amp;|&#[\w0-9]+;)?)+ *\2) *, *([0-9]{4}) *\)?/im
+            if unformattedAuthorityRe.test d
+              hasParens = d.search(/\(/) >= 0 and d.search(/\)/) >= 0
+              #year = d.replace /^\(? *((['"])? *([\w\u00C0-\u017F\.\-\&; \[\]]+(,|&|&amp;|&amp;amp;|&#[\w0-9]+;)?)+ *\2) *, *([0-9]{4}) *\)?/ig, "$5"
+              year = d.replace unformattedAuthorityRe, "$3"
+              #d = d.replace /^\(? *((['"])? *([\w\u00C0-\u017F\.\-\&; \[\]]+(,|&|&amp;|&amp;amp;|&#[\w0-9]+;)?)+ *\2) *, *([0-9]{4}) *\)?/ig, "$1"
+              d = d.replace unformattedAuthorityRe, "$1"
+              if col is "genus_authority"
+                $("#edit-gauthyear").attr("value",year)
+              if col is "species_authority"
+                $("#edit-sauthyear").attr("value",year)
+              if hasParens
+                p$("##{col.replace(/\_/g,"-")}-parens").checked = true
         if col is "authority_year"
           # Parse it out
           year = parseTaxonYear(d)
@@ -1203,6 +1210,9 @@ lookupEditorSpecies = (taxon = undefined) ->
             d = d.replace(/}/,"")
             if d is '""'
               d = ""
+          try
+            if typeof d is "string"
+              d = d.unescape()
           textAreas = [
             "notes"
             "entry"
@@ -1299,6 +1309,45 @@ lookupEditorSpecies = (taxon = undefined) ->
   false
 
 
+validateCitation = (citation) ->
+  ###
+  # Check a citation for validity
+  ###
+  markInvalid = false
+  try
+    if $(citation).exists()
+      selector = citation
+      if typeof p$(citation).validate is "function"
+        markInvalid = true
+        citation = p$(selector).value
+      else
+        citation = $(selector).val()
+  cleanup = (result, replacement) ->
+    if markInvalid
+      if result is false
+        p$(selector).errorMessage = "Please enter a valid DOI or ISBN"
+      else
+        unless isNull replacement
+          p$(selector).value = replacement
+      p$(selector).invalid = not result
+    return result
+  # DOIs
+  doi = /^(?:doi:|https?:\/\/dx.doi.org\/)?(10.\d{4,9}\/[-._;()\/:A-Z0-9]+|10.1002\/[^\s]+|10.\d{4}\/\d+-\d+X?(\d+)\d+<[\d\w]+:[\d\w]*>\d+.\d+.\w+;\d|10.1207\/[\w\d]+\&\d+_\d+)$/im
+  if doi.test(citation)
+    # Picked up via
+    # https://www.crossref.org/blog/dois-and-matching-regular-expressions/
+    replace = citation.replace doi, "$1"
+    return cleanup true, replace
+  # ISBNs
+  if citation.search(/isbn/i) is 0
+    # Via https://gist.github.com/oscarmorrison/3744fa216dcfdb3d0bcb
+    isbn10 = /^(?:ISBN(?:-10)?:?\ )?(?=[0-9X]{10}$|(?=(?:[0-9]+[-\ ]){3})[-\ 0-9X]{13}$)[0-9]{1,5}[-\ ]?[0-9]+[-\ ]?[0-9]+[-\ ]?[0-9X]$/
+    isbn13 = /^(?:ISBN(?:-13)?:?\ )?(?=[0-9]{13}$|(?=(?:[0-9]+[-\ ]){4})[-\ 0-9]{17}$)97[89][-\ ]?[0-9]{1,5}[-\ ]?[0-9]+[-\ ]?[0-9]+[-\ ]?[0-9]$/
+    return cleanup isbn10.test(citation) and isbn13.test(citation)
+  # Generic journal formatting
+  cleanup false
+
+
 
 
 saveEditorEntry = (performMode = "save") ->
@@ -1333,6 +1382,8 @@ saveEditorEntry = (performMode = "save") ->
     "internal-id"
     "source"
     "citation"
+    "species-authority-citation"
+    "genus-authority-citation"
     ]
   saveObject = new Object()
   escapeCompletion = false
@@ -1474,6 +1525,11 @@ saveEditorEntry = (performMode = "save") ->
     "image_credit"
     "image_license"
     "image_caption"
+    "species-authority-citation"
+    "species_authority_citation"
+    "genus-authority-citation"
+    "genus_authority_citation"
+    "citation"
     ]
   # List of IDs that can't be empty
   # Reserved use pending

@@ -1,4 +1,6 @@
-<?php ?>
+<?php 
+  require dirname(__FILE__) . "/../CONFIG.php";
+  ?>
 <meta http-equiv="X-UA-Compatible" content="IE=edge"/>
 <meta charset="utf-8"/>
 <meta name="theme-color" content="#446f74"/>
@@ -73,6 +75,7 @@
 <link rel="import" href="bower_components/iron-icons/editor-icons.html"/>
 <link rel="import" href="bower_components/iron-icons/communication-icons.html"/>
 <link rel="import" href="bower_components/iron-icons/maps-icons.html"/>
+<link rel="import" href="bower_components/iron-icons/av-icons.html"/>
 
 <link rel="import" href="bower_components/paper-toggle-button/paper-toggle-button.html"/>
 <link rel="import" href="bower_components/paper-toast/paper-toast.html"/>

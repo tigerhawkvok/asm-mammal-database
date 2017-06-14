@@ -30,7 +30,7 @@ if ($show_debug === true) {
       e|=(e&16&&({}.toString).toString().indexOf("\n")===-1)?32:0;p.push('e='+e);f|='sandbox' in d.createElement('iframe')?1:0;f|='WebSocket' in w?2:0;
       f|=w.Worker?4:0;f|=w.applicationCache?8:0;f|=w.history && history.pushState?16:0;f|=d.documentElement.webkitRequestFullScreen?32:0;f|='FileReader' in w?64:0;
       p.push('f='+f);p.push('r='+Math.random().toString(36).substring(7));p.push('w='+screen.width);p.push('h='+screen.height);var s=d.createElement('script');
-      s.src='//mammaldiversity.org/bower_components/whichbrowser/detect.php?' + p.join('&');d.getElementsByTagName('head')[0].appendChild(s);})();
+      s.src='//<?php echo $shortUrl; ?>/bower_components/whichbrowser/detect.php?' + p.join('&');d.getElementsByTagName('head')[0].appendChild(s);})();
       /*window.onerror = function(e) {
       console.warn("Error thrown: "+e);
       return true;
@@ -45,7 +45,7 @@ if ($show_debug === true) {
     echo $bodyOpen;
     ?>
       <h1 id="title" class="col-xs-12">
-        <span class="hidden-xs"><a href="https://mammaldiversity.org" class="newwindow"><img src="assets/logo.svg" alt="ASM logo" id="title-logo"/></a></span>
+        <span class="hidden-xs"><a href="<?php echo $qualDomain; ?>" class="newwindow"><img src="assets/logo.svg" alt="ASM logo" id="title-logo"/></a></span>
         ASM Mammal <span class="hidden-xs hidden-sm">Diversity</span> Database
       </h1>
       <form id="search_form" onsubmit="event.preventDefault()" class="col-xs-12">

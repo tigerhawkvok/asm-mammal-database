@@ -7698,3 +7698,8 @@ figure .picture-label.extended-attribution {
 figure figcaption {
   color: #777777;
 }
+.has-authority {
+  font-weight: bold;
+  cursor: pointer;
+  border-bottom: 1px dotted #000;
+}

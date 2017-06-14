@@ -2467,7 +2467,12 @@ eutheriaFilterHelper = function(skipFetch) {
 };
 
 checkLaggedUpdate = function(result) {
+
+  /*
+   *
+   */
   var args, error2, finishedLoop, i, iucnCanProvide, j, k, key, len1, m, ref1, shouldSkip, start, taxon;
+  console.debug("Executing lagged update check ...");
   iucnCanProvide = ["common_name", "species_authority"];
   start = Date.now();
   if (result.do_client_update === true) {
@@ -2523,7 +2528,18 @@ checkLaggedUpdate = function(result) {
             console.log("Finished async IUCN taxa check in " + elapsed + "ms");
             stopLoad();
             return delay(500, function() {
-              return stopLoad();
+              stopLoad();
+              console.debug("About to try a data walk");
+              return $.get(uri.urlString + "datawalk.php", "", "json").done(function(result) {
+                if (result.status === true) {
+                  return console.log("Completed data walk in " + result.execution_time + "ms");
+                } else {
+                  console.warn("Data walk executed, but failed to complete");
+                  return console.warn(result);
+                }
+              }).fail(function(result, status) {
+                return console.warn("Couldn't execute data walk", result, status);
+              });
             });
           }
         });
@@ -2535,6 +2551,7 @@ checkLaggedUpdate = function(result) {
       console.warn(e.stack);
     }
   } else {
+    console.debug("Lagged update check unneeded.");
     stopLoad();
   }
   return false;
@@ -2602,7 +2619,7 @@ performSearch = function(stateArgs) {
     if (result.status === true) {
       console.log("Server response:", result);
       formatSearchResults(result, void 0, function() {
-        return checkLaggedUpdate(result);
+        return checkLaggedUpdate.debounce(1000, null, null, result);
       });
       return false;
     }
@@ -2719,7 +2736,7 @@ formatSearchResults = function(result, container, callback) {
   }
   colClass = null;
   bootstrapColCount = 0;
-  dontShowColumns = ["id", "minor_type", "notes", "major_type", "taxon_author", "taxon_credit", "image_license", "image_credit", "taxon_credit_date", "parens_auth_genus", "parens_auth_species", "is_alien", "internal_id", "source", "deprecated_scientific", "canonical_sciname", "simple_linnean_group", "iucn", "dwc", "entry", "common_name_source", "image_caption"];
+  dontShowColumns = ["id", "minor_type", "notes", "major_type", "taxon_author", "taxon_credit", "image_license", "image_credit", "taxon_credit_date", "parens_auth_genus", "parens_auth_species", "is_alien", "internal_id", "source", "deprecated_scientific", "canonical_sciname", "simple_linnean_group", "iucn", "dwc", "entry", "common_name_source", "image_caption", "species_authority_citation", "genus_authority_citation", "citation"];
   externalCounter = 0;
   renderTimeout = delay(7500, function() {
     stopLoadError("There was a problem parsing the search results.");

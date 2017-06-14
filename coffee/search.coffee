@@ -138,6 +138,10 @@ eutheriaFilterHelper = (skipFetch = false) ->
 
 
 checkLaggedUpdate = (result) ->
+  ###
+  #
+  ###
+  console.debug "Executing lagged update check ..."
   iucnCanProvide = [
     "common_name"
     "species_authority"
@@ -188,11 +192,24 @@ checkLaggedUpdate = (result) ->
             stopLoad()
             delay 500, ->
               stopLoad()
+              # Hit the datawalker to update. We don't care about the
+              # result.
+              console.debug "About to try a data walk"        
+              $.get "#{uri.urlString}datawalk.php", "", "json"
+              .done (result) ->
+                if result.status is true
+                  console.log "Completed data walk in #{result.execution_time}ms"
+                else
+                  console.warn "Data walk executed, but failed to complete"
+                  console.warn result
+              .fail (result, status) ->
+                console.warn "Couldn't execute data walk", result, status
       finishedLoop = true
     catch e
       console.warn "Couldn't do client update -- #{e.message}"
       console.warn e.stack
   else
+    console.debug "Lagged update check unneeded."
     stopLoad()
   false
 
@@ -258,7 +275,7 @@ performSearch = (stateArgs = undefined) ->
       console.log "Server response:", result
       # May be worth moving this part to a service worker
       formatSearchResults result, undefined, ->
-        checkLaggedUpdate result
+        checkLaggedUpdate.debounce 1000, null, null, result
       return false
     clearSearch(true)
     $("#search-status").attr("text",result.human_error)
@@ -381,6 +398,9 @@ formatSearchResults = (result, container = searchParams.targetContainer, callbac
     "entry"
     "common_name_source"
     "image_caption"
+    "species_authority_citation"
+    "genus_authority_citation"
+    "citation"
     ]
   externalCounter = 0
   renderTimeout = delay 7500, ->

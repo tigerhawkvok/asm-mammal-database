@@ -2523,7 +2523,10 @@ checkLaggedUpdate = function(result) {
             console.log("Finished async IUCN taxa check in " + elapsed + "ms");
             stopLoad();
             return delay(500, function() {
-              return stopLoad();
+              stopLoad();
+              return $.get(uri.urlString + "datawalk.php", "", "json").done(function(result) {
+                return console.log("Completed data walk in " + result.execution_time + "ms");
+              });
             });
           }
         });

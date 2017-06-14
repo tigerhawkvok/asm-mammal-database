@@ -2062,6 +2062,11 @@ checkLaggedUpdate = (result) ->
             stopLoad()
             delay 500, ->
               stopLoad()
+              # Hit the datawalker to update. We don't care about the
+              # result.              
+              $.get "#{uri.urlString}datawalk.php", "", "json"
+              .done (result) ->
+                console.log "Completed data walk in #{result.execution_time}ms"
       finishedLoop = true
     catch e
       console.warn "Couldn't do client update -- #{e.message}"

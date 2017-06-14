@@ -1,6 +1,6 @@
 {
   "name": "asm-mammal-database",
-  "version": "1.3.8",
+  "version": "1.3.9",
   "description": "ASM Mammal Database",
   "main": "api.php",
   "scripts": {

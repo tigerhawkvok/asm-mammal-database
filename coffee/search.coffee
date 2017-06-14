@@ -87,6 +87,9 @@ eutheriaFilterHelper = (skipFetch = false) ->
         fetchMajorMinorGroups.debounce(50)
   $("#linnean")
   .on "iron-select", ->
+    try
+      if $(p$("#linnean").selectedItem).attr("data-type") isnt "any"
+        p$("#global_search").checked = false
     if $(p$("#linnean").selectedItem).attr("data-type") is "eutheria"
       # Clean it up for the code
       mammalGroups = new Array()
@@ -194,7 +197,7 @@ checkLaggedUpdate = (result) ->
               stopLoad()
               # Hit the datawalker to update. We don't care about the
               # result.
-              console.debug "About to try a data walk"        
+              console.debug "About to try a data walk"
               $.get "#{uri.urlString}datawalk.php", "", "json"
               .done (result) ->
                 if result.status is true
@@ -700,7 +703,7 @@ checkTaxonNear = (taxonQuery = undefined, callback = undefined, selector = "#nea
   ###
   if not taxonQuery?
     console.warn("Please specify a taxon.")
-    return false;
+    return false
   if not locationData.last?
     getLocation()
   elapsed = (Date.now() - locationData.last)/1000

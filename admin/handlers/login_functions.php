@@ -1981,7 +1981,7 @@ class UserFunctions extends DBHelper
             $xml->setXml($userdata['name']);
             $user_greet = $xml->getTagContents('<fname>');
             $user_full_name = $xml->getTagContents('<name>'); // for now
-            if(!$this->needsManualAuth()) {
+            if(toBool($userdata["flag"])) {
                 setcookie($cookieauth, $value, $expire);
                 setcookie($cookiekey, $cookie_secret, $expire);
                 setcookie($cookieuser, $username, $expire);
@@ -2012,6 +2012,7 @@ class UserFunctions extends DBHelper
             } else {
                 $value = null;
                 $cookie_secret = null;
+                $value_create = null;
             }
 
             return array(
@@ -2032,6 +2033,8 @@ class UserFunctions extends DBHelper
                 'raw_cookie' => $raw_data,
                 'basis' => $value_create,
                 'expires' => "{expires:$expire_days,path:'/'}",
+                "flag" => toBool($userdata["flag"]),
+                "raw_flag" => $userdata["flag"],
             );
         } catch (Exception $e) {
             return array('status' => false,'error' => 'Unexpected exception in cookies: '.$e->getMessage(),'provided_data' => array('user_data' => $username,'data_flag' => $password_or_is_data,'remote' => $remote));

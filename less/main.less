@@ -582,7 +582,7 @@ footer {
     &.row {
         left: 15px;
         @media (max-width: @screen-xs-max) {
-            
+
             #git-footer {
                 paper-icon-button + paper-icon-button[icon='glyphicon-social:github'] {
                     // Only hide it if the other ones successfully load
@@ -953,6 +953,7 @@ iron-label + paper-icon-button, label + paper-icon-button {
     height: calc(100vh ~"-" @body-header-offset*2 ~"-" 5em);
     position: fixed;
     top: calc(@body-header-offset ~"+" 30px);
+    -webkit-overflow-scrolling: touch;
     @media(max-width: @screen-sm-max) {
         width: 90vw !important;
         &.out {

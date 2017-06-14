@@ -7639,6 +7639,7 @@ label + paper-icon-button {
   height: calc(100vh - 6em - 5em);
   position: fixed;
   top: calc(3em + 30px);
+  -webkit-overflow-scrolling: touch;
   transition: 0.5s all ease-in-out;
 }
 @media (max-width: 991px) {

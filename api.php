@@ -274,6 +274,8 @@ if (toBool($_REQUEST["random"])) {
             }
         }
     }
+    $row["specificEpithet"] = $row["species"];
+    $row["subspecificEpithet"] = $row["subspecies"];
     returnAjax($row);
 }
 

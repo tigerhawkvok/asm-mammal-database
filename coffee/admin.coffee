@@ -541,7 +541,7 @@ loadModalTaxonEditor = (extraHtml = "", affirmativeText = "Save") ->
     <div class="markdown-html"></div>
   </marked-element>
   <paper-input label="Data Source" id="edit-source" name="edit-source" floatingLabel></paper-input>
-  <paper-input label="Data Citation" id="edit-citation" name="edit-citation" floatingLabel></paper-input>
+  <paper-input label="Data Citation (Markdown Allowed)" id="edit-citation" name="edit-citation" floatingLabel></paper-input>
   <div id="upload-image"></div>
   <span class="help-block" id="upload-image-help">You can drag and drop an image above, or enter its server path below.</span>
   <paper-input label="Image" id="edit-image" name="edit-image" floatingLabel aria-describedby="imagehelp"></paper-input>
@@ -1529,6 +1529,7 @@ saveEditorEntry = (performMode = "save") ->
     "species_authority_citation"
     "genus-authority-citation"
     "genus_authority_citation"
+    "citation"
     ]
   # List of IDs that can't be empty
   # Reserved use pending

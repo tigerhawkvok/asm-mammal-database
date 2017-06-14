@@ -725,7 +725,7 @@ if (!is_numeric($creditTime) || $creditTime == 0) {
 $creditAuthor = empty($speciesRow["taxon_author"]) ? "your local ASM server" : $speciesRow["taxon_credit"];
 $credit = "<p>Entry by ".$creditAuthor." on ".strftime("%d %B %Y", $creditTime)."</p>";
 if (!empty($speciesRow["citation"])) {
-    $credit .= "<marked-element id='taxon-citation-credit'><div class='markdown-html'></div><script type='text/markdown'>".$speciesRow["citation"]."</script></marked-element>";
+    $credit .= "<marked-element id='taxon-citation-credit'><div class='markdown-html'></div><script type='text/markdown'>The data used to generate this page is via: ".$speciesRow["citation"]."</script></marked-element>";
 }
 
 $taxonCitation = $speciesRow["canonical_sciname"]." (ASM Species Account Database #".$speciesRow["internal_id"].") fetched ".date(DATE_ISO8601);

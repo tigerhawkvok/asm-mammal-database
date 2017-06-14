@@ -3726,7 +3726,8 @@ getRandomEntry = function() {
   var args;
   startLoad();
   args = {
-    random: true
+    random: true,
+    require_image: true
   };
   $.get(searchParams.apiPath, buildQuery(args, "json")).done(function(result) {
     var accountQuery, dest;

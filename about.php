@@ -31,7 +31,7 @@ include_once dirname(__FILE__)."/CONFIG.php";
       e|=(e&16&&({}.toString).toString().indexOf("\n")===-1)?32:0;p.push('e='+e);f|='sandbox' in d.createElement('iframe')?1:0;f|='WebSocket' in w?2:0;
       f|=w.Worker?4:0;f|=w.applicationCache?8:0;f|=w.history && history.pushState?16:0;f|=d.documentElement.webkitRequestFullScreen?32:0;f|='FileReader' in w?64:0;
       p.push('f='+f);p.push('r='+Math.random().toString(36).substring(7));p.push('w='+screen.width);p.push('h='+screen.height);var s=d.createElement('script');
-      s.src='//<?php echo $domain; ?>/bower_components/whichbrowser/detect.php?' + p.join('&');d.getElementsByTagName('head')[0].appendChild(s);})();
+      s.src='//<?php echo $shortUrl; ?>/bower_components/whichbrowser/detect.php?' + p.join('&');d.getElementsByTagName('head')[0].appendChild(s);})();
       /*window.onerror = function(e) {
       console.warn("Error thrown: "+e);
       return true;
@@ -59,7 +59,7 @@ include_once dirname(__FILE__)."/CONFIG.php";
       </div>
       <h2 class="col-xs-12">API</h2>
       <p class="col-xs-12">
-        Please view <a href="<?php echo $gitUrl; ?>/blob/master/README.md#api"><code>README.md</code> in the Github repository</a> for information on how to use our public taxon API. The API endpoint can be found at <code><a href="<?php echo $protocol; ?>://$domain/api/q=ursus+arctos" class="newwindow"><?php echo $protocol; ?>://$domain/api</a></code>.
+        Please view <a href="<?php echo $gitUrl; ?>/blob/master/README.md#api"><code>README.md</code> in the Github repository</a> for information on how to use our public taxon API. The API endpoint can be found at <code><a href="<?php echo $protocol; ?>://$shortUrl/api/q=ursus+arctos" class="newwindow"><?php echo $protocol; ?>://$shortUrl/api</a></code>.
         </p>
       <h2 class="col-xs-12">Legal Notices</h2>
       <h3 class="col-xs-12">Application</h3>

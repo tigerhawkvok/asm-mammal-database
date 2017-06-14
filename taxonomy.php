@@ -45,7 +45,7 @@ $updatesSinceAssessmentYear = 2005;
       e|=(e&16&&({}.toString).toString().indexOf("\n")===-1)?32:0;p.push('e='+e);f|='sandbox' in d.createElement('iframe')?1:0;f|='WebSocket' in w?2:0;
       f|=w.Worker?4:0;f|=w.applicationCache?8:0;f|=w.history && history.pushState?16:0;f|=d.documentElement.webkitRequestFullScreen?32:0;f|='FileReader' in w?64:0;
       p.push('f='+f);p.push('r='+Math.random().toString(36).substring(7));p.push('w='+screen.width);p.push('h='+screen.height);var s=d.createElement('script');
-      s.src='//<?php echo $domain; ?>/bower_components/whichbrowser/detect.php?' + p.join('&');d.getElementsByTagName('head')[0].appendChild(s);})();
+      s.src='//<?php echo $shortUrl; ?>/bower_components/whichbrowser/detect.php?' + p.join('&');d.getElementsByTagName('head')[0].appendChild(s);})();
       /*window.onerror = function(e) {
       console.warn("Error thrown: "+e);
       return true;
@@ -126,7 +126,7 @@ $updatesSinceAssessmentYear = 2005;
             } else {
                 $citation = "";
             }
-            $buffer .= "\n<li><span class='sciname'><span class='genus'>".$taxon["genus"]."</span> <span class='species'>".$taxon["species"]."</span></span> in <span class='has-authority' data-toggle='tooltip' title='$authority'>$year</span> <paper-icon-button class='click' data-href='$protocol://$domain/species-account/id=".$taxon["id"]."' icon='icons:visibility' title='See account for ".ucwords($taxon["genus"])." ".$taxon["species"]."' data-toggle='tooltip'></paper-icon-button> $citation</li>\n";
+            $buffer .= "\n<li><span class='sciname'><span class='genus'>".$taxon["genus"]."</span> <span class='species'>".$taxon["species"]."</span></span> in <span class='has-authority' data-toggle='tooltip' title='$authority'>$year</span> <paper-icon-button class='click' data-href='$protocol://$shortUrl/species-account/id=".$taxon["id"]."' icon='icons:visibility' title='See account for ".ucwords($taxon["genus"])." ".$taxon["species"]."' data-toggle='tooltip'></paper-icon-button> $citation</li>\n";
         }
         echo "<h3>There have been ".sizeof($novelTaxa)." taxa changes since $updatesSinceAssessmentYear</h3> <ul>";
         echo $buffer;

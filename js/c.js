@@ -2197,7 +2197,7 @@ loadSocialMediaSlideoutBar = function(handles, selector, appendTo) {
       handle = handles[service];
       switch (service) {
         case "twitter":
-          serviceHtml = "<a class=\"twitter-timeline\" data-link-color=\"#1DA1F2\" href=\"https://twitter.com/" + handle + "\">Tweets by @" + handle + "</a> <script async src=\"//platform.twitter.com/widgets.js\" charset=\"utf-8\"></script>          ";
+          serviceHtml = "<a class=\"twitter-timeline\" data-link-color=\"#1DA1F2\" href=\"https://twitter.com/" + handle + "\">Tweets by @" + handle + "</a> <script async src=\"//platform.twitter.com/widgets.js\" charset=\"utf-8\"></script>";
           break;
         default:
           serviceHtml = "";

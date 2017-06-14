@@ -2,7 +2,7 @@
 
 
 /***********************************************************
-* ASM Species database API target
+ * ASM Species database API target
  *
  * Find the full API description here:
  *

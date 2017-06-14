@@ -383,6 +383,7 @@ formatSearchResults = (result, container = searchParams.targetContainer, callbac
     "image_caption"
     "species_authority_citation"
     "genus_authority_citation"
+    "citation"
     ]
   externalCounter = 0
   renderTimeout = delay 7500, ->

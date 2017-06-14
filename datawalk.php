@@ -23,11 +23,12 @@ if ($show_debug === true) {
 require dirname(__FILE__)."/CONFIG.php";
 require_once(dirname(__FILE__)."/core/core.php");
 
+$start_script_timer = microtime_float();
 $db = new DBHelper($default_database, $default_sql_user, $default_sql_password, $default_sql_url, $default_table, $db_cols);
 
 try {
     # walk distinct genera
-    $query = "SELECT DISTINCT genus FROM `".$db->getTable()."`";
+    $query = "SELECT DISTINCT genus FROM `".$db->getTable()."` WHERE (`genus_authority` IS NULL OR `authority_year` IS NULL OR `genus_authority`='' OR `authority_year`='')";
     $r = mysqli_query($db->getLink(), $query);
     $generaCount = mysqli_num_rows($r);
     $generaWalked = 0;
@@ -84,6 +85,9 @@ try {
                     $authority = $genusRow["genus_authority"];
                 }
             }
+            if (empty($gYear) && empty($sYear)) {
+                continue;
+            }
             $data[] = array(
                 $genusRow['id'] => array(
                     "year" => intval($gYear),
@@ -111,6 +115,9 @@ try {
         foreach ($data as $taxa) {
             foreach ($taxa as $uniqueAuthority) {
                 $authYear = json_encode(array($oldest => $uniqueAuthority["species_year"]));
+                if ($authYear == "[0]") {
+                    continue;
+                }
                 $q = "UPDATE ".$db->getTable()." SET `authority_year`='".$db->sanitize($authYear)."', `genus_authority`='".$db->sanitize($genusAuthority)."', `species_authority`='".$db->sanitize($uniqueAuthority["authority"])."', `parens_auth_species`=".strbool($uniqueAuthority["has_parens"]).", `parens_auth_genus`=".strbool($hasParens)." WHERE `genus`='$row[0]' AND `species_authority`='".mysqli_real_escape_string($db->getLink(), $uniqueAuthority["match_authority"])."'";
                 $writeData[] = $q;
                 $executed = mysqli_query($db->getLink(), $q);
@@ -131,6 +138,7 @@ try {
             "modified" => $generaWalked,
             "needed_updates" => $generaCount,
         ),
+        #"sample" => $q,
     ));
 } catch (Exception $e) {
     $response = array(

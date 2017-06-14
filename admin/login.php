@@ -610,7 +610,7 @@ if ($_REQUEST['q']=='submitlogin') {
               </label>
 	      <input type='text' name='honey' id='honey' class='hide'/>
 </div>
-        <p>Please do the<a href='https://en.wikipedia.org/wiki/CAPTCHA' class='newwindow'>CAPTCHA test</a> below to prove you're human:</p>
+        <p>Please do the <a href='https://en.wikipedia.org/wiki/CAPTCHA' class='newwindow'>CAPTCHA test</a> below to prove you're human:</p>
         <script src='https://www.google.com/recaptcha/api.js'></script>
         <div class=\"g-recaptcha\" data-sitekey=\"".$recaptcha_public_key."\"></div>
 
@@ -689,12 +689,14 @@ if ($_REQUEST['q']=='submitlogin') {
                             $res=$user->createUser($_POST['username'], $_POST['password'], array($_POST['fname'],$_POST['lname']), $_POST['dname'], $_POST['phone']);
                             if ($res["status"]) {
                                 $login_output.="<div class='alert alert-success text-center force-center'><button type='button' class='close' data-dismiss='alert' aria-label='Close'><span aria-hidden='true'>&times;</span></button>
-<h3> ".$res["message"]." </h3><p>You can <a class='alert-link' href='".$self_url."'>return to your profile page here</a>.</p></div>"; //jumpto1
-                                             if ($user->needsManualAuth()) {
-                                                 $login_output.="<div class='alert alert-warning text-center force-center'><p>Your ability to login will be restricted until you've been authorized.</p></div>";
-                                             }
-                                             // email user
-                                             $to=$_POST['username'];
+<h3> ".$res["message"]." </h3>"; //jumpto1
+                                if ($user->needsManualAuth()) {
+                                    $login_output.="</div><div class='alert alert-warning text-center force-center'><p>Your ability to login will be restricted until you've been authorized.</p></div>";
+                                } else {
+                                    $login_output .= "<p>You can <a class='alert-link' href='".$self_url."'>return to your profile page here</a>.</p></div>";
+                                }
+                                // email user
+                                $to=$_POST['username'];
                                 $headers  = 'MIME-Version: 1.0' . "\r\n";
                                 $headers .= 'Content-type: text/html; charset=iso-8859-1' . "\r\n";
                                 $headers .= "From: [".$shorturl."] Mailer Bot <blackhole@".$shorturl.">";
@@ -706,10 +708,12 @@ if ($_REQUEST['q']=='submitlogin') {
                                     // no email
                                 }
 
-                                             /***
-                                              * Post login behavior ...
-                                              ***/
-                                             $deferredJS.=$res['js'];
+                                /***
+                                 * Post login behavior ...
+                                 ***/
+                                if (!$user->needsManualAuth()) {
+                                    $deferredJS.=$res['js'];
+                                }
                                 if ($post_create_redirect) {
                                     if ($redirect_to_home !== true && empty($redirect_url)) {
                                         $durl = $self_url;
@@ -742,10 +746,10 @@ if ($_REQUEST['q']=='submitlogin') {
 </form>";
                                     $login_output .= "<h2>Verifying your Phone</h2>".$phone_verify_template;
                                 }
-                                             # Give the option to add two-factor now; force it if flag enabled
-                                             if ($ask_twofactor_at_signup) {
-                                                 # Give user 2FA
-                                                 $totp_add_form = "<section id='totp_add' class='row'>
+                                # Give the option to add two-factor now; force it if flag enabled
+                                if ($ask_twofactor_at_signup) {
+                                    # Give user 2FA
+                                    $totp_add_form = "<section id='totp_add' class='row'>
   <div id='totp_message' class='col-xs-12 col-md-6 alert alert-warning force-center'>
     Two factor authentication is required when setting up an account with $shorturl. If you don't know what this is, click \"Help with two-factor authentication\" below.
   </div>
@@ -770,8 +774,8 @@ if ($_REQUEST['q']=='submitlogin') {
     <button id='totp_help' class='alert-link btn btn-link'>Help with Two-Factor Authentication</button>
   </div>
 </section>";
-                                                 $login_output .= "<h2 class='row'>Adding two-factor authentication</h2>".$totp_add_form;
-                                             }
+                                    $login_output .= "<h2 class='row'>Adding two-factor authentication</h2>".$totp_add_form;
+                                }
                             } else {
                                 if ($debug) {
                                     $login_output.=displayDebug($res);

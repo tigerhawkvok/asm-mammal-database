@@ -1981,33 +1981,38 @@ class UserFunctions extends DBHelper
             $xml->setXml($userdata['name']);
             $user_greet = $xml->getTagContents('<fname>');
             $user_full_name = $xml->getTagContents('<name>'); // for now
-            setcookie($cookieauth, $value, $expire);
-            setcookie($cookiekey, $cookie_secret, $expire);
-            setcookie($cookieuser, $username, $expire);
-            setcookie($cookieperson, $user_greet, $expire);
-            setcookie($cookiewholeperson, $user_full_name, $expire);
-            $path = $this->getUserPicture($userdata['id']);
-            setcookie($cookiepic, $path, $expire);
-            setcookie($cookielink, $dblink, $expire);
+            if(!$this->needsManualAuth()) {
+                setcookie($cookieauth, $value, $expire);
+                setcookie($cookiekey, $cookie_secret, $expire);
+                setcookie($cookieuser, $username, $expire);
+                setcookie($cookieperson, $user_greet, $expire);
+                setcookie($cookiewholeperson, $user_full_name, $expire);
+                $path = $this->getUserPicture($userdata['id']);
+                setcookie($cookiepic, $path, $expire);
+                setcookie($cookielink, $dblink, $expire);
 
-            $js_expires = ",{expires:$expire_days,path:'/'});\n";
-            $jquerycookie = "$.cookie('$cookieauth','$value'".$js_expires;
-            $jquerycookie .= "$.cookie('$cookiekey','$cookie_secret'".$js_expires;
-            $jquerycookie .= "$.cookie('$cookieuser','$username'".$js_expires;
-            $jquerycookie .= "$.cookie('$cookieperson','$user_greet'".$js_expires;
-            $jquerycookie .= "$.cookie('$cookiewholeperson','$user_full_name'".$js_expires;
-            $jquerycookie .= "$.cookie('$cookiepic','$path'".$js_expires;
-            $jquerycookie .= "$.cookie('$cookielink','$dblink'".$js_expires;
+                $js_expires = ",{expires:$expire_days,path:'/'});\n";
+                $jquerycookie = "$.cookie('$cookieauth','$value'".$js_expires;
+                $jquerycookie .= "$.cookie('$cookiekey','$cookie_secret'".$js_expires;
+                $jquerycookie .= "$.cookie('$cookieuser','$username'".$js_expires;
+                $jquerycookie .= "$.cookie('$cookieperson','$user_greet'".$js_expires;
+                $jquerycookie .= "$.cookie('$cookiewholeperson','$user_full_name'".$js_expires;
+                $jquerycookie .= "$.cookie('$cookiepic','$path'".$js_expires;
+                $jquerycookie .= "$.cookie('$cookielink','$dblink'".$js_expires;
 
-            $raw_data = array(
-                $cookieuser => $username,
-                $cookieauth => $value,
-                $cookiekey => $cookie_secret,
-                $cookiepic => $path,
-                $cookieperson => $user_greet,
-                $cookiewholeperson => $user_full_name,
-                $cookielink => $dblink,
-            );
+                $raw_data = array(
+                    $cookieuser => $username,
+                    $cookieauth => $value,
+                    $cookiekey => $cookie_secret,
+                    $cookiepic => $path,
+                    $cookieperson => $user_greet,
+                    $cookiewholeperson => $user_full_name,
+                    $cookielink => $dblink,
+                );
+            } else {
+                $value = null;
+                $cookie_secret = null;
+            }
 
             return array(
                 'status' => true,

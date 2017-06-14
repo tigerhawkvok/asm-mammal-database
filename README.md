@@ -26,7 +26,9 @@ You can generate links that way, corresponding to the options given in the follo
 
 ## API
 
-### Search query parameters
+### Search
+
+#### Search query parameters
 
 **Note**: Boolean values are "truthy" in the application; `"true"`, `true`, and `1` all evaluate to `true`; `"false"`, `false`, and `0` all evaluate to `false`.
 
@@ -63,7 +65,7 @@ You can generate links that way, corresponding to the options given in the follo
 
 
 
-### API return
+#### API return
 
 The JSON result gives the following parameters:
 
@@ -164,7 +166,7 @@ As the rest of the data have strict formatting requirements, all other
 formatting is left up to the application to correctly apply CSS styles
 to generate the desired case.
 
-### Search behaviour
+#### Search behaviour
 
 **Please note that the example JSON results may not have all of the
   fields or data in the `result` key of the most recent version. There
@@ -235,9 +237,92 @@ The search algorithm behaves as follows:
          word-wise on `common_name`, `major_common_type`, and
          `major_subtype` (eg, for all matches that contain each word
          as a substring in any of the columns). The returned `method`
-         is `space_loose_fallback`. [Example](https://mammaldiversity.org/commonnames_api.php?q=bear&loose=true&dwc_only=true&fuzzy=true)
+         is `space_loose_fallback`. [Example](https://mammaldiversity.org/api.php?q=bear&loose=true&dwc_only=true&fuzzy=true)
 
 
+### Other API functions
+
+#### Random Taxon
+
+| Parameter       | Value | Required |
+|-----------------|-------|----------|
+| `random`        | `true`| **true** |
+| `require_image` | bool  | false    |
+
+
+A hit with the argument `random=true` will return a random taxon, eg:
+
+`api.php?random=true`
+
+```json
+{"genus":"pronolagus","species":"randensis","subspecies":"","specificEpithet":"randensis","subspecificEpithet":"","execution_time":20.604133605957}
+```
+
+Note that the simple (`species`) and DarwinCore (`specificEpithet`) values are both returned.
+
+If the flag `require_image` is set to a truthy value, the returned taxon will be guaranteed to have a Mammal Images Library, iNaturalist, or Calphotos image associated with the taxon. However, the image is not parsed. For example:
+
+`api.php?random=true&require_image=true`
+
+```json
+{"genus":"rhinoceros","species":"sondaicus","subspecies":"","image":"","specificEpithet":"sondaicus","subspecificEpithet":"","execution_time":1561.1729621887}
+```
+
+Note that since several external services may be hit multiple times, the execution time is significantly longer when requiring images.
+
+#### Unique Datapoints
+
+| Parameter    | Value  | Required |
+|--------------|--------|----------|
+| `get_unique` | `true` | **true** |
+| `col`        | string | **true** |
+
+Fetches all `distinct` entries for a given database column `col` under the key `values` for a successful `status`. For example:
+
+`api.php?get_unique=true&col=linnean_order`
+
+```json
+{"status":true,"values":{"0":"afrosoricida","1":"artiodactyla","2":"carnivora","3":"chiroptera","4":"cingulata","5":"dasyuromorphia","6":"dermoptera","7":"didelphimorphia","8":"diprotodontia","9":"eulipotyphla","10":"hyracoidea","11":"lagomorpha","12":"macroscelidea","13":"microbiotheria","14":"monotremata","15":"notoryctemorphia","16":"paucituberculata","17":"peramelemorphia","18":"perissodactyla","19":"pholidota","20":"pilosa","21":"primates","22":"proboscidea","23":"rodentia","24":"scandentia","25":"sirenia","26":"tubulidentata"},"execution_time":8.540153503418}
+```
+
+#### Ordered Taxonomy
+
+| Parameter    | Value  | Required |
+|--------------|--------|----------|
+| `get_unique` | `true` | **true** |
+| `col`        | string | **true** |
+
+TODO
+
+#### Direct Queries
+
+| Parameter   | Value                 | Required |
+|-------------|-----------------------|----------|
+| `action`    | `query`               | **true** |
+| `sql_query` | Base64-encoded string | **true** |
+| `dwc`       | bool                  |          |
+
+Allows certain direct queries against the database. On mammaldiversity.org, security is enforced by a separate low-privilege user executing these queries; however, a separate regex layer level of security exists as well.
+
+Only fairly basic `SELECT` queries (and a few specific exceptions such as `SHOW COLUMNS`) are permitted. Programatically, a PDO query is constructed with each column pre-checked for existence separately prior to execution (generating a fatal error on failure). Backticks are optional on column names.
+
+If the flag `dwc` is specified, only DarwinCore terms will be returned. The default is to return both DarwinCore and internal structure.
+
+Example:
+
+```sql
+SELECT * FROM `mammal_diversity_database` where `genus`='canis' and species='lupus';
+```
+
+becomes
+
+`api.php?sql_query=U0VMRUNUICogRlJPTSBgbWFtbWFsX2RpdmVyc2l0eV9kYXRhYmFzZWAgd2hlcmUgYGdlbnVzYD0nY2FuaXMnIGFuZCBzcGVjaWVzPSdsdXB1cyc7&action=query&dwc=false`
+
+returning the reuslt
+
+```json
+{"status":true,"statements":{"0":{"result":{"0":{"id":410,"species_authority":"Linnaeus","canonical_sciname":"Canis lupus","image":"","notes":"","authority_year":"{\"1758\":1758}","parens_auth_genus":0,"internal_id":3746,"major_type":"","genus":"canis","taxon_author":"","parens_auth_species":0,"genus_authority":"Linnaeus","deprecated_scientific":"","subspecies":"","simple_linnean_group":"eutheria","linnean_order":"carnivora","source":"iucn","species":"lupus","taxon_credit":"","taxon_credit_date":"","common_name":"Gray Wolf","major_subtype":"","linnean_family":"canidae","simple_linnean_subgroup":"true dogs","citation":null,"image_credit":null,"image_license":null,"entry":null,"common_name_source":"iucn","image_caption":null,"species_authority_citation":null,"genus_authority_citation":null,"dwc":{"scientificName":"Canis lupus","genus":"canis","subspecificEpithet":"","order":"carnivora","specificEpithet":"lupus","vernacularName":"Gray Wolf","family":"canidae","namePublishedIn":null,"higherClassification":{"cohort":"eutheria","list":"eutheria"},"scientificNameAuthorship":{"genus":"Linnaeus, 1758","species":"Linnaeus, 1758"},"taxonRank":"species","class":"mammalia","taxonomicStatus":"accepted","dcterms:bibliographicCitation":"Canis lupus (ASM Species Account Database #3746) fetched 2017-06-14T23:15:43+0000","dcterms:language":"en","dcterms:modified":"2017-06-14T23:15:43+0000","dcterms:license":"https:\/\/creativecommons.org\/licenses\/by-nc\/4.0\/legalcode"}}},"action":"SELECT","query":{"where":" WHERE (`genus`= ?  AND `species`= ? )","values":{"0":"canis","1":"lupus"},"full_query":"SELECT * FROM `mammal_diversity_database` WHERE (`genus`= ?  AND `species`= ? )","used_statement":"SELECT * FROM `mammal_diversity_database` where `genus`='canis' and species='lupus';"}}},"statement_count":1,"provided":"SELECT * FROM `mammal_diversity_database` where `genus`='canis' and species='lupus';","execution_time":0.786066055298}
+```
 
 ## Old scientific names
 
@@ -276,7 +361,9 @@ Your life will also be a lot easier if you have [Homebrew](https://brew.sh/) or 
 #### Build dependencies
 
 - [Yarn](https://yarnpkg.com/lang/en/docs/cli/) You can install Yarn by running `brew install yarn`
-- [Grunt](http://gruntjs.com/). You can install Grunt from the command line by running `yarn global install grunt-cli`.
+- [Grunt](http://gruntjs.com/). You can install Grunt from the command line by running `yarn global add grunt-cli`.
+- Recommended: [Coffeescript](http://coffeescript.org) and [Less](http://lesscss.org/). They're included locally but often behave better globally via `yarn global add coffee-script less`
+- Run `yarn install` to install local dependencies.
 
 #### Deploy dependencies
 
@@ -287,6 +374,8 @@ Your life will also be a lot easier if you have [Homebrew](https://brew.sh/) or 
 
 You can update the whole application, with dependencies, by running
 `grunt build` at the root directory.
+
+If you don't need to update dependencies, just run `grunt qbuild`.
 
 #### Installation
 
@@ -324,4 +413,4 @@ https://mammaldiversity.org/admin
 
 If you create a user, an exisiting superuser will need to authorize your access. **You will not be able to log in or access the admin interface until this occurs**.
 
-If you log in to another device / location, all other session credentials will be invalidated. [This occurs at API-level](https://github.com/tigerhawkvok/blob/master/asm-mammal-database/admin_api.php#L43-L48), and may require a re-login if your network location changes.
+If you log in to another device / location, all other session credentials will be invalidated. [This occurs at the authentication level](https://github.com/tigerhawkvok/asm-mammal-database/blob/v1.3.9/admin/handlers/login_functions.php#L1856-L1869), and may require a re-login if your network location changes.

@@ -511,7 +511,7 @@ Function::getName = ->
   ###
   name = this.name
   unless name?
-    name = this.toString().substr( 0, this.toString().indexOf( "(" ) ).replace( "function ", "" );
+    name = this.toString().substr( 0, this.toString().indexOf( "(" ) ).replace( "function ", "" )
   if isNull name
     name = md5 this.toString()
   name

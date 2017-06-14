@@ -703,7 +703,7 @@ checkTaxonNear = (taxonQuery = undefined, callback = undefined, selector = "#nea
   ###
   if not taxonQuery?
     console.warn("Please specify a taxon.")
-    return false;
+    return false
   if not locationData.last?
     getLocation()
   elapsed = (Date.now() - locationData.last)/1000

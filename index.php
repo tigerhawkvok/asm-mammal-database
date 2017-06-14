@@ -78,7 +78,7 @@ if ($show_debug === true) {
               <paper-icon-button icon="info-outline" data-toggle="tooltip" title="Check this to do a 'close match' search. Check this if you're unsure of your spelling or only have part of the name, for example." class="pull-left"></paper-icon-button>
               <paper-toggle-button id="fuzzy" class="pull-left">Fuzzy</paper-toggle-button>
             </div>
-            <div class="col-md-5 col-sm-6 col-xs-12 taxon-dropdown-container">
+            <div class="col-md-9 col-lg-5 col-sm-6 col-xs-12 taxon-dropdown-container">
               <!-- This is a filter column. We need a radio button for
                    AND/OR, and then to walk through the filters and append the object to the query. -->
               <div class="row">

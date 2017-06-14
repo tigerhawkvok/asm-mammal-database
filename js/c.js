@@ -2425,6 +2425,11 @@ eutheriaFilterHelper = function(skipFetch) {
   }
   $("#linnean").on("iron-select", function() {
     var column, error2, group, html, humanGroup, len1, len2, m, mammalGroups, mammalItems, o, ref1, ref2, scientific, type;
+    try {
+      if ($(p$("#linnean").selectedItem).attr("data-type") !== "any") {
+        p$("#global_search").checked = false;
+      }
+    } catch (undefined) {}
     if ($(p$("#linnean").selectedItem).attr("data-type") === "eutheria") {
       mammalGroups = new Array();
       ref1 = _asm.mammalGroupsBase;

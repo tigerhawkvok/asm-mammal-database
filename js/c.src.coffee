@@ -511,7 +511,7 @@ Function::getName = ->
   ###
   name = this.name
   unless name?
-    name = this.toString().substr( 0, this.toString().indexOf( "(" ) ).replace( "function ", "" );
+    name = this.toString().substr( 0, this.toString().indexOf( "(" ) ).replace( "function ", "" )
   if isNull name
     name = md5 this.toString()
   name
@@ -2577,7 +2577,7 @@ checkTaxonNear = (taxonQuery = undefined, callback = undefined, selector = "#nea
   ###
   if not taxonQuery?
     console.warn("Please specify a taxon.")
-    return false;
+    return false
   if not locationData.last?
     getLocation()
   elapsed = (Date.now() - locationData.last)/1000
@@ -3215,6 +3215,7 @@ getRandomEntry = ->
   startLoad()
   args =
     random: true
+    require_image: true
   $.get searchParams.apiPath, buildQuery args, "json"
   .done (result) ->
     if isNull(result.genus) or isNull result.species

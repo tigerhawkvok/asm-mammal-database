@@ -138,17 +138,144 @@ function checkColumnExists($column_list)
 
 
 
-if (boolstr($_REQUEST["missing"]) || boolstr($_REQUEST["fetch_missing"])) {
-    $save = isset($_REQUEST["prefetch"]) ? boolstr($_REQUEST["prefetch"]) : false;
+if (toBool($_REQUEST["missing"]) || toBool($_REQUEST["fetch_missing"])) {
+    $save = isset($_REQUEST["prefetch"]) ? toBool($_REQUEST["prefetch"]) : false;
     returnAjax(getTaxonIucnData($_REQUEST), $save);
 }
-if (boolstr($_REQUEST["get_unique"])) {
+if (toBool($_REQUEST["get_unique"])) {
     returnAjax(getUniqueVals($_REQUEST["col"]));
 }
-if (boolstr($_REQUEST["random"])) {
+if (toBool($_REQUEST["random"])) {
+    $hasImage = false;
     $query = "SELECT `genus`, `species`, `subspecies` from `".$db->getTable()."` ORDER BY RAND() LIMIT 1";
-    $result = mysqli_query($db->getLink(), $query);
-    $row = mysqli_fetch_assoc($result);
+    while (!$hasImage) {
+        if (!isset($_REQUEST["require_image"]) || !toBool($_REQUEST["require_image"])) {
+            # We don't care if it really has an image. Pretend it
+            # does.
+            $hasImage = true;
+        } else {
+            # We need to test the presence of an image
+            $query = "SELECT `genus`, `species`, `subspecies`, `image` from `".$db->getTable()."` ORDER BY RAND() LIMIT 1";
+        }
+        $result = mysqli_query($db->getLink(), $query);
+        $row = mysqli_fetch_assoc($result);
+        if (!$hasImage) {
+            /***
+             * As per
+             * https://github.com/tigerhawkvok/asm-mammal-database/issues/56
+             ***/
+            if (!function_exists("getCanonicalSpecies")) {
+                function getCanonicalSpecies($speciesRow, $short = false)
+                {
+                    $output = ucwords($speciesRow["genus"]);
+                    $short = ucwords(substr($speciesRow["genus"], 0, 1)) . ". ";
+                    $output .= " " . $speciesRow["species"];
+                    if (!empty($speciesRow["subspecies"])) {
+                        $output .= " " . $speciesRow["subspecies"];
+                        $short .= substr($speciesRow["species"], 0, 1) . ". " . $speciesRow["subspecies"];
+                    } else {
+                        $short .= $speciesRow["species"];
+                    }
+                    if (!empty($speciesRow["canonical_sciname"])) {
+                        $output = $speciesRow["canonical_sciname"];
+                    }
+                    return $short === true ? $short : $output;
+                }
+            }
+            $imgPath = preg_replace('/species&#95;photos/im', 'species_photos', $row["image"]);
+            # Does it exist?
+            if (!empty($imgPath) && file_exists(dirname(__FILE__)."/".$imgPath)) {
+                $hasImage = true;
+            } else {
+                # Check for other available ones
+                try {
+                    include_once dirname(__FILE__) . "/phpquery/phpQuery/phpQuery.php";
+                    if (!class_exists("phpQuery")) {
+                        throw(new Exception("BadPHPQuery"));
+                    }
+                    $url = $mammalDomain . "/search/asm_custom_search/" . urlencode(getCanonicalSpecies($row));
+                    $images .= "<!-- Image from search $url -->";
+                    $html = file_get_contents($url);
+                    phpQuery::newDocumentHTML($html);
+                    $imgElement = pq("#imageLibraryContent #current_image img");
+                    $imgRelPath = $imgElement->attr("src");
+                    if (!empty($imgRelPath) && !toBool($_REQUEST["skip_mil"])) {
+                        $hasImage = true;
+                    } else {
+                        # We couldn't find a picture in the mammal library. Try
+                        # iNaturalist.
+                        #
+                        # Sample:
+                        # https://www.inaturalist.org/observations.json?taxon_name=ursus+arctos&quality_grade=research&photo_license=any&iconic_taxa[]=Mammalia&has[]=photos
+                        $endpoint = "https://www.inaturalist.org/observations.json";
+                        $postArgs = array(
+                            "taxon_name" => urlencode(getCanonicalSpecies($row)),
+                            "quality_grade" => "research",
+                            "photo_license" => "any",
+                            "iconic_taxa[]" => "Mammalia",
+                            "has[]" => "photos",
+                        );
+                        $result = do_post_request($endpoint, $postArgs, "GET");
+                        $response = json_decode($result["response"], true);
+                        $textArgs = http_build_query($postArgs);
+                        # Some stupid replacements
+                        $search = array(
+                            "%2B",
+                            "%5B",
+                            "%5D",
+                        );
+                        $replace = array(
+                            "+",
+                            "[",
+                            "]",
+                        );
+                        $textArgs = str_replace($search, $replace, $textArgs);
+                        $inat = 0;
+                        if (sizeof($response) > 0 && !toBool($_REQUEST["skip_inat"])) {
+                            shuffle($response);
+                            $useObservation = $response[0];
+                            # First, we have to check that there was a match, and
+                            # iNat didn't return an unhelpful blob
+                            $obsTaxon = explode(" ", $useObservation["taxon"]["name"]);
+                            $refMatchGenus = strlen(substr($row["genus"], 0, -3)) < 3 ? $row["genus"] : substr($row["genus"], 0, -3);
+                            $refMatchSpecies = strlen(substr($row["species"], 0, -3)) < 3 ? $row["species"] : substr($row["species"], 0, -3);
+                            $obsMatchGenus = strlen(substr($obsTaxon[0], 0, -3)) < 3 ? strtolower($obsTaxon[0]) : substr(strtolower($obsTaxon[0]), 0, -3);
+                            $obsMatchSpecies = strlen(substr($obsTaxon[1], 0, -3)) < 3 ? $obsTaxon[1] : substr($obsTaxon[1], 0, -3);
+                            if ($refMatchGenus == $obsMatchGenus || $refMatchSpecies == $obsMatchSpecies) {
+                                $hasImage = true;
+                            }
+                        }
+                        if ($inat == 0) {
+                            # iNaturalist failed us too.
+                            # Last attempt: calPhotos
+                            # Queries of format: http://calphotos.berkeley.edu/cgi/img_query?getthumbinfo=1&num=all&taxon=ursus+arctos&format=xml
+                            $endpoint = "http://calphotos.berkeley.edu/cgi/img_query";
+                            $postArgs = array(
+                                "getthumbinfo" => 1,
+                                "cconly" => 1,
+                                "num" => "all",
+                                "taxon" => getCanonicalSpecies($row),
+                                "format" => "xml",
+                            );
+                            $dest = $endpoint."?".http_build_query($postArgs);
+                            $xmlContent = file_get_contents($dest);
+                            $xml = new Xml();
+                            $xml->setXml($xmlContent);
+                            $imgArr = $xml->getAllTagContents("enlarge_jpeg_url");
+                            if (sizeof($imgArr) > 0 && !toBool($_REQUEST["skip_calphotos"])) {
+                                $hasImage = true;
+                            }
+                        }
+                    }
+                } catch (Exception $e) {
+                    # Somethign went wrong with that image
+                    $hasImage = false;
+                }
+            }
+        }
+    }
+    $row["specificEpithet"] = $row["species"];
+    $row["subspecificEpithet"] = $row["subspecies"];
     returnAjax($row);
 }
 
@@ -550,8 +677,8 @@ function getOrderedTaxonomy($get)
 * Setup flags
 *****************************/
 
-$flag_fuzzy = boolstr($_REQUEST['fuzzy']);
-$loose = boolstr($_REQUEST['loose']);
+$flag_fuzzy = toBool($_REQUEST['fuzzy']);
+$loose = toBool($_REQUEST['loose']);
 # Default limit is specified in CONFIG
 $limit = is_numeric($_REQUEST['limit']) && $_REQUEST['limit'] >= 1 ? intval($_REQUEST['limit']):$default_limit;
 

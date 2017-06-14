@@ -167,14 +167,14 @@ class UserFunctions extends DBHelper
     }
     }
 
-  /***
-   * Helper functions
-   ***/
-
-  private function getSiteKey()
-  {
-      return $this->siteKey;
-  }
+    /***
+     * Helper functions
+     ***/
+    
+    private function getSiteKey()
+    {
+        return $this->siteKey;
+    }
     public function getSiteName()
     {
         return $this->site;
@@ -210,6 +210,11 @@ class UserFunctions extends DBHelper
     }
     public function needsManualAuth()
     {
+        if (!empty($this->getUsername())) {
+            $userdata = $this->getUser();
+            $flaggedAvailable = toBool($userdata["flag"]);
+            return $this->needsAuth === true && $flaggedAvailable;
+        }
         return $this->needsAuth === true;
     }
     private function getMailObject()

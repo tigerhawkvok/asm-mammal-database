@@ -1341,6 +1341,7 @@ getRandomEntry = ->
   startLoad()
   args =
     random: true
+    require_image: true
   $.get searchParams.apiPath, buildQuery args, "json"
   .done (result) ->
     if isNull(result.genus) or isNull result.species

@@ -1470,7 +1470,7 @@ saveEditorEntry = function(performMode) {
     completionErrorMessage = "There was a problem with your formatting for the deprecated scientifics. Please check it and try again.";
   }
   saveObject["deprecated_scientific"] = depString;
-  keepCase = ["notes", "taxon_credit", "image", "image_credit", "image_license", "image_caption", "species-authority-citation", "species_authority_citation", "genus-authority-citation", "genus_authority_citation", "citation"];
+  keepCase = ["notes", "entry", "taxon_credit", "image", "image_credit", "image_license", "image_caption", "species-authority-citation", "species_authority_citation", "genus-authority-citation", "genus_authority_citation", "citation"];
   requiredNotEmpty = ["common-name", "major-type", "linnean-order", "genus-authority", "species-authority"];
   if (!isNull(d$("#edit-image").val())) {
     requiredNotEmpty.push("image-credit");

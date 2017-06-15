@@ -1520,6 +1520,7 @@ saveEditorEntry = (performMode = "save") ->
   # For the rest of the items, iterate over and put on saveObject
   keepCase = [
     "notes"
+    "entry"
     "taxon_credit"
     "image"
     "image_credit"

@@ -106,7 +106,13 @@ def cleanCSV(path = defaultFile, newPath = outputFile):
         doExit()
     import csv
     rows = csv.reader(contents.split("\n"),delimiter=",")
-    newFile = open(newPath,"w", newline='')
+    try:
+        newFile = open(newPath,"w", newline='')
+    except PermissionError:
+        print("")
+        print("ERROR: We couldn't get write permissions to '"+os.getcwd()+"/"+newPath+"'")
+        print("Please check that the directory is writeable and that the file hasn't been locked by another user or program (like Excel),")
+        print("then try to run this again.")
     cleanRows = csv.writer(newFile,delimiter=",",quoting=csv.QUOTE_ALL)
     colDefs = {}
     colClean = {
@@ -135,6 +141,7 @@ def cleanCSV(path = defaultFile, newPath = outputFile):
         if i%50 is 0 and i > 0:
             print("Cleaned",i,"rows...")
     print("Finished cleaning",i,"rows.")
+    print("Wrote '"+os.getcwd()+"/"+newPath+"'")
     return newPath
 
 

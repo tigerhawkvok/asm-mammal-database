@@ -32,7 +32,7 @@ def cleanKVPairs(col,val):
         return "'"+val+"'"
 
 
-def generateUpdateSqlQueries(rowList, refCol, tableName, makeLower=True, addCols=True):
+def generateUpdateSqlQueries(rowList, refCol, tableName, addCols=True, makeLower=False):
     # Generate update SQL queries
     i=0
     j=0
@@ -42,12 +42,12 @@ def generateUpdateSqlQueries(rowList, refCol, tableName, makeLower=True, addCols
     try:
         for row in rowList:
             # Each row should be a dict of the form "column":"value"
-            query="UPDATE `"+tableName+"` SET "
+            query="INSERT INTO `"+tableName+"` SET "
             s=""
             set_statement = ""
             try:
                 for col,val in row.items():
-                    if first is True:
+                    if first is True and addCols:
                         #alter_query = "IF COL_LENGTH(`"+tableName+"`,`"+col+"`) IS NULL"
                         #alter_query += "\n\tBEGIN"
                         alter_query = "ALTER TABLE `"+tableName+"` ADD `"+col+"` VARCHAR(MAX)" # Just in case!
@@ -63,7 +63,12 @@ def generateUpdateSqlQueries(rowList, refCol, tableName, makeLower=True, addCols
                 s = s[:-1]
                 set_statement = s
                 s += where
-                s += "ON DUPLICATE KEY UPDATE IGNORE " + set_statement
+                s += " ON DUPLICATE KEY UPDATE "
+                if not addCols:
+                    # If we skipped adding cols, let's not crap out if
+                    # a col is missing
+                    s += "IGNORE "
+                s += set_statement
             except AttributeError:
                 print("ERROR: Row is not a dictionary.")
                 print("Each row should be a dictionary of the form {column:value}.")
@@ -85,22 +90,29 @@ def generateUpdateSqlQueries(rowList, refCol, tableName, makeLower=True, addCols
         return False
 
 
-def updateTableQueries(rowList,refCol,tableName):
+def updateTableQueries(rowList, refCol, tableName, addAbsentCols):
     # generate queries for this directory
     import time
     time.clock()
     # Check the format of rowList
     print("Table",tableName)
     preamble="/* Automatically generated SQL entries from "+time.strftime('%d %B %Y at %H%M%S %Z')+"  */\n"
-    queries = generateUpdateSqlQueries(rowList,refCol,tableName)
+    queries = generateUpdateSqlQueries(rowList, refCol, tableName, addAbsentCols)
     if queries is not False:
         queries_string = "\n\n".join(queries)
-        filename = outputFileNoExtBase + "-tbl_" + tableName + ".sql"
-        f=open(filename,'w')
+        fileName = outputFileNoExtBase + "-tbl_" + tableName + ".sql"
+        try:
+            f=open(fileName, 'w')
+        except PermissionError:
+            print("")
+            print("ERROR: We couldn't get write permissions to '"+os.getcwd()+"/"+fileName+"'")
+            print("Please check that the directory is writeable and that the file hasn't been locked by another user or program (like Excel),")
+            print("then try to run this again.")
         f.write(preamble)
         f.write(queries_string)
         f.close()
         print('Processed queries in ',round(time.clock(),2),'seconds')
+        print("Wrote '"+os.getcwd()+"/"+fileName+"'")
     else:
         print("Unable to generate queries.")
 
@@ -195,7 +207,9 @@ import csv
 rows = csv.reader(contents.split("\n"),delimiter=",")
 entryList = list()
 n = 0
-refCol = None
+refColumn = None
+startCol = None
+endCol = None
 for row in rows:
     # Each array element corresponds to column
     # if it's the first row, use it as the column definitions
@@ -205,30 +219,51 @@ for row in rows:
             columns = row
             firstRow = False
         else:
-            if refCol is None:
-                refColNum = None
+            if refColumn is None:
+                refColumnNum = None
                 ask = ""
                 for k,column in enumerate(columns):
                     if column:
                        ask += str(k)+": "+column+"\n"
                 ask+="\nWhich column is the reference column to match against? "
-                while refColNum is None:
+                while refColumnNum is None:
                     try:
-                        refColNumStr = input(ask)
-                        refColNum = int(refColNumStr)
-                        refCol = columns[refColNum]
-                        if columns[refColNum] == "":
+                        refColumnNumStr = input(ask)
+                        refColumnNum = int(refColumnNumStr)
+                        refColumn = columns[refColumnNum]
+                        if columns[refColumnNum] == "":
                             print("That column isn't part of this dataset. Please try again.")
                     except ValueError:
-                        refColNum = None
+                        refColumnNum = None
                         print("That wasn't a number. Please try again.")
                     except KeyboardInterrupt:
                         doExit()
+                if yn.yn("Do you only want to use a subset of columns?"):
+                    while startCol is None:
+                        startCol = qinput.input("Starting column number: ")
+                        try:
+                            startCol = int(startCol)
+                        except:
+                            print("Invalid column '"+startCol+"'")
+                            startCol = None
+                    while endCol is None:
+                        endCol = qinput.input("Ending column number: ")
+                        try:
+                            endCol = int(endCol)
+                        except:
+                            print("Invalid column '"+endCol+"'")
+                            endCol = None
             # use "columns" to create the dict
             try:
                 thisRow = {}
                 # Each row is a list object as per the CSV library.
                 for entry in row:
+                    if startCol is not None:
+                        colNum = i
+                        if colNum < startCol:
+                            continue
+                        if colNum > endCol:
+                            continue
                     column = columns[i]
                     if column != "":
                         thisRow[column] = entry
@@ -237,9 +272,9 @@ for row in rows:
             except IndexError:
                 # Not enough columns!
                 print("The number of columns doesn't match the number of items per row.")
-                print("(We have",len(columns),"columns and",len(entries),"items per row)")
-                print(entries)
+                print("(We have",len(columns),"columns and",len(entryList[0]),"items per row)")
+                print(entryList)
                 doExit()
     n+=1
-addCols = yn.yn("Do you want to add columns that don't already exist in the database?")
-updateTableQueries(entryList,refCol,table, true, addCols)
+addColumns = yn.yn("Do you want to add columns that don't already exist in the database?")
+updateTableQueries(entryList, refColumn, table, addColumns)

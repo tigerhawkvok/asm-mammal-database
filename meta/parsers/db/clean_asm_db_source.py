@@ -1,8 +1,24 @@
-import time, os, glob, sys, qinput, string, yn
+import time, os, glob, sys, qinput, string, yn, re
 
-defaultFile = "../../MasterTax_MamPhy-v1.0_Sept2015.csv"
+defaultFile = "../../MDD_taxonomy_fullList_cleanRelease_15June2017.csv"
 outputFile = "../../asm_predatabase_clean.csv"
 exitScriptPrompt = "Press Control-c to exit."
+
+
+keepCase = [
+    "notes",
+    "citation",
+    "IfNew_valid_SciName",
+    "IfNew_described_SciName",
+    "IfNew_evidenceCitation",
+    "IfNew_evidenceAuthors",
+    "IfNew_evidenceLink",
+    "IfNew_nameCitation",
+    "IfNew_nameAuthors",
+    "IfNew_nameLink",
+    "IfTransfer_evidenceCitation"
+]
+
 
 def doExit():
     import os,sys
@@ -10,23 +26,67 @@ def doExit():
     os._exit(0)
     sys.exit(0)
 
-def cleanGenus(data):
+def cleanGenus(data, col):
     # Split spaces, throw out first, throw out numbers, trim and throw
     # out comma if exists at end
-    return formatData(data)
+    data = formatData(data, col)
+    if data.find(" ") > 0:
+        return data.split(" ")[0]
+    return data
 
 
-def cleanSpecies(data):
+def cleanSpecies(data, col):
     #throw out numbers, parens
-    return formatData(data)
+    data = formatData(data, col)
+    if data.find(" ") > 0:
+        return data.split(" ")[1]
+    return data
+
+def cleanSubspecies(data, col):
+    data = formatData(data, col)
+    if data.find(" ") > 0:
+        if len(data.split(" ")) is 3:
+            return data.split(" ")[2]
+        return ""
+    return data
 
 
-def cleanSciname(data):
+def cleanSciname(data, col):
     return data.strip().replace("_", " ")
 
-def formatData(data):
+def formatData(data, col):
     try:
-        return data.lower().strip()
+        # Basic formatting
+        data = data.strip().replace("_", " ")
+        if not col in keepCase:
+            data = data.lower()
+        # Boolean values
+        truthy = [
+            "true",
+            "1",
+            "yes",
+            "on",
+            "+"
+        ]
+        falsey = [
+            "false",
+            "0",
+            "no",
+            "off",
+            "-"
+        ]
+        if data in truthy or data in falsey:
+            if data in truthy:
+                data = "true"
+            elif data in falsey:
+                data = "false"
+        # Are you an integer?
+        try:
+            idata = int(data)
+            data = idata
+        except ValueError:
+            pass
+        return data
     except:
         return data
 
@@ -50,23 +110,26 @@ def cleanCSV(path = defaultFile, newPath = outputFile):
     cleanRows = csv.writer(newFile,delimiter=",",quoting=csv.QUOTE_ALL)
     colDefs = {}
     colClean = {
-        "genus": lambda x: cleanGenus(x),
-        "species": lambda x: cleanSpecies(x),
-        "canonical_sciname": lambda x: cleanSciname(x),
+        "genus": lambda x,y: cleanGenus(x,y),
+        "species": lambda x,y: cleanSpecies(x,y),
+        "subspecies": lambda x,y: cleanSubspecies(x,y),
+        "canonical_sciname": lambda x,y: cleanSciname(x,y),
+        "IfTransfer_oldSciName": lambda x,y: cleanSciname(x,y),
     }
-    for i,row in enumerate(rows):
+    for i, row in enumerate(rows):
         if i is 0:
-            for j,column in enumerate(row):
-                colDefs[j] = column
+            for j, column in enumerate(row):
+                cleanColumn = re.sub(r"[^\w_]", "", column, 0, re.IGNORECASE)
+                colDefs[j] = cleanColumn
         else:
             # All other loops
             for j, column in enumerate(row):
                 colName = colDefs[j]
                 try:
-                    row[j] = colClean[colName](column)
+                    row[j] = colClean[colName](column, colName)
                 except KeyError:
                     # Doesn't need cleaning
-                    row[j] = formatData(column)
+                    row[j] = formatData(column, colName)
         # Append the cleaned row back on
         cleanRows.writerow(row)
         if i%50 is 0 and i > 0:

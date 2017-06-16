@@ -46,7 +46,8 @@ def generateUpdateSqlQueries(rowList, refCol, tableName, addCols=True, makeLower
             s=""
             set_statement = ""
             try:
-                for col,val in row.items():
+                where = ""
+                for col,val in row.items():                    
                     if first is True and addCols:
                         #alter_query = "IF COL_LENGTH(`"+tableName+"`,`"+col+"`) IS NULL"
                         #alter_query += "\n\tBEGIN"
@@ -226,18 +227,30 @@ for row in rows:
                     if column:
                        ask += str(k)+": "+column+"\n"
                 ask+="\nWhich column is the reference column to match against? "
+                skipRefCol = [
+                    "none",
+                    "null",
+                    "skip",
+                    "",
+                    "-1"
+                ]
                 while refColumnNum is None:
-                    try:
-                        refColumnNumStr = input(ask)
-                        refColumnNum = int(refColumnNumStr)
-                        refColumn = columns[refColumnNum]
-                        if columns[refColumnNum] == "":
-                            print("That column isn't part of this dataset. Please try again.")
-                    except ValueError:
-                        refColumnNum = None
-                        print("That wasn't a number. Please try again.")
-                    except KeyboardInterrupt:
-                        doExit()
+                    refColumnNumStr = input(ask)
+                    if not refColumnNumStr.lower() in skipRefCol:
+                        try:
+                            refColumnNum = int(refColumnNumStr)
+                            refColumn = columns[refColumnNum]
+                            if columns[refColumnNum] == "":
+                                print("That column isn't part of this dataset. Please try again.")
+                        except ValueError:
+                            refColumnNum = None
+                            print("That wasn't a number. Please try again.")
+                        except KeyboardInterrupt:
+                            doExit()
+                    else:
+                        print("OK, we'll rely on unique column values instead")
+                        refColumnNum = "SKIP_REF_COL"
+                        refColumn = "SKIP_REF_COL"
                 if yn.yn("Do you only want to use a subset of columns?"):
                     while startCol is None:
                         startCol = qinput.input("Starting column number: ")
@@ -276,5 +289,7 @@ for row in rows:
                 print(entryList)
                 doExit()
     n+=1
+if refColumn is "SKIP_REF_COL":
+    refColumn = None
 addColumns = yn.yn("Do you want to add columns that don't already exist in the database?")
 updateTableQueries(entryList, refColumn, table, addColumns)

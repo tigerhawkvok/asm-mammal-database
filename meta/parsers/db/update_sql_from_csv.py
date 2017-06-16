@@ -4,7 +4,11 @@
 
 ## Helper functions
 
-import sys, os, glob, string
+import sys, os, glob, string, qinput
+
+defaultFile = "../../asm_predatabase_clean.csv"
+outputFileNoExtBase = "../../asm_update_sql"
+default_table = "mammal_diversity_database"
 
 def doExit():
     import os,sys
@@ -13,14 +17,6 @@ def doExit():
     sys.exit(0)
 
 def cleanKVPairs(col,val):
-    # Specific hacks for the current use case
-    if col == "alignment":
-        if val == "negative": return -1
-        elif val == "positive": return 1
-        else: return 0
-    if col == "strength":
-        if val == "strong": return 1
-        else: return 0
     # Format the value for SQL
     if val.lower() == "true" or val.lower() == "false":
         # Keep bools as bools
@@ -34,9 +30,9 @@ def cleanKVPairs(col,val):
         # But enclosed as an SQL string
         val = val.replace("'","&#39;")
         return "'"+val+"'"
-        
 
-def generateUpdateSqlQueries(rowList,refCol,tableName,makeLower=True):
+
+def generateUpdateSqlQueries(rowList, refCol, tableName, makeLower=True, addCols=True):
     # Generate update SQL queries
     i=0
     j=0
@@ -66,7 +62,8 @@ def generateUpdateSqlQueries(rowList,refCol,tableName,makeLower=True):
                 # Trim the last comma
                 s = s[:-1]
                 set_statement = s
-                s+=where
+                s += where
+                s += "ON DUPLICATE KEY UPDATE IGNORE " + set_statement
             except AttributeError:
                 print("ERROR: Row is not a dictionary.")
                 print("Each row should be a dictionary of the form {column:value}.")
@@ -98,7 +95,7 @@ def updateTableQueries(rowList,refCol,tableName):
     queries = generateUpdateSqlQueries(rowList,refCol,tableName)
     if queries is not False:
         queries_string = "\n\n".join(queries)
-        filename = "sql_update_queries_"+tableName+".sql"
+        filename = outputFileNoExtBase + "-tbl_" + tableName + ".sql"
         f=open(filename,'w')
         f.write(preamble)
         f.write(queries_string)
@@ -108,27 +105,37 @@ def updateTableQueries(rowList,refCol,tableName):
         print("Unable to generate queries.")
 
 ## Primary Script at runtime
-        
+
 # Take in input CSV file and write out an SQL file to update a database.
 path = None
 while path is None:
     try:
-        path = input("Enter the path to the CSV file to be used: ")
+        path = qinput.input("Enter the path to the CSV file to be used: (default:"+defaultFile+")")
         # Check for file existence and filetype
-        exit_script_prompt = "If you want to exit, press Control-c."
+        exitScriptPrompt = "If you want to exit, press Control-c."
+        if path == "":
+            path = defaultFile
+            tmp = path.split(".")
+            ext = tmp.pop().lower()
+        if len(ext) is not 3:
+            # no extension, try adding "csv" to it
+            # Edge cases for alternate extension types don't matter,
+            # they'll fail the next check, since eg test.xlsx.csv
+            # won't exist
+            path += ".csv"
+        elif ext != "csv":
+            print("You did not point to a valid CSV file.",exitScriptPrompt)
+            print("You provided",path)
+            path = None
+            continue
         if not os.path.isfile(path):
             path = None
-            print("Invalid file.",exit_script_prompt)
-        else:
-            tmp = path.split(".")
-            if tmp.pop().lower() != "csv":
-                path = None
-                print("You did not point to a valid CSV file.",exit_script_prompt)
+            print("Invalid file.",exitScriptPrompt)
     except KeyboardInterrupt:
         # Exit the script
         doExit()
-default_table = 'master_emotion_list'
-table = input("Which table should be written to? (default: `"+default_table+"`): ")
+# Tables ...
+table = qinput.input("Which table should be written to? (default: `"+default_table+"`): ")
 if not table:
     table = default_table
 import yn
@@ -234,4 +241,5 @@ for row in rows:
                 print(entries)
                 doExit()
     n+=1
-updateTableQueries(entryList,refCol,table)
+addCols = yn.yn("Do you want to add columns that don't already exist in the database?")
+updateTableQueries(entryList,refCol,table, true, addCols)

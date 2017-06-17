@@ -10,6 +10,9 @@ defaultFile = "../../asm_predatabase_clean.csv"
 outputFileNoExtBase = "../../asm_update_sql"
 default_table = "mammal_diversity_database"
 
+dropDupRefCol = "IfTransfer_oldSciName"
+dropDupDbCol = "canonical_sciname"
+
 def doExit():
     import os,sys
     print("\n")
@@ -28,6 +31,8 @@ def cleanKVPairs(col,val):
     except ValueError:
         # Give back the original if no matches
         # But enclosed as an SQL string
+        if val == "" or val.lower() == "NA":
+            return "NULL"
         val = val.replace("'","&#39;")
         return "'"+val+"'"
 
@@ -47,7 +52,7 @@ def generateUpdateSqlQueries(rowList, refCol, tableName, addCols=True, makeLower
             set_statement = ""
             try:
                 where = ""
-                for col,val in row.items():                    
+                for col,val in row.items():
                     if first is True and addCols:
                         #alter_query = "IF COL_LENGTH(`"+tableName+"`,`"+col+"`) IS NULL"
                         #alter_query += "\n\tBEGIN"
@@ -59,6 +64,7 @@ def generateUpdateSqlQueries(rowList, refCol, tableName, addCols=True, makeLower
                     if col != refCol:
                         s+="\n\t`"+col+"`="+str(val)+","
                     else:
+                        refS = "\n\t`"+col+"`="+str(val)+","
                         where = " WHERE `"+col+"`="+str(val)
                 # Trim the last comma
                 s = s[:-1]
@@ -111,6 +117,15 @@ def updateTableQueries(rowList, refCol, tableName, addAbsentCols):
             print("then try to run this again.")
         f.write(preamble)
         f.write(queries_string)
+        if len(asmDrops) > 0:
+            # Loop over the cols to drop
+            i = 0
+            for ref in asmDrops:
+                cleanRef = ref.replace("'","&#39;")
+                query = "\n\nDELETE FROM `"+tableName+"` WHERE `"+dropDupDbCol+"`='"+cleanRef+"' LIMIT 1;"
+                f.write(query)
+                i += 1
+            print("Using reference duplicates column '"+dropDupRefCol+"', dropped "+str(i)+" rows with matching `"+dropDupDbCol+"`")
         f.close()
         print('Processed queries in ',round(time.clock(),2),'seconds')
         print("Wrote '"+os.getcwd()+"/"+fileName+"'")
@@ -118,7 +133,7 @@ def updateTableQueries(rowList, refCol, tableName, addAbsentCols):
         print("Unable to generate queries.")
 
 ## Primary Script at runtime
-
+asmDrops = list()
 # Take in input CSV file and write out an SQL file to update a database.
 path = None
 while path is None:
@@ -218,6 +233,16 @@ for row in rows:
     if n >= skip:
         if firstRow is True:
             columns = row
+            try:
+                if dropDupRefCol in columns:
+                    dropIndex = columns.index(dropDupRefCol)
+                else:
+                    dropIndex = None
+            except:
+                dropIndex = None
+            if dropDupRefCol != "" and dropDupRefCol is not None and dropIndex is None:
+                print("Warning: didn't find '"+dropDupRefCol+"' in columns")
+                print(columns)
             firstRow = False
         else:
             if refColumn is None:
@@ -267,6 +292,19 @@ for row in rows:
                             print("Invalid column '"+endCol+"'")
                             endCol = None
             # use "columns" to create the dict
+            if dropIndex is not None:
+                fetchedEntry = False
+                di = 0
+                for entry in row:
+                    if di is dropIndex:
+                        cleanEntry = entry.strip()
+                        if cleanEntry != "" and cleanEntry.lower() != "na":
+                            asmDrops.append(cleanEntry)
+                        fetchedEntry = True
+                        break
+                    di += 1
+                if fetchedEntry is False:
+                    print("Couldn't get column '"+str(dropIndex)+"' from row")
             try:
                 thisRow = {}
                 # Each row is a list object as per the CSV library.

@@ -52,7 +52,10 @@ def cleanSubspecies(data, col):
 
 
 def cleanSciname(data, col):
-    return data.strip().replace("_", " ")
+    data = data.strip().replace("_", " ")
+    if data.lower() == "NA":
+        data = ""
+    return data
 
 def formatData(data, col):
     try:
@@ -80,6 +83,8 @@ def formatData(data, col):
                 data = "true"
             elif data in falsey:
                 data = "false"
+        if data.lower() == "na":
+            data = ""
         # Are you an integer?
         try:
             idata = int(data)
@@ -125,7 +130,7 @@ def cleanCSV(path = defaultFile, newPath = outputFile):
     for i, row in enumerate(rows):
         if i is 0:
             for j, column in enumerate(row):
-                cleanColumn = re.sub(r"[^\w_]", "", column, 0, re.IGNORECASE)
+                cleanColumn = re.sub(r"[^a-z__]", "", column, 0, re.IGNORECASE)
                 colDefs[j] = cleanColumn
         else:
             # All other loops

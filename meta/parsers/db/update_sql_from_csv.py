@@ -21,6 +21,10 @@ def doExit():
 
 def cleanKVPairs(col,val):
     # Format the value for SQL
+    try:
+        val = val.strip()
+    except:
+        pass
     if val.lower() == "true" or val.lower() == "false":
         # Keep bools as bools
         return val
@@ -62,7 +66,8 @@ def generateUpdateSqlQueries(rowList, refCol, tableName, addCols=True, makeLower
                     if makeLower: val = val.lower()
                     val = cleanKVPairs(col,val)
                     if col != refCol:
-                        s+="\n\t`"+col+"`="+str(val)+","
+                        if str(val) != "NULL":
+                            s+="\n\t`"+col+"`="+str(val)+","
                     else:
                         where = ",\n\t`"+col+"`="+str(val)+" "
                         #where = " WHERE `"+col+"`="+str(val)

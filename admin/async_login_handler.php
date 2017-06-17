@@ -78,7 +78,7 @@ if (!function_exists("returnAjax")) {
         }
         header('Cache-Control: no-cache, must-revalidate');
         header('Expires: Mon, 26 Jul 1997 05:00:00 GMT');
-        header('Content-type: application/json');
+        header('Content-type: application/json; charset=utf-8');
         global $billingTokens;
         if (is_array($billingTokens)) {
             $data['billing_meta'] = $billingTokens;
@@ -89,7 +89,7 @@ if (!function_exists("returnAjax")) {
         //     }
         // } catch (Exception $e) {
         // }
-        $json = json_encode($data, JSON_FORCE_OBJECT);
+        $json = json_encode($data, JSON_FORCE_OBJECT | JSON_PARTIAL_OUTPUT_ON_ERROR | JSON_UNESCAPED_UNICODE);
         $replace_array = array("&quot;","&#34;");
         $deescaped = htmlspecialchars_decode(html_entity_decode($json));
         $dequoted = str_replace($replace_array, "\\\"", $deescaped);

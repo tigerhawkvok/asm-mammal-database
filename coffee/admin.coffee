@@ -247,6 +247,7 @@ renderAdminSearchResults = (overrideSearch, containerSelector = "#search-results
   .fail (result,status) ->
     console.error("There was an error performing the search")
     console.warn(result,error,result.statusText)
+    console.warn "#{searchParams.targetApi}?#{args}"
     error = "#{result.status}::#{result.statusText}"
     stopLoadError("Couldn't execute the search - #{error}")
 

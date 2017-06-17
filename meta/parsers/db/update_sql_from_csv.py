@@ -56,7 +56,7 @@ def generateUpdateSqlQueries(rowList, refCol, tableName, addCols=True, makeLower
                     if first is True and addCols:
                         #alter_query = "IF COL_LENGTH(`"+tableName+"`,`"+col+"`) IS NULL"
                         #alter_query += "\n\tBEGIN"
-                        alter_query = "ALTER TABLE `"+tableName+"` ADD `"+col+"` VARCHAR(MAX)" # Just in case!
+                        alter_query = "ALTER TABLE `"+tableName+"` ADD `"+col+"` VARCHAR(MAX);" # Just in case!
                         # alter_query += "\n\tEND;"
                         queryList.append(alter_query)
                     if makeLower: val = val.lower()
@@ -64,17 +64,17 @@ def generateUpdateSqlQueries(rowList, refCol, tableName, addCols=True, makeLower
                     if col != refCol:
                         s+="\n\t`"+col+"`="+str(val)+","
                     else:
-                        refS = "\n\t`"+col+"`="+str(val)+","
-                        where = " WHERE `"+col+"`="+str(val)
+                        where = ",\n\t`"+col+"`="+str(val)+" "
+                        #where = " WHERE `"+col+"`="+str(val)
                 # Trim the last comma
                 s = s[:-1]
                 set_statement = s
                 s += where
                 s += " ON DUPLICATE KEY UPDATE "
-                if not addCols:
-                    # If we skipped adding cols, let's not crap out if
-                    # a col is missing
-                    s += "IGNORE "
+                # if not addCols:
+                #     # If we skipped adding cols, let's not crap out if
+                #     # a col is missing
+                #     s += "IGNORE "
                 s += set_statement
             except AttributeError:
                 print("ERROR: Row is not a dictionary.")
@@ -117,16 +117,19 @@ def updateTableQueries(rowList, refCol, tableName, addAbsentCols):
             print("then try to run this again.")
         f.write(preamble)
         f.write(queries_string)
+        i = 0
         if len(asmDrops) > 0:
             # Loop over the cols to drop
-            i = 0
             for ref in asmDrops:
                 cleanRef = ref.replace("'","&#39;")
                 query = "\n\nDELETE FROM `"+tableName+"` WHERE `"+dropDupDbCol+"`='"+cleanRef+"' LIMIT 1;"
                 f.write(query)
                 i += 1
+            f.write("\n\n")
             print("Using reference duplicates column '"+dropDupRefCol+"', dropped "+str(i)+" rows with matching `"+dropDupDbCol+"`")
         f.close()
+        #finalSize = len(queries) - i
+        #print("Expected final size: "+str(finalSize))
         print('Processed queries in ',round(time.clock(),2),'seconds')
         print("Wrote '"+os.getcwd()+"/"+fileName+"'")
     else:

@@ -1472,7 +1472,7 @@ saveEditorEntry = function(performMode) {
   }
   saveObject["deprecated_scientific"] = depString;
   keepCase = ["notes", "taxon_credit", "image", "image_credit", "image_license", "image_caption", "species-authority-citation", "species_authority_citation", "genus-authority-citation", "genus_authority_citation", "citation"];
-  requiredNotEmpty = ["common-name", "major-type", "linnean-order", "genus-authority", "species-authority"];
+  requiredNotEmpty = ["genus", "species", "major-type", "linnean-order", "genus-authority", "species-authority"];
   if (!isNull(d$("#edit-image").val())) {
     requiredNotEmpty.push("image-credit");
     requiredNotEmpty.push("image-license");
@@ -1565,10 +1565,9 @@ saveEditorEntry = function(performMode) {
         if (/[^A-Za-z]/m.test(val) || nullTest) {
           d$("#edit-" + id).attr("error-message", error).attr("invalid", "invalid");
           escapeCompletion = true;
-          completionErrorMessage = "invalid gss";
+          completionErrorMessage = "Invalid Scientific Name";
         }
         break;
-      case "common-name":
       case "major-type":
       case "linnean-order":
       case "genus-authority":
@@ -1577,7 +1576,7 @@ saveEditorEntry = function(performMode) {
         if (isNull(val)) {
           $("#edit-" + id).attr("error-message", error).attr("invalid", "invalid");
           escapeCompletion = true;
-          completionErrorMessage = "invalid cmmlgs";
+          completionErrorMessage = "Missing Field";
         }
         break;
       default:

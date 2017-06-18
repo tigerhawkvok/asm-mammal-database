@@ -1536,7 +1536,8 @@ saveEditorEntry = (performMode = "save") ->
   # Reserved use pending
   # https://github.com/jashkenas/coffeescript/issues/3594
   requiredNotEmpty = [
-    "common-name"
+    "genus"
+    "species"
     "major-type"
     "linnean-order"
     "genus-authority"
@@ -1620,8 +1621,8 @@ saveEditorEntry = (performMode = "save") ->
           .attr("error-message",error)
           .attr("invalid","invalid")
           escapeCompletion = true
-          completionErrorMessage = "invalid gss"
-      when "common-name", "major-type", "linnean-order", "genus-authority", "species-authority"
+          completionErrorMessage = "Invalid Scientific Name"
+      when "major-type", "linnean-order", "genus-authority", "species-authority"
         # I'd love to syntactically clean this up via the empty array
         # requiredNotEmpty above, but that's pending
         # https://github.com/jashkenas/coffeescript/issues/3594
@@ -1633,7 +1634,7 @@ saveEditorEntry = (performMode = "save") ->
           .attr("error-message",error)
           .attr("invalid","invalid")
           escapeCompletion = true
-          completionErrorMessage = "invalid cmmlgs"
+          completionErrorMessage = "Missing Field"
       else
         if id in requiredNotEmpty
           selectorSample = "#edit-#{id}"

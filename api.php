@@ -1464,10 +1464,11 @@ function getTaxonIucnData($taxonBase, $ignoreFlagSave = false)
             unset($taxon["id"]);
             $saveResult = $db->updateEntry($taxon, $ref);
             $taxon["save_result"] = $saveResult;
+            $taxon["id"] = $ref["id"];
         }
         $taxon["did_update"] = $flagSave;
         $taxon["iucn"] = $iucnTaxon;
-        unset($taxon["id"]);
+        #unset($taxon["id"]);
     }
     $hasWellFormattedSpeciesCitation = preg_match('/\(? *([\w\. \[\]]+), *([0-9]{
                         4
@@ -1575,9 +1576,10 @@ if (sizeof($result["result"]) <= 5) {
                 unset($taxon["id"]);
                 $saveResult = $db->updateEntry($taxon, $ref);
                 $taxon["saveResult"] = $saveResult;
+                $taxon["id"] = $ref["id"];
             }
             $taxon["iucn"] = $iucnTaxon;
-            unset($taxon["id"]);
+            #unset($taxon["id"]);
             $result["result"][$i] = $taxon;
             continue;
         }

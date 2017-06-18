@@ -3034,7 +3034,7 @@ clearSearch = (partialReset = false) ->
   ###
   $("#result-count").text("")
   calloutHtml = """
-  <div class="bs-callout bs-callout-info center-block col-xs-12 col-sm-8 col-md-5">
+  <div class="alert alert-info center-block col-xs-12 col-sm-8 col-md-5">
     Search for a common or scientific name above to begin, eg, "Brown Bear" or "<span class="sciname">Ursus arctos</span>"
   </div>
   """

@@ -52,7 +52,7 @@ if ($show_debug === true) {
         <?php
           # Look up the taxon based on criteria
           $db = new DBHelper($default_database, $default_sql_user, $default_sql_password, $default_sql_url, $default_table, $db_cols);
-          $query = "SELECT `image`, `id` FROM `".$db->getTable()."` WHERE ";
+          $query = "SELECT `image`, `id`, `canonical_sciname` FROM `".$db->getTable()."` WHERE ";
           $where = "`id`=461";
           $query .= $where;
           $r = mysqli_query($db->getLink(), $query);
@@ -65,6 +65,9 @@ if ($show_debug === true) {
           image="<?php echo $taxonImage; ?>"
           id="featured-mammal-card"
           class="featured-mammal"
+          data-toggle="tooltip"
+          data-placement="left"
+          title="Click to visit the entry for <?php echo $taxon["canonical_sciname"]; ?>"
           data-taxon-id="<?php echo $taxonId ?>">
           <div class="card-content">
             <p>Featured Mammal</p>
@@ -188,7 +191,7 @@ if ($show_debug === true) {
           <p>Click on an entry for more information.</p>
         </div>
         <div id="result_container" class="table-responsive row">
-          <div class="bs-callout bs-callout-info center-block col-xs-12 col-sm-8 col-md-5">
+          <div class="alert alert-info center-block col-xs-12 col-sm-8 col-md-5">
             Search for a common or scientific name above to begin, eg, "Brown Bear" or "<span class="sciname">Ursus arctos</span>"
           </div>
         </div>

@@ -49,9 +49,23 @@ if ($show_debug === true) {
         ASM Mammal <span class="hidden-xs hidden-sm">Diversity</span> Database
       </h1>
       <div class="featured-container hidden-xs col-sm-3 col-md-2" id="featured-mammal-container">
-        <paper-card 
-          image="species_photos/c05bcdb170c15b42e32e5e099703341e.jpeg"
-          id="featured-mammal-card">
+        <?php
+          # Look up the taxon based on criteria
+          $db = new DBHelper($default_database, $default_sql_user, $default_sql_password, $default_sql_url, $default_table, $db_cols);
+          $query = "SELECT `image`, `id` FROM `".$db->getTable()."` WHERE ";
+          $where = "`id`=461";
+          $query .= $where;
+          $r = mysqli_query($db->getLink(), $query);
+          $taxon = mysqli_fetch_assoc($r);
+          # Get its id
+          $taxonId = $taxon["id"];
+          $taxonImage = $taxon["image"];
+            ?>
+        <paper-card
+          image="<?php echo $taxonImage; ?>"
+          id="featured-mammal-card"
+          class="featured-mammal"
+          data-taxon-id="<?php echo $taxonId ?>">
           <div class="card-content">
             <p>Featured Mammal</p>
           </div>

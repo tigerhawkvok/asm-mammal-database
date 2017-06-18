@@ -2623,6 +2623,7 @@ performSearch = function(stateArgs) {
     }
     if (result.status === true) {
       console.log("Server response:", result);
+      $(".hanging-alert.alert-danger").remove();
       formatSearchResults(result, void 0, function() {
         return checkLaggedUpdate.debounce(1000, null, null, result);
       });
@@ -3514,6 +3515,7 @@ clearSearch = function(partialReset) {
   calloutHtml = "<div class=\"alert alert-info center-block col-xs-12 col-sm-8 col-md-5\">\n  Search for a common or scientific name above to begin, eg, \"Brown Bear\" or \"<span class=\"sciname\">Ursus arctos</span>\"\n</div>";
   $("#result_container").html(calloutHtml);
   $("#result-header-container").attr("hidden", "hidden");
+  $(".hanging-alert.alert-danger").remove();
   if (partialReset === true) {
     return false;
   }
@@ -3644,7 +3646,7 @@ insertCORSWorkaround = function() {
 };
 
 showBadSearchErrorMessage = function(result) {
-  var error2, error3, filterText, i, sOrig, text;
+  var alertText, error2, error3, filterText, i, sOrig, text;
   try {
     sOrig = result.query.replace(/\+/g, " ");
   } catch (error2) {
@@ -3676,6 +3678,13 @@ showBadSearchErrorMessage = function(result) {
   } catch (error3) {
     text = "Sorry, there was a problem with your search";
   }
+  try {
+    if (text.search(/no results/) >= 0) {
+      alertText = "<code>ZERO_RESULTS</code><strong>:</strong> " + text;
+      bsAlert(alertText, "danger");
+      text = "Sorry, your search returned no results";
+    }
+  } catch (undefined) {}
   return stopLoadError(text);
 };
 

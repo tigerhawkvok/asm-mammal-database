@@ -276,6 +276,8 @@ performSearch = (stateArgs = undefined) ->
       return false
     if result.status is true
       console.log "Server response:", result
+      # Clear any pending error
+      $(".hanging-alert.alert-danger").remove()
       # May be worth moving this part to a service worker
       formatSearchResults result, undefined, ->
         checkLaggedUpdate.debounce 1000, null, null, result
@@ -1166,6 +1168,8 @@ clearSearch = (partialReset = false) ->
   """
   $("#result_container").html(calloutHtml)
   $("#result-header-container").attr "hidden", "hidden"
+  # Clear any pending error
+  $(".hanging-alert.alert-danger").remove()
   if partialReset is true then return false
   # Do a history breakpoint
   setHistory()
@@ -1305,6 +1309,13 @@ showBadSearchErrorMessage = (result) ->
       text = result.human_error
   catch
     text = "Sorry, there was a problem with your search"
+  try
+    if text.search(/no results/) >= 0
+      alertText = """
+      <code>ZERO_RESULTS</code><strong>:</strong> #{text}
+      """
+      bsAlert alertText, "danger"
+      text = "Sorry, your search returned no results"
   stopLoadError(text)
 
 

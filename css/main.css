@@ -7704,6 +7704,30 @@ figure .picture-label.extended-attribution {
 figure figcaption {
   color: #777777;
 }
+marked-element .markdown-html h1,
+marked-element .markdown-html .h1 {
+  font-size: 24px;
+}
+marked-element .markdown-html h2,
+marked-element .markdown-html .h2 {
+  font-size: 20px;
+}
+marked-element .markdown-html h3,
+marked-element .markdown-html .h3 {
+  font-size: 16px;
+}
+marked-element .markdown-html h4,
+marked-element .markdown-html .h4 {
+  font-size: 12px;
+}
+marked-element .markdown-html h5,
+marked-element .markdown-html .h5 {
+  font-size: 9.33333333px;
+}
+marked-element .markdown-html h6,
+marked-element .markdown-html .h6 {
+  font-size: 8px;
+}
 .has-authority {
   font-weight: bold;
   cursor: pointer;

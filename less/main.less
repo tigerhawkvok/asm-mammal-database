@@ -1040,6 +1040,31 @@ figure {
     }
 }
 
+marked-element {
+    .markdown-html {
+        @md-header-scale: 24 / 36;
+
+        h1, .h1 {
+            font-size: @font-size-h1 * @md-header-scale;
+        }
+        h2, .h2 {
+            font-size: @font-size-h2 * @md-header-scale;
+        }
+        h3, .h3 {
+            font-size: @font-size-h3 * @md-header-scale;
+        }
+        h4, .h4 {
+            font-size: @font-size-h4 * @md-header-scale;
+        }
+        h5, .h5 {
+            font-size: @font-size-h5 * @md-header-scale;
+        }
+        h6, .h6 {
+            font-size: @font-size-h6 * @md-header-scale;
+        }
+
+    }
+}
 
 // taxonomy
 

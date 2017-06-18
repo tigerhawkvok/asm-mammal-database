@@ -6954,6 +6954,10 @@ main #images-block div.no-image {
   -ms-flex-align: center;
       align-items: center;
 }
+.featured-container paper-card {
+  margin-bottom: 1rem;
+  margin-right: 2rem;
+}
 #search_form {
   position: relative;
 }

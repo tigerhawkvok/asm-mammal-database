@@ -44,19 +44,23 @@ if ($show_debug === true) {
     require_once dirname(__FILE__)."/modular/bodyFrame.php";
     echo $bodyOpen;
     ?>
-      <h1 id="title" class="col-xs-12">
+      <h1 id="title" class="col-xs-12 col-sm-9 col-md-10">
         <span class="hidden-xs"><a href="<?php echo $qualDomain; ?>" class="newwindow"><img src="assets/logo.svg" alt="ASM logo" id="title-logo"/></a></span>
         ASM Mammal <span class="hidden-xs hidden-sm">Diversity</span> Database
       </h1>
+      <div class="featured-container hidden-xs col-sm-3 col-md-2" id="featured-mammal-container">
+        <paper-card 
+          image="species_photos/c05bcdb170c15b42e32e5e099703341e.jpeg"
+          id="featured-mammal-card">
+          <div class="card-content">
+            <p>Featured Mammal</p>
+          </div>
+        </paper-card>
+      </div>
       <form id="search_form" onsubmit="event.preventDefault()" class="col-xs-12">
         <div class="row">
-          <paper-input
-            label="Search"
-            id="search"
-            class="col-xs-7 col-sm-9"
-            name="search"
-            placeholder="Search term, eg, Ursus arctos"
-            autofocus floatingLabel></paper-input>
+          <paper-input label="Search" id="search" class="col-xs-7
+            col-sm-9" name="search" placeholder="Search term, eg, Ursus arctos" autofocus floatingLabel></paper-input>
           <div class="col-xs-5 col-sm-3 search-control-container">
             <paper-fab id="do-search" icon="search" raisedButton class="asm-blue"></paper-fab>
             <paper-fab id="do-search-all" icon="list" raisedButton class="asm-blue hidden-xs" data-toggle="tooltip" title="Show all results" data-placement="bottom"></paper-fab>

@@ -542,9 +542,9 @@ class ImageFunctions
         $this->img = $imgUrl;
     }
 
-    private static function notfound()
+    private static function notfound($image)
     {
-        throw new Exception('Not Found Exception');
+        throw new Exception('Not Found Exception for file "'.$image.'"');
     }
     public function getRelPath($file = false)
     {
@@ -786,6 +786,9 @@ class ImageFunctions
         case 'jpg':     # jpg
             $src = imagecreatefromjpeg($image) or self::notfound();
             break;
+        case 'jpeg':     # jpg
+            $src = imagecreatefromjpeg($image) or self::notfound();
+            break;
         case 'png':     # png
             $src = imagecreatefrompng($image) or self::notfound();
             break;
@@ -903,22 +906,25 @@ class ImageFunctions
         switch ($ext) {
         case "jpeg":
         case 'jpg':     # jpg
-            $src = imagecreatefromjpeg($image) or self::notfound();
+            $src = imagecreatefromjpeg($image) or self::notfound($image);
+            break;
+        case 'jpeg':     # jpg
+            $src = imagecreatefromjpeg($image) or self::notfound($image);
             break;
         case 'png':     # png
-            $src = imagecreatefrompng($image) or self::notfound();
+            $src = imagecreatefrompng($image) or self::notfound($image);
             break;
         case 'gif':     # gif
-            $src = imagecreatefromgif($image) or self::notfound();
+            $src = imagecreatefromgif($image) or self::notfound($image);
             break;
         case 'bmp':     # bmp
-            $src = imagecreatefromwbmp($image) or self::notfound();
+            $src = imagecreatefromwbmp($image) or self::notfound($image);
             break;
         case 'webp':     # webp
-            $src = imagecreatefromwebp($image) or self::notfound();
+            $src = imagecreatefromwebp($image) or self::notfound($image);
             break;
         default:
-            self::notfound();
+            self::notfound($image);
         }
 
         # set up canvas

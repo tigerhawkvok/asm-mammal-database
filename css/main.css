@@ -6957,6 +6957,7 @@ main #images-block div.no-image {
 .featured-container paper-card {
   margin-bottom: 1rem;
   margin-right: 2rem;
+  cursor: pointer;
 }
 #search_form {
   position: relative;

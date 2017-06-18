@@ -1912,7 +1912,7 @@ $(function() {
   var error1, isAdminActive, thisUrl;
   try {
     thisUrl = uri.o.attr("source");
-    isAdminActive = /^https?:\/\/(?:.*?\/)+(admin-.*\.(?:php|html)|admin\/)(?:\?(?:&?[\w\-_]+=[\w+\-_%]+)+)?(?:\#[\w\+%]+)?$/im.test(thisUrl);
+    isAdminActive = /^https?:\/\/(?:.*?\/)+(admin-.*\.(?:php|html)|admin\/)(?:\?(?:&?[\w\-_]+=[\w+\-_%]+)+)?(?:\#[\w\+%\=]+)?$/im.test(thisUrl);
   } catch (error1) {
     isAdminActive = true;
   }

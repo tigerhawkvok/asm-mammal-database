@@ -1941,7 +1941,7 @@ adminPreloadSearch = ->
 $ ->
   try
     thisUrl = uri.o.attr("source")
-    isAdminActive = /^https?:\/\/(?:.*?\/)+(admin-.*\.(?:php|html)|admin\/)(?:\?(?:&?[\w\-_]+=[\w+\-_%]+)+)?(?:\#[\w\+%]+)?$/im.test thisUrl
+    isAdminActive = /^https?:\/\/(?:.*?\/)+(admin-.*\.(?:php|html)|admin\/)(?:\?(?:&?[\w\-_]+=[\w+\-_%]+)+)?(?:\#[\w\+%\=]+)?$/im.test thisUrl
   catch
     # We validate everything anyway, so run speculatively
     isAdminActive = true

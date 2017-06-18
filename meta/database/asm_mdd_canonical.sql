@@ -54,8 +54,8 @@ CREATE TABLE `mammal_diversity_database` (
   `entry` longtext,
   `common_name_source` varchar(255) DEFAULT NULL,
   `image_caption` text,
-  `species_authority_citation` varchar(512) DEFAULT NULL,
-  `genus_authority_citation` varchar(512) DEFAULT NULL,
+  `species_authority_citation` varchar(255) DEFAULT NULL,
+  `genus_authority_citation` varchar(255) DEFAULT NULL,
   `simple_linnean_group_alt` varchar(63) DEFAULT NULL,
   `linnean_subfamily` varchar(127) DEFAULT NULL,
   `linnean_tribe` varchar(127) DEFAULT NULL,
@@ -88,4 +88,4 @@ UNLOCK TABLES;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2017-06-17 19:15:35
+-- Dump completed on 2017-06-17 19:47:58

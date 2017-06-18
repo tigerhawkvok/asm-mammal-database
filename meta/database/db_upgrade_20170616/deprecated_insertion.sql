@@ -1,4 +1,4 @@
-﻿UPDATE `mammal_diversity_database` SET `deprecated_scientific`='{"Microtus evoronensis":":$2016"}' WHERE `canonical_sciname`='Alexandromys evoronensis';
+UPDATE `mammal_diversity_database` SET `deprecated_scientific`='{"Microtus evoronensis":":$2016"}' WHERE `canonical_sciname`='Alexandromys evoronensis';
 UPDATE `mammal_diversity_database` SET `deprecated_scientific`='{"Microtus fortis":":$2016"}' WHERE `canonical_sciname`='Alexandromys fortis';
 UPDATE `mammal_diversity_database` SET `deprecated_scientific`='{"Microtus gromovi":":$2016"}' WHERE `canonical_sciname`='Alexandromys gromovi';
 UPDATE `mammal_diversity_database` SET `deprecated_scientific`='{"Microtus kikuchii":":$2016"}' WHERE `canonical_sciname`='Alexandromys kikuchii';

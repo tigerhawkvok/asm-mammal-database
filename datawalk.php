@@ -42,6 +42,7 @@ try {
     $generaWalked = 0;
     $writeData = array();
     $statementsSuccessful = 0;
+    $authorityMatcher = '/^\(? *(([\'"]?) *(?:(\b|[\xC0-\x{17F}])[a-z\xC0-\x{17F}\x{2019} \?.[\]-]+(?:,|,? *&|,? *&amp;|,? *&amp;amp;| *&([a-z]+|#[0-9]+);)? *)+ *\g{2}) *, *([0-9]{4}) *\)?$/uim';
     while ($row = mysqli_fetch_row($r)) {
         # Find oldest citation among unformatted (all) and formatted
         # genera
@@ -64,15 +65,15 @@ try {
                     $sYear = $gYear;
                 }
                 $authority = preg_replace('%(</|<|&lt;|&lt;/).*?(>|&gt;)%im', '', $genusRow["species_authority"]);
-                $authority = preg_replace('/^\(? *(([\'"]?) *(?:\b[a-z\xC0-\x{17F}.[\]-]+(?:,| *&| *&amp;| *&amp;amp;| *&([a-z]|#[0-9])+;)? *)+ *\g{2}) *, *([0-9]{4}) *\)?$/uim', '${1}', $authority);
+                $authority = preg_replace($authorityMatcher, '${1}', $authority);
                 $authority = htmlspecialchars_decode($authority);
             }
             if (empty($gYear) || empty($sYear)) {
                 # Parse out the string
                 $authority = preg_replace('%(</|<|&lt;|&lt;/).*?(>|&gt;)%im', '', $genusRow["species_authority"]);
-                $authority = preg_replace('/^\(? *(([\'"]?) *(?:\b[a-z\xC0-\x{17F}.[\]-]+(?:,| *&| *&amp;| *&amp;amp;| *&([a-z]|#[0-9])+;)? *)+ *\g{2}) *, *([0-9]{4}) *\)?$/uim', '${1}', $authority);
+                $authority = preg_replace($authorityMatcher, '${1}', $authority);
                 $authority = htmlspecialchars_decode($authority);
-                $tYear = preg_replace('/^\(? *(([\'"]?) *(?:\b[a-z\xC0-\x{17F}.[\]-]+(?:,| *&| *&amp;| *&amp;amp;| *&([a-z]|#[0-9])+;)? *)+ *\g{2}) *, *([0-9]{4}) *\)?$/uim', '${4}', $genusRow["species_authority"]);
+                $tYear = preg_replace($authorityMatcher, '${4}', $genusRow["species_authority"]);
                 $sYear = $tYear;
                 if (empty($gYear)) {
                     $gYear = $tYear;
@@ -87,7 +88,7 @@ try {
             # we make sure it has priority.
             if (!empty($genusRow["genus_authority"])) {
                 $authority = preg_replace('%(</|<|&lt;|&lt;/).*?(>|&gt;)%im', '', $genusRow["genus_authority"]);
-                $authority = preg_replace('/^\(? *(([\'"]?) *(?:\b[a-z\xC0-\x{17F}.[\]-]+(?:,| *&| *&amp;| *&amp;amp;| *&([a-z]|#[0-9])+;)? *)+ *\g{2}) *, *([0-9]{4}) *\)?$/uim', '${1}', $authority);
+                $authority = preg_replace($authorityMatcher, '${1}', $authority);
                 $authority = htmlspecialchars_decode($authority);
                 if (empty($authority)) {
                     $authority = $genusRow["genus_authority"];

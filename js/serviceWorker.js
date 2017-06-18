@@ -2,7 +2,7 @@
 /*
  * Core helpers/imports for web workers
  */
-var _asm, authorityTest, byteCount, commalessTest, createCSVFile, createHtmlFile, dateMonthToString, deEscape, decode64, delay, downloadCSVFile, encode64, generateCSVFromResults, getLocation, goTo, isArray, isBlank, isBool, isEmpty, isJson, isNull, isNumber, jsonTo64, locationData, markdown, openLink, openTab, post64, prepURI, progressStepCount, randomInt, randomString, renderDataArray, roundNumber, roundNumberSigfig, smartUpperCasing, toFloat, toInt, toObject, uri, validateAWebTaxon, window,
+var _asm, authorityMatch, authorityTest, byteCount, commalessTest, createCSVFile, createHtmlFile, dateMonthToString, deEscape, decode64, delay, downloadCSVFile, encode64, generateCSVFromResults, getLocation, goTo, isArray, isBlank, isBool, isEmpty, isJson, isNull, isNumber, jsonTo64, locationData, markdown, openLink, openTab, post64, prepURI, progressStepCount, randomInt, randomString, renderDataArray, roundNumber, roundNumberSigfig, smartUpperCasing, toFloat, toInt, toObject, uri, validateAWebTaxon, window, yearMatch,
   indexOf = [].indexOf || function(item) { for (var i = 0, l = this.length; i < l; i++) { if (i in this && this[i] === item) return i; } return -1; },
   modulo = function(a, b) { return (+a % (b = +b) + b) % b; };
 
@@ -882,7 +882,11 @@ validateAWebTaxon = function(taxonObj, callback) {
  * Service worker!
  */
 
-authorityTest = /^\(? *((['"])? *([\w\u00C0-\u017F\. \-\&;\[\]]+(,|&|&amp;|&amp;amp;|&#[\w0-9]+;)?)+ *\2) *, *([0-9]{4}) *\)?/img;
+authorityTest = /^\(? *((['"]?) *(?:(?:\b|[\u00C0-\u017F])[a-z\u00C0-\u017F\u2019 \.\-\[\]\?]+(?:,|,? *&|,? *&amp;| *&amp;amp;| *&(?:[a-z]+|#[0-9]+);)? *)+ *\2) *, *([0-9]{4}) *\)?/img;
+
+yearMatch = "$3";
+
+authorityMatch = "$1";
 
 commalessTest = /^(\(?)(.*?[^,]) ([0-9]{4})(\)?)$/img;
 
@@ -1154,8 +1158,8 @@ createHtmlFile = function(result, htmlBody) {
                 row.species_authority = row.species_authority.replace(commalessTest, "$1$2, $3$4");
               }
               if (authorityTest.test(row.species_authority)) {
-                year = row.species_authority.replace(authorityTest, "$5");
-                row.species_authority = row.species_authority.replace(authorityTest, "$1");
+                year = row.species_authority.replace(authorityTest, yearMatch);
+                row.species_authority = row.species_authority.replace(authorityTest, authorityMatch);
                 authorityYears[year] = year;
                 row.authority_year = authorityYears;
               } else {
@@ -1354,8 +1358,8 @@ createCSVFile = function(result) {
                       row.species_authority = row.species_authority.replace(commalessTest, "$1$2, $3$4");
                     }
                     if (authorityTest.test(row.species_authority)) {
-                      year = row.species_authority.replace(authorityTest, "$5");
-                      row.species_authority = row.species_authority.replace(authorityTest, "$1");
+                      year = row.species_authority.replace(authorityTest, yearMatch);
+                      row.species_authority = row.species_authority.replace(authorityTest, authorityMatch);
                       authorityYears[year] = year;
                       row.authority_year = authorityYears;
                     } else {

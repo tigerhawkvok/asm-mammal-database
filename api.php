@@ -82,6 +82,16 @@ if (!function_exists('elapsed')) {
     }
 }
 
+function utf8ize($d) {
+    if (is_array($d)) {
+        foreach ($d as $k => $v) {
+            $d[$k] = utf8ize($v);
+        }
+    } else if (is_string ($d)) {
+        return utf8_encode($d);
+    }
+    return $d;
+}
 
 if (!function_exists("returnAjax")) {
     function returnAjax($data)
@@ -95,11 +105,16 @@ if (!function_exists("returnAjax")) {
         if (!is_array($data)) {
             $data=array($data);
         }
+        $data = utf8ize($data);
         $data["execution_time"] = elapsed();
         header('Cache-Control: no-cache, must-revalidate');
         header('Expires: Mon, 26 Jul 1997 05:00:00 GMT');
-        header('Content-type: application/json');
-        $json = json_encode($data, JSON_FORCE_OBJECT);
+        header('Content-type: application/json; charset=utf-8');
+        $json = json_encode($data, JSON_FORCE_OBJECT | JSON_PARTIAL_OUTPUT_ON_ERROR | JSON_UNESCAPED_UNICODE);
+        if ($json === false) {
+            $json = json_last_error();
+        }
+        //print_r(json_last_error());
         $replace_array = array("&quot;","&#34;");
         print str_replace($replace_array, "\\\"", $json);
         exit();
@@ -903,7 +918,7 @@ function handleParamSearch($filter_params, $loose = false, $boolean_type = "AND"
  * The actual main search loop
  *
  *********************************************************/
-
+ini_set('memory_limit', '512M');
 function doSearch($overrideSearch = null, $enforceGlobalSearch = null)
 {
     global $search, $flag_fuzzy, $loose, $limit, $order_by, $params, $boolean_type, $filter_params, $db, $method;
@@ -1375,6 +1390,7 @@ function doSearch($overrideSearch = null, $enforceGlobalSearch = null)
             )
         );
     }
+    return false;
 }
 
 
@@ -1448,10 +1464,11 @@ function getTaxonIucnData($taxonBase, $ignoreFlagSave = false)
             unset($taxon["id"]);
             $saveResult = $db->updateEntry($taxon, $ref);
             $taxon["save_result"] = $saveResult;
+            $taxon["id"] = $ref["id"];
         }
         $taxon["did_update"] = $flagSave;
         $taxon["iucn"] = $iucnTaxon;
-        unset($taxon["id"]);
+        #unset($taxon["id"]);
     }
     $hasWellFormattedSpeciesCitation = preg_match('/\(? *([\w\. \[\]]+), *([0-9]{
                         4
@@ -1559,9 +1576,10 @@ if (sizeof($result["result"]) <= 5) {
                 unset($taxon["id"]);
                 $saveResult = $db->updateEntry($taxon, $ref);
                 $taxon["saveResult"] = $saveResult;
+                $taxon["id"] = $ref["id"];
             }
             $taxon["iucn"] = $iucnTaxon;
-            unset($taxon["id"]);
+            #unset($taxon["id"]);
             $result["result"][$i] = $taxon;
             continue;
         }
@@ -1664,8 +1682,10 @@ $result = getDarwinCore($result);
 if (toBool($_REQUEST["dwc_only"])) {
     $result["result"] = $dwcTotal;
 }
-
 # $as_include isn't specified, so if it is, it's from a parent file
 if ($as_include !== true) {
+    if (empty($result)) {
+        $result = false;
+    }
     returnAjax($result);
 }

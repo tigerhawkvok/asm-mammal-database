@@ -247,6 +247,7 @@ renderAdminSearchResults = (overrideSearch, containerSelector = "#search-results
   .fail (result,status) ->
     console.error("There was an error performing the search")
     console.warn(result,error,result.statusText)
+    console.warn "#{searchParams.targetApi}?#{args}"
     error = "#{result.status}::#{result.statusText}"
     stopLoadError("Couldn't execute the search - #{error}")
 
@@ -1137,7 +1138,7 @@ lookupEditorSpecies = (taxon = undefined) ->
           # Check if the authority is in full format, eg, "(Linnaeus, 1758)"
           #unless isNull d.match /\(? *([\w\. \[\]]+), *([0-9]{4}) *\)?/g
           if /[0-9]{4}/im.test d
-            unformattedAuthorityRe = /^\(? *((['"]?) *(?:\b[a-z\u00C0-\u017F\.\-\[\]]+(?:,| *&| *&amp;| *&amp;amp;| *&([a-z]|#[0-9])+;)? *)+ *\2) *, *([0-9]{4}) *\)?$/img
+            unformattedAuthorityRe = /^\(? *((['"]?) *(?:(?:\b|[\u00C0-\u017F])[a-z\u00C0-\u017F\u2019 \.\-\[\]\?]+(?:,|,? *&|,? *&amp;| *&amp;amp;| *&(?:[a-z]+|#[0-9]+);)? *)+ *\2) *, *([0-9]{4}) *\)?/img
             unformattedAuthorityReOrig = /^\(? *((['"])? *([\w\u00C0-\u017F\. \-\&;\[\]]+(,|&|&amp;|&amp;amp;|&#[\w0-9]+;)?)+ *\2) *, *([0-9]{4}) *\)?/im
             if unformattedAuthorityRe.test d
               hasParens = d.search(/\(/) >= 0 and d.search(/\)/) >= 0
@@ -1536,7 +1537,8 @@ saveEditorEntry = (performMode = "save") ->
   # Reserved use pending
   # https://github.com/jashkenas/coffeescript/issues/3594
   requiredNotEmpty = [
-    "common-name"
+    "genus"
+    "species"
     "major-type"
     "linnean-order"
     "genus-authority"
@@ -1620,8 +1622,8 @@ saveEditorEntry = (performMode = "save") ->
           .attr("error-message",error)
           .attr("invalid","invalid")
           escapeCompletion = true
-          completionErrorMessage = "invalid gss"
-      when "common-name", "major-type", "linnean-order", "genus-authority", "species-authority"
+          completionErrorMessage = "Invalid Scientific Name"
+      when "major-type", "linnean-order", "genus-authority", "species-authority"
         # I'd love to syntactically clean this up via the empty array
         # requiredNotEmpty above, but that's pending
         # https://github.com/jashkenas/coffeescript/issues/3594
@@ -1633,7 +1635,7 @@ saveEditorEntry = (performMode = "save") ->
           .attr("error-message",error)
           .attr("invalid","invalid")
           escapeCompletion = true
-          completionErrorMessage = "invalid cmmlgs"
+          completionErrorMessage = "Missing Field"
       else
         if id in requiredNotEmpty
           selectorSample = "#edit-#{id}"

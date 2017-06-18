@@ -50,8 +50,12 @@ if (!function_exists("returnAjax")) {
         $data["execution_time"] = elapsed();
         header('Cache-Control: no-cache, must-revalidate');
         header('Expires: Mon, 26 Jul 1997 05:00:00 GMT');
-        header('Content-type: application/json');
-        $json = json_encode($data, JSON_FORCE_OBJECT);
+        header('Content-type: application/json; charset=utf-8');
+        $json = json_encode($data, JSON_FORCE_OBJECT | JSON_PARTIAL_OUTPUT_ON_ERROR | JSON_UNESCAPED_UNICODE);
+        if ($json === false) {
+            $json = json_last_error();
+        }
+        //print_r(json_last_error());
         $replace_array = array("&quot;","&#34;");
         print str_replace($replace_array, "\\\"", $json);
         exit();
@@ -778,6 +782,7 @@ class ImageFunctions
         # read image
         $ext = strtolower(substr(strrchr($image, '.'), 1)); # get the file extension
         switch ($ext) {
+        case "jepg":
         case 'jpg':     # jpg
             $src = imagecreatefromjpeg($image) or self::notfound();
             break;
@@ -899,6 +904,7 @@ class ImageFunctions
         # read image
         $ext = strtolower(substr(strrchr($image, '.'), 1)); # get the file extension
         switch ($ext) {
+        case "jpeg":
         case 'jpg':     # jpg
             $src = imagecreatefromjpeg($image) or self::notfound($image);
             break;

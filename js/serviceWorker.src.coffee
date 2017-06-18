@@ -762,7 +762,7 @@ validateAWebTaxon = (taxonObj, callback = null) ->
 
 #authorityTest = /^\(? *((['"])? *([\w\u00C0-\u017F\. \-\&;\[\]]+(,|&|&amp;|&amp;amp;|&#[\w0-9]+;)?)+ *\2) *, *([0-9]{4}) *\)?/img
 #yearMatch = "$5"
-authorityTest = /^\(? *((['"]?) *(?:(?:\b|[\u00C0-\u017F])[a-z\u00C0-\u017F\.\-\[\]]+(?:,| *&|,? *&amp;| *&amp;amp;| *&(?:[a-z]+|#[0-9]+);)? *)+ *\2) *, *([0-9]{4}) *\)?/img
+authorityTest = /^\(? *((['"]?) *(?:(?:\b|[\u00C0-\u017F])[a-z\u00C0-\u017F\u2019 \.\-\[\]\?]+(?:,|,? *&|,? *&amp;| *&amp;amp;| *&(?:[a-z]+|#[0-9]+);)? *)+ *\2) *, *([0-9]{4}) *\)?/img
 yearMatch = "$3"
 authorityMatch = "$1"
 commalessTest = /^(\(?)(.*?[^,]) ([0-9]{4})(\)?)$/img
@@ -989,7 +989,7 @@ createHtmlFile = (result, htmlBody) ->
             self.postMessage message
             self.close()
       # try
-      #   if 4900 <= k <= 5000
+      #   if 2900 <= k <= 3000
       #     console.warn "Testing row #{k}", row
       # Prep the authorities
       try

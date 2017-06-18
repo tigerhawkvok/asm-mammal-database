@@ -29,7 +29,7 @@ module.exports = (grunt) ->
       bower:
         command: ["bower install", "bower update"].join("&&")
       yarn:
-        command: ["yarn install", "yarn upgarde"].join("&&")
+        command: ["yarn install", "yarn upgrade"].join("&&")
       movesrc:
         command: ["cp js/c.src.coffee js/maps/c.src.coffee"].join("&&")
       dumpver:
@@ -93,9 +93,6 @@ module.exports = (grunt) ->
       options:
         rules: "@PSR2"
     uglify:
-      options:
-        mangle:
-          except:['jQuery']
       vulcanize:
         options:
           sourceMap:true
@@ -106,15 +103,15 @@ module.exports = (grunt) ->
         options:
           sourceMap:true
           sourceMapIncludeSources:true
-          sourceMapIn: (fileIn) ->
-            fileName = fileIn.split("/").pop()
-            fileNameArr = fileName.split(".")
-            fileNameArr.pop()
-            fileId = fileNameArr.join(".")
-            "js/maps/#{fileId}.js.map"
+          # sourceMapIn: (fileIn) ->
+          #   fileName = fileIn.split("/").pop()
+          #   fileNameArr = fileName.split(".")
+          #   fileNameArr.pop()
+          #   fileId = fileNameArr.join(".")
+          #   "js/maps/#{fileId}.js.map"
         files:
-          "js/combined.min.js":["js/c.js","js/admin.js", "js/charts.js","bower_components/purl/purl.js","bower_components/xmlToJSON/lib/xmlToJSON.js","bower_components/jquery-cookie/jquery.cookie.js"]
-          "js/app.min.js":["js/c.js","js/admin.js", "js/charts.js"]
+          "js/combined.min.js":["js/c.js","js/admin.js", "js/charts.js","js/download.js", "js/terminal.js", "bower_components/purl/purl.js","bower_components/xmlToJSON/lib/xmlToJSON.js","bower_components/jquery-cookie/jquery.cookie.js"]
+          "js/app.min.js":["js/c.js","js/admin.js", "js/charts.js", "js/download.js", "js/terminal.js"]
       dist:
         options:
           sourceMap:true
@@ -141,6 +138,7 @@ module.exports = (grunt) ->
         files:
           "js/c.min.js":["js/c.js"]
           "js/download.min.js":["js/download.js"]
+          "js/terminal.min.js":["js/terminal.js"]
           "js/admin.min.js":["js/admin.js"]
           "js/serviceWorker.min.js":["js/serviceWorker.js"]
           "js/charts.min.js":["js/charts.js"]
@@ -193,7 +191,8 @@ module.exports = (grunt) ->
           sourceMapDir: "js/maps"
           sourceMap: true
         files:
-          "js/c.js":["coffee/core.coffee","coffee/search.coffee","coffee/terminal.coffee"]
+          "js/c.js":["coffee/core.coffee","coffee/search.coffee"]
+          "js/terminal.js": ["coffee/terminal.coffee"]
           "js/download.js":["coffee/download.coffee"]
           "js/admin.js":"coffee/admin.coffee"
           "js/serviceWorker.js":["coffee/core-worker.coffee","coffee/serviceWorker.coffee"]

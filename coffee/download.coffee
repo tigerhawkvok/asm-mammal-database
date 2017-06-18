@@ -134,7 +134,7 @@ downloadCSVList = (useLastSearch = false) ->
               We have an open API! Read all of our parameters here:
               <a href="https://github.com/tigerhawkvok/asm-mammal-database/blob/master/README.md#api"  onclick='window.open(this.href); return false;' onkeypress='window.open(this.href); return false;'>README API Documentation <iron-icon icon="launch"></iron-icon></a>
               <br/><br/>
-              We also have a UI to perform permission-restricted SQL queries on the database TODO
+              We also have a UI to perform permission-restricted SQL queries on the database. You can launch this by clicking the <iron-icon icon="icons:code"></iron-icon> icon in the footer.
             </p>
             <h3>Which file type do I want?</h3>
             <p>

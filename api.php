@@ -2,7 +2,7 @@
 
 
 /***********************************************************
-* ASM Species database API target
+ * ASM Species database API target
  *
  * Find the full API description here:
  *
@@ -42,6 +42,7 @@ if ($show_debug === true) {
 } else {
     # Rigorously avoid errors in production
     ini_set('display_errors', 0);
+    $debug = false;
 }
 
 require dirname(__FILE__)."/CONFIG.php";
@@ -81,6 +82,16 @@ if (!function_exists('elapsed')) {
     }
 }
 
+function utf8ize($d) {
+    if (is_array($d)) {
+        foreach ($d as $k => $v) {
+            $d[$k] = utf8ize($v);
+        }
+    } else if (is_string ($d)) {
+        return utf8_encode($d);
+    }
+    return $d;
+}
 
 if (!function_exists("returnAjax")) {
     function returnAjax($data)
@@ -94,11 +105,16 @@ if (!function_exists("returnAjax")) {
         if (!is_array($data)) {
             $data=array($data);
         }
+        $data = utf8ize($data);
         $data["execution_time"] = elapsed();
         header('Cache-Control: no-cache, must-revalidate');
         header('Expires: Mon, 26 Jul 1997 05:00:00 GMT');
-        header('Content-type: application/json');
-        $json = json_encode($data, JSON_FORCE_OBJECT);
+        header('Content-type: application/json; charset=utf-8');
+        $json = json_encode($data, JSON_FORCE_OBJECT | JSON_PARTIAL_OUTPUT_ON_ERROR | JSON_UNESCAPED_UNICODE);
+        if ($json === false) {
+            $json = json_last_error();
+        }
+        //print_r(json_last_error());
         $replace_array = array("&quot;","&#34;");
         print str_replace($replace_array, "\\\"", $json);
         exit();
@@ -121,6 +137,9 @@ function checkColumnExists($column_list)
     global $db;
     $cols = $db->getCols();
     foreach (explode(",", $column_list) as $column) {
+        if (strtolower($column) == "count(*)" || $column == "*") {
+            continue;
+        }
         if (!array_key_exists($column, $cols)) {
             try {
                 returnAjax(array("status"=>false,"error"=>"Invalid column '$column'. If it exists, it may be an illegal lookup column.","human_error"=>"Sorry, you specified a lookup criterion that doesn't exist. Please try again.","columns"=>$column_list,"bad_column"=>$column));
@@ -134,17 +153,144 @@ function checkColumnExists($column_list)
 
 
 
-if (boolstr($_REQUEST["missing"]) || boolstr($_REQUEST["fetch_missing"])) {
-    $save = isset($_REQUEST["prefetch"]) ? boolstr($_REQUEST["prefetch"]) : false;
+if (toBool($_REQUEST["missing"]) || toBool($_REQUEST["fetch_missing"])) {
+    $save = isset($_REQUEST["prefetch"]) ? toBool($_REQUEST["prefetch"]) : false;
     returnAjax(getTaxonIucnData($_REQUEST), $save);
 }
-if (boolstr($_REQUEST["get_unique"])) {
+if (toBool($_REQUEST["get_unique"])) {
     returnAjax(getUniqueVals($_REQUEST["col"]));
 }
-if (boolstr($_REQUEST["random"])) {
+if (toBool($_REQUEST["random"])) {
+    $hasImage = false;
     $query = "SELECT `genus`, `species`, `subspecies` from `".$db->getTable()."` ORDER BY RAND() LIMIT 1";
-    $result = mysqli_query($db->getLink(), $query);
-    $row = mysqli_fetch_assoc($result);
+    while (!$hasImage) {
+        if (!isset($_REQUEST["require_image"]) || !toBool($_REQUEST["require_image"])) {
+            # We don't care if it really has an image. Pretend it
+            # does.
+            $hasImage = true;
+        } else {
+            # We need to test the presence of an image
+            $query = "SELECT `genus`, `species`, `subspecies`, `image` from `".$db->getTable()."` ORDER BY RAND() LIMIT 1";
+        }
+        $result = mysqli_query($db->getLink(), $query);
+        $row = mysqli_fetch_assoc($result);
+        if (!$hasImage) {
+            /***
+             * As per
+             * https://github.com/tigerhawkvok/asm-mammal-database/issues/56
+             ***/
+            if (!function_exists("getCanonicalSpecies")) {
+                function getCanonicalSpecies($speciesRow, $short = false)
+                {
+                    $output = ucwords($speciesRow["genus"]);
+                    $short = ucwords(substr($speciesRow["genus"], 0, 1)) . ". ";
+                    $output .= " " . $speciesRow["species"];
+                    if (!empty($speciesRow["subspecies"])) {
+                        $output .= " " . $speciesRow["subspecies"];
+                        $short .= substr($speciesRow["species"], 0, 1) . ". " . $speciesRow["subspecies"];
+                    } else {
+                        $short .= $speciesRow["species"];
+                    }
+                    if (!empty($speciesRow["canonical_sciname"])) {
+                        $output = $speciesRow["canonical_sciname"];
+                    }
+                    return $short === true ? $short : $output;
+                }
+            }
+            $imgPath = preg_replace('/species&#95;photos/im', 'species_photos', $row["image"]);
+            # Does it exist?
+            if (!empty($imgPath) && file_exists(dirname(__FILE__)."/".$imgPath)) {
+                $hasImage = true;
+            } else {
+                # Check for other available ones
+                try {
+                    include_once dirname(__FILE__) . "/phpquery/phpQuery/phpQuery.php";
+                    if (!class_exists("phpQuery")) {
+                        throw(new Exception("BadPHPQuery"));
+                    }
+                    $url = $mammalDomain . "/search/asm_custom_search/" . urlencode(getCanonicalSpecies($row));
+                    $images .= "<!-- Image from search $url -->";
+                    $html = file_get_contents($url);
+                    phpQuery::newDocumentHTML($html);
+                    $imgElement = pq("#imageLibraryContent #current_image img");
+                    $imgRelPath = $imgElement->attr("src");
+                    if (!empty($imgRelPath) && !toBool($_REQUEST["skip_mil"])) {
+                        $hasImage = true;
+                    } else {
+                        # We couldn't find a picture in the mammal library. Try
+                        # iNaturalist.
+                        #
+                        # Sample:
+                        # https://www.inaturalist.org/observations.json?taxon_name=ursus+arctos&quality_grade=research&photo_license=any&iconic_taxa[]=Mammalia&has[]=photos
+                        $endpoint = "https://www.inaturalist.org/observations.json";
+                        $postArgs = array(
+                            "taxon_name" => urlencode(getCanonicalSpecies($row)),
+                            "quality_grade" => "research",
+                            "photo_license" => "any",
+                            "iconic_taxa[]" => "Mammalia",
+                            "has[]" => "photos",
+                        );
+                        $result = do_post_request($endpoint, $postArgs, "GET");
+                        $response = json_decode($result["response"], true);
+                        $textArgs = http_build_query($postArgs);
+                        # Some stupid replacements
+                        $search = array(
+                            "%2B",
+                            "%5B",
+                            "%5D",
+                        );
+                        $replace = array(
+                            "+",
+                            "[",
+                            "]",
+                        );
+                        $textArgs = str_replace($search, $replace, $textArgs);
+                        $inat = 0;
+                        if (sizeof($response) > 0 && !toBool($_REQUEST["skip_inat"])) {
+                            shuffle($response);
+                            $useObservation = $response[0];
+                            # First, we have to check that there was a match, and
+                            # iNat didn't return an unhelpful blob
+                            $obsTaxon = explode(" ", $useObservation["taxon"]["name"]);
+                            $refMatchGenus = strlen(substr($row["genus"], 0, -3)) < 3 ? $row["genus"] : substr($row["genus"], 0, -3);
+                            $refMatchSpecies = strlen(substr($row["species"], 0, -3)) < 3 ? $row["species"] : substr($row["species"], 0, -3);
+                            $obsMatchGenus = strlen(substr($obsTaxon[0], 0, -3)) < 3 ? strtolower($obsTaxon[0]) : substr(strtolower($obsTaxon[0]), 0, -3);
+                            $obsMatchSpecies = strlen(substr($obsTaxon[1], 0, -3)) < 3 ? $obsTaxon[1] : substr($obsTaxon[1], 0, -3);
+                            if ($refMatchGenus == $obsMatchGenus || $refMatchSpecies == $obsMatchSpecies) {
+                                $hasImage = true;
+                            }
+                        }
+                        if ($inat == 0) {
+                            # iNaturalist failed us too.
+                            # Last attempt: calPhotos
+                            # Queries of format: http://calphotos.berkeley.edu/cgi/img_query?getthumbinfo=1&num=all&taxon=ursus+arctos&format=xml
+                            $endpoint = "http://calphotos.berkeley.edu/cgi/img_query";
+                            $postArgs = array(
+                                "getthumbinfo" => 1,
+                                "cconly" => 1,
+                                "num" => "all",
+                                "taxon" => getCanonicalSpecies($row),
+                                "format" => "xml",
+                            );
+                            $dest = $endpoint."?".http_build_query($postArgs);
+                            $xmlContent = file_get_contents($dest);
+                            $xml = new Xml();
+                            $xml->setXml($xmlContent);
+                            $imgArr = $xml->getAllTagContents("enlarge_jpeg_url");
+                            if (sizeof($imgArr) > 0 && !toBool($_REQUEST["skip_calphotos"])) {
+                                $hasImage = true;
+                            }
+                        }
+                    }
+                } catch (Exception $e) {
+                    # Somethign went wrong with that image
+                    $hasImage = false;
+                }
+            }
+        }
+    }
+    $row["specificEpithet"] = $row["species"];
+    $row["subspecificEpithet"] = $row["subspecies"];
     returnAjax($row);
 }
 
@@ -211,10 +357,23 @@ function doLiveQuery($get)
         if (preg_match($queryPattern, $statement)) {
             $safePreflight = true;
             $sqlAction = "SELECT";
-        } elseif (preg_match('/\A(?i)SELECT +\* +(?:FROM)?[ `]*'.$db->getTable().'[ `]* +(WHERE FALSE)[;]?\Z/m', $statement)) {
+        } elseif (preg_match('/\A(?i)SELECT +\* +(?:FROM)?[ `]*'.$db->getTable().'[ `]* +(WHERE FALSE)[;]?\Z/m', $statement) || preg_match('/^show +columns +from +(`?)'.$db->getTable().'\g{1} *;?$/im', $statement)) {
             # Looking up the columns is a safe action
             $safePreflight = true;
             $sqlAction = "LOOKUP_COLS";
+            # We'll just do this now
+            $query = "SHOW COLUMNS FROM `".$db->getTable()."`";
+            $r = mysqli_query($db->getLink(), $query);
+            $cols = array();
+            while ($row = mysqli_fetch_row($r)) {
+                $cols[] = $row[0];
+            }
+            $statementResult = array(
+                "result" => $cols,
+                "action" => $sqlAction,
+            );
+            $statementResponse[] = $statementResult;
+            continue;
         } else {
             # Unverified action
             $safePreflight = false;
@@ -224,7 +383,7 @@ function doLiveQuery($get)
             try {
                 # Split up statements into chunks and prep for a safe
                 # query
-                global $db, $default_database, $default_sql_user, $default_sql_password, $default_sql_url;
+                global $db, $default_database, $readonly_sql_user, $readonly_sql_password, $default_sql_url, $default_sql_user, $default_sql_password;
                 # We're going ito use peices of PDO since this is more
                 # or less arbitrarily specifiable by users
                 $dsn = "mysql:host=$default_sql_url;dbname=$default_database;charset=utf8";
@@ -233,15 +392,21 @@ function doLiveQuery($get)
                     PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
                     PDO::ATTR_EMULATE_PREPARES   => false,
                 );
-                $pdo = new PDO($dsn, $default_sql_user, $default_sql_password, $opt);
+                $pdo = new PDO($dsn, $readonly_sql_user, $readonly_sql_password, $opt);
+                #$pdo = new PDO($dsn, $default_sql_user, $default_sql_password, $opt);
                 $select = preg_replace($queryPattern, '$1', $statement);
                 $selectCols = explode(",", $select);
                 $realSelect = array();
-                foreach($selectCols as $colStatement) {
+                $dontQuote = array(
+                    "count(*)",
+                    "*",
+                );
+                foreach ($selectCols as $colStatement) {
                     $col = preg_replace('/^([`]?)([a-zA-Z_\-]+)\g{1}$/im', '$2', $colStatement);
+                    $col = trim($col);
                     $realCol = getDarwinCore($col, true, true);
                     checkColumnExists($realCol);
-                    $realSelect[] = "`$realCol`";
+                    $realSelect[] = in_array($realCol, $dontQuote) ? $realCol : "`$realCol`";
                 }
                 $query = "SELECT ".implode(",", $realSelect)." FROM `".$db->getTable()."`";
                 $where = preg_replace($queryPattern, '${4}', $statement);
@@ -257,7 +422,9 @@ function doLiveQuery($get)
                     $andConds = array();
                     foreach ($groups as $k => $group) {
                         # Trim any leading parens or spaces
-                        if (empty($group)) continue;
+                        if (empty($group)) {
+                            continue;
+                        }
                         if (preg_match('/^ *(and|or) +.*$/im', $group)) {
                             $glue = preg_replace('/^ *(and|or) +.*$/im', '$1', $group);
                             $group = preg_replace('/^ *(and|or) +(.*)$/im', '$2', $group);
@@ -317,7 +484,7 @@ function doLiveQuery($get)
                                 checkColumnExists($realCol);
                                 $buildGroup[$k] = "(`$realCol` $glue ?";
                                 $buildWhereVals[] = preg_replace('/^([\'"]?)([^\'"]+)\g{1}$/im', '$2', $condParts[1]);
-                            } elseif (!empty($group)){
+                            } elseif (!empty($group)) {
                                 # What?
                                 $buildGroup[$k] = "ILLEGAL_GROUP::>>>$group<<<";
                             }
@@ -348,7 +515,7 @@ function doLiveQuery($get)
                     $stmt = $pdo->prepare($query);
                     $stmt->execute($buildWhereVals);
                     $data = array();
-                    foreach($stmt as $row) {
+                    foreach ($stmt as $row) {
                         $tmp = array(
                             "result" => array($row),
                         );
@@ -414,7 +581,9 @@ function doLiveQuery($get)
             $status = false;
         }
         $statementResponse[] = $statementResult;
-        if ($status !== true) break;
+        if ($status !== true) {
+            break;
+        }
     }
     return array(
         "status" => $status,
@@ -523,8 +692,8 @@ function getOrderedTaxonomy($get)
 * Setup flags
 *****************************/
 
-$flag_fuzzy = boolstr($_REQUEST['fuzzy']);
-$loose = boolstr($_REQUEST['loose']);
+$flag_fuzzy = toBool($_REQUEST['fuzzy']);
+$loose = toBool($_REQUEST['loose']);
 # Default limit is specified in CONFIG
 $limit = is_numeric($_REQUEST['limit']) && $_REQUEST['limit'] >= 1 ? intval($_REQUEST['limit']):$default_limit;
 
@@ -548,7 +717,7 @@ if (isset($_REQUEST['filter'])) {
             $params = array();
             foreach ($params_temp as $col => $lookup) {
                 # Smart_decode takes care of this for us
-                                $params[$db->sanitize(deEscape($col))] = $db->sanitize(deEscape($lookup));
+                $params[$db->sanitize(deEscape($col))] = $db->sanitize(deEscape($lookup));
             }
         }
     }
@@ -593,6 +762,12 @@ if (isset($_REQUEST['filter'])) {
                 $extra_deprecated_params = "LOWER(`deprecated_scientific`) LIKE '%".$deprecated_params."%'";
             }
         }
+        if (isset($params["major_type"])) {
+            # We want to search all the higherClassification
+            $extra_deprecated_params = "`major_type`='".$params["major_type"]."' OR `major_subtype`='".$params["major_type"]."' OR `simple_linnean_group`='".$params["major_type"]."'";
+        }
+        //print_r($params);
+        //print_r($extra_deprecated_params);
         # Do all the columns exist?
         foreach ($params as $col => $lookup) {
             checkColumnExists($col);
@@ -602,7 +777,7 @@ if (isset($_REQUEST['filter'])) {
 
 
 $search = strtolower($db->sanitize(deEscape(urldecode($_REQUEST['q']))));
-
+$search = trim($search);
 
 /*****************************
  * The actual handlers
@@ -743,15 +918,61 @@ function handleParamSearch($filter_params, $loose = false, $boolean_type = "AND"
  * The actual main search loop
  *
  *********************************************************/
-
-function doSearch($overrideSearch = null)
+ini_set('memory_limit', '512M');
+function doSearch($overrideSearch = null, $enforceGlobalSearch = null)
 {
     global $search, $flag_fuzzy, $loose, $limit, $order_by, $params, $boolean_type, $filter_params, $db, $method;
     if (!empty($overrideSearch)) {
         $search = $overrideSearch;
     }
-    $result_vector = array();
-    if (empty($params) || !empty($search)) {
+    if (empty($enforceGlobalSearch)) {
+        $enforceGlobalSearch = toBool($_REQUEST["global_search"]);
+    }
+    if ($enforceGlobalSearch) {
+        # Check out all the columns
+        global $show_debug;
+        $method = "global";
+        $isLoose = toBool($_REQUEST["loose"]);
+        $cols = $db->getCols();
+        $searchBuilder = array();
+        $boolean_type = "OR";
+        foreach ($cols as $col => $type) {
+            if ($type == "boolean") {
+                continue;
+            }
+            $searchBuilder[$col] = $search;
+        }
+
+        $result_vector = $db->getQueryResults($searchBuilder, "*", $boolean_type, $isLoose, true, $order_by, $show_debug === true);
+        if ($result_vector["status"] === false) {
+            # It's an error
+            $response = array(
+                "status" => false,
+                "result" => $result_vector["result_provided"],
+                "error" => "SEARCH_EXCEPTION",
+                "human_error" => "There was a server error executing your search",
+            );
+            if ($show_debug === true) {
+                $response["exception"] = $result_vector["error"];
+            }
+            return $response;
+        } elseif (empty($result_vector)) {
+            # We'll use this as a placeholder
+            $result_vector = "ZERO_RESULTS";
+        }
+    } else {
+        $result_vector = array();
+    }
+    // return array(
+    //         "request" => $_REQUEST,
+    //         "loose" => $isLoose,
+    //         "global" => $enforceGlobalSearch,
+    //         "empty" => empty($result_vector),
+    //         "size" => sizeof($result_vector),
+    //         "builder" => $searchBuilder,
+    //     );
+    # Do the basic search
+    if ((empty($params) || !empty($search)) && empty($result_vector)) {
         # There was either a parsing failure, or no filter set.
         if (empty($search)) {
             # For the full list, just return scientific data
@@ -823,8 +1044,8 @@ function doSearch($overrideSearch = null)
                     $extra_params["genus"] = $search;
                     $extra_params["species"] = $search;
                     $extra_params["subspecies"] = $search;
-                    $extra_params["major_common_type"] = $search;
-                    $extra_params["major_subtype"] = $search;
+                    $extra_params["major_type"] = $search;
+                    $extra_params["linnean_order"] = $search;
                     $extra_params["deprecated_scientific"] = $search;
                 } else {
                     foreach (explode(",", $_REQUEST['only']) as $column) {
@@ -1041,7 +1262,7 @@ function doSearch($overrideSearch = null)
                              */
                             $method = "space_loose_fallback";
                             $where = array();
-                            $search_cols = array("common_name","major_common_type","major_subtype");
+                            $search_cols = array("common_name","major_type","linnean_order");
                             $search_words = explode(" ", $search);
                             $where_glue = " or ";
                             $match_glue = " and ";
@@ -1124,12 +1345,21 @@ function doSearch($overrideSearch = null)
                 }
             }
         }
+    } elseif (empty($result_vector)) {
+        $method = "param_queryless";
+        global $extra_deprecated_params;
+        $useFilter = !empty($extra_deprecated_params) ? true : null;
+        $result_vector = handleParamSearch($params, $loose, $boolean_type, $useFilter);
     } else {
-        $result_vector = handleParamSearch($params, $loose, $boolean_type);
+        # We already have a result vector from the global search
     }
     if (isset($error)) {
         return array("status"=>false,"error"=>$error,"human_error"=>"There was a problem performing this query. Please try again.","method"=>$method);
     } else {
+        if ($result_vector == "ZERO_RESULTS") {
+            $result_vector = array();
+            $filter_params = $searchBuilder;
+        }
         foreach ($result_vector as $k => $v) {
             if (is_array($v)) {
                 foreach ($v as $rk => $vk) {
@@ -1160,6 +1390,7 @@ function doSearch($overrideSearch = null)
             )
         );
     }
+    return false;
 }
 
 
@@ -1233,10 +1464,11 @@ function getTaxonIucnData($taxonBase, $ignoreFlagSave = false)
             unset($taxon["id"]);
             $saveResult = $db->updateEntry($taxon, $ref);
             $taxon["save_result"] = $saveResult;
+            $taxon["id"] = $ref["id"];
         }
         $taxon["did_update"] = $flagSave;
         $taxon["iucn"] = $iucnTaxon;
-        unset($taxon["id"]);
+        #unset($taxon["id"]);
     }
     $hasWellFormattedSpeciesCitation = preg_match('/\(? *([\w\. \[\]]+), *([0-9]{
                         4
@@ -1344,9 +1576,10 @@ if (sizeof($result["result"]) <= 5) {
                 unset($taxon["id"]);
                 $saveResult = $db->updateEntry($taxon, $ref);
                 $taxon["saveResult"] = $saveResult;
+                $taxon["id"] = $ref["id"];
             }
             $taxon["iucn"] = $iucnTaxon;
-            unset($taxon["id"]);
+            #unset($taxon["id"]);
             $result["result"][$i] = $taxon;
             continue;
         }
@@ -1356,7 +1589,8 @@ if (sizeof($result["result"]) <= 5) {
     $result["do_client_update"] = true;
 }
 
-function getDarwinCore($result, $mapOnly = false, $reverseMap = false) {
+function getDarwinCore($result, $mapOnly = false, $reverseMap = false)
+{
     # DarwinCore mapping
     # http://rs.tdwg.org/dwc/terms/
     $dwcResultMap = array(
@@ -1373,7 +1607,9 @@ function getDarwinCore($result, $mapOnly = false, $reverseMap = false) {
         if ($reverseMap === true) {
             # Map DarwinCore to internal DB terms
             foreach ($dwcResultMap as $db => $dc) {
-                if ($result == $dc) return $db;
+                if ($result == $dc) {
+                    return $db;
+                }
             }
             # Return the original as a fallback
             return $result;
@@ -1404,8 +1640,10 @@ function getDarwinCore($result, $mapOnly = false, $reverseMap = false) {
         $dwcResult["higherClassification"] = $higherClassification;
         if (isset($taxon["species_authority"])) {
             $years = json_decode($taxon["authority_year"], true);
-            $genusYear = key($years);
-            $speciesYear = current($years);
+            if (is_array($years)) {
+                $genusYear = key($years);
+                $speciesYear = current($years);
+            }
             $genus = empty($genusYear) ? $taxon["genus_authority"] : $taxon["genus_authority"] . ", " . $genusYear;
             $species = empty($speciesYear) ? $taxon["species_authority"] : $taxon["species_authority"] . ", " . $speciesYear;
             $genus = toBool($taxon["parens_auth_genus"]) ? "($genus)" : $genus;
@@ -1444,8 +1682,10 @@ $result = getDarwinCore($result);
 if (toBool($_REQUEST["dwc_only"])) {
     $result["result"] = $dwcTotal;
 }
-
 # $as_include isn't specified, so if it is, it's from a parent file
 if ($as_include !== true) {
+    if (empty($result)) {
+        $result = false;
+    }
     returnAjax($result);
 }

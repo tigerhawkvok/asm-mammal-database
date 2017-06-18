@@ -103,6 +103,7 @@ verifyLoginCredentials = (callback) ->
     console.log "Server called back from login credential verification", result
     if result.status is true
       $(".logged-in-values").removeAttr "hidden"
+      $(".logged-in-hidden").attr "hidden", "hidden"
       cookieFullName = "#{uri.domain}_fullname"
       $("header .fill-user-fullname").text $.cookie cookieFullName
       if typeof callback is "function"
@@ -246,10 +247,9 @@ renderAdminSearchResults = (overrideSearch, containerSelector = "#search-results
   .fail (result,status) ->
     console.error("There was an error performing the search")
     console.warn(result,error,result.statusText)
-    error = "#{result.status} - #{result.statusText}"
-    $("#search-status").attr("text","Couldn't execute the search - #{error}")
-    $("#search-status")[0].show()
-    stopLoadError()
+    console.warn "#{searchParams.targetApi}?#{args}"
+    error = "#{result.status}::#{result.statusText}"
+    stopLoadError("Couldn't execute the search - #{error}")
 
 
 
@@ -473,6 +473,8 @@ prefetchEditorDropdowns = ->
     major_subtype: "Sub-Clade (eg., euarchontoglires)"
     linnean_order: null
     linnean_family: null
+    linnean_tribe: null
+    linnean_subfamily: null
     simple_linnean_group: "Common Group (eg., metatheria)"
     simple_linnean_subgroup: "Common type (eg., bat)"
   for col, label of needCols
@@ -505,16 +507,20 @@ loadModalTaxonEditor = (extraHtml = "", affirmativeText = "Save") ->
   #{_asm.dropdownPopulation.major_subtype.html}
   #{_asm.dropdownPopulation.linnean_order.html}
   #{_asm.dropdownPopulation.linnean_family.html}
+  #{_asm.dropdownPopulation.linnean_subfamily.html}
+  #{_asm.dropdownPopulation.linnean_tribe.html}
   #{_asm.dropdownPopulation.simple_linnean_group.html}
   #{_asm.dropdownPopulation.simple_linnean_subgroup.html}
   <paper-input label="Genus authority" id="edit-genus-authority" name="edit-genus-authority" class="genus_authority" floatingLabel></paper-input>
   <paper-input label="Genus authority year" id="edit-gauthyear" name="edit-gauthyear" floatingLabel></paper-input>
+  <paper-input label="Genus authority citation" id="edit-genus-authority-citation" name="edit-genus-authority-citation" class="citation-input" floatingLabel></paper-input>
   <iron-label>
     Use Parenthesis for Genus Authority
     <paper-toggle-button id="genus-authority-parens"  checked="false"></paper-toggle-button>
   </iron-label>
   <paper-input label="Species authority" id="edit-species-authority" name="edit-species-authority" class="species_authority" floatingLabel></paper-input>
   <paper-input label="Species authority year" id="edit-sauthyear" name="edit-sauthyear" floatingLabel></paper-input>
+  <paper-input label="Species authority citation" id="edit-species-authority-citation" name="edit-species-authority-citation" class="citation-input" floatingLabel></paper-input>
   <iron-label>
     Use Parenthesis for Species Authority
     <paper-toggle-button id="species-authority-parens" checked="false"></paper-toggle-button>
@@ -540,7 +546,7 @@ loadModalTaxonEditor = (extraHtml = "", affirmativeText = "Save") ->
     <div class="markdown-html"></div>
   </marked-element>
   <paper-input label="Data Source" id="edit-source" name="edit-source" floatingLabel></paper-input>
-  <paper-input label="Data Citation" id="edit-citation" name="edit-source" floatingLabel></paper-input>
+  <paper-input label="Data Citation (Markdown Allowed)" id="edit-citation" name="edit-citation" floatingLabel></paper-input>
   <div id="upload-image"></div>
   <span class="help-block" id="upload-image-help">You can drag and drop an image above, or enter its server path below.</span>
   <paper-input label="Image" id="edit-image" name="edit-image" floatingLabel aria-describedby="imagehelp"></paper-input>
@@ -595,6 +601,9 @@ loadModalTaxonEditor = (extraHtml = "", affirmativeText = "Save") ->
   catch e
     console.warn "Couldn't set deprecated helper: #{e.message}"
     console.warn e.stack
+  try
+    $(".citation-input").keyup ->
+      validateCitation this
   handleDragDropImage()
   # # Bind the autogrow
   # # https://elements.polymer-project.org/elements/iron-autogrow-textarea
@@ -653,7 +662,8 @@ deprecatedHelper = (selector = "#edit-deprecated-taxon-dialog") ->
             oldTaxon = oldTaxon.replace /\-/g, " "
           authorityParts = authorityString.split(":")
           authorities = authorityParts[0]
-          prettyElement = """ #{oldTaxon} <iron-icon icon="icons:arrow-forward"></iron-icon> #{authorities.toTitleCase()} in #{authorityParts[1]}"""
+          yearParts = authorityParts[1].split("$")
+          prettyElement = """ #{oldTaxon} <iron-icon icon="icons:arrow-forward"></iron-icon> #{authorities.toTitleCase()} in #{yearParts[0]}"""
           listEl.push prettyElement
         list = "<li>#{listEl.join("</li>\n<li>")}</li>"
       catch e
@@ -680,6 +690,7 @@ deprecatedHelper = (selector = "#edit-deprecated-taxon-dialog") ->
             <paper-input class="col-xs-12" value="#{currentTaxon.species}" label="Old Species" placeholder="#{currentTaxon.species}" id="dialog-update-species" required autovalidate></paper-input>
             <paper-input class="col-xs-6" value="#{currentTaxonAuthority.genus.authority}" label="Old Authority" placeholder="#{currentTaxonAuthority.genus.authority}" required autovalidate floatingLabel id="dialog-update-authority"></paper-input>
             <paper-input class="col-xs-6" value="#{currentTaxonAuthority.genus.year}" label="Old Year" placeholder="#{currentTaxonAuthority.genus.year}" pattern="[0-9]{4}" error-message="Invalid Year" required autovalidate floatingLabel id="dialog-update-year"></paper-input>
+            <paper-input class="col-xs-6" value="#{currentTaxonAuthority.genus.year}" label="Year Assigned" placeholder="#{currentTaxonAuthority.genus.year}" pattern="[0-9]{4}" error-message="Invalid Year" required autovalidate floatingLabel id="dialog-update-citeyear"></paper-input>
           </div>
           <div class="row">
             <div class="col-xs-12 text-right pull-right">
@@ -719,6 +730,7 @@ deprecatedHelper = (selector = "#edit-deprecated-taxon-dialog") ->
         species: p$("#dialog-update-species").value.trim()
         authority: p$("#dialog-update-authority").value.trim()
         year: toInt p$("#dialog-update-year").value.trim()
+        citeYear: toInt p$("#dialog-update-citeyear").value.trim()
       # Ensure that the taxon doesn't match the current one
       if currentTaxon.genus.toLowerCase() is oldTaxon.genus.toLowerCase()
         if currentTaxon.species.toLowerCase() is oldTaxon.species.toLowerCase()
@@ -738,7 +750,7 @@ deprecatedHelper = (selector = "#edit-deprecated-taxon-dialog") ->
         return false
       # Construct the strings
       oldTaxonString = "#{oldTaxon.genus} #{oldTaxon.species}"
-      oldAuthorityString = "#{oldTaxon.authority}:#{oldTaxon.year}"
+      oldAuthorityString = "#{oldTaxon.authority}:#{oldTaxon.year}$#{oldTaxon.citeYear}"
       console.log "Got strings", oldTaxonString, oldAuthorityString
       jDep[oldTaxonString] = oldAuthorityString
       console.log "Object:", jDep
@@ -1109,6 +1121,8 @@ lookupEditorSpecies = (taxon = undefined) ->
         "parens_auth_genus"
         "parens_auth_species"
         ]
+      console.debug "Using data", data
+      console.debug JSON.stringify data
       for col, d of data
         # For each column, replace _ with - and prepend "edit"
         # This should be the selector
@@ -1130,19 +1144,21 @@ lookupEditorSpecies = (taxon = undefined) ->
         if col is "species_authority" or col is "genus_authority"
           # Check if the authority is in full format, eg, "(Linnaeus, 1758)"
           #unless isNull d.match /\(? *([\w\. \[\]]+), *([0-9]{4}) *\)?/g
-          if /^\(? *((['"])? *([\w\u00C0-\u017F\. \-\&;\[\]]+(,|&|&amp;|&amp;amp;|&#[\w0-9]+;)?)+ *\2) *, *([0-9]{4}) *\)?/im.test d
-            hasParens = d.search(/\(/) >= 0 and d.search(/\)/) >= 0
-            #authorityParts = d.replace(/[\(\)]/g,"").split(",")
-            #d = authorityParts[0].trim()
-            #year = toInt(authorityParts[1])
-            year = d.replace /^\(? *((['"])? *([\w\u00C0-\u017F\.\-\&; \[\]]+(,|&|&amp;|&amp;amp;|&#[\w0-9]+;)?)+ *\2) *, *([0-9]{4}) *\)?/ig, "$5"
-            d = d.replace /^\(? *((['"])? *([\w\u00C0-\u017F\.\-\&; \[\]]+(,|&|&amp;|&amp;amp;|&#[\w0-9]+;)?)+ *\2) *, *([0-9]{4}) *\)?/ig, "$1"
-            if col is "genus_authority"
-              $("#edit-gauthyear").attr("value",year)
-            if col is "species_authority"
-              $("#edit-sauthyear").attr("value",year)
-            if hasParens
-              p$("##{col.replace(/\_/g,"-")}-parens").checked = true
+          if /[0-9]{4}/im.test d
+            unformattedAuthorityRe = /^\(? *((['"]?) *(?:(?:\b|[\u00C0-\u017F])[a-z\u00C0-\u017F\u2019 \.\-\[\]\?]+(?:,|,? *&|,? *&amp;| *&amp;amp;| *&(?:[a-z]+|#[0-9]+);)? *)+ *\2) *, *([0-9]{4}) *\)?/img
+            unformattedAuthorityReOrig = /^\(? *((['"])? *([\w\u00C0-\u017F\. \-\&;\[\]]+(,|&|&amp;|&amp;amp;|&#[\w0-9]+;)?)+ *\2) *, *([0-9]{4}) *\)?/im
+            if unformattedAuthorityRe.test d
+              hasParens = d.search(/\(/) >= 0 and d.search(/\)/) >= 0
+              #year = d.replace /^\(? *((['"])? *([\w\u00C0-\u017F\.\-\&; \[\]]+(,|&|&amp;|&amp;amp;|&#[\w0-9]+;)?)+ *\2) *, *([0-9]{4}) *\)?/ig, "$5"
+              year = d.replace unformattedAuthorityRe, "$3"
+              #d = d.replace /^\(? *((['"])? *([\w\u00C0-\u017F\.\-\&; \[\]]+(,|&|&amp;|&amp;amp;|&#[\w0-9]+;)?)+ *\2) *, *([0-9]{4}) *\)?/ig, "$1"
+              d = d.replace unformattedAuthorityRe, "$1"
+              if col is "genus_authority"
+                $("#edit-gauthyear").attr("value",year)
+              if col is "species_authority"
+                $("#edit-sauthyear").attr("value",year)
+              if hasParens
+                p$("##{col.replace(/\_/g,"-")}-parens").checked = true
         if col is "authority_year"
           # Parse it out
           year = parseTaxonYear(d)
@@ -1202,6 +1218,9 @@ lookupEditorSpecies = (taxon = undefined) ->
             d = d.replace(/}/,"")
             if d is '""'
               d = ""
+          try
+            if typeof d is "string"
+              d = d.unescape()
           textAreas = [
             "notes"
             "entry"
@@ -1298,6 +1317,45 @@ lookupEditorSpecies = (taxon = undefined) ->
   false
 
 
+validateCitation = (citation) ->
+  ###
+  # Check a citation for validity
+  ###
+  markInvalid = false
+  try
+    if $(citation).exists()
+      selector = citation
+      if typeof p$(citation).validate is "function"
+        markInvalid = true
+        citation = p$(selector).value
+      else
+        citation = $(selector).val()
+  cleanup = (result, replacement) ->
+    if markInvalid
+      if result is false
+        p$(selector).errorMessage = "Please enter a valid DOI or ISBN"
+      else
+        unless isNull replacement
+          p$(selector).value = replacement
+      p$(selector).invalid = not result
+    return result
+  # DOIs
+  doi = /^(?:doi:|https?:\/\/dx.doi.org\/)?(10.\d{4,9}\/[-._;()\/:A-Z0-9]+|10.1002\/[^\s]+|10.\d{4}\/\d+-\d+X?(\d+)\d+<[\d\w]+:[\d\w]*>\d+.\d+.\w+;\d|10.1207\/[\w\d]+\&\d+_\d+)$/im
+  if doi.test(citation)
+    # Picked up via
+    # https://www.crossref.org/blog/dois-and-matching-regular-expressions/
+    replace = citation.replace doi, "$1"
+    return cleanup true, replace
+  # ISBNs
+  if citation.search(/isbn/i) is 0
+    # Via https://gist.github.com/oscarmorrison/3744fa216dcfdb3d0bcb
+    isbn10 = /^(?:ISBN(?:-10)?:?\ )?(?=[0-9X]{10}$|(?=(?:[0-9]+[-\ ]){3})[-\ 0-9X]{13}$)[0-9]{1,5}[-\ ]?[0-9]+[-\ ]?[0-9]+[-\ ]?[0-9X]$/
+    isbn13 = /^(?:ISBN(?:-13)?:?\ )?(?=[0-9]{13}$|(?=(?:[0-9]+[-\ ]){4})[-\ 0-9]{17}$)97[89][-\ ]?[0-9]{1,5}[-\ ]?[0-9]+[-\ ]?[0-9]+[-\ ]?[0-9]$/
+    return cleanup isbn10.test(citation) and isbn13.test(citation)
+  # Generic journal formatting
+  cleanup false
+
+
 
 
 saveEditorEntry = (performMode = "save") ->
@@ -1332,6 +1390,8 @@ saveEditorEntry = (performMode = "save") ->
     "internal-id"
     "source"
     "citation"
+    "species-authority-citation"
+    "genus-authority-citation"
     ]
   saveObject = new Object()
   escapeCompletion = false
@@ -1392,7 +1452,8 @@ saveEditorEntry = (performMode = "save") ->
       # If there were any error strings assigned, display an error.
       if error?
         escapeCompletion = true
-        console.warn "#{authYearDeepInputSelector} failed its validity checks for `#{yearString}`!"
+        completionErrorMessage = "#{authYearDeepInputSelector} failed its validity checks for `#{yearString}`!"
+        console.warn completionErrorMessage
         unless directYear
           # Populate the paper-input errors
           # See
@@ -1467,17 +1528,24 @@ saveEditorEntry = (performMode = "save") ->
   # For the rest of the items, iterate over and put on saveObject
   keepCase = [
     "notes"
+    "entry"
     "taxon_credit"
     "image"
     "image_credit"
     "image_license"
     "image_caption"
+    "species-authority-citation"
+    "species_authority_citation"
+    "genus-authority-citation"
+    "genus_authority_citation"
+    "citation"
     ]
   # List of IDs that can't be empty
   # Reserved use pending
   # https://github.com/jashkenas/coffeescript/issues/3594
   requiredNotEmpty = [
-    "common-name"
+    "genus"
+    "species"
     "major-type"
     "linnean-order"
     "genus-authority"
@@ -1491,7 +1559,9 @@ saveEditorEntry = (performMode = "save") ->
     # We have a taxon credit, need a date for it
     requiredNotEmpty.push("taxon-credit-date")
   for k, id of examineIds
-    # console.log(k,id)
+    if typeof id isnt "string"
+      continue
+    console.log(k,id)
     try
       col = id.replace(/-/g,"_")
     catch
@@ -1559,7 +1629,8 @@ saveEditorEntry = (performMode = "save") ->
           .attr("error-message",error)
           .attr("invalid","invalid")
           escapeCompletion = true
-      when "common-name", "major-type", "linnean-order", "genus-authority", "species-authority"
+          completionErrorMessage = "Invalid Scientific Name"
+      when "major-type", "linnean-order", "genus-authority", "species-authority"
         # I'd love to syntactically clean this up via the empty array
         # requiredNotEmpty above, but that's pending
         # https://github.com/jashkenas/coffeescript/issues/3594
@@ -1571,6 +1642,7 @@ saveEditorEntry = (performMode = "save") ->
           .attr("error-message",error)
           .attr("invalid","invalid")
           escapeCompletion = true
+          completionErrorMessage = "Missing Field"
       else
         if id in requiredNotEmpty
           selectorSample = "#edit-#{id}"
@@ -1594,6 +1666,7 @@ saveEditorEntry = (performMode = "save") ->
             .attr("error-message",spilloverError)
             .attr("invalid","invalid")
             escapeCompletion = true
+            completionErrorMessage = "REQUIRED_FIELD_EMPTY"
     # Finally, tack it on to the saveObject
     saveObject[col] = val
   # Some other save object items...
@@ -1606,7 +1679,7 @@ saveEditorEntry = (performMode = "save") ->
   if escapeCompletion
     animateLoad()
     consoleError = completionErrorMessage ? "Bad characters in entry. Stopping ..."
-    completionErrorMessage ?= "There was a problem with your entry. Please correct your entry and try again."
+    completionErrorMessage = "There was a problem with your entry. Please correct your entry and try again. #{completionErrorMessage}"
     stopLoadError(completionErrorMessage)
     console.error(consoleError)
     console.warn "Save object so far:", saveObject
@@ -1868,7 +1941,7 @@ adminPreloadSearch = ->
 $ ->
   try
     thisUrl = uri.o.attr("source")
-    isAdminActive = /^https?:\/\/(?:.*?\/)+(admin-.*\.(?:php|html)|admin\/)(?:\?(?:&?[\w\-_]+=[\w+\-_%]+)+)?(?:\#[\w\+%]+)?$/im.test thisUrl
+    isAdminActive = /^https?:\/\/(?:.*?\/)+(admin-.*\.(?:php|html)|admin\/)(?:\?(?:&?[\w\-_]+=[\w+\-_%]+)+)?(?:\#[\w\+%\=]+)?$/im.test thisUrl
   catch
     # We validate everything anyway, so run speculatively
     isAdminActive = true

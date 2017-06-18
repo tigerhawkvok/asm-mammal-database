@@ -21,6 +21,7 @@
 @body-padding: 2rem;
 body {
     padding: @body-padding;
+    overflow-x: hidden;
 }
 
 
@@ -260,7 +261,7 @@ header#header-bar {
     paper-icon-button, paper-button {
         color: #fff;
     }
-    
+
     paper-button.hidden-xs {
         // Just the alternates
         text-transform: capitalize;
@@ -268,8 +269,8 @@ header#header-bar {
             margin-left: 5px;
         }
     }
-    
-    paper-icon-button.visible-xs {
+
+    paper-icon-button.visible-xs:not([hidden]) {
         @media(max-width: @screen-xs-max) {
             display: inline-block !important;
         }
@@ -278,6 +279,8 @@ header#header-bar {
     & + main {
         margin-top: @body-header-offset;
         padding-bottom: @body-header-offset;
+        max-width: 100vw;
+        overflow-x: hidden;
     }
 }
 
@@ -336,10 +339,88 @@ main {
 
 
 // Search page
+.featured-container {
+    paper-card {
+        margin-bottom: 1rem;
+        margin-right: 2rem;
+        cursor: pointer;
+    }
+}
+#search_form {
+    position:relative;
+    #search {
+        position:relative;
+        font-size: 220%;
+        top: -2rem;
+    }
+    .search-control-container {
+        paper-fab {
+            float: left;
+            &:not(:last-of-type) {
+                margin-right: 1rem;
+            }
+            @media(max-width: @screen-xs-max) {
+                // Emulate the 'mini' attribute
+                height: 40px;
+                width: 40px;
+                padding: 8px;
+                // Bring it inline with the search input
+                margin-top: 1em;
+            }
+        }
+    }
+
+    #search-options-container {
+        &.collapse, &.collapsing {
+            .bool-search-option {
+                padding-top: .5rem;
+                padding-bottom: .5rem;
+            }
+        }
+        .bool-search-option {
+            @media(max-width: @screen-xs-max) {
+                paper-icon-button[data-toggle='tooltip'] {
+                    // Hide these to prevent awkward wrapping
+                    display: none;
+                }
+            }
+        }
+        paper-menu-button {
+            margin-top: -1.5em;
+        }
+
+        @media(max-width: @screen-sm-max) {
+            .taxon-dropdown-container {
+                & > .row {
+                    .panel;
+                    .panel-default;
+                    margin-right: 0;
+                }
+
+                paper-menu-button {
+                    margin-top: 0;
+                }
+                paper-toggle-button {
+                    margin-top: 1.5em;
+                }
+            }
+        }
+    }
+
+    #default-hidden-search-option-container {
+        & > p.text-muted {
+                margin-top: 1em;
+        }
+    }
+}
 
 .toggle-container {
     paper-icon-button {
         margin-top: calc( -.5em ~"-" 5px);
+
+        & + paper-toggle-button, & + .tooltip + paper-toggle-button {
+            margin-top: -.25em;
+        }
     }
 }
 
@@ -362,7 +443,7 @@ paper-dialog {
             }
         }
     }
-    
+
     &#set-license-value {
         width: 85vw;
     }
@@ -373,33 +454,33 @@ paper-dialog {
 
         }
     }
-    
+
     &.download-file {
         .data-download-button {
             margin: .25rem;
         }
-        
+
         h3 + p {
             margin-left: 1rem;
         }
     }
-    
+
     &#sql-query-dialog {
         width: 60vw;
         paper-dialog-scrollable {
             div.scrollable {
                 max-height:50vh;
             }
-            
+
             #sql-results {
                 max-width: 100%;
-                
+
             }
-            
+
             #sql-results, #interpreted-sql {
                 margin-bottom:2rem;
             }
-            
+
             .text-muted {
                 margin-top: 5px;
                 kbd {
@@ -506,10 +587,24 @@ footer {
     box-shadow: 5px 5px 8px 5px rgba(0,0,0,.5);
     &.row {
         left: 15px;
+        @media (max-width: @screen-xs-max) {
+
+            #git-footer {
+                paper-icon-button + paper-icon-button[icon='glyphicon-social:github'] {
+                    // Only hide it if the other ones successfully load
+                    .hidden-xs;
+                }
+            }
+        }
     }
 
     copyright-statement {
         top: @line-height-base / 2em;
+        @media (max-width: @screen-xs-max) {
+            .visible-xs {
+                display: inline-block !important;
+            }
+        }
     }
 }
 
@@ -624,14 +719,7 @@ header {
     }
 }
 
-#search {
-    position:relative;
-    font-size: 220%;
-    top: -2rem;
-}
-#search_form {
-    position:relative;
-}
+
 #loader {
     position:fixed;
     top:50%;
@@ -861,6 +949,48 @@ iron-label + paper-icon-button, label + paper-icon-button {
     // width: 200%;
 }
 
+
+
+#social-menu {
+    @partial-width: 30vw;
+    width: @partial-width;
+    min-width: @partial-width;
+    background: #fff;
+    height: calc(100vh ~"-" @body-header-offset*2 ~"-" 5em);
+    position: fixed;
+    top: calc(@body-header-offset ~"+" 30px);
+    -webkit-overflow-scrolling: touch;
+    @media(max-width: @screen-sm-max) {
+        width: 90vw !important;
+        &.out {
+            right: -90vw !important;
+        }
+    }
+    transition: .5s all ease-in-out;
+    &.out {
+        right: -@partial-width;
+    }
+    &.in {
+        right: -1em;
+    }
+    div {
+        max-height: calc(100% ~"-" @body-header-offset);
+        overflow-y: scroll;
+    }
+    & > paper-icon-button {
+        margin-left: -30px;
+        background: #fff;
+        box-shadow: -1px 0 5px rgba(0,0,0,.25);
+        border-radius: 50%;
+        // Via
+        // https://brand.twitter.com/logo
+        iron-icon {
+            color: #1DA1F2;
+        }
+    }
+}
+
+
 ///////////////////////////////////////////////////
 // Species account page
 ///////////////////////////////////////////////////
@@ -910,4 +1040,36 @@ figure {
     }
 }
 
-// @import "combinator.less";
+marked-element {
+    .markdown-html {
+        @md-header-scale: (@font-size-h3 * .9) / @font-size-h1;
+
+        h1, .h1 {
+            font-size: @font-size-h1 * @md-header-scale;
+        }
+        h2, .h2 {
+            font-size: @font-size-h2 * @md-header-scale;
+        }
+        h3, .h3 {
+            font-size: @font-size-h3 * @md-header-scale;
+        }
+        h4, .h4 {
+            font-size: @font-size-h4 * @md-header-scale;
+        }
+        h5, .h5 {
+            font-size: @font-size-h5 * @md-header-scale;
+        }
+        h6, .h6 {
+            font-size: @font-size-h6 * @md-header-scale;
+        }
+
+    }
+}
+
+// taxonomy
+
+.has-authority {
+    font-weight: bold;
+    cursor: pointer;
+    border-bottom: 1px dotted #000;
+}

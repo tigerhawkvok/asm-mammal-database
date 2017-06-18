@@ -6,7 +6,7 @@
  * This page accounts for all the individual species listing
  *************/
 
-# $show_debug = true;
+#$show_debug = true;
 #$showAccountDebug = true;
 
 if ($show_debug === true) {
@@ -15,10 +15,10 @@ if ($show_debug === true) {
     error_log('Index is running in debug mode!');
     $debug = true; # compat
     $showAccountDebug = true; # Show all the debugging
-}  else {
-  # Rigorously avoid errors in production
-  # We'll respect if $showAccountDebug was set earlier
-  ini_set('display_errors', 0);
+} else {
+    # Rigorously avoid errors in production
+    # We'll respect if $showAccountDebug was set earlier
+    ini_set('display_errors', 0);
 }
 
 require_once("CONFIG.php");
@@ -353,6 +353,7 @@ if (empty($speciesRow["genus_authority"]) && $hasWellFormattedSpeciesCitation) {
 
 $nameCitation = "";
 $citationYears = json_decode($speciesRow["authority_year"], true);
+$citationRef = null;
 if (!empty($speciesRow["genus_authority"])) {
     if (!empty($citationYears)) {
         $citation = $speciesRow["genus_authority"].", ".key($citationYears);
@@ -362,9 +363,21 @@ if (!empty($speciesRow["genus_authority"])) {
     } else {
         $citation = "";
     }
+    # Start building the whole citation for the taxon name
     $nameCitation = "<span class='genus'>".$speciesRow["genus"]."</span>, <span class='citation person $iucnCitation'>".$citation."</span>; ";
+    # Do we need to provide a citation reference?
+    if (!empty($speciesRow["genus_authority_citation"])) {
+        if (stripos($speciesRow["genus_authority_citation"], "isbn")) {
+            $citationRef = "<small class='isbn'>".$speciesRow["genus_authority_citation"]."</small>";
+        } else {
+            $citationRef = "<paper-icon-button data-href='http://dx.doi.org/".$speciesRow["genus_authority_citation"]."' class='newwindow doi' data-toggle='tooltip' title='doi:".$speciesRow["genus_authority_citation"]."' icon='av:library-books' data-placement='bottom'></paper-icon-button>";
+        }
+        $nameCitation .= $citationRef;
+    }
 }
+# Save this for a reference
 $genusCitation = $citation;
+# Should we expand the citation for a separate species authority?
 if (!empty($speciesRow["species_authority"])) {
     if (!empty($citationYears)) {
         $citation = $speciesRow["species_authority"].", ".current($citationYears);
@@ -378,9 +391,34 @@ if (!empty($speciesRow["species_authority"])) {
         if ($citation == $genusCitation) {
             # We shouldn't double up on this. Just say that it's the
             # whole darn citation.
-            $nameCitation = "<span class='genus'>".$speciesRow["genus"]."</span> <span class='species'>".$speciesRow["species"]."</span>, <span class='citation person $iucnCitation'>".$citation."</span>; ";
+            $nameCitation = "<span class='genus'>".$speciesRow["genus"]."</span> <span class='species'>".$speciesRow["species"]."</span>, <span class='citation person $iucnCitation'>".$citation."</span>";
+            if (!empty($citationRef)) {
+                $nameCitation .= $citationRef;
+            } elseif (empty($citationRef) && !empty($speciesRow["species_authority_citation"])) {
+                # We have a citation for species but not genus.
+                # Here, that's OK since they're one and the same.
+                if (stripos($speciesRow["species_authority_citation"], "isbn")) {
+                    $citationRef = "<small class='isbn'>".$speciesRow["species_authority_citation"]."</small>";
+                } else {
+                    $citationRef = "<paper-icon-button data-href='http://dx.doi.org/".$speciesRow["species_authority_citation"]."' class='newwindow doi' data-toggle='tooltip' title='doi:".$speciesRow["species_authority_citation"]."' icon='av:library-books' data-placement='bottom'></paper-icon-button>";
+                }
+                $nameCitation .= $citationRef;
+            }
         } else {
+            # Append a new citation for the species
             $nameCitation .= "<span class='species'>".$speciesRow["species"]."</span>, <span class='citation person $iucnCitation'>".$citation."</span>";
+            if (empty($speciesRow["species_authority_citation"]) && !empty($speciesRow["genus_authority_citation"])) {
+                $speciesRow["species_authority_citation"] = $speciesRow["genus_authority_citation"];
+            }
+        }
+        # Do we need to provide a citation reference?
+        if (!empty($speciesRow["species_authority_citation"])) {
+            if (stripos($speciesRow["species_authority_citation"], "isbn")) {
+                $citationRef = "<small class='isbn'>".$speciesRow["species_authority_citation"]."</small>";
+            } else {
+                $citationRef = "<paper-icon-button data-href='http://dx.doi.org/".$speciesRow["species_authority_citation"]."' class='newwindow doi' data-toggle='tooltip' title='doi:".$speciesRow["species_authority_citation"]."' icon='av:library-books' data-placement='bottom'></paper-icon-button>";
+            }
+            $nameCitation .= $citationRef;
         }
     } else {
         # What if we got it from the IUCN?
@@ -418,7 +456,7 @@ $taxonomyNotes = "<section id='taxonomy' class='col-xs-12'>
 </section>\n\n";
 
 # Any aside / note for this species.
-$entryNote = empty($speciesRow["notes"]) ? "" : "<section id='species-note' class='col-xs-12'><h3>Taxon Notes</h3><marked-element><div class='markdown-html'></div><script type='text/markdown'>".$speciesRow["notes"]."</script></marked-element></section>\n\n"; #"<section id='species-note' class='col-xs-12'><marked-element><div class='markdown-html'></div><script type='text/markdown'>".$speciesRow["notes"]."</script></marked-element></section>\n\n";
+$entryNote = empty($speciesRow["notes"]) ? "" : "<section id='species-note' class='col-xs-12'><h3>Taxon Notes</h3><marked-element id='taxon-notes'><div class='markdown-html'></div><script type='text/markdown'>".$speciesRow["notes"]."</script></marked-element></section>\n\n"; #"<section id='species-note' class='col-xs-12'><marked-element><div class='markdown-html'></div><script type='text/markdown'>".$speciesRow["notes"]."</script></marked-element></section>\n\n";
 
 
 
@@ -672,7 +710,7 @@ $speciesRow["entry"] = empty($speciesRow["entry"]) ? "No entry exists for this t
 
 # The main entry.
 #  col-md-10 col-lg-6 col-md-offset-2 col-lg-offset-3
-$primaryEntry = "<section id='species-account' class='col-xs-12'><h3>Taxon Entry</h3><marked-element><div class='markdown-html'></div><script type='text/markdown'>".$speciesRow["entry"]."</script></marked-element></section>\n\n";
+$primaryEntry = "<section id='species-account' class='col-xs-12'><h3>Taxon Entry</h3><marked-element id='taxon-primary-entry'><div class='markdown-html'></div><script type='text/markdown'>".$speciesRow["entry"]."</script></marked-element></section>\n\n";
 
 # Credits
 $creditTime = strtotime($speciesRow["taxon_credit_date"]);
@@ -685,10 +723,14 @@ if (!is_numeric($creditTime) || $creditTime == 0) {
 
 
 $creditAuthor = empty($speciesRow["taxon_author"]) ? "your local ASM server" : $speciesRow["taxon_credit"];
-$credit = "Entry by ".$creditAuthor." on ".strftime("%d %B %Y", $creditTime);
+$credit = "<p>Entry by ".$creditAuthor." on ".strftime("%d %B %Y", $creditTime)."</p>";
+if (!empty($speciesRow["citation"])) {
+    $credit .= "<marked-element id='taxon-citation-credit'><div class='markdown-html'></div><script type='text/markdown'>The data used to generate this page is via: ".$speciesRow["citation"]."</script></marked-element>";
+}
+
 $taxonCitation = $speciesRow["canonical_sciname"]." (ASM Species Account Database #".$speciesRow["internal_id"].") fetched ".date(DATE_ISO8601);
 $permalink = "https://mammaldiversity.org/species-account/id=".$speciesRow["id"];
-$entryCredits = "<section id='entry-credits' class='col-xs-12 small'><p>".$credit."</p><p class='cite-taxon'>Citation: <cite>".$taxonCitation."</cite></p><p>Permalink: <code>".$permalink."</code></section>\n\n";
+$entryCredits = "<section id='entry-credits' class='col-xs-12 small'><div>".$credit."</div><p class='cite-taxon'>Citation: <cite>".$taxonCitation."</cite></p><p>Permalink: <code>".$permalink."</code></section>\n\n";
 
 $content = $entryTitle . $images . $taxonomyNotes. $entryNote . $primaryEntry . $entryCredits;
 

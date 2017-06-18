@@ -25,6 +25,17 @@ locationData.params =
   enableHighAccuracy: true
 locationData.last = undefined
 
+
+unless typeof window._asm is "object"
+  window._asm = new Object()
+
+_asm.socialHandles =
+  twitter: "mammalogists"
+
+# Breakpoint in px
+_asm.mobileBreakpoint = 767
+
+
 isBool = (str) -> str is true or str is false
 
 isEmpty = (str) -> not str or str.length is 0
@@ -502,7 +513,7 @@ Function::getName = ->
   ###
   name = this.name
   unless name?
-    name = this.toString().substr( 0, this.toString().indexOf( "(" ) ).replace( "function ", "" );
+    name = this.toString().substr( 0, this.toString().indexOf( "(" ) ).replace( "function ", "" )
   if isNull name
     name = md5 this.toString()
   name
@@ -1725,6 +1736,55 @@ delayPolymerBind = (selector, callback, iter = 0) ->
   false
 
 
+
+loadSocialMediaSlideoutBar = (handles, selector = "#social-menu", appendTo = "main") ->
+  ###
+  #
+  # @param obj handles -> an object with keys as service and value as handle
+  ###
+  toggleSocialSlideoutBar = ->
+    if $(selector).hasClass "out"
+      $(selector)
+      .removeClass "out"
+      .addClass "in"
+    else
+      $(selector)
+      .removeClass "in"
+      .addClass "out"
+    false
+  window.toggleSocialSlideoutBar = toggleSocialSlideoutBar
+  unless $(selector).exists()
+    contentHtml = ""
+    for service, handle of handles
+      switch service
+        when "twitter"
+          # https://dev.twitter.com/web/embedded-timelines
+          # https://publish.twitter.com/#
+          serviceHtml = """
+          <a class="twitter-timeline" data-link-color="#1DA1F2" href="https://twitter.com/#{handle}">Tweets by @#{handle}</a> <script async src="//platform.twitter.com/widgets.js" charset="utf-8"></script>
+          """
+        else
+          serviceHtml = ""
+      contentHtml += "\n#{serviceHtml}\n"
+    html = """
+<paper-material id="social-menu" class="out" elevation="4">
+  <paper-icon-button icon="glyphicon-social:twitter" class="show-social"></paper-icon-button>
+  <div class="slideout-content">
+    #{contentHtml}
+  </div>
+</paper-material>
+    """
+    showButton = """
+    """
+    $(appendTo).append html
+    $(".show-social").click ->
+      toggleSocialSlideoutBar.debounce 50
+      false
+  false
+
+
+
+
 try
   $()
 catch e
@@ -1787,6 +1847,8 @@ $ ->
         p$(md).markdown = mdText
   browserBeware()
   checkFileVersion()
+  try
+    loadSocialMediaSlideoutBar(_asm.socialHandles)
   try
     for caption in $("figcaption .caption-description")
       captionValue = $(caption).text().unescape()

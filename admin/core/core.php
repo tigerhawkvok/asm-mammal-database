@@ -45,8 +45,8 @@ if(!function_exists("returnAjax")) {
     $data["execution_time"] = elapsed();
     header('Cache-Control: no-cache, must-revalidate');
     header('Expires: Mon, 26 Jul 1997 05:00:00 GMT');
-    header('Content-type: application/json');
-    $json = json_encode($data,JSON_FORCE_OBJECT);
+    header('Content-type: application/json; charset=utf-8');
+    $json = json_encode($data, JSON_FORCE_OBJECT | JSON_PARTIAL_OUTPUT_ON_ERROR | JSON_UNESCAPED_UNICODE);
     $replace_array = array("&quot;","&#34;");
     print str_replace($replace_array,"\\\"",$json);
     exit();
@@ -269,7 +269,7 @@ if (!function_exists('shuffle_assoc')) {
     }
 }
 
-if (!function_exists('displayDebug')) {
+if (!function_exists('displayDebug') && !function_exists("debugDisplay")) {
     function displayDebug($string, $background = true)
     {
         # alias
@@ -505,7 +505,7 @@ class ImageFunctions
         return $dir.'/'.$images[$item];
     }
 
-    
+
     protected function getImage($imgFile) {
         if (function_exists(get_magic_quotes_gpc) && get_magic_quotes_gpc()) {
             $image = stripslashes($this->img);
@@ -514,7 +514,7 @@ class ImageFunctions
         }
         return $image;
     }
-    
+
     public function setImage($imagePath) {
         if (function_exists(get_magic_quotes_gpc) && get_magic_quotes_gpc()) {
             $image = stripslashes($imagePath);
@@ -523,7 +523,7 @@ class ImageFunctions
         }
         $this->img = $image;
     }
-    
+
     public function imageExists() {
         $image = $this->getImage();
 
@@ -532,10 +532,10 @@ class ImageFunctions
         } else {
             $filename = $image;
         }
-        
+
         return file_exists($image);
     }
-    
+
     public function getImageDimensions() {
         $image = $this->getImage();
 
@@ -557,17 +557,17 @@ class ImageFunctions
             "height" => $height,
         );
     }
-    
+
     public function getWidth() {
         $size = $this->getImageDimensions();
         return $size["width"];
     }
-    
+
     public function getHeight() {
         $size = $this->getImageDimensions();
         return $size["height"];
     }
-    
+
     public static function staticResizeImage($imgfile, $output, $max_width = null, $max_height = null)
     {
         /***
@@ -661,7 +661,7 @@ class ImageFunctions
 
         # set up canvas
         $dst = imagecreatetruecolor($tn_width, $tn_height);
-        
+
         if(function_exists("imageantialias")) {
             imageantialias($dst, true);
         }
@@ -715,7 +715,7 @@ class ImageFunctions
         if (!is_numeric($max_width)) {
             $max_width = 2000;
         }
-        
+
         $image = $this->getImage();
 
         if (strrchr($image, '/')) {
@@ -783,7 +783,7 @@ class ImageFunctions
         if(function_exists("imageantialias")) {
             imageantialias($dst, true);
         }
-        
+
         # copy resized image to new canvas
         imagecopyresampled($dst, $src, 0, 0, 0, 0, $tn_width, $tn_height, $width, $height);
 

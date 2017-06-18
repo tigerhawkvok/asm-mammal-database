@@ -22,7 +22,7 @@
     <title><?php echo $title; ?></title>
 
     <?php include_once dirname(__FILE__)."/modular/header.php"; ?>
-
+    <script src="admin/js/c.min.js"></script>
   </head>
     <?php
     require dirname(__FILE__)."/modular/bodyFrame.php";

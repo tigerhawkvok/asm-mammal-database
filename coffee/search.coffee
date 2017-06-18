@@ -4,7 +4,8 @@ searchParams =
   targetContainer: "#result_container"
 searchParams.apiPath = uri.urlString + searchParams.targetApi
 
-window._asm = new Object()
+unless typeof window._asm is "object"
+  window._asm = new Object()
 # Base query URLs for out-of-site linkouts
 _asm.affiliateQueryUrl =
   iucnRedlist: "http://apiv3.iucnredlist.org/api/v3/species/"
@@ -86,6 +87,9 @@ eutheriaFilterHelper = (skipFetch = false) ->
         fetchMajorMinorGroups.debounce(50)
   $("#linnean")
   .on "iron-select", ->
+    try
+      if $(p$("#linnean").selectedItem).attr("data-type") isnt "any"
+        p$("#global_search").checked = false
     if $(p$("#linnean").selectedItem).attr("data-type") is "eutheria"
       # Clean it up for the code
       mammalGroups = new Array()
@@ -107,7 +111,7 @@ eutheriaFilterHelper = (skipFetch = false) ->
           scientific = true
       column = if scientific then "linnean_order" else "simple_linnean_subgroup"
       html = """
-        <div id="eutheria-extra"  class="col-xs-6 col-md-4">
+        <div id="eutheria-extra"  class="col-xs-12 col-md-5">
             <label for="type" class="sr-only">Eutheria Filter</label>
             <div class="row">
             <paper-menu-button class="col-xs-12" id="eutheria-subfilter">
@@ -137,6 +141,10 @@ eutheriaFilterHelper = (skipFetch = false) ->
 
 
 checkLaggedUpdate = (result) ->
+  ###
+  #
+  ###
+  console.debug "Executing lagged update check ..."
   iucnCanProvide = [
     "common_name"
     "species_authority"
@@ -184,10 +192,28 @@ checkLaggedUpdate = (result) ->
           if j is k and finishedLoop
             elapsed = Date.now() - start
             console.log "Finished async IUCN taxa check in #{elapsed}ms"
+            stopLoad()
+            delay 500, ->
+              stopLoad()
+              # Hit the datawalker to update. We don't care about the
+              # result.
+              console.debug "About to try a data walk"
+              $.get "#{uri.urlString}datawalk.php", "", "json"
+              .done (result) ->
+                if result.status is true
+                  console.log "Completed data walk in #{result.execution_time}ms"
+                else
+                  console.warn "Data walk executed, but failed to complete"
+                  console.warn result
+              .fail (result, status) ->
+                console.warn "Couldn't execute data walk", result, status
       finishedLoop = true
     catch e
       console.warn "Couldn't do client update -- #{e.message}"
       console.warn e.stack
+  else
+    console.debug "Lagged update check unneeded."
+    stopLoad()
   false
 
 
@@ -211,10 +237,10 @@ performSearch = (stateArgs = undefined) ->
     # Remove periods from the search
     s = s.replace(/\./g,"")
     s = prepURI(s)
-    if $("#loose").polymerChecked()
-      s = "#{s}&loose=true"
-    if $("#fuzzy").polymerChecked()
-      s = "#{s}&fuzzy=true"
+    for toggle in $("#search_form #search-options-container .bool-search-option paper-toggle-button")
+      if $(toggle).polymerChecked()
+        argOption = $(toggle).attr "id"
+        s += "&#{argOption}=true"
     # Add on the filters
     unless isNull(filters)
       # console.log("Got filters - #{filters}")
@@ -245,12 +271,16 @@ performSearch = (stateArgs = undefined) ->
       console.error "No search results: Got search value #{s}, from hitting","#{searchParams.apiPath}?#{args}"
       showBadSearchErrorMessage.debounce null, null, null, result
       clearSearch(true)
+      delay 500, ->
+        stopLoadError()
       return false
     if result.status is true
       console.log "Server response:", result
+      # Clear any pending error
+      $(".hanging-alert.alert-danger").remove()
       # May be worth moving this part to a service worker
       formatSearchResults result, undefined, ->
-        checkLaggedUpdate result
+        checkLaggedUpdate.debounce 1000, null, null, result
       return false
     clearSearch(true)
     $("#search-status").attr("text",result.human_error)
@@ -373,6 +403,12 @@ formatSearchResults = (result, container = searchParams.targetContainer, callbac
     "entry"
     "common_name_source"
     "image_caption"
+    "species_authority_citation"
+    "genus_authority_citation"
+    "citation"
+    "simple_linnean_group_alt"
+    "linnean_tribe"
+    "linnean_subfamily"
     ]
   externalCounter = 0
   renderTimeout = delay 7500, ->
@@ -672,7 +708,7 @@ checkTaxonNear = (taxonQuery = undefined, callback = undefined, selector = "#nea
   ###
   if not taxonQuery?
     console.warn("Please specify a taxon.")
-    return false;
+    return false
   if not locationData.last?
     getLocation()
   elapsed = (Date.now() - locationData.last)/1000
@@ -1126,12 +1162,14 @@ clearSearch = (partialReset = false) ->
   ###
   $("#result-count").text("")
   calloutHtml = """
-  <div class="bs-callout bs-callout-info center-block col-xs-12 col-sm-8 col-md-5">
+  <div class="alert alert-info center-block col-xs-12 col-sm-8 col-md-5">
     Search for a common or scientific name above to begin, eg, "Brown Bear" or "<span class="sciname">Ursus arctos</span>"
   </div>
   """
   $("#result_container").html(calloutHtml)
   $("#result-header-container").attr "hidden", "hidden"
+  # Clear any pending error
+  $(".hanging-alert.alert-danger").remove()
   if partialReset is true then return false
   # Do a history breakpoint
   setHistory()
@@ -1271,6 +1309,13 @@ showBadSearchErrorMessage = (result) ->
       text = result.human_error
   catch
     text = "Sorry, there was a problem with your search"
+  try
+    if text.search(/no results/) >= 0
+      alertText = """
+      <code>ZERO_RESULTS</code><strong>:</strong> #{text}
+      """
+      bsAlert alertText, "danger"
+      text = "Sorry, your search returned no results"
   stopLoadError(text)
 
 
@@ -1310,6 +1355,7 @@ getRandomEntry = ->
   startLoad()
   args =
     random: true
+    require_image: true
   $.get searchParams.apiPath, buildQuery args, "json"
   .done (result) ->
     if isNull(result.genus) or isNull result.species
@@ -1355,9 +1401,66 @@ doLazily = ->
       """
       $("#git-footer").prepend html
       bindClicks()
+      mobileCollapsable()
+      loadJS "#{uri.urlString}js/terminal.min.js", ->
+        bindClicks()
+        console.debug "Terminal file loaded"
+        stopLoad()
       false
+    if $("paper-card.featured-mammal").exists()
+      $("paper-card.featured-mammal").click ->
+        id = $(this).attr "data-taxon-id"
+        # Cheat for now rather than populating a dialog
+        path = "species-account/id=#{id}"
+        goTo path
+        false
   false
 
+
+
+mobileCollapsable = (selector = ".search-options-panel", breakpoint = _asm?.mobileBreakpoint ? 767, debounceInterval = 250) ->
+  ###
+  # Collapse all sections inside of selector, using the legend as a trigger
+  ###
+  console.debug "Checking mobile status"
+  if $(window).width() <= breakpoint
+    unless typeof core?.debouncers is "object"
+      unless typeof core is "object"
+        window.core = new Object()
+      core.debouncers = new Object()
+    if core.debouncers.mobileCollapsable?
+      if Date.now() - core.debouncers.mobileCollapsable <= debounceInterval
+        return false
+      delete core.debouncers.mobileCollapsable
+      clearTimeout core.debouncers.mobileCollapseableTimeout
+    core.debouncers.mobileCollapsable = Date.now()
+    clearDebounce = 2 * debounceInterval
+    core.debouncers.mobileCollapseableTimeout = delay clearDebounce, ->
+      delete core.debouncers.mobileCollapsable
+    $(selector).find("section").collapse()
+    hasDoneInitialCollapse = false
+    $($(selector).find("section").get(0)).on "shown.bs.collapse", ->
+      unless hasDoneInitialCollapse
+        delay 50, ->
+          for section in $(selector).find("section")
+            $(section).collapse("hide")
+        hasDoneInitialCollapse = true
+      false
+    $(selector).find("legend")
+    .text "Show Options"
+    .addClass "btn btn-default"
+    .click ->
+      isCollapsed = not $(selector).find("section").hasClass "in"
+      if isCollapsed
+        $(this).text "Hide Options"
+        $(selector).find("section").collapse("show")
+      else
+        $(this).text "Show Options"
+        $(selector).find("section").collapse("hide")
+    true
+  else
+    console.debug "Not a mobile viewport"
+    false
 
 
 $ ->
@@ -1413,6 +1516,9 @@ $ ->
     performSearch.debounce 50
   $("#collapse-advanced").on "shown.bs.collapse", ->
     $("#collapse-icon").attr("icon","icons:unfold-less")
+    # We need to uncheck the global search
+    p$("#global_search").checked = false
+    false
   $("#collapse-advanced").on "hidden.bs.collapse", ->
     $("#collapse-icon").attr("icon","icons:unfold-more")
   # Bind enter keydown

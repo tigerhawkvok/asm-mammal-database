@@ -50,8 +50,12 @@ if (!function_exists("returnAjax")) {
         $data["execution_time"] = elapsed();
         header('Cache-Control: no-cache, must-revalidate');
         header('Expires: Mon, 26 Jul 1997 05:00:00 GMT');
-        header('Content-type: application/json');
-        $json = json_encode($data, JSON_FORCE_OBJECT);
+        header('Content-type: application/json; charset=utf-8');
+        $json = json_encode($data, JSON_FORCE_OBJECT | JSON_PARTIAL_OUTPUT_ON_ERROR | JSON_UNESCAPED_UNICODE);
+        if ($json === false) {
+            $json = json_last_error();
+        }
+        //print_r(json_last_error());
         $replace_array = array("&quot;","&#34;");
         print str_replace($replace_array, "\\\"", $json);
         exit();
@@ -276,7 +280,7 @@ if (!function_exists('shuffle_assoc')) {
     }
 }
 
-if (!function_exists('displayDebug')) {
+if (!function_exists('displayDebug') && !function_exists("debugDisplay")) {
     function displayDebug($string, $background = true)
     {
         # alias
@@ -538,9 +542,9 @@ class ImageFunctions
         $this->img = $imgUrl;
     }
 
-    private static function notfound()
+    private static function notfound($image)
     {
-        throw new Exception('Not Found Exception');
+        throw new Exception('Not Found Exception for file "'.$image.'"');
     }
     public function getRelPath($file = false)
     {
@@ -778,7 +782,11 @@ class ImageFunctions
         # read image
         $ext = strtolower(substr(strrchr($image, '.'), 1)); # get the file extension
         switch ($ext) {
+        case "jepg":
         case 'jpg':     # jpg
+            $src = imagecreatefromjpeg($image) or self::notfound();
+            break;
+        case 'jpeg':     # jpg
             $src = imagecreatefromjpeg($image) or self::notfound();
             break;
         case 'png':     # png
@@ -896,23 +904,27 @@ class ImageFunctions
         # read image
         $ext = strtolower(substr(strrchr($image, '.'), 1)); # get the file extension
         switch ($ext) {
+        case "jpeg":
         case 'jpg':     # jpg
-            $src = imagecreatefromjpeg($image) or self::notfound();
+            $src = imagecreatefromjpeg($image) or self::notfound($image);
+            break;
+        case 'jpeg':     # jpg
+            $src = imagecreatefromjpeg($image) or self::notfound($image);
             break;
         case 'png':     # png
-            $src = imagecreatefrompng($image) or self::notfound();
+            $src = imagecreatefrompng($image) or self::notfound($image);
             break;
         case 'gif':     # gif
-            $src = imagecreatefromgif($image) or self::notfound();
+            $src = imagecreatefromgif($image) or self::notfound($image);
             break;
         case 'bmp':     # bmp
-            $src = imagecreatefromwbmp($image) or self::notfound();
+            $src = imagecreatefromwbmp($image) or self::notfound($image);
             break;
         case 'webp':     # webp
-            $src = imagecreatefromwebp($image) or self::notfound();
+            $src = imagecreatefromwebp($image) or self::notfound($image);
             break;
         default:
-            self::notfound();
+            self::notfound($image);
         }
 
         # set up canvas

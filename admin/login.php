@@ -397,7 +397,7 @@ if ($_REQUEST['q']=='submitlogin') {
                         $durl = $redirect_url;
                     }
                 }
-                
+
                 # Double check the cookie setting
                 if (isset($_COOKIE[$cookieuser]) || $logged_in===true) {
                     $cookiedebug.=" cookie-enter";
@@ -459,7 +459,7 @@ if ($_REQUEST['q']=='submitlogin') {
                             $cookiedebug.="\nWould wipe here";
                         }
                     }
-                    
+
                     # Force two factor
                     if (!$user->has2FA() && $require_two_factor === true) {
                         # If require two factor is on, always force it post login
@@ -482,7 +482,7 @@ if ($_REQUEST['q']=='submitlogin') {
                     $logged_in=false;
                     $cookiedebug.='cookies not set for '.$domain;
                 }
-                
+
                 if ($debug) {
                     echo "<pre>CookieDebug:\n";
                     echo $cookiedebug;
@@ -610,7 +610,7 @@ if ($_REQUEST['q']=='submitlogin') {
               </label>
 	      <input type='text' name='honey' id='honey' class='hide'/>
 </div>
-        <p>Please do the<a href='https://en.wikipedia.org/wiki/CAPTCHA' class='newwindow'>CAPTCHA test</a> below to prove you're human:</p>
+        <p>Please do the <a href='https://en.wikipedia.org/wiki/CAPTCHA' class='newwindow'>CAPTCHA test</a> below to prove you're human:</p>
         <script src='https://www.google.com/recaptcha/api.js'></script>
         <div class=\"g-recaptcha\" data-sitekey=\"".$recaptcha_public_key."\"></div>
 
@@ -630,7 +630,7 @@ if ($_REQUEST['q']=='submitlogin') {
         if ($_REQUEST['s']=='next') {
             $email_preg="/[a-z0-9!#$%&'*+=?^_`{|}~-]+(?:\.[a-z0-9!#$%&'*+=?^_`{|}~-]+)*@(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\.)+(?:[a-z]{2}|com|org|net|edu|gov|mil|biz|info|mobi|name|aero|asia|jobs|museum)\b/";
             if (!empty($_POST['honey'])) {
-                $login_ouptut.="<div class='alert alert-warning'><button type='button' class='close' data-dismiss='alert' aria-label='Close'><span aria-hidden='true'>&times;</span></button><p><strong>Whoops!</strong> You tripped one of our bot tests. If you are not a bot, please go back and try again. Read your fields carefully!</p></div>";
+                $login_output.="<div class='alert alert-warning'><button type='button' class='close' data-dismiss='alert' aria-label='Close'><span aria-hidden='true'>&times;</span></button><p><strong>Whoops!</strong> You tripped one of our bot tests. If you are not a bot, please go back and try again. Read your fields carefully!</p></div>";
                 $_POST['email']='bob';
             }
             # https://developers.google.com/recaptcha/docs/verify
@@ -648,7 +648,11 @@ if ($_REQUEST['q']=='submitlogin') {
                 if ($debug) {
                     $login_output .= "<pre>Bare output: ".displayDebug($bareResponse)."</pre>";
                 }
-                $resp = json_decode($bareResponse, true);
+                if (!is_array($bareResponse)) {
+                    $resp = json_decode($bareResponse, true);
+                } else {
+                    $resp = $bareResponse["response"];
+                }
                 if (empty($bareResponse) || $bareResponse === false) {
                     throw new Exception("Bad Response");
                 }
@@ -656,6 +660,9 @@ if ($_REQUEST['q']=='submitlogin') {
                     $login_output .= "<pre>Parsed output: ".displayDebug($resp)."</pre>";
                 }
             } catch (Exception $e) {
+                if (!is_array($resp)) {
+                    $resp = array();
+                }
                 $resp["success"] = false;
                 $resp["post-error"] = $e->getMessage();
                 $resp["full_error"] = $e;
@@ -669,7 +676,7 @@ if ($_REQUEST['q']=='submitlogin') {
                 if (empty($error)) {
                     $error = "Unknown Error";
                 }
-                $login_output.= "<div class='alert alert-danger'><button type='button' class='close' data-dismiss='alert' aria-label='Close'><span aria-hidden='true'>&times;</span></button>The reCAPTCHA wasn't entered correctly. Go back and try it again." . " (reCAPTCHA said: " . $error . ")</div>";
+                $login_output .= "<div class='alert alert-danger'><button type='button' class='close' data-dismiss='alert' aria-label='Close'><span aria-hidden='true'>&times;</span></button>The reCAPTCHA wasn't entered correctly. Go back and try it again." . " (reCAPTCHA said: " . $error . ")</div>";
                 if ($debug) {
                     $login_output .= "<pre>".displayDebug($resp)."</pre>";
                 }
@@ -682,12 +689,14 @@ if ($_REQUEST['q']=='submitlogin') {
                             $res=$user->createUser($_POST['username'], $_POST['password'], array($_POST['fname'],$_POST['lname']), $_POST['dname'], $_POST['phone']);
                             if ($res["status"]) {
                                 $login_output.="<div class='alert alert-success text-center force-center'><button type='button' class='close' data-dismiss='alert' aria-label='Close'><span aria-hidden='true'>&times;</span></button>
-<h3> ".$res["message"]." </h3><p>You can <a class='alert-link' href='".$self_url."'>return to your profile page here</a>.</p></div>"; //jumpto1
-                                             if ($user->needsManualAuth()) {
-                                                 $login_output.="<div class='alert alert-warning text-center force-center'><p>Your ability to login will be restricted until you've been authorized.</p></div>";
-                                             }
-                                             // email user
-                                             $to=$_POST['username'];
+<h3> ".$res["message"]." </h3>"; //jumpto1
+                                if ($user->needsManualAuth()) {
+                                    $login_output.="</div><div class='alert alert-warning text-center force-center'><p>Your ability to login will be restricted until you've been authorized.</p></div>";
+                                } else {
+                                    $login_output .= "<p>You can <a class='alert-link' href='".$self_url."'>return to your profile page here</a>.</p></div>";
+                                }
+                                // email user
+                                $to=$_POST['username'];
                                 $headers  = 'MIME-Version: 1.0' . "\r\n";
                                 $headers .= 'Content-type: text/html; charset=iso-8859-1' . "\r\n";
                                 $headers .= "From: [".$shorturl."] Mailer Bot <blackhole@".$shorturl.">";
@@ -699,10 +708,12 @@ if ($_REQUEST['q']=='submitlogin') {
                                     // no email
                                 }
 
-                                             /***
-                                              * Post login behavior ...
-                                              ***/
-                                             $deferredJS.=$res['js'];
+                                /***
+                                 * Post login behavior ...
+                                 ***/
+                                if (!$user->needsManualAuth()) {
+                                    $deferredJS.=$res['js'];
+                                }
                                 if ($post_create_redirect) {
                                     if ($redirect_to_home !== true && empty($redirect_url)) {
                                         $durl = $self_url;
@@ -735,10 +746,10 @@ if ($_REQUEST['q']=='submitlogin') {
 </form>";
                                     $login_output .= "<h2>Verifying your Phone</h2>".$phone_verify_template;
                                 }
-                                             # Give the option to add two-factor now; force it if flag enabled
-                                             if ($ask_twofactor_at_signup) {
-                                                 # Give user 2FA
-                                                 $totp_add_form = "<section id='totp_add' class='row'>
+                                # Give the option to add two-factor now; force it if flag enabled
+                                if ($ask_twofactor_at_signup) {
+                                    # Give user 2FA
+                                    $totp_add_form = "<section id='totp_add' class='row'>
   <div id='totp_message' class='col-xs-12 col-md-6 alert alert-warning force-center'>
     Two factor authentication is required when setting up an account with $shorturl. If you don't know what this is, click \"Help with two-factor authentication\" below.
   </div>
@@ -763,8 +774,8 @@ if ($_REQUEST['q']=='submitlogin') {
     <button id='totp_help' class='alert-link btn btn-link'>Help with Two-Factor Authentication</button>
   </div>
 </section>";
-                                                 $login_output .= "<h2 class='row'>Adding two-factor authentication</h2>".$totp_add_form;
-                                             }
+                                    $login_output .= "<h2 class='row'>Adding two-factor authentication</h2>".$totp_add_form;
+                                }
                             } else {
                                 if ($debug) {
                                     $login_output.=displayDebug($res);

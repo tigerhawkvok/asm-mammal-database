@@ -104,6 +104,7 @@ include_once dirname(__FILE__)."/core/core.php";
                 <th>Orders</th>
                 <th>Genera</th>
                 <th>Species</th>
+                <th>View Taxonomy Info</th>
               </tr>
             </thead>
             <tbody>
@@ -116,6 +117,11 @@ include_once dirname(__FILE__)."/core/core.php";
                 </td>
                 <td>
                   <?php echo $speciesTotal; ?>
+                </td>
+                <td>
+                    <a class="btn btn-primary" href="<?php echo $qualDomain;?>/taxonomy">
+                        Visit Taxonomy Page
+                    </a>
                 </td>
               </tr>
             </tbody>

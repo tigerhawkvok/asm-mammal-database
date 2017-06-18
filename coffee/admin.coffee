@@ -473,6 +473,8 @@ prefetchEditorDropdowns = ->
     major_subtype: "Sub-Clade (eg., euarchontoglires)"
     linnean_order: null
     linnean_family: null
+    linnean_tribe: null
+    linnean_subfamily: null
     simple_linnean_group: "Common Group (eg., metatheria)"
     simple_linnean_subgroup: "Common type (eg., bat)"
   for col, label of needCols
@@ -505,6 +507,8 @@ loadModalTaxonEditor = (extraHtml = "", affirmativeText = "Save") ->
   #{_asm.dropdownPopulation.major_subtype.html}
   #{_asm.dropdownPopulation.linnean_order.html}
   #{_asm.dropdownPopulation.linnean_family.html}
+  #{_asm.dropdownPopulation.linnean_subfamily.html}
+  #{_asm.dropdownPopulation.linnean_tribe.html}
   #{_asm.dropdownPopulation.simple_linnean_group.html}
   #{_asm.dropdownPopulation.simple_linnean_subgroup.html}
   <paper-input label="Genus authority" id="edit-genus-authority" name="edit-genus-authority" class="genus_authority" floatingLabel></paper-input>
@@ -658,7 +662,8 @@ deprecatedHelper = (selector = "#edit-deprecated-taxon-dialog") ->
             oldTaxon = oldTaxon.replace /\-/g, " "
           authorityParts = authorityString.split(":")
           authorities = authorityParts[0]
-          prettyElement = """ #{oldTaxon} <iron-icon icon="icons:arrow-forward"></iron-icon> #{authorities.toTitleCase()} in #{authorityParts[1]}"""
+          yearParts = authorityParts[1].split("$")
+          prettyElement = """ #{oldTaxon} <iron-icon icon="icons:arrow-forward"></iron-icon> #{authorities.toTitleCase()} in #{yearParts[0]}"""
           listEl.push prettyElement
         list = "<li>#{listEl.join("</li>\n<li>")}</li>"
       catch e
@@ -685,6 +690,7 @@ deprecatedHelper = (selector = "#edit-deprecated-taxon-dialog") ->
             <paper-input class="col-xs-12" value="#{currentTaxon.species}" label="Old Species" placeholder="#{currentTaxon.species}" id="dialog-update-species" required autovalidate></paper-input>
             <paper-input class="col-xs-6" value="#{currentTaxonAuthority.genus.authority}" label="Old Authority" placeholder="#{currentTaxonAuthority.genus.authority}" required autovalidate floatingLabel id="dialog-update-authority"></paper-input>
             <paper-input class="col-xs-6" value="#{currentTaxonAuthority.genus.year}" label="Old Year" placeholder="#{currentTaxonAuthority.genus.year}" pattern="[0-9]{4}" error-message="Invalid Year" required autovalidate floatingLabel id="dialog-update-year"></paper-input>
+            <paper-input class="col-xs-6" value="#{currentTaxonAuthority.genus.year}" label="Year Assigned" placeholder="#{currentTaxonAuthority.genus.year}" pattern="[0-9]{4}" error-message="Invalid Year" required autovalidate floatingLabel id="dialog-update-citeyear"></paper-input>
           </div>
           <div class="row">
             <div class="col-xs-12 text-right pull-right">
@@ -724,6 +730,7 @@ deprecatedHelper = (selector = "#edit-deprecated-taxon-dialog") ->
         species: p$("#dialog-update-species").value.trim()
         authority: p$("#dialog-update-authority").value.trim()
         year: toInt p$("#dialog-update-year").value.trim()
+        citeYear: toInt p$("#dialog-update-citeyear").value.trim()
       # Ensure that the taxon doesn't match the current one
       if currentTaxon.genus.toLowerCase() is oldTaxon.genus.toLowerCase()
         if currentTaxon.species.toLowerCase() is oldTaxon.species.toLowerCase()
@@ -743,7 +750,7 @@ deprecatedHelper = (selector = "#edit-deprecated-taxon-dialog") ->
         return false
       # Construct the strings
       oldTaxonString = "#{oldTaxon.genus} #{oldTaxon.species}"
-      oldAuthorityString = "#{oldTaxon.authority}:#{oldTaxon.year}"
+      oldAuthorityString = "#{oldTaxon.authority}:#{oldTaxon.year}$#{oldTaxon.citeYear}"
       console.log "Got strings", oldTaxonString, oldAuthorityString
       jDep[oldTaxonString] = oldAuthorityString
       console.log "Object:", jDep

@@ -59,7 +59,7 @@ include_once dirname(__FILE__)."/CONFIG.php";
       </div>
       <h2 class="col-xs-12">API</h2>
       <p class="col-xs-12">
-        Please view <a href="<?php echo $gitUrl; ?>/blob/master/README.md#api"><code>README.md</code> in the Github repository</a> for information on how to use our public taxon API. The API endpoint can be found at <code><a href="<?php echo $protocol; ?>://$shortUrl/api/q=ursus+arctos" class="newwindow"><?php echo $protocol; ?>://$shortUrl/api</a></code>.
+        Please view <a href="<?php echo $gitUrl; ?>/blob/master/README.md#api"><code>README.md</code> in the Github repository</a> for information on how to use our public taxon API. The API endpoint can be found at <code><a href="<?php echo $protocol; ?>://<?php echo $shortUrl; ?>/api/q=ursus+arctos" class="newwindow"><?php echo $protocol; ?>://<?php echo $shortUrl; ?>/api</a></code>.
         </p>
       <h2 class="col-xs-12">Legal Notices</h2>
       <h3 class="col-xs-12">Application</h3>

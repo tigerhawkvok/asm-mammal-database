@@ -2197,7 +2197,7 @@ loadSocialMediaSlideoutBar = function(handles, selector, appendTo) {
       handle = handles[service];
       switch (service) {
         case "twitter":
-          serviceHtml = "<a class=\"twitter-timeline\" data-link-color=\"#1DA1F2\" href=\"https://twitter.com/" + handle + "\">Tweets by @" + handle + "</a> <script async src=\"//platform.twitter.com/widgets.js\" charset=\"utf-8\"></script>          ";
+          serviceHtml = "<a class=\"twitter-timeline\" data-link-color=\"#1DA1F2\" href=\"https://twitter.com/" + handle + "\">Tweets by @" + handle + "</a> <script async src=\"//platform.twitter.com/widgets.js\" charset=\"utf-8\"></script>";
           break;
         default:
           serviceHtml = "";
@@ -2425,6 +2425,11 @@ eutheriaFilterHelper = function(skipFetch) {
   }
   $("#linnean").on("iron-select", function() {
     var column, error2, group, html, humanGroup, len1, len2, m, mammalGroups, mammalItems, o, ref1, ref2, scientific, type;
+    try {
+      if ($(p$("#linnean").selectedItem).attr("data-type") !== "any") {
+        p$("#global_search").checked = false;
+      }
+    } catch (undefined) {}
     if ($(p$("#linnean").selectedItem).attr("data-type") === "eutheria") {
       mammalGroups = new Array();
       ref1 = _asm.mammalGroupsBase;
@@ -2736,7 +2741,7 @@ formatSearchResults = function(result, container, callback) {
   }
   colClass = null;
   bootstrapColCount = 0;
-  dontShowColumns = ["id", "minor_type", "notes", "major_type", "taxon_author", "taxon_credit", "image_license", "image_credit", "taxon_credit_date", "parens_auth_genus", "parens_auth_species", "is_alien", "internal_id", "source", "deprecated_scientific", "canonical_sciname", "simple_linnean_group", "iucn", "dwc", "entry", "common_name_source", "image_caption", "species_authority_citation", "genus_authority_citation", "citation"];
+  dontShowColumns = ["id", "minor_type", "notes", "major_type", "taxon_author", "taxon_credit", "image_license", "image_credit", "taxon_credit_date", "parens_auth_genus", "parens_auth_species", "is_alien", "internal_id", "source", "deprecated_scientific", "canonical_sciname", "simple_linnean_group", "iucn", "dwc", "entry", "common_name_source", "image_caption", "species_authority_citation", "genus_authority_citation", "citation", "simple_linnean_group_alt", "linnean_tribe", "linnean_subfamily"];
   externalCounter = 0;
   renderTimeout = delay(7500, function() {
     stopLoadError("There was a problem parsing the search results.");
@@ -3721,7 +3726,8 @@ getRandomEntry = function() {
   var args;
   startLoad();
   args = {
-    random: true
+    random: true,
+    require_image: true
   };
   $.get(searchParams.apiPath, buildQuery(args, "json")).done(function(result) {
     var accountQuery, dest;

@@ -134,12 +134,70 @@ $updatesSinceAssessmentYear = 2005;
         /***
          * To find migrations, find species with species authories
          * younger than the modified date, but genus authories newer
+         *
+         * Add to this deprecateds with modified after date
          ***/
+        foreach ($yearsToCheck as $year) {
+            $search = array(
+                "deprecated_scientific" => "$".$year,
+            );
+            $results = $db->getQueryResults($search, "*", "OR", true, true);
+            $list = array();
+            foreach ($results as $result) {
+                # Check each item in the deprecated list
+                # Append to list if the genera don't match
+                $dep = json_decode($result["deprecated_scientific"], true);
+                $graduateTaxon = array();
+                $updateYearRef = $updatesSinceAssessmentYear;
+                foreach ($dep as $taxon => $authorityString) {
+                    # We're only interested in genera
+                    $genus = explode(" ", $taxon)[0];
+                    if (strtolower($taxon["genus"]) == strtolower($genus)) {
+                        continue;
+                    }
+                    # Get the rest
+                    $authorityParts = explode(":", $authorityString);
+                    $authority = $authorityParts[0];
+                    $authorityYearParts = explode("$", $authorityParts[1]);
+                    $authorityYear = $authorityYearParts[0];
+                    $updateYear = $authorityYearParts[1];
+                    if (empty($updateYear)) {
+                        $updateYear = $updatesSinceAssessmentYear;
+                    }
+                    if ($updateYear > $updateYearRef || empty($graduateTaxon)) {
+                        $graduateTaxon = array(
+                            "changeYear" => $updateYear,
+                            "authority" => $authority,
+                            "authorityYear" => $authorityYear,
+                            "oldTaxon" => $taxon,
+                            "oldGenus" => $genus,
+                        );
+                        $updateYearRef = $updateYear;
+                    }
+                }
+                $result["graduated"] = $graduateTaxon;
+                $list[] = $result;
+            }
+            $migratedTaxa = array_merge($migratedTaxa, $list);
+        }
+        $buffer = "";
         echo "<h3>There have been ".sizeof($migratedTaxa)." taxa with genus migrations since $updatesSinceAssessmentYear</h3> <ul>";
         foreach ($migratedTaxa as $taxon) {
             # Do the thing, Ju-Li!
-            continue;
+            $year = $taxon["graduated"]["changeYear"];
+            $genus = $taxon["graduated"]["oldGenus"];
+            if (!empty($taxon["species_authority_citation"])) {
+                if (stripos($taxon["species_authority_citation"], "isbn")) {
+                    $citation = $taxon["species_authority_citation"];
+                } else {
+                    $citation = "<a href='http://dx.doi.org/".$taxon["species_authority_citation"]."' class='newwindow doi btn btn-xs btn-primary'>doi:".$taxon["species_authority_citation"]."</a>";
+                }
+            } else {
+                $citation = "";
+            }
+            $buffer .= "\n<li><span class='sciname'><span class='genus'>".$taxon["genus"]."</span> <span class='species'>".$taxon["species"]."</span></span> migrated from <span class='genus'>".$genus."</span> in $year  <paper-icon-button class='click' data-href='$protocol://$shortUrl/species-account/id=".$taxon["id"]."' icon='icons:visibility' title='See account for ".ucwords($taxon["genus"])." ".$taxon["species"]."' data-toggle='tooltip'></paper-icon-button></li>\n";
         }
+        echo $buffer;
         echo "</ul>"
         ?>
       </div>

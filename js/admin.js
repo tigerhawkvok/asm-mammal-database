@@ -263,6 +263,7 @@ renderAdminSearchResults = function(overrideSearch, containerSelector) {
     var error;
     console.error("There was an error performing the search");
     console.warn(result, error, result.statusText);
+    console.warn(searchParams.targetApi + "?" + args);
     error = result.status + "::" + result.statusText;
     return stopLoadError("Couldn't execute the search - " + error);
   });
@@ -1087,7 +1088,7 @@ lookupEditorSpecies = function(taxon) {
         }
         if (col === "species_authority" || col === "genus_authority") {
           if (/[0-9]{4}/im.test(d)) {
-            unformattedAuthorityRe = /^\(? *((['"]?) *(?:\b[a-z\u00C0-\u017F\.\-\[\]]+(?:,| *&| *&amp;| *&amp;amp;| *&([a-z]|#[0-9])+;)? *)+ *\2) *, *([0-9]{4}) *\)?$/img;
+            unformattedAuthorityRe = /^\(? *((['"]?) *(?:(?:\b|[\u00C0-\u017F])[a-z\u00C0-\u017F\u2019 \.\-\[\]\?]+(?:,|,? *&|,? *&amp;| *&amp;amp;| *&(?:[a-z]+|#[0-9]+);)? *)+ *\2) *, *([0-9]{4}) *\)?/img;
             unformattedAuthorityReOrig = /^\(? *((['"])? *([\w\u00C0-\u017F\. \-\&;\[\]]+(,|&|&amp;|&amp;amp;|&#[\w0-9]+;)?)+ *\2) *, *([0-9]{4}) *\)?/im;
             if (unformattedAuthorityRe.test(d)) {
               hasParens = d.search(/\(/) >= 0 && d.search(/\)/) >= 0;
@@ -1471,7 +1472,7 @@ saveEditorEntry = function(performMode) {
   }
   saveObject["deprecated_scientific"] = depString;
   keepCase = ["notes", "taxon_credit", "image", "image_credit", "image_license", "image_caption", "species-authority-citation", "species_authority_citation", "genus-authority-citation", "genus_authority_citation", "citation"];
-  requiredNotEmpty = ["common-name", "major-type", "linnean-order", "genus-authority", "species-authority"];
+  requiredNotEmpty = ["genus", "species", "major-type", "linnean-order", "genus-authority", "species-authority"];
   if (!isNull(d$("#edit-image").val())) {
     requiredNotEmpty.push("image-credit");
     requiredNotEmpty.push("image-license");
@@ -1564,10 +1565,9 @@ saveEditorEntry = function(performMode) {
         if (/[^A-Za-z]/m.test(val) || nullTest) {
           d$("#edit-" + id).attr("error-message", error).attr("invalid", "invalid");
           escapeCompletion = true;
-          completionErrorMessage = "invalid gss";
+          completionErrorMessage = "Invalid Scientific Name";
         }
         break;
-      case "common-name":
       case "major-type":
       case "linnean-order":
       case "genus-authority":
@@ -1576,7 +1576,7 @@ saveEditorEntry = function(performMode) {
         if (isNull(val)) {
           $("#edit-" + id).attr("error-message", error).attr("invalid", "invalid");
           escapeCompletion = true;
-          completionErrorMessage = "invalid cmmlgs";
+          completionErrorMessage = "Missing Field";
         }
         break;
       default:

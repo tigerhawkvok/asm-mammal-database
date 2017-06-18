@@ -87,6 +87,9 @@ eutheriaFilterHelper = (skipFetch = false) ->
         fetchMajorMinorGroups.debounce(50)
   $("#linnean")
   .on "iron-select", ->
+    try
+      if $(p$("#linnean").selectedItem).attr("data-type") isnt "any"
+        p$("#global_search").checked = false
     if $(p$("#linnean").selectedItem).attr("data-type") is "eutheria"
       # Clean it up for the code
       mammalGroups = new Array()
@@ -194,7 +197,7 @@ checkLaggedUpdate = (result) ->
               stopLoad()
               # Hit the datawalker to update. We don't care about the
               # result.
-              console.debug "About to try a data walk"        
+              console.debug "About to try a data walk"
               $.get "#{uri.urlString}datawalk.php", "", "json"
               .done (result) ->
                 if result.status is true
@@ -401,6 +404,9 @@ formatSearchResults = (result, container = searchParams.targetContainer, callbac
     "species_authority_citation"
     "genus_authority_citation"
     "citation"
+    "simple_linnean_group_alt"
+    "linnean_tribe"
+    "linnean_subfamily"
     ]
   externalCounter = 0
   renderTimeout = delay 7500, ->
@@ -700,7 +706,7 @@ checkTaxonNear = (taxonQuery = undefined, callback = undefined, selector = "#nea
   ###
   if not taxonQuery?
     console.warn("Please specify a taxon.")
-    return false;
+    return false
   if not locationData.last?
     getLocation()
   elapsed = (Date.now() - locationData.last)/1000
@@ -1338,6 +1344,7 @@ getRandomEntry = ->
   startLoad()
   args =
     random: true
+    require_image: true
   $.get searchParams.apiPath, buildQuery args, "json"
   .done (result) ->
     if isNull(result.genus) or isNull result.species

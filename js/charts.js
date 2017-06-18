@@ -104,7 +104,7 @@ renderTaxonData = function() {
             borderWidth: 1
           }, {
             label: "Genus Count",
-            type: "line",
+            type: "bar",
             data: genusCountData,
             borderColor: lineColor.border,
             backgroundColor: lineColor.background,

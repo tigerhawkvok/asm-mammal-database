@@ -3914,7 +3914,9 @@ $(function() {
     return performSearch.debounce(50);
   });
   $("#collapse-advanced").on("shown.bs.collapse", function() {
-    return $("#collapse-icon").attr("icon", "icons:unfold-less");
+    $("#collapse-icon").attr("icon", "icons:unfold-less");
+    p$("#global_search").checked = false;
+    return false;
   });
   $("#collapse-advanced").on("hidden.bs.collapse", function() {
     return $("#collapse-icon").attr("icon", "icons:unfold-more");

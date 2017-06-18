@@ -1505,6 +1505,9 @@ $ ->
     performSearch.debounce 50
   $("#collapse-advanced").on "shown.bs.collapse", ->
     $("#collapse-icon").attr("icon","icons:unfold-less")
+    # We need to uncheck the global search
+    p$("#global_search").checked = false
+    false
   $("#collapse-advanced").on "hidden.bs.collapse", ->
     $("#collapse-icon").attr("icon","icons:unfold-more")
   # Bind enter keydown

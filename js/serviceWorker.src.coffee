@@ -760,7 +760,11 @@ validateAWebTaxon = (taxonObj, callback = null) ->
 # Service worker!
 ###
 
-authorityTest = /^\(? *((['"])? *([\w\u00C0-\u017F\. \-\&;\[\]]+(,|&|&amp;|&amp;amp;|&#[\w0-9]+;)?)+ *\2) *, *([0-9]{4}) *\)?/img
+#authorityTest = /^\(? *((['"])? *([\w\u00C0-\u017F\. \-\&;\[\]]+(,|&|&amp;|&amp;amp;|&#[\w0-9]+;)?)+ *\2) *, *([0-9]{4}) *\)?/img
+#yearMatch = "$5"
+authorityTest = /^\(? *((['"]?) *(?:(?:\b|[\u00C0-\u017F])[a-z\u00C0-\u017F\u2019 \.\-\[\]\?]+(?:,|,? *&|,? *&amp;| *&amp;amp;| *&(?:[a-z]+|#[0-9]+);)? *)+ *\2) *, *([0-9]{4}) *\)?/img
+yearMatch = "$3"
+authorityMatch = "$1"
 commalessTest = /^(\(?)(.*?[^,]) ([0-9]{4})(\)?)$/img
 progressStepCount = 1000.0
 
@@ -985,7 +989,7 @@ createHtmlFile = (result, htmlBody) ->
             self.postMessage message
             self.close()
       # try
-      #   if 4900 <= k <= 5000
+      #   if 2900 <= k <= 3000
       #     console.warn "Testing row #{k}", row
       # Prep the authorities
       try
@@ -1004,8 +1008,8 @@ createHtmlFile = (result, htmlBody) ->
                 row.species_authority = row.species_authority.replace commalessTest, "$1$2, $3$4"
               # The real tester
               if authorityTest.test(row.species_authority)
-                year = row.species_authority.replace authorityTest, "$5"
-                row.species_authority = row.species_authority.replace authorityTest, "$1"
+                year = row.species_authority.replace authorityTest, yearMatch
+                row.species_authority = row.species_authority.replace authorityTest, authorityMatch
                 authorityYears[year] = year
                 row.authority_year = authorityYears
               else
@@ -1271,8 +1275,8 @@ createCSVFile = (result) ->
                       row.species_authority = row.species_authority.replace commalessTest, "$1$2, $3$4"
                     # The real tester
                     if authorityTest.test(row.species_authority)
-                      year = row.species_authority.replace authorityTest, "$5"
-                      row.species_authority = row.species_authority.replace authorityTest, "$1"
+                      year = row.species_authority.replace authorityTest, yearMatch
+                      row.species_authority = row.species_authority.replace authorityTest, authorityMatch
                       authorityYears[year] = year
                       row.authority_year = authorityYears
                     else

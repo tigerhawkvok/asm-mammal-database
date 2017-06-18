@@ -2278,6 +2278,9 @@ formatSearchResults = (result, container = searchParams.targetContainer, callbac
     "species_authority_citation"
     "genus_authority_citation"
     "citation"
+    "simple_linnean_group_alt"
+    "linnean_tribe"
+    "linnean_subfamily"
     ]
   externalCounter = 0
   renderTimeout = delay 7500, ->

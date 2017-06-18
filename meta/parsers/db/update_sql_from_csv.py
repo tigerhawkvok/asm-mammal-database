@@ -4,7 +4,14 @@
 
 ## Helper functions
 
-import sys, os, glob, string
+import sys, os, glob, string, qinput
+
+defaultFile = "../../asm_predatabase_clean.csv"
+outputFileNoExtBase = "../../asm_update_sql"
+default_table = "mammal_diversity_database"
+
+dropDupRefCol = "IfTransfer_oldSciName"
+dropDupDbCol = "canonical_sciname"
 
 def doExit():
     import os,sys
@@ -13,15 +20,11 @@ def doExit():
     sys.exit(0)
 
 def cleanKVPairs(col,val):
-    # Specific hacks for the current use case
-    if col == "alignment":
-        if val == "negative": return -1
-        elif val == "positive": return 1
-        else: return 0
-    if col == "strength":
-        if val == "strong": return 1
-        else: return 0
     # Format the value for SQL
+    try:
+        val = val.strip()
+    except:
+        pass
     if val.lower() == "true" or val.lower() == "false":
         # Keep bools as bools
         return val
@@ -32,11 +35,13 @@ def cleanKVPairs(col,val):
     except ValueError:
         # Give back the original if no matches
         # But enclosed as an SQL string
+        if val == "" or val.lower() == "NA":
+            return "NULL"
         val = val.replace("'","&#39;")
         return "'"+val+"'"
-        
 
-def generateUpdateSqlQueries(rowList,refCol,tableName,makeLower=True):
+
+def generateUpdateSqlQueries(rowList, refCol, tableName, addCols=True, makeLower=False):
     # Generate update SQL queries
     i=0
     j=0
@@ -46,27 +51,36 @@ def generateUpdateSqlQueries(rowList,refCol,tableName,makeLower=True):
     try:
         for row in rowList:
             # Each row should be a dict of the form "column":"value"
-            query="UPDATE `"+tableName+"` SET "
+            query="INSERT INTO `"+tableName+"` SET "
             s=""
             set_statement = ""
             try:
+                where = ""
                 for col,val in row.items():
-                    if first is True:
+                    if first is True and addCols:
                         #alter_query = "IF COL_LENGTH(`"+tableName+"`,`"+col+"`) IS NULL"
                         #alter_query += "\n\tBEGIN"
-                        alter_query = "ALTER TABLE `"+tableName+"` ADD `"+col+"` VARCHAR(MAX)" # Just in case!
+                        alter_query = "ALTER TABLE `"+tableName+"` ADD `"+col+"` VARCHAR(MAX);" # Just in case!
                         # alter_query += "\n\tEND;"
                         queryList.append(alter_query)
                     if makeLower: val = val.lower()
                     val = cleanKVPairs(col,val)
                     if col != refCol:
-                        s+="\n\t`"+col+"`="+str(val)+","
+                        if str(val) != "NULL":
+                            s+="\n\t`"+col+"`="+str(val)+","
                     else:
-                        where = " WHERE `"+col+"`="+str(val)
+                        where = ",\n\t`"+col+"`="+str(val)+" "
+                        #where = " WHERE `"+col+"`="+str(val)
                 # Trim the last comma
                 s = s[:-1]
                 set_statement = s
-                s+=where
+                s += where
+                s += " ON DUPLICATE KEY UPDATE "
+                # if not addCols:
+                #     # If we skipped adding cols, let's not crap out if
+                #     # a col is missing
+                #     s += "IGNORE "
+                s += set_statement
             except AttributeError:
                 print("ERROR: Row is not a dictionary.")
                 print("Each row should be a dictionary of the form {column:value}.")
@@ -88,47 +102,76 @@ def generateUpdateSqlQueries(rowList,refCol,tableName,makeLower=True):
         return False
 
 
-def updateTableQueries(rowList,refCol,tableName):
+def updateTableQueries(rowList, refCol, tableName, addAbsentCols):
     # generate queries for this directory
     import time
     time.clock()
     # Check the format of rowList
     print("Table",tableName)
     preamble="/* Automatically generated SQL entries from "+time.strftime('%d %B %Y at %H%M%S %Z')+"  */\n"
-    queries = generateUpdateSqlQueries(rowList,refCol,tableName)
+    queries = generateUpdateSqlQueries(rowList, refCol, tableName, addAbsentCols)
     if queries is not False:
         queries_string = "\n\n".join(queries)
-        filename = "sql_update_queries_"+tableName+".sql"
-        f=open(filename,'w')
+        fileName = outputFileNoExtBase + "-tbl_" + tableName + ".sql"
+        try:
+            f=open(fileName, 'w')
+        except PermissionError:
+            print("")
+            print("ERROR: We couldn't get write permissions to '"+os.getcwd()+"/"+fileName+"'")
+            print("Please check that the directory is writeable and that the file hasn't been locked by another user or program (like Excel),")
+            print("then try to run this again.")
         f.write(preamble)
         f.write(queries_string)
+        i = 0
+        if len(asmDrops) > 0:
+            # Loop over the cols to drop
+            for ref in asmDrops:
+                cleanRef = ref.replace("'","&#39;")
+                query = "\n\nDELETE FROM `"+tableName+"` WHERE `"+dropDupDbCol+"`='"+cleanRef+"' LIMIT 1;"
+                f.write(query)
+                i += 1
+            f.write("\n\n")
+            print("Using reference duplicates column '"+dropDupRefCol+"', dropped "+str(i)+" rows with matching `"+dropDupDbCol+"`")
         f.close()
+        #finalSize = len(queries) - i
+        #print("Expected final size: "+str(finalSize))
         print('Processed queries in ',round(time.clock(),2),'seconds')
+        print("Wrote '"+os.getcwd()+"/"+fileName+"'")
     else:
         print("Unable to generate queries.")
 
 ## Primary Script at runtime
-        
+asmDrops = list()
 # Take in input CSV file and write out an SQL file to update a database.
 path = None
 while path is None:
     try:
-        path = input("Enter the path to the CSV file to be used: ")
+        path = qinput.input("Enter the path to the CSV file to be used: (default:"+defaultFile+")")
         # Check for file existence and filetype
-        exit_script_prompt = "If you want to exit, press Control-c."
+        exitScriptPrompt = "If you want to exit, press Control-c."
+        if path == "":
+            path = defaultFile
+            tmp = path.split(".")
+            ext = tmp.pop().lower()
+        if len(ext) is not 3:
+            # no extension, try adding "csv" to it
+            # Edge cases for alternate extension types don't matter,
+            # they'll fail the next check, since eg test.xlsx.csv
+            # won't exist
+            path += ".csv"
+        elif ext != "csv":
+            print("You did not point to a valid CSV file.",exitScriptPrompt)
+            print("You provided",path)
+            path = None
+            continue
         if not os.path.isfile(path):
             path = None
-            print("Invalid file.",exit_script_prompt)
-        else:
-            tmp = path.split(".")
-            if tmp.pop().lower() != "csv":
-                path = None
-                print("You did not point to a valid CSV file.",exit_script_prompt)
+            print("Invalid file.",exitScriptPrompt)
     except KeyboardInterrupt:
         # Exit the script
         doExit()
-default_table = 'master_emotion_list'
-table = input("Which table should be written to? (default: `"+default_table+"`): ")
+# Tables ...
+table = qinput.input("Which table should be written to? (default: `"+default_table+"`): ")
 if not table:
     table = default_table
 import yn
@@ -188,7 +231,9 @@ import csv
 rows = csv.reader(contents.split("\n"),delimiter=",")
 entryList = list()
 n = 0
-refCol = None
+refColumn = None
+startCol = None
+endCol = None
 for row in rows:
     # Each array element corresponds to column
     # if it's the first row, use it as the column definitions
@@ -196,32 +241,88 @@ for row in rows:
     if n >= skip:
         if firstRow is True:
             columns = row
+            try:
+                if dropDupRefCol in columns:
+                    dropIndex = columns.index(dropDupRefCol)
+                else:
+                    dropIndex = None
+            except:
+                dropIndex = None
+            if dropDupRefCol != "" and dropDupRefCol is not None and dropIndex is None:
+                print("Warning: didn't find '"+dropDupRefCol+"' in columns")
+                print(columns)
             firstRow = False
         else:
-            if refCol is None:
-                refColNum = None
+            if refColumn is None:
+                refColumnNum = None
                 ask = ""
                 for k,column in enumerate(columns):
                     if column:
                        ask += str(k)+": "+column+"\n"
                 ask+="\nWhich column is the reference column to match against? "
-                while refColNum is None:
-                    try:
-                        refColNumStr = input(ask)
-                        refColNum = int(refColNumStr)
-                        refCol = columns[refColNum]
-                        if columns[refColNum] == "":
-                            print("That column isn't part of this dataset. Please try again.")
-                    except ValueError:
-                        refColNum = None
-                        print("That wasn't a number. Please try again.")
-                    except KeyboardInterrupt:
-                        doExit()
+                skipRefCol = [
+                    "none",
+                    "null",
+                    "skip",
+                    "",
+                    "-1"
+                ]
+                while refColumnNum is None:
+                    refColumnNumStr = input(ask)
+                    if not refColumnNumStr.lower() in skipRefCol:
+                        try:
+                            refColumnNum = int(refColumnNumStr)
+                            refColumn = columns[refColumnNum]
+                            if columns[refColumnNum] == "":
+                                print("That column isn't part of this dataset. Please try again.")
+                        except ValueError:
+                            refColumnNum = None
+                            print("That wasn't a number. Please try again.")
+                        except KeyboardInterrupt:
+                            doExit()
+                    else:
+                        print("OK, we'll rely on unique column values instead")
+                        refColumnNum = "SKIP_REF_COL"
+                        refColumn = "SKIP_REF_COL"
+                if yn.yn("Do you only want to use a subset of columns?"):
+                    while startCol is None:
+                        startCol = qinput.input("Starting column number: ")
+                        try:
+                            startCol = int(startCol)
+                        except:
+                            print("Invalid column '"+startCol+"'")
+                            startCol = None
+                    while endCol is None:
+                        endCol = qinput.input("Ending column number: ")
+                        try:
+                            endCol = int(endCol)
+                        except:
+                            print("Invalid column '"+endCol+"'")
+                            endCol = None
             # use "columns" to create the dict
+            if dropIndex is not None:
+                fetchedEntry = False
+                di = 0
+                for entry in row:
+                    if di is dropIndex:
+                        cleanEntry = entry.strip()
+                        if cleanEntry != "" and cleanEntry.lower() != "na":
+                            asmDrops.append(cleanEntry)
+                        fetchedEntry = True
+                        break
+                    di += 1
+                if fetchedEntry is False:
+                    print("Couldn't get column '"+str(dropIndex)+"' from row")
             try:
                 thisRow = {}
                 # Each row is a list object as per the CSV library.
                 for entry in row:
+                    if startCol is not None:
+                        colNum = i
+                        if colNum < startCol:
+                            continue
+                        if colNum > endCol:
+                            continue
                     column = columns[i]
                     if column != "":
                         thisRow[column] = entry
@@ -230,8 +331,11 @@ for row in rows:
             except IndexError:
                 # Not enough columns!
                 print("The number of columns doesn't match the number of items per row.")
-                print("(We have",len(columns),"columns and",len(entries),"items per row)")
-                print(entries)
+                print("(We have",len(columns),"columns and",len(entryList[0]),"items per row)")
+                print(entryList)
                 doExit()
     n+=1
-updateTableQueries(entryList,refCol,table)
+if refColumn is "SKIP_REF_COL":
+    refColumn = None
+addColumns = yn.yn("Do you want to add columns that don't already exist in the database?")
+updateTableQueries(entryList, refColumn, table, addColumns)

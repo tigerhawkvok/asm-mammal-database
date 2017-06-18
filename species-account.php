@@ -6,7 +6,7 @@
  * This page accounts for all the individual species listing
  *************/
 
-# $show_debug = true;
+#$show_debug = true;
 #$showAccountDebug = true;
 
 if ($show_debug === true) {

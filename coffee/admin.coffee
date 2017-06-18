@@ -1138,7 +1138,7 @@ lookupEditorSpecies = (taxon = undefined) ->
           # Check if the authority is in full format, eg, "(Linnaeus, 1758)"
           #unless isNull d.match /\(? *([\w\. \[\]]+), *([0-9]{4}) *\)?/g
           if /[0-9]{4}/im.test d
-            unformattedAuthorityRe = /^\(? *((['"]?) *(?:\b[a-z\u00C0-\u017F\.\-\[\]]+(?:,| *&| *&amp;| *&amp;amp;| *&([a-z]|#[0-9])+;)? *)+ *\2) *, *([0-9]{4}) *\)?$/img
+            unformattedAuthorityRe = /^\(? *((['"]?) *(?:(?:\b|[\u00C0-\u017F])[a-z\u00C0-\u017F\.\-\[\]]+(?:,| *&|,? *&amp;| *&amp;amp;| *&(?:[a-z]+|#[0-9]+);)? *)+ *\2) *, *([0-9]{4}) *\)?/img
             unformattedAuthorityReOrig = /^\(? *((['"])? *([\w\u00C0-\u017F\. \-\&;\[\]]+(,|&|&amp;|&amp;amp;|&#[\w0-9]+;)?)+ *\2) *, *([0-9]{4}) *\)?/im
             if unformattedAuthorityRe.test d
               hasParens = d.search(/\(/) >= 0 and d.search(/\)/) >= 0

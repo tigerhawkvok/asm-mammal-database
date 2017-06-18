@@ -918,7 +918,7 @@ function handleParamSearch($filter_params, $loose = false, $boolean_type = "AND"
  * The actual main search loop
  *
  *********************************************************/
-
+ini_set('memory_limit', '512M');
 function doSearch($overrideSearch = null, $enforceGlobalSearch = null)
 {
     global $search, $flag_fuzzy, $loose, $limit, $order_by, $params, $boolean_type, $filter_params, $db, $method;

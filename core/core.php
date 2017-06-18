@@ -782,6 +782,7 @@ class ImageFunctions
         # read image
         $ext = strtolower(substr(strrchr($image, '.'), 1)); # get the file extension
         switch ($ext) {
+        case "jepg":
         case 'jpg':     # jpg
             $src = imagecreatefromjpeg($image) or self::notfound();
             break;
@@ -900,6 +901,7 @@ class ImageFunctions
         # read image
         $ext = strtolower(substr(strrchr($image, '.'), 1)); # get the file extension
         switch ($ext) {
+        case "jpeg":
         case 'jpg':     # jpg
             $src = imagecreatefromjpeg($image) or self::notfound();
             break;

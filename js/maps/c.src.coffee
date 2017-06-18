@@ -3034,7 +3034,7 @@ clearSearch = (partialReset = false) ->
   ###
   $("#result-count").text("")
   calloutHtml = """
-  <div class="bs-callout bs-callout-info center-block col-xs-12 col-sm-8 col-md-5">
+  <div class="alert alert-info center-block col-xs-12 col-sm-8 col-md-5">
     Search for a common or scientific name above to begin, eg, "Brown Bear" or "<span class="sciname">Ursus arctos</span>"
   </div>
   """
@@ -3270,6 +3270,13 @@ doLazily = ->
         console.debug "Terminal file loaded"
         stopLoad()
       false
+    if $("paper-card.featured-mammal").exists()
+      $("paper-card.featured-mammal").click ->
+        id = $(this).attr "data-taxon-id"
+        # Cheat for now rather than populating a dialog
+        path = "species-account/id=#{id}"
+        goTo path
+        false
   false
 
 

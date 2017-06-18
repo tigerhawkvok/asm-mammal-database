@@ -6954,6 +6954,11 @@ main #images-block div.no-image {
   -ms-flex-align: center;
       align-items: center;
 }
+.featured-container paper-card {
+  margin-bottom: 1rem;
+  margin-right: 2rem;
+  cursor: pointer;
+}
 #search_form {
   position: relative;
 }
@@ -7698,6 +7703,30 @@ figure .picture-label.extended-attribution {
 }
 figure figcaption {
   color: #777777;
+}
+marked-element .markdown-html h1,
+marked-element .markdown-html .h1 {
+  font-size: 21.6px;
+}
+marked-element .markdown-html h2,
+marked-element .markdown-html .h2 {
+  font-size: 18px;
+}
+marked-element .markdown-html h3,
+marked-element .markdown-html .h3 {
+  font-size: 14.4px;
+}
+marked-element .markdown-html h4,
+marked-element .markdown-html .h4 {
+  font-size: 10.8px;
+}
+marked-element .markdown-html h5,
+marked-element .markdown-html .h5 {
+  font-size: 8.4px;
+}
+marked-element .markdown-html h6,
+marked-element .markdown-html .h6 {
+  font-size: 7.2px;
 }
 .has-authority {
   font-weight: bold;

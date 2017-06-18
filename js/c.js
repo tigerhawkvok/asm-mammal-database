@@ -3511,7 +3511,7 @@ clearSearch = function(partialReset) {
    * Clear out the search and reset it to a "fresh" state.
    */
   $("#result-count").text("");
-  calloutHtml = "<div class=\"bs-callout bs-callout-info center-block col-xs-12 col-sm-8 col-md-5\">\n  Search for a common or scientific name above to begin, eg, \"Brown Bear\" or \"<span class=\"sciname\">Ursus arctos</span>\"\n</div>";
+  calloutHtml = "<div class=\"alert alert-info center-block col-xs-12 col-sm-8 col-md-5\">\n  Search for a common or scientific name above to begin, eg, \"Brown Bear\" or \"<span class=\"sciname\">Ursus arctos</span>\"\n</div>";
   $("#result_container").html(calloutHtml);
   $("#result-header-container").attr("hidden", "hidden");
   if (partialReset === true) {
@@ -3776,6 +3776,15 @@ doLazily = function() {
       });
       return false;
     });
+    if ($("paper-card.featured-mammal").exists()) {
+      $("paper-card.featured-mammal").click(function() {
+        var id, path;
+        id = $(this).attr("data-taxon-id");
+        path = "species-account/id=" + id;
+        goTo(path);
+        return false;
+      });
+    }
   }
   return false;
 };

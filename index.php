@@ -44,19 +44,40 @@ if ($show_debug === true) {
     require_once dirname(__FILE__)."/modular/bodyFrame.php";
     echo $bodyOpen;
     ?>
-      <h1 id="title" class="col-xs-12">
+      <h1 id="title" class="col-xs-12 col-sm-9 col-md-10">
         <span class="hidden-xs"><a href="<?php echo $qualDomain; ?>" class="newwindow"><img src="assets/logo.svg" alt="ASM logo" id="title-logo"/></a></span>
         ASM Mammal <span class="hidden-xs hidden-sm">Diversity</span> Database
       </h1>
+      <div class="featured-container hidden-xs col-sm-3 col-md-2" id="featured-mammal-container">
+        <?php
+          # Look up the taxon based on criteria
+          $db = new DBHelper($default_database, $default_sql_user, $default_sql_password, $default_sql_url, $default_table, $db_cols);
+          $query = "SELECT `image`, `id`, `canonical_sciname` FROM `".$db->getTable()."` WHERE ";
+          $where = "`id`=461";
+          $query .= $where;
+          $r = mysqli_query($db->getLink(), $query);
+          $taxon = mysqli_fetch_assoc($r);
+          # Get its id
+          $taxonId = $taxon["id"];
+          $taxonImage = $taxon["image"];
+            ?>
+        <paper-card
+          image="<?php echo $taxonImage; ?>"
+          id="featured-mammal-card"
+          class="featured-mammal"
+          data-toggle="tooltip"
+          data-placement="left"
+          title="Click to visit the entry for <?php echo $taxon["canonical_sciname"]; ?>"
+          data-taxon-id="<?php echo $taxonId ?>">
+          <div class="card-content">
+            <p>Featured Mammal</p>
+          </div>
+        </paper-card>
+      </div>
       <form id="search_form" onsubmit="event.preventDefault()" class="col-xs-12">
         <div class="row">
-          <paper-input
-            label="Search"
-            id="search"
-            class="col-xs-7 col-sm-9"
-            name="search"
-            placeholder="Search term, eg, Ursus arctos"
-            autofocus floatingLabel></paper-input>
+          <paper-input label="Search" id="search" class="col-xs-7
+            col-sm-9" name="search" placeholder="Search term, eg, Ursus arctos" autofocus floatingLabel></paper-input>
           <div class="col-xs-5 col-sm-3 search-control-container">
             <paper-fab id="do-search" icon="search" raisedButton class="asm-blue"></paper-fab>
             <paper-fab id="do-search-all" icon="list" raisedButton class="asm-blue hidden-xs" data-toggle="tooltip" title="Show all results" data-placement="bottom"></paper-fab>
@@ -170,7 +191,7 @@ if ($show_debug === true) {
           <p>Click on an entry for more information.</p>
         </div>
         <div id="result_container" class="table-responsive row">
-          <div class="bs-callout bs-callout-info center-block col-xs-12 col-sm-8 col-md-5">
+          <div class="alert alert-info center-block col-xs-12 col-sm-8 col-md-5">
             Search for a common or scientific name above to begin, eg, "Brown Bear" or "<span class="sciname">Ursus arctos</span>"
           </div>
         </div>

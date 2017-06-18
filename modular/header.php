@@ -1,4 +1,4 @@
-<?php 
+<?php
   require dirname(__FILE__) . "/../CONFIG.php";
   ?>
 <meta http-equiv="X-UA-Compatible" content="IE=edge"/>
@@ -82,6 +82,7 @@
 <link rel="import" href="bower_components/paper-input/paper-input.html"/>
 <link rel="import" href="bower_components/paper-spinner/paper-spinner.html"/>
 <link rel="import" href="bower_components/paper-menu/paper-menu.html"/>
+<link rel="import" href="bower_components/paper-card/paper-card.html"/>
 <link rel="import" href="bower_components/paper-material/paper-material.html"/>
 <link rel="import" href="bower_components/paper-menu-button/paper-menu-button.html"/>
 <link rel="import" href="bower_components/paper-dialog/paper-dialog.html"/>

@@ -3776,6 +3776,15 @@ doLazily = function() {
       });
       return false;
     });
+    if ($("paper-card.featured-mammal").exists()) {
+      $("paper-card.featured-mammal").click(function() {
+        var id, path;
+        id = $(this).attr("data-taxon-id");
+        path = "species-account/id=" + id;
+        goTo(path);
+        return false;
+      });
+    }
   }
   return false;
 };

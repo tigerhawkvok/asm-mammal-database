@@ -3270,6 +3270,13 @@ doLazily = ->
         console.debug "Terminal file loaded"
         stopLoad()
       false
+    if $("paper-card.featured-mammal").exists()
+      $("paper-card.featured-mammal").click ->
+        id = $(this).attr "data-taxon-id"
+        # Cheat for now rather than populating a dialog
+        path = "species-account/id=#{id}"
+        goTo path
+        false
   false
 
 

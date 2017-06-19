@@ -72,6 +72,7 @@ appendCountryLayerToMap = (queryObj = {"code":"US"},  mapObj = gMapsConfig.map) 
           build.push "'#{fusionColumn[col]}' = '#{val}'"
     for where in build
       # We need to redeclare it, because object copies suck.
+      console.debug "obj build"
       tmp =
         query:
           select: "json_4326" # GeoJson coords: http://blog.mastermaps.com/2011/02/natural-earth-vectors-in-cloud.html

@@ -95,6 +95,7 @@ appendCountryLayerToMap = function(queryObj, mapObj) {
     }
     for (j = 0, len1 = build.length; j < len1; j++) {
       where = build[j];
+      console.debug("obj build");
       tmp = {
         query: {
           select: "json_4326",

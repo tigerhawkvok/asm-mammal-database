@@ -104,6 +104,11 @@
 <link rel="import" href="polymer-elements/copyright-statement.html"/>
 <link rel="import" href="polymer-elements/glyphicon-social-icons.html"/>
 
+<?php
+  if (!empty($unrestrictedMapsApiKey) && $tld == "localhost") {
+    echo "<script type='text/javascript'>window.gMapsLocalKey = '$unrestrictedMapsApiKey';</script>";
+  }
+  ?>
 
 <script type="text/javascript" src="js/purl.min.js"></script>
 <script type="text/javascript" src="js/xmlToJSON.min.js" async></script>

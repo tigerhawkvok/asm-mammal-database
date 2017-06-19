@@ -59,6 +59,7 @@ function buildHeader($pageTitle, $prerender, $prefetch)
     $pageTitle
     </title>";
     $html .= get_include_contents("modular/header.php");
+    $html .= "\n\n<script type='text/javascript' src='js/speciesAccount.min.js'></script>";
     $html .= "\n</head>";
     return $html;
 }

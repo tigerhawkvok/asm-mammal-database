@@ -704,6 +704,7 @@ Function.prototype.getName = function() {
   }
   if (isNull(name)) {
     name = md5(this.toString());
+    window.name = this;
   }
   return name;
 };
@@ -2297,7 +2298,7 @@ $(function() {
     }
   } catch (undefined) {}
   try {
-    return (offsetImageLabel = function(iter) {
+    (offsetImageLabel = function(iter) {
       var imageWidth;
       if (!$("figure picture").exists()) {
         console.log("No image on page");
@@ -2322,6 +2323,9 @@ $(function() {
       lightboxImages();
       return false;
     })(0);
+  } catch (undefined) {}
+  try {
+    return loadJS("bower_components/JavaScript-MD5/js/md5.min.js");
   } catch (undefined) {}
 });
 

@@ -514,6 +514,7 @@ Function::getName = ->
     name = this.toString().substr( 0, this.toString().indexOf( "(" ) ).replace( "function ", "" )
   if isNull name
     name = md5 this.toString()
+    window.name = this
   name
 
 Function::debounce = (threshold = 300, execAsap = false, timeout = window.debounce_timer, args...) ->
@@ -1871,6 +1872,8 @@ $ ->
       $("figure p.picture-label").css "left", "calc(50% - (#{imageWidth}px/2)*.95)"
       lightboxImages()
       false
+  try
+    loadJS "bower_components/JavaScript-MD5/js/md5.min.js"
 
 searchParams =
   lastSearch: "*"

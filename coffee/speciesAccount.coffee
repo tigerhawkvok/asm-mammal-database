@@ -32,9 +32,7 @@ baseQuery =
       fillColor: "#rrggbb",
       strokeColor: "#rrggbb",
       strokeWeight: "int"
-    polylineOptions: 
-      strokeColor: "#rrggbb",
-      strokeWeight: "int"
+      fillOpacity: 0
     ]
 
 
@@ -43,11 +41,7 @@ appendCountryLayerToMap = (queryObj = {"code":"US"},  mapObj = gMapsConfig.map) 
   #
   ###
   unless google?.maps?
-    console.debug "Loading Google Maps first ..."
-    mapPath = "#{gMapsConfig.jsApiSrc}?key=#{gMapsConfig.jsApiKey}"
-    if typeof gMapsConfig.jsApiInitCallbackFn is "function"
-      mapPath += "&callback=#{gMapsConfig.jsApiInitCallbackFn.name}"
-    loadJS mapPath, ->
+    initMap ->
       appendCountryLayerToMap queryObj, mapObj
       false
     return false
@@ -64,6 +58,7 @@ appendCountryLayerToMap = (queryObj = {"code":"US"},  mapObj = gMapsConfig.map) 
     postal: "postal"
     name: "name"
     country: "name"
+  fusionQuery = baseQuery
   if typeof queryObj is "object"
     build = new Array()
     for col, val of queryObj
@@ -73,22 +68,28 @@ appendCountryLayerToMap = (queryObj = {"code":"US"},  mapObj = gMapsConfig.map) 
             build.push "'#{fusionColumn[col]}' = '#{subval}'"
         else
           build.push "'#{fusionColumn[col]}' = '#{val}'"
-    query = build.join " OR "
+    for where in build
+      temp =
+        where: where
+        polygonOptions:
+          fillOpacity: .5
+      fusionQuery.styles.push temp
   else
     query = queryObj
-  fusionQuery = baseQuery
-  fusionQuery.query.where = query
+    fusionQuery.query.where = query
   layer = new google.maps.FusionTablesLayer fusionQuery
   layer.setMap mapObj
   {fusionQuery, layer, mapObj}
 
 
-initMap = (nextToSelector = "#species-note", callback) ->
+initMap = (callback, nextToSelector = "#species-note") ->
   ###
   #
   ###
   if gMapsConfig.hasRunInitMap is true
     console.debug "Map already initialized"
+    if typeof callback is "function"
+      callback()
     return false
   unless google?.maps?
     console.debug "Loading Google Maps first ..."
@@ -102,7 +103,7 @@ initMap = (nextToSelector = "#species-note", callback) ->
       unless gMapsConfig.jsApiInitCallbackFn.getName() in names
         mapPath += "&callback=#{gMapsConfig.jsApiInitCallbackFn.getName()}"
     loadJS mapPath, ->
-      initMap nextToSelector
+      initMap callback, nextToSelector
       false
     return false
   unless $(nextToSelector).exists()
@@ -134,6 +135,9 @@ initMap = (nextToSelector = "#species-note", callback) ->
 
 
 fetchIucnRange = (taxon = window._activeTaxon) ->
+  ###
+  #
+  ###
   if isNull(taxon.genus) or isNull taxon.species
     # we have to infer the taxon
     false
@@ -149,6 +153,28 @@ fetchIucnRange = (taxon = window._activeTaxon) ->
     if result.status isnt true
       console.warn "#{uri.urlString}api.php?#{buildQuery args}"
       return false
+    countryList = new Array()
+    if result.response?.count <= 0
+      console.warn "No results found!"
+      return false
+    else
+      sourceList = Object.toArray result.response.result
+      extantList = new Array()
+      for countryObj in sourceList
+        if countryObj.presence.search(/extinct/i) is -1
+          extantList.push countryObj
+      if extantList.length is 0
+        console.warn "This taxon '#{result.response.name}' is extinct :("
+        return false
+      for countryObj in extantList
+        countryList.push countryObj.code
+      populateQueryObj =
+        code: countryList
+      console.debug "Taxon exists in #{countryList.length} countries...", countryList
+      initMap ->
+        console.debug "Map initialized, populating..."
+        appendResults = appendCountryLayerToMap populateQueryObj
+        console.debug "Country layers topped", appendResults
     false
   .fail (result, error) ->
     false
@@ -157,4 +183,5 @@ fetchIucnRange = (taxon = window._activeTaxon) ->
 
 
 $ ->
+  fetchIucnRange()
   false

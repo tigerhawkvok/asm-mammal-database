@@ -37,18 +37,15 @@ baseQuery = {
       polygonOptions: {
         fillColor: "#rrggbb",
         strokeColor: "#rrggbb",
-        strokeWeight: "int"
-      },
-      polylineOptions: {
-        strokeColor: "#rrggbb",
-        strokeWeight: "int"
+        strokeWeight: "int",
+        fillOpacity: 0
       }
     }
   ]
 };
 
 appendCountryLayerToMap = function(queryObj, mapObj) {
-  var build, col, fusionColumn, fusionQuery, i, layer, len, mapPath, query, subval, val;
+  var build, col, fusionColumn, fusionQuery, i, j, layer, len, len1, query, subval, temp, val, where;
   if (queryObj == null) {
     queryObj = {
       "code": "US"
@@ -62,12 +59,7 @@ appendCountryLayerToMap = function(queryObj, mapObj) {
    *
    */
   if ((typeof google !== "undefined" && google !== null ? google.maps : void 0) == null) {
-    console.debug("Loading Google Maps first ...");
-    mapPath = gMapsConfig.jsApiSrc + "?key=" + gMapsConfig.jsApiKey;
-    if (typeof gMapsConfig.jsApiInitCallbackFn === "function") {
-      mapPath += "&callback=" + gMapsConfig.jsApiInitCallbackFn.name;
-    }
-    loadJS(mapPath, function() {
+    initMap(function() {
       appendCountryLayerToMap(queryObj, mapObj);
       return false;
     });
@@ -83,6 +75,7 @@ appendCountryLayerToMap = function(queryObj, mapObj) {
     name: "name",
     country: "name"
   };
+  fusionQuery = baseQuery;
   if (typeof queryObj === "object") {
     build = new Array();
     for (col in queryObj) {
@@ -98,12 +91,20 @@ appendCountryLayerToMap = function(queryObj, mapObj) {
         }
       }
     }
-    query = build.join(" OR ");
+    for (j = 0, len1 = build.length; j < len1; j++) {
+      where = build[j];
+      temp = {
+        where: where,
+        polygonOptions: {
+          fillOpacity: .5
+        }
+      };
+      fusionQuery.styles.push(temp);
+    }
   } else {
     query = queryObj;
+    fusionQuery.query.where = query;
   }
-  fusionQuery = baseQuery;
-  fusionQuery.query.where = query;
   layer = new google.maps.FusionTablesLayer(fusionQuery);
   layer.setMap(mapObj);
   return {
@@ -113,7 +114,7 @@ appendCountryLayerToMap = function(queryObj, mapObj) {
   };
 };
 
-initMap = function(nextToSelector, callback) {
+initMap = function(callback, nextToSelector) {
   var canvasHtml, map, mapDefaults, mapDiv, mapPath, names, ref, ref1, ref2, ref3, ref4, selfName;
   if (nextToSelector == null) {
     nextToSelector = "#species-note";
@@ -124,6 +125,9 @@ initMap = function(nextToSelector, callback) {
    */
   if (gMapsConfig.hasRunInitMap === true) {
     console.debug("Map already initialized");
+    if (typeof callback === "function") {
+      callback();
+    }
     return false;
   }
   if ((typeof google !== "undefined" && google !== null ? google.maps : void 0) == null) {
@@ -137,7 +141,7 @@ initMap = function(nextToSelector, callback) {
       }
     }
     loadJS(mapPath, function() {
-      initMap(nextToSelector);
+      initMap(callback, nextToSelector);
       return false;
     });
     return false;
@@ -171,6 +175,10 @@ fetchIucnRange = function(taxon) {
   if (taxon == null) {
     taxon = window._activeTaxon;
   }
+
+  /*
+   *
+   */
   if (isNull(taxon.genus) || isNull(taxon.species)) {
     false;
   }
@@ -183,10 +191,43 @@ fetchIucnRange = function(taxon) {
     args.taxon += "%20" + taxon.subspecies;
   }
   $.get("api.php", buildQuery(args, "json")).done(function(result) {
+    var countryList, countryObj, extantList, i, j, len, len1, populateQueryObj, ref, sourceList;
     console.log("Got", result);
     if (result.status !== true) {
       console.warn(uri.urlString + "api.php?" + (buildQuery(args)));
       return false;
+    }
+    countryList = new Array();
+    if (((ref = result.response) != null ? ref.count : void 0) <= 0) {
+      console.warn("No results found!");
+      return false;
+    } else {
+      sourceList = Object.toArray(result.response.result);
+      extantList = new Array();
+      for (i = 0, len = sourceList.length; i < len; i++) {
+        countryObj = sourceList[i];
+        if (countryObj.presence.search(/extinct/i) === -1) {
+          extantList.push(countryObj);
+        }
+      }
+      if (extantList.length === 0) {
+        console.warn("This taxon '" + result.response.name + "' is extinct :(");
+        return false;
+      }
+      for (j = 0, len1 = extantList.length; j < len1; j++) {
+        countryObj = extantList[j];
+        countryList.push(countryObj.code);
+      }
+      populateQueryObj = {
+        code: countryList
+      };
+      console.debug("Taxon exists in " + countryList.length + " countries...", countryList);
+      initMap(function() {
+        var appendResults;
+        console.debug("Map initialized, populating...");
+        appendResults = appendCountryLayerToMap(populateQueryObj);
+        return console.debug("Country layers topped", appendResults);
+      });
     }
     return false;
   }).fail(function(result, error) {
@@ -196,6 +237,7 @@ fetchIucnRange = function(taxon) {
 };
 
 $(function() {
+  fetchIucnRange();
   return false;
 });
 

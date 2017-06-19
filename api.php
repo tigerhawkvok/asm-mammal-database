@@ -344,7 +344,7 @@ switch (strtolower($_REQUEST["action"])) {
             }
             returnAjax($response);
         }
-        $endpoint = $iucnApiHit . $iucnTaxonLookup . "&token=" . $iucnToken;
+        $endpoint = $iucnApiHit . $iucnTaxonLookup . "?token=" . $iucnToken;
         $opts = array(
             'http' => array(
                 'method' => 'GET',

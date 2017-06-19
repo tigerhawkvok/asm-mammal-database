@@ -562,7 +562,7 @@ Function::debounce = (threshold = 300, execAsap = false, timeout = window.deboun
 
 
 
-loadJS = (src, callback = new Object(), doCallbackOnError = true) ->
+loadJS = (src, callback = new Object(), doCallbackOnError = true, async = true) ->
   ###
   # Load a new javascript file
   #
@@ -586,10 +586,11 @@ loadJS = (src, callback = new Object(), doCallbackOnError = true) ->
   s = document.createElement("script")
   # Set all the attributes. We can be a bit redundant about this
   s.setAttribute("src",src)
-  s.setAttribute("async","async")
   s.setAttribute("type","text/javascript")
   s.src = src
-  s.async = true
+  unless async is false
+    s.setAttribute("async","async")
+    s.async = true
   # Onload function
   onLoadFunction = ->
     state = s.readyState

@@ -777,13 +777,16 @@ Function.prototype.debounce = function() {
   }
 };
 
-loadJS = function(src, callback, doCallbackOnError) {
+loadJS = function(src, callback, doCallbackOnError, async) {
   var e, error1, errorFunction, onLoadFunction, s;
   if (callback == null) {
     callback = new Object();
   }
   if (doCallbackOnError == null) {
     doCallbackOnError = true;
+  }
+  if (async == null) {
+    async = true;
   }
 
   /*
@@ -810,10 +813,12 @@ loadJS = function(src, callback, doCallbackOnError) {
   }
   s = document.createElement("script");
   s.setAttribute("src", src);
-  s.setAttribute("async", "async");
   s.setAttribute("type", "text/javascript");
   s.src = src;
-  s.async = true;
+  if (async !== false) {
+    s.setAttribute("async", "async");
+    s.async = true;
+  }
   onLoadFunction = function() {
     var error2, error3, state;
     state = s.readyState;

@@ -7680,6 +7680,9 @@ label + paper-icon-button {
 #taxonomy .common-taxonomy {
   color: #777777;
 }
+.map-container .map {
+  height: 30vh;
+}
 h3 + marked-element {
   padding-left: 2rem;
 }

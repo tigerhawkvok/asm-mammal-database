@@ -34,7 +34,7 @@ baseQuery = {
 appendCountryLayerToMap = function(queryObj, mapObj) {
   var build, col, fusionColumn, fusionQuery, mapPath, query, val;
   if (mapObj == null) {
-    mapObj = "";
+    mapObj = gMapsConfig.map;
   }
 
   /*
@@ -80,7 +80,7 @@ appendCountryLayerToMap = function(queryObj, mapObj) {
 };
 
 initMap = function(nextToSelector) {
-  var canvasHtml, map, mapDefaults, mapDiv, mapPath, names, ref, selfName;
+  var canvasHtml, map, mapDefaults, mapDiv, mapPath, names, ref, ref1, ref2, ref3, ref4, selfName;
   if (nextToSelector == null) {
     nextToSelector = "#species-note";
   }
@@ -109,9 +109,15 @@ initMap = function(nextToSelector) {
     return false;
   }
   $(nextToSelector).removeClass("col-xs-12").addClass("col-xs-6");
-  canvasHtml = "<div id=\"taxon-range-map\" class=\"col-xs-6\">\n</div>";
+  canvasHtml = "<div id=\"taxon-range-map-container\" class=\"col-xs-6 map-container google-map-container\">\n  <div id=\"taxon-range-map\" class=\"map google-map\">\n  </div>\n</div>";
   $(nextToSelector).after(canvasHtml);
-  mapDefaults = {};
+  mapDefaults = {
+    center: {
+      lat: (ref1 = (ref2 = window.locationData) != null ? ref2.lat : void 0) != null ? ref1 : 0,
+      lng: (ref3 = (ref4 = window.locationData) != null ? ref4.lng : void 0) != null ? ref3 : 0
+    },
+    zoom: 2
+  };
   mapDiv = $("#taxon-range-map").get(0);
   map = new google.maps.Map(mapDiv, mapDefaults);
   gMapsConfig.map = map;

@@ -27,7 +27,7 @@ baseQuery =
   from: worldPoliticalFusionTableId
 
 
-appendCountryLayerToMap = (queryObj,  mapObj = "") ->
+appendCountryLayerToMap = (queryObj,  mapObj = gMapsConfig.map) ->
   ###
   #
   ###
@@ -93,11 +93,17 @@ initMap = (nextToSelector = "#species-note") ->
   .removeClass "col-xs-12"
   .addClass "col-xs-6"
   canvasHtml = """
-  <div id="taxon-range-map" class="col-xs-6">
+  <div id="taxon-range-map-container" class="col-xs-6 map-container google-map-container">
+    <div id="taxon-range-map" class="map google-map">
+    </div>
   </div>
   """
   $(nextToSelector).after canvasHtml
-  mapDefaults = {}
+  mapDefaults =
+    center:
+      lat: window.locationData?.lat ? 0
+      lng: window.locationData?.lng ? 0
+    zoom: 2
   mapDiv = $("#taxon-range-map").get(0)
   map = new google.maps.Map mapDiv, mapDefaults
   gMapsConfig.map = map

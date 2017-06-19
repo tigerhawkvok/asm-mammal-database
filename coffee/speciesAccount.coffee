@@ -29,12 +29,15 @@ baseQuery =
     from: worldPoliticalFusionTableId
   styles: [
     polygonOptions:
-      fillColor: "#22dd55",
-      strokeColor: "#22dd55",
-      strokeWeight: 1
-      fillOpacity: .5
+      fillColor: "#dd2255",
+      strokeColor: "#000",
+      strokeWeight: .05
+      fillOpacity: .05
     ]
+  suppressInfoWindows: true
 
+if typeof _asm is "object"
+  _asm.baseQuery = $.extend {}, baseQuery
 
 appendCountryLayerToMap = (queryObj = {"code":"US"},  mapObj = gMapsConfig.map) ->
   ###
@@ -59,7 +62,11 @@ appendCountryLayerToMap = (queryObj = {"code":"US"},  mapObj = gMapsConfig.map) 
     name: "name"
     country: "name"
   layers = new Array()
-  fusionQuery = $.extend {}, baseQuery
+  console.debug "Got query obj", queryObj
+  fusionQuery = $.extend {}, _asm.baseQuery
+  #fusionQuery = baseQuery ? _asm.baseQuery
+  console.debug "working query", fusionQuery
+  console.debug "basline", baseQuery
   fusionQueries = new Array()
   if typeof queryObj is "object"
     build = new Array()
@@ -72,23 +79,24 @@ appendCountryLayerToMap = (queryObj = {"code":"US"},  mapObj = gMapsConfig.map) 
           build.push "'#{fusionColumn[col]}' = '#{val}'"
     for where in build
       # We need to redeclare it, because object copies suck.
-      console.debug "obj build"
       tmp =
-        query:
-          select: "json_4326" # GeoJson coords: http://blog.mastermaps.com/2011/02/natural-earth-vectors-in-cloud.html
-          from: worldPoliticalFusionTableId
-          where: where
-        styles: [
-          polygonOptions:
-            fillColor: "#22dd55",
-            strokeColor: "#22dd55",
-            strokeWeight: 1
-            fillOpacity: .5
-          ]
-      fusionQueries.push tmp
-      layers.push setMapHelper new google.maps.FusionTablesLayer(tmp), mapObj
+        where: where
+        polygonOptions:
+          fillColor: "#22dd55",
+          strokeColor: "#22dd55",
+          strokeWeight: 1
+          fillOpacity: .5
+      fusionQuery.styles.push tmp
+    fusionQueries.push fusionQuery
+    layers.push setMapHelper new google.maps.FusionTablesLayer(fusionQuery), mapObj
   else
     fusionQuery.query.where = queryObj
+    fusionQuery.styles[0] =
+      polygonOptions:
+        fillColor: "#22dd55",
+        strokeColor: "#22dd55",
+        strokeWeight: 1
+        fillOpacity: .5
     fusionQueries.push fusionQuery
     layers.push setMapHelper new google.maps.FusionTablesLayer(fusionQuery), mapObj
   {fusionQueries, layers, mapObj}
@@ -184,6 +192,7 @@ fetchIucnRange = (taxon = window._activeTaxon) ->
         return false
       for countryObj in extantList
         countryList.push countryObj.code
+      shuffle countryList
       populateQueryObj =
         code: countryList
       console.debug "Taxon exists in #{countryList.length} countries...", countryList

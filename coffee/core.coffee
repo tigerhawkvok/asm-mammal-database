@@ -602,6 +602,7 @@ loadJS = (src, callback = new Object(), doCallbackOnError = true, async = true) 
             callback()
           catch e
             console.error "Postload callback error for '#{src}' - #{e.message}"
+            console.warn e.stack
     catch e
       console.error "Onload error for '#{src}' - #{e.message}"
   # Error function

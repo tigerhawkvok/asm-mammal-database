@@ -35,14 +35,19 @@ baseQuery = {
   styles: [
     {
       polygonOptions: {
-        fillColor: "#22dd55",
-        strokeColor: "#22dd55",
-        strokeWeight: 1,
-        fillOpacity: .5
+        fillColor: "#dd2255",
+        strokeColor: "#000",
+        strokeWeight: .05,
+        fillOpacity: .05
       }
     }
-  ]
+  ],
+  suppressInfoWindows: true
 };
+
+if (typeof _asm === "object") {
+  _asm.baseQuery = $.extend({}, baseQuery);
+}
 
 appendCountryLayerToMap = function(queryObj, mapObj) {
   var build, col, fusionColumn, fusionQueries, fusionQuery, i, j, layers, len, len1, subval, tmp, val, where;
@@ -76,7 +81,10 @@ appendCountryLayerToMap = function(queryObj, mapObj) {
     country: "name"
   };
   layers = new Array();
-  fusionQuery = $.extend({}, baseQuery);
+  console.debug("Got query obj", queryObj);
+  fusionQuery = $.extend({}, _asm.baseQuery);
+  console.debug("working query", fusionQuery);
+  console.debug("basline", baseQuery);
   fusionQueries = new Array();
   if (typeof queryObj === "object") {
     build = new Array();
@@ -95,29 +103,29 @@ appendCountryLayerToMap = function(queryObj, mapObj) {
     }
     for (j = 0, len1 = build.length; j < len1; j++) {
       where = build[j];
-      console.debug("obj build");
       tmp = {
-        query: {
-          select: "json_4326",
-          from: worldPoliticalFusionTableId,
-          where: where
-        },
-        styles: [
-          {
-            polygonOptions: {
-              fillColor: "#22dd55",
-              strokeColor: "#22dd55",
-              strokeWeight: 1,
-              fillOpacity: .5
-            }
-          }
-        ]
+        where: where,
+        polygonOptions: {
+          fillColor: "#22dd55",
+          strokeColor: "#22dd55",
+          strokeWeight: 1,
+          fillOpacity: .5
+        }
       };
-      fusionQueries.push(tmp);
-      layers.push(setMapHelper(new google.maps.FusionTablesLayer(tmp), mapObj));
+      fusionQuery.styles.push(tmp);
     }
+    fusionQueries.push(fusionQuery);
+    layers.push(setMapHelper(new google.maps.FusionTablesLayer(fusionQuery), mapObj));
   } else {
     fusionQuery.query.where = queryObj;
+    fusionQuery.styles[0] = {
+      polygonOptions: {
+        fillColor: "#22dd55",
+        strokeColor: "#22dd55",
+        strokeWeight: 1,
+        fillOpacity: .5
+      }
+    };
     fusionQueries.push(fusionQuery);
     layers.push(setMapHelper(new google.maps.FusionTablesLayer(fusionQuery), mapObj));
   }
@@ -240,6 +248,7 @@ fetchIucnRange = function(taxon) {
         countryObj = extantList[j];
         countryList.push(countryObj.code);
       }
+      shuffle(countryList);
       populateQueryObj = {
         code: countryList
       };

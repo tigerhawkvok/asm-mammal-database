@@ -830,7 +830,8 @@ loadJS = function(src, callback, doCallbackOnError, async) {
             return callback();
           } catch (error2) {
             e = error2;
-            return console.error("Postload callback error for '" + src + "' - " + e.message);
+            console.error("Postload callback error for '" + src + "' - " + e.message);
+            return console.warn(e.stack);
           }
         }
       }

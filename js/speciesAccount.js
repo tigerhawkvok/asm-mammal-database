@@ -11,7 +11,7 @@
  *   -
  *
  */
-var appendCountryLayerToMap, baseQuery, fetchIucnRange, gMapsConfig, initMap, worldPoliticalFusionTableId,
+var appendCountryLayerToMap, baseQuery, fetchIucnRange, gMapsConfig, initMap, setMapHelper, worldPoliticalFusionTableId,
   indexOf = [].indexOf || function(item) { for (var i = 0, l = this.length; i < l; i++) { if (i in this && this[i] === item) return i; } return -1; };
 
 gMapsConfig = {
@@ -35,17 +35,17 @@ baseQuery = {
   styles: [
     {
       polygonOptions: {
-        fillColor: "#rrggbb",
-        strokeColor: "#rrggbb",
-        strokeWeight: "int",
-        fillOpacity: 0
+        fillColor: "#22dd55",
+        strokeColor: "#22dd55",
+        strokeWeight: 1,
+        fillOpacity: .5
       }
     }
   ]
 };
 
 appendCountryLayerToMap = function(queryObj, mapObj) {
-  var build, col, fusionColumn, fusionQuery, i, j, layer, len, len1, query, subval, temp, val, where;
+  var build, col, fusionColumn, fusionQueries, fusionQuery, i, j, layers, len, len1, subval, tmp, val, where;
   if (queryObj == null) {
     queryObj = {
       "code": "US"
@@ -75,7 +75,9 @@ appendCountryLayerToMap = function(queryObj, mapObj) {
     name: "name",
     country: "name"
   };
-  fusionQuery = baseQuery;
+  layers = new Array();
+  fusionQuery = $.extend({}, baseQuery);
+  fusionQueries = new Array();
   if (typeof queryObj === "object") {
     build = new Array();
     for (col in queryObj) {
@@ -93,25 +95,44 @@ appendCountryLayerToMap = function(queryObj, mapObj) {
     }
     for (j = 0, len1 = build.length; j < len1; j++) {
       where = build[j];
-      temp = {
-        where: where,
-        polygonOptions: {
-          fillOpacity: .5
-        }
+      tmp = {
+        query: {
+          select: "json_4326",
+          from: worldPoliticalFusionTableId,
+          where: where
+        },
+        styles: [
+          {
+            polygonOptions: {
+              fillColor: "#22dd55",
+              strokeColor: "#22dd55",
+              strokeWeight: 1,
+              fillOpacity: .5
+            }
+          }
+        ]
       };
-      fusionQuery.styles.push(temp);
+      fusionQueries.push(tmp);
+      layers.push(setMapHelper(new google.maps.FusionTablesLayer(tmp), mapObj));
     }
   } else {
-    query = queryObj;
-    fusionQuery.query.where = query;
+    fusionQuery.query.where = queryObj;
+    fusionQueries.push(fusionQuery);
+    layers.push(setMapHelper(new google.maps.FusionTablesLayer(fusionQuery), mapObj));
   }
-  layer = new google.maps.FusionTablesLayer(fusionQuery);
-  layer.setMap(mapObj);
   return {
-    fusionQuery: fusionQuery,
-    layer: layer,
+    fusionQueries: fusionQueries,
+    layers: layers,
     mapObj: mapObj
   };
+};
+
+setMapHelper = function(layer, mapObj) {
+  if (mapObj == null) {
+    mapObj = gMapsConfig.map;
+  }
+  layer.setMap(mapObj);
+  return layer;
 };
 
 initMap = function(callback, nextToSelector) {

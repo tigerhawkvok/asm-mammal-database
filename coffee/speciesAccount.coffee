@@ -29,10 +29,10 @@ baseQuery =
     from: worldPoliticalFusionTableId
   styles: [
     polygonOptions:
-      fillColor: "#rrggbb",
-      strokeColor: "#rrggbb",
-      strokeWeight: "int"
-      fillOpacity: 0
+      fillColor: "#22dd55",
+      strokeColor: "#22dd55",
+      strokeWeight: 1
+      fillOpacity: .5
     ]
 
 
@@ -58,7 +58,9 @@ appendCountryLayerToMap = (queryObj = {"code":"US"},  mapObj = gMapsConfig.map) 
     postal: "postal"
     name: "name"
     country: "name"
-  fusionQuery = baseQuery
+  layers = new Array()
+  fusionQuery = $.extend {}, baseQuery
+  fusionQueries = new Array()
   if typeof queryObj is "object"
     build = new Array()
     for col, val of queryObj
@@ -69,17 +71,30 @@ appendCountryLayerToMap = (queryObj = {"code":"US"},  mapObj = gMapsConfig.map) 
         else
           build.push "'#{fusionColumn[col]}' = '#{val}'"
     for where in build
-      temp =
-        where: where
-        polygonOptions:
-          fillOpacity: .5
-      fusionQuery.styles.push temp
+      # We need to redeclare it, because object copies suck.
+      tmp =
+        query:
+          select: "json_4326" # GeoJson coords: http://blog.mastermaps.com/2011/02/natural-earth-vectors-in-cloud.html
+          from: worldPoliticalFusionTableId
+          where: where
+        styles: [
+          polygonOptions:
+            fillColor: "#22dd55",
+            strokeColor: "#22dd55",
+            strokeWeight: 1
+            fillOpacity: .5
+          ]
+      fusionQueries.push tmp
+      layers.push setMapHelper new google.maps.FusionTablesLayer(tmp), mapObj
   else
-    query = queryObj
-    fusionQuery.query.where = query
-  layer = new google.maps.FusionTablesLayer fusionQuery
+    fusionQuery.query.where = queryObj
+    fusionQueries.push fusionQuery
+    layers.push setMapHelper new google.maps.FusionTablesLayer(fusionQuery), mapObj
+  {fusionQueries, layers, mapObj}
+
+setMapHelper = (layer, mapObj = gMapsConfig.map) ->
   layer.setMap mapObj
-  {fusionQuery, layer, mapObj}
+  layer
 
 
 initMap = (callback, nextToSelector = "#species-note") ->

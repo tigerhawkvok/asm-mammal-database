@@ -15,6 +15,7 @@ gMapsConfig =
   jsApiKey: "AIzaSyC_qZqVvNk6A6px4Q7BJQOOHqpnQNihSBA"
   jsApiSrc: "https://maps.googleapis.com/maps/api/js"
   jsApiInitCallbackFn: null
+  hasRunInitMap: false
 
 unless isNull window.gMapsLocalKey
   gMapsConfig.jsApiKey = window.gMapsLocalKey
@@ -23,11 +24,21 @@ unless isNull window.gMapsLocalKey
 worldPoliticalFusionTableId = "1uKyspg-HkChMIntZ0N376lMpRzduIjr85UYPpQ"
 
 baseQuery =
-  select: "json_4326" # GeoJson coords: http://blog.mastermaps.com/2011/02/natural-earth-vectors-in-cloud.html
-  from: worldPoliticalFusionTableId
+  query:
+    select: "json_4326" # GeoJson coords: http://blog.mastermaps.com/2011/02/natural-earth-vectors-in-cloud.html
+    from: worldPoliticalFusionTableId
+  styles: [
+    polygonOptions:
+      fillColor: "#rrggbb",
+      strokeColor: "#rrggbb",
+      strokeWeight: "int"
+    polylineOptions: 
+      strokeColor: "#rrggbb",
+      strokeWeight: "int"
+    ]
 
 
-appendCountryLayerToMap = (queryObj,  mapObj = gMapsConfig.map) ->
+appendCountryLayerToMap = (queryObj = {"code":"US"},  mapObj = gMapsConfig.map) ->
   ###
   #
   ###
@@ -41,7 +52,7 @@ appendCountryLayerToMap = (queryObj,  mapObj = gMapsConfig.map) ->
       false
     return false
   # Verify the map object is really a map object
-  unless mapObj instanceOf google.map.Map
+  unless mapObj instanceof google.maps.Map
     console.error "Invalid map object provided"
     return false
   # Create a map of plausible query specifications to fusion table
@@ -57,20 +68,28 @@ appendCountryLayerToMap = (queryObj,  mapObj = gMapsConfig.map) ->
     build = new Array()
     for col, val of queryObj
       if col in Object.keys fusionColumn
-        build.push "`#{fusionColumn[col]}` = '#{val}'"
+        if isArray val
+          for subval in val
+            build.push "'#{fusionColumn[col]}' = '#{subval}'"
+        else
+          build.push "'#{fusionColumn[col]}' = '#{val}'"
     query = build.join " OR "
   else
     query = queryObj
   fusionQuery = baseQuery
-  fusionQuery.where = query
+  fusionQuery.query.where = query
+  layer = new google.maps.FusionTablesLayer fusionQuery
+  layer.setMap mapObj
+  {fusionQuery, layer, mapObj}
 
-  false
 
-
-initMap = (nextToSelector = "#species-note") ->
+initMap = (nextToSelector = "#species-note", callback) ->
   ###
   #
   ###
+  if gMapsConfig.hasRunInitMap is true
+    console.debug "Map already initialized"
+    return false
   unless google?.maps?
     console.debug "Loading Google Maps first ..."
     mapPath = "#{gMapsConfig.jsApiSrc}?key=#{gMapsConfig.jsApiKey}"
@@ -107,7 +126,21 @@ initMap = (nextToSelector = "#species-note") ->
   mapDiv = $("#taxon-range-map").get(0)
   map = new google.maps.Map mapDiv, mapDefaults
   gMapsConfig.map = map
+  gMapsConfig.hasRunInitMap = true
+  if typeof callback is "function"
+    callback()
   map
+
+
+
+fetchIucnRange = (taxon = window._activeTaxon) ->
+  if isNull(taxon.genus) or isNull taxon.species
+    # we have to infer the taxon
+    false
+  
+  false
+
+
 
 $ ->
   false

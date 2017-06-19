@@ -11,13 +11,14 @@
  *   -
  *
  */
-var appendCountryLayerToMap, baseQuery, gMapsConfig, initMap, worldPoliticalFusionTableId,
+var appendCountryLayerToMap, baseQuery, fetchIucnRange, gMapsConfig, initMap, worldPoliticalFusionTableId,
   indexOf = [].indexOf || function(item) { for (var i = 0, l = this.length; i < l; i++) { if (i in this && this[i] === item) return i; } return -1; };
 
 gMapsConfig = {
   jsApiKey: "AIzaSyC_qZqVvNk6A6px4Q7BJQOOHqpnQNihSBA",
   jsApiSrc: "https://maps.googleapis.com/maps/api/js",
-  jsApiInitCallbackFn: null
+  jsApiInitCallbackFn: null,
+  hasRunInitMap: false
 };
 
 if (!isNull(window.gMapsLocalKey)) {
@@ -27,12 +28,32 @@ if (!isNull(window.gMapsLocalKey)) {
 worldPoliticalFusionTableId = "1uKyspg-HkChMIntZ0N376lMpRzduIjr85UYPpQ";
 
 baseQuery = {
-  select: "json_4326",
-  from: worldPoliticalFusionTableId
+  query: {
+    select: "json_4326",
+    from: worldPoliticalFusionTableId
+  },
+  styles: [
+    {
+      polygonOptions: {
+        fillColor: "#rrggbb",
+        strokeColor: "#rrggbb",
+        strokeWeight: "int"
+      },
+      polylineOptions: {
+        strokeColor: "#rrggbb",
+        strokeWeight: "int"
+      }
+    }
+  ]
 };
 
 appendCountryLayerToMap = function(queryObj, mapObj) {
-  var build, col, fusionColumn, fusionQuery, mapPath, query, val;
+  var build, col, fusionColumn, fusionQuery, i, layer, len, mapPath, query, subval, val;
+  if (queryObj == null) {
+    queryObj = {
+      "code": "US"
+    };
+  }
   if (mapObj == null) {
     mapObj = gMapsConfig.map;
   }
@@ -52,7 +73,7 @@ appendCountryLayerToMap = function(queryObj, mapObj) {
     });
     return false;
   }
-  if (!mapObj(instanceOf(google.map.Map))) {
+  if (!(mapObj instanceof google.maps.Map)) {
     console.error("Invalid map object provided");
     return false;
   }
@@ -67,7 +88,14 @@ appendCountryLayerToMap = function(queryObj, mapObj) {
     for (col in queryObj) {
       val = queryObj[col];
       if (indexOf.call(Object.keys(fusionColumn), col) >= 0) {
-        build.push("`" + fusionColumn[col] + "` = '" + val + "'");
+        if (isArray(val)) {
+          for (i = 0, len = val.length; i < len; i++) {
+            subval = val[i];
+            build.push("'" + fusionColumn[col] + "' = '" + subval + "'");
+          }
+        } else {
+          build.push("'" + fusionColumn[col] + "' = '" + val + "'");
+        }
       }
     }
     query = build.join(" OR ");
@@ -75,11 +103,17 @@ appendCountryLayerToMap = function(queryObj, mapObj) {
     query = queryObj;
   }
   fusionQuery = baseQuery;
-  fusionQuery.where = query;
-  return false;
+  fusionQuery.query.where = query;
+  layer = new google.maps.FusionTablesLayer(fusionQuery);
+  layer.setMap(mapObj);
+  return {
+    fusionQuery: fusionQuery,
+    layer: layer,
+    mapObj: mapObj
+  };
 };
 
-initMap = function(nextToSelector) {
+initMap = function(nextToSelector, callback) {
   var canvasHtml, map, mapDefaults, mapDiv, mapPath, names, ref, ref1, ref2, ref3, ref4, selfName;
   if (nextToSelector == null) {
     nextToSelector = "#species-note";
@@ -88,6 +122,10 @@ initMap = function(nextToSelector) {
   /*
    *
    */
+  if (gMapsConfig.hasRunInitMap === true) {
+    console.debug("Map already initialized");
+    return false;
+  }
   if ((typeof google !== "undefined" && google !== null ? google.maps : void 0) == null) {
     console.debug("Loading Google Maps first ...");
     mapPath = gMapsConfig.jsApiSrc + "?key=" + gMapsConfig.jsApiKey;
@@ -121,7 +159,21 @@ initMap = function(nextToSelector) {
   mapDiv = $("#taxon-range-map").get(0);
   map = new google.maps.Map(mapDiv, mapDefaults);
   gMapsConfig.map = map;
+  gMapsConfig.hasRunInitMap = true;
+  if (typeof callback === "function") {
+    callback();
+  }
   return map;
+};
+
+fetchIucnRange = function(taxon) {
+  if (taxon == null) {
+    taxon = window._activeTaxon;
+  }
+  if (isNull(taxon.genus) || isNull(taxon.species)) {
+    false;
+  }
+  return false;
 };
 
 $(function() {

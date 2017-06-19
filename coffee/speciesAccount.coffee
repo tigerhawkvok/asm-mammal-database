@@ -65,8 +65,6 @@ appendCountryLayerToMap = (queryObj = {"code":"US"},  mapObj = gMapsConfig.map) 
   console.debug "Got query obj", queryObj
   fusionQuery = $.extend {}, _asm.baseQuery
   #fusionQuery = baseQuery ? _asm.baseQuery
-  console.debug "working query", fusionQuery
-  console.debug "basline", baseQuery
   fusionQueries = new Array()
   if typeof queryObj is "object"
     build = new Array()

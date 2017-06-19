@@ -137,7 +137,21 @@ fetchIucnRange = (taxon = window._activeTaxon) ->
   if isNull(taxon.genus) or isNull taxon.species
     # we have to infer the taxon
     false
-  
+  args =
+    action: "iucn"
+    taxon: "#{taxon.genus.toTitleCase()}%20#{taxon.species}"
+    iucn_endpoint: "species/countries/name/"
+  unless isNull taxon.subspecies
+    args.taxon += "%20#{taxon.subspecies}"
+  $.get "api.php", buildQuery args, "json"
+  .done (result) ->
+    console.log "Got", result
+    if result.status isnt true
+      console.warn "#{uri.urlString}api.php?#{buildQuery args}"
+      return false
+    false
+  .fail (result, error) ->
+    false
   false
 
 

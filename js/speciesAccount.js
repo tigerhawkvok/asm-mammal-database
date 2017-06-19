@@ -167,12 +167,31 @@ initMap = function(nextToSelector, callback) {
 };
 
 fetchIucnRange = function(taxon) {
+  var args;
   if (taxon == null) {
     taxon = window._activeTaxon;
   }
   if (isNull(taxon.genus) || isNull(taxon.species)) {
     false;
   }
+  args = {
+    action: "iucn",
+    taxon: (taxon.genus.toTitleCase()) + "%20" + taxon.species,
+    iucn_endpoint: "species/countries/name/"
+  };
+  if (!isNull(taxon.subspecies)) {
+    args.taxon += "%20" + taxon.subspecies;
+  }
+  $.get("api.php", buildQuery(args, "json")).done(function(result) {
+    console.log("Got", result);
+    if (result.status !== true) {
+      console.warn(uri.urlString + "api.php?" + (buildQuery(args)));
+      return false;
+    }
+    return false;
+  }).fail(function(result, error) {
+    return false;
+  });
   return false;
 };
 

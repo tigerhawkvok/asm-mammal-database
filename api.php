@@ -304,6 +304,74 @@ switch (strtolower($_REQUEST["action"])) {
         returnAjax(doLiveQuery($_REQUEST));
         die();
         break;
+    case "iucn":
+        $iucnBase = "http://apiv3.iucnredlist.org/api/v3/";
+        $validIucnApis = array(
+            "species/common_names/",
+            "species/countries/name/",
+        );
+        $iucnEndpoint = decode64($_REQUEST["iucn_endpoint"]);
+        if (empty($iucnEndpoint)) {
+            $iucnEndpoint = $_REQUEST["iucn_endpoint"];
+        }
+        if (!in_array($iucnEndpoint, $validIucnApis)) {
+            returnAjax(array(
+                "status" => false,
+                "error" => "INVALID_API_TARGET",
+                "human_error" => "You specified an invalid IUCN endpoint",
+                "valid_endpoints" => $validIucnApis,
+                "parsed_endpoint" => $iucnEndpoint,
+                "provided" => $_REQUEST,
+            ));
+        }
+        $iucnApiHit = $iucnBase . $iucnEndpoint;
+        $iucnTaxonLookup = decode64($_REQUEST["taxon"]);
+        if (empty($iucnTaxonLookup)) {
+            $iucnTaxonLookup = $_REQUEST["taxon"];
+        }
+        $canonicalVerify = $db->sanitize(urldecode($iucnTaxonLookup));
+        # Verify the taxon exists in our database
+        if (!$db->isEntry($canonicalVerify, "canonical_sciname", true)) {
+            $response = array(
+                "status" => false,
+                "error" => "INVALID_TAXON",
+                "human_error" => "You specified a taxon we don't recognize",
+                "parsed_taxon" => $canonicalVerify,
+                "provided" => $_REQUEST,
+            );
+            if ($show_debug === true) {
+                $response["verification"] = $db->isEntry($canonicalVerify, "canonical_species", true, true);
+            }
+            returnAjax($response);
+        }
+        $endpoint = $iucnApiHit . $iucnTaxonLookup . "&token=" . $iucnToken;
+        $opts = array(
+            'http' => array(
+                'method' => 'GET',
+                #'request_fulluri' => true,
+                'ignore_errors' => true,
+                'timeout' => 3.5, # Seconds
+            ),
+        );
+        $context = stream_context_create($opts);
+        $response = file_get_contents($endpoint, false, $context);
+        $decoded = json_decode($response, true);
+        $status = !empty($decoded) && empty($decoded["error"]);
+        $response = array(
+            "status" => $status,
+            "response" => $decoded,
+            "target" => $iucnEndpoint,
+            "taxon" => $canonicalVerify,
+        );
+        if ($show_debug === true) {
+            $response["iucn_token"] = $iucnToken;
+            if (!$status) {
+                $response["endpoint"] = $endpoint;
+            }
+        }
+        returnAjax($response);
+        die();
+        break;
     default:
         break;
 }

@@ -1094,14 +1094,18 @@ createHtmlFile = (result, htmlBody) ->
         hasReadSubClade.push row.linnean_family.trim()
       unless row.genus in hasReadGenus
         # Show the genus header
+        if not genusAuth?
+          genusAuth = ""
         oneOffHtml += """
         <aside class="genus-declaration lead">
           <span class="entry-sciname text-capitalize">#{row.genus}</span>
-          <span class="entry-authority">#{genusAuth.unescape()}</span>
+          <span class="entry-authority">#{genusAuth?.unescape()}</span>
         </aside>
         """
         hasReadGenus.push row.genus
       shortGenus = "#{row.genus.slice(0,1)}. "
+      if not speciesAuth?
+        speciesAuth = ""
       entryHtml = """
       <section class="species-entry">
         #{oneOffHtml}
@@ -1110,7 +1114,7 @@ createHtmlFile = (result, htmlBody) ->
             <span class="text-capitalize">#{shortGenus}</span> #{row.species} #{row.subspecies}
           </span>
           <span class="entry-authority">
-            #{speciesAuth.unescape()}
+            #{speciesAuth?.unescape()}
           </span>
           &#8212;
           <span class="common_name no-cap">

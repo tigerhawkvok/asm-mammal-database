@@ -2,6 +2,31 @@
 # Depends on the service worker to do some of the load off-thread
 # See ./serviceWorker.coffee
 
+reEnableClosure = ->
+  $("#download-chooser").find(".buttons paper-button")
+  .removeAttr "disabled"
+  false
+
+
+getLastSearch = ->
+  # Are we on a taxon page?
+  if uri.o.attr("path")?.search(/species\-account/i) >=0
+    # Get the taxon
+    unless isNull window._activeTaxon
+      canonicalTaxon = "#{_activeTaxon.genus} #{_activeTaxon.species}"
+      unless isNull _activeTaxon.subspecies
+        canonicalTaxon += " #{_activeTaxon.subspecies}"
+      return canonicalTaxon
+    else
+      console.warn "Couldn't identify the active taxon"
+  # OTherwise ...
+  if searchParams?.lastSearch
+    return searchParams.lastSearch
+  else
+    return "*"
+  false
+
+
 downloadCSVList = (useLastSearch = false) ->
   ###
   # Download a CSV file list
@@ -14,7 +39,7 @@ downloadCSVList = (useLastSearch = false) ->
   _asm.progressTracking =
     estimate: new Array()
   try
-    searchString = if useLastSearch then searchParams.lastSearch else "*"
+    searchString = if useLastSearch then getLastSearch() else "*"
     if isNull searchString
       searchString = "*"
   catch
@@ -24,13 +49,14 @@ downloadCSVList = (useLastSearch = false) ->
       p$(button).disabled = true
   #filterArg = "eyJpc19hbGllbiI6MCwiYm9vbGVhbl90eXBlIjoib3IifQ"
   #args = "filter=#{filterArg}"
-  args = "q=#{searchString}"
+  args =
+    q: encodeURIComponent searchString
   d = new Date()
   adjMonth = d.getMonth() + 1
   month = if adjMonth.toString().length is 1 then "0#{adjMonth}" else adjMonth
   day = if d.getDate().toString().length is 1 then "0#{d.getDate().toString()}" else d.getDate()
   dateString = "#{d.getUTCFullYear()}-#{month}-#{day}"
-  $.get "#{searchParams.apiPath}", args, "json"
+  $.get "#{searchParams.apiPath}", buildQuery args, "json"
   .done (result) ->
     try
       unless result.status is true
@@ -50,6 +76,7 @@ downloadCSVList = (useLastSearch = false) ->
           console.warn "Got an error!"
           message = unless isNull e.data.updateUser then e.data.updateUser else "Failed to create file"
           stopLoadError message, undefined, 10000
+          reEnableClosure()
           return false
         if e.data.done isnt true
           unless isNull e.data.updateUser
@@ -185,6 +212,7 @@ downloadCSVList = (useLastSearch = false) ->
       console.warn "Got",result,"from","#{searchParams.apiPath}?#{args}", result.status
   .fail ->
     stopLoadError "There was a problem communicating with the server. Please try again later."
+    reEnableClosure()
   # Get the SQL dump location
   _asm.sqlDumpLocation = null
   $.get "#{uri.urlString}meta.php", "action=get_db_dump", "json"
@@ -195,6 +223,7 @@ downloadCSVList = (useLastSearch = false) ->
       _asm.sqlDumpLocation = false
     false
   .fail (result, status) ->
+    reEnableClosure()
     false
   false
 
@@ -223,7 +252,7 @@ downloadHTMLList = (useLastSearch = false) ->
   _asm.progressTracking =
     estimate: new Array()
   try
-    searchString = if useLastSearch then searchParams.lastSearch else "*"
+    searchString = if useLastSearch then getLastSearch() else "*"
     if isNull searchString
       searchString = "*"
   catch
@@ -231,8 +260,10 @@ downloadHTMLList = (useLastSearch = false) ->
   try
     for button in $("#download-chooser .buttons paper-button")
       p$(button).disabled = true
+  console.debug "Getting CSS..."
   $.get "#{uri.urlString}css/download-inline-bootstrap.css"
   .done (importedCSS) ->
+    startLoad()
     d = new Date()
     adjMonth = d.getMonth() + 1
     month = if adjMonth.toString().length is 1 then "0#{adjMonth}" else adjMonth
@@ -257,8 +288,12 @@ downloadHTMLList = (useLastSearch = false) ->
               <article>
                 <h1 class="text-center">ASM Species Checklist ver. #{dateString}</h1>
     """
-    args = "q=#{searchString}&order=linnean_order,linnean_family,genus,species,subspecies"
-    $.get "#{searchParams.apiPath}", args, "json"
+    console.debug "CSS loaded, starting main ..."
+    args =
+      q: encodeURIComponent searchString
+      order: "linnean_order,linnean_family,genus,species,subspecies"
+    #args = "q=#{searchString}&order=linnean_order,linnean_family,genus,species,subspecies"
+    $.get "#{searchParams.apiPath}", buildQuery args, "json"
     .done (result) ->
       startLoad()
       toastStatusMessage "Please be patient while we create the file for you"
@@ -277,6 +312,7 @@ downloadHTMLList = (useLastSearch = false) ->
           console.warn "Got an error!"
           message = unless isNull e.data.updateUser then e.data.updateUser else "Failed to create file"
           stopLoadError message, undefined, 10000
+          reEnableClosure()
           return false
         if e.data.done isnt true
           unless isNull e.data.updateUser
@@ -387,9 +423,11 @@ downloadHTMLList = (useLastSearch = false) ->
       worker.postMessage postMessageContent
       false
     .fail  ->
-      stopLoadError("There was a problem communicating with the server. Please try again later.")
+      stopLoadError "There was a problem communicating with the server. Please try again later."
+      reEnableClosure()
   .fail ->
     stopLoadError "Unable to fetch styles for printout"
+    reEnableClosure()
     false
   false
 

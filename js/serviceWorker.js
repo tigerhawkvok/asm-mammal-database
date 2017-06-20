@@ -1249,11 +1249,17 @@ createHtmlFile = function(result, htmlBody) {
         hasReadSubClade.push(row.linnean_family.trim());
       }
       if (ref3 = row.genus, indexOf.call(hasReadGenus, ref3) < 0) {
-        oneOffHtml += "<aside class=\"genus-declaration lead\">\n  <span class=\"entry-sciname text-capitalize\">" + row.genus + "</span>\n  <span class=\"entry-authority\">" + (genusAuth.unescape()) + "</span>\n</aside>";
+        if (genusAuth == null) {
+          genusAuth = "";
+        }
+        oneOffHtml += "<aside class=\"genus-declaration lead\">\n  <span class=\"entry-sciname text-capitalize\">" + row.genus + "</span>\n  <span class=\"entry-authority\">" + (genusAuth != null ? genusAuth.unescape() : void 0) + "</span>\n</aside>";
         hasReadGenus.push(row.genus);
       }
       shortGenus = (row.genus.slice(0, 1)) + ". ";
-      entryHtml = "<section class=\"species-entry\">\n  " + oneOffHtml + "\n  <p class=\"h4 entry-header\">\n    <span class=\"entry-sciname\">\n      <span class=\"text-capitalize\">" + shortGenus + "</span> " + row.species + " " + row.subspecies + "\n    </span>\n    <span class=\"entry-authority\">\n      " + (speciesAuth.unescape()) + "\n    </span>\n    &#8212;\n    <span class=\"common_name no-cap\">\n      " + (smartUpperCasing(row.common_name)) + "\n    </span>\n  </p>\n  <div class=\"entry-content\">\n    " + htmlNotes + "\n    " + htmlCredit + "\n  </div>\n</section>";
+      if (speciesAuth == null) {
+        speciesAuth = "";
+      }
+      entryHtml = "<section class=\"species-entry\">\n  " + oneOffHtml + "\n  <p class=\"h4 entry-header\">\n    <span class=\"entry-sciname\">\n      <span class=\"text-capitalize\">" + shortGenus + "</span> " + row.species + " " + row.subspecies + "\n    </span>\n    <span class=\"entry-authority\">\n      " + (speciesAuth != null ? speciesAuth.unescape() : void 0) + "\n    </span>\n    &#8212;\n    <span class=\"common_name no-cap\">\n      " + (smartUpperCasing(row.common_name)) + "\n    </span>\n  </p>\n  <div class=\"entry-content\">\n    " + htmlNotes + "\n    " + htmlCredit + "\n  </div>\n</section>";
       htmlBody += entryHtml;
     }
     htmlBody += "</article>\n</div>\n</body>\n</html>";

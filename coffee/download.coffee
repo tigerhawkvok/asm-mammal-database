@@ -2,6 +2,12 @@
 # Depends on the service worker to do some of the load off-thread
 # See ./serviceWorker.coffee
 
+reEnableClosure = ->
+  $("#download-chooser").find(".buttons paper-button")
+  .removeAttr "disabled"
+  false
+
+
 downloadCSVList = (useLastSearch = false) ->
   ###
   # Download a CSV file list
@@ -50,6 +56,7 @@ downloadCSVList = (useLastSearch = false) ->
           console.warn "Got an error!"
           message = unless isNull e.data.updateUser then e.data.updateUser else "Failed to create file"
           stopLoadError message, undefined, 10000
+          reEnableClosure()
           return false
         if e.data.done isnt true
           unless isNull e.data.updateUser
@@ -185,6 +192,7 @@ downloadCSVList = (useLastSearch = false) ->
       console.warn "Got",result,"from","#{searchParams.apiPath}?#{args}", result.status
   .fail ->
     stopLoadError "There was a problem communicating with the server. Please try again later."
+    reEnableClosure()
   # Get the SQL dump location
   _asm.sqlDumpLocation = null
   $.get "#{uri.urlString}meta.php", "action=get_db_dump", "json"
@@ -195,6 +203,7 @@ downloadCSVList = (useLastSearch = false) ->
       _asm.sqlDumpLocation = false
     false
   .fail (result, status) ->
+    reEnableClosure()
     false
   false
 
@@ -280,6 +289,7 @@ downloadHTMLList = (useLastSearch = false) ->
           console.warn "Got an error!"
           message = unless isNull e.data.updateUser then e.data.updateUser else "Failed to create file"
           stopLoadError message, undefined, 10000
+          reEnableClosure()
           return false
         if e.data.done isnt true
           unless isNull e.data.updateUser
@@ -391,8 +401,10 @@ downloadHTMLList = (useLastSearch = false) ->
       false
     .fail  ->
       stopLoadError "There was a problem communicating with the server. Please try again later."
+      reEnableClosure()
   .fail ->
     stopLoadError "Unable to fetch styles for printout"
+    reEnableClosure()
     false
   false
 

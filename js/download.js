@@ -1,4 +1,9 @@
-var downloadCSVList, downloadHTMLList, showDownloadChooser;
+var downloadCSVList, downloadHTMLList, reEnableClosure, showDownloadChooser;
+
+reEnableClosure = function() {
+  $("#download-chooser").find(".buttons paper-button").removeAttr("disabled");
+  return false;
+};
 
 downloadCSVList = function(useLastSearch) {
   var adjMonth, args, button, d, dateString, day, error, i, len, month, ref, searchString, startTime;
@@ -62,6 +67,7 @@ downloadCSVList = function(useLastSearch) {
           console.warn("Got an error!");
           message = !isNull(e.data.updateUser) ? e.data.updateUser : "Failed to create file";
           stopLoadError(message, void 0, 10000);
+          reEnableClosure();
           return false;
         }
         if (e.data.done !== true) {
@@ -146,7 +152,8 @@ downloadCSVList = function(useLastSearch) {
       return console.warn("Got", result, "from", searchParams.apiPath + "?" + args, result.status);
     }
   }).fail(function() {
-    return stopLoadError("There was a problem communicating with the server. Please try again later.");
+    stopLoadError("There was a problem communicating with the server. Please try again later.");
+    return reEnableClosure();
   });
   _asm.sqlDumpLocation = null;
   $.get(uri.urlString + "meta.php", "action=get_db_dump", "json").done(function(result) {
@@ -157,6 +164,7 @@ downloadCSVList = function(useLastSearch) {
     }
     return false;
   }).fail(function(result, status) {
+    reEnableClosure();
     return false;
   });
   return false;
@@ -237,6 +245,7 @@ downloadHTMLList = function(useLastSearch) {
           console.warn("Got an error!");
           message = !isNull(e.data.updateUser) ? e.data.updateUser : "Failed to create file";
           stopLoadError(message, void 0, 10000);
+          reEnableClosure();
           return false;
         }
         if (e.data.done !== true) {
@@ -324,10 +333,12 @@ downloadHTMLList = function(useLastSearch) {
       worker.postMessage(postMessageContent);
       return false;
     }).fail(function() {
-      return stopLoadError("There was a problem communicating with the server. Please try again later.");
+      stopLoadError("There was a problem communicating with the server. Please try again later.");
+      return reEnableClosure();
     });
   }).fail(function() {
     stopLoadError("Unable to fetch styles for printout");
+    reEnableClosure();
     return false;
   });
   return false;

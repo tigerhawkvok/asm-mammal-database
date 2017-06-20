@@ -1,7 +1,28 @@
-var downloadCSVList, downloadHTMLList, reEnableClosure, showDownloadChooser;
+var downloadCSVList, downloadHTMLList, getLastSearch, reEnableClosure, showDownloadChooser;
 
 reEnableClosure = function() {
   $("#download-chooser").find(".buttons paper-button").removeAttr("disabled");
+  return false;
+};
+
+getLastSearch = function() {
+  var canonicalTaxon, ref;
+  if (((ref = uri.o.attr("path")) != null ? ref.search(/species\-account/i) : void 0) >= 0) {
+    if (!isNull(window._activeTaxon)) {
+      canonicalTaxon = _activeTaxon.genus + " " + _activeTaxon.species;
+      if (!isNull(_activeTaxon.subspecies)) {
+        canonicalTaxon += " " + _activeTaxon.subspecies;
+      }
+      return canonicalTaxon;
+    } else {
+      console.warn("Couldn't identify the active taxon");
+    }
+  }
+  if (typeof searchParams !== "undefined" && searchParams !== null ? searchParams.lastSearch : void 0) {
+    return searchParams.lastSearch;
+  } else {
+    return "*";
+  }
   return false;
 };
 
@@ -23,7 +44,7 @@ downloadCSVList = function(useLastSearch) {
     estimate: new Array()
   };
   try {
-    searchString = useLastSearch ? searchParams.lastSearch : "*";
+    searchString = useLastSearch ? getLastSearch() : "*";
     if (isNull(searchString)) {
       searchString = "*";
     }
@@ -198,7 +219,7 @@ downloadHTMLList = function(useLastSearch) {
     estimate: new Array()
   };
   try {
-    searchString = useLastSearch ? searchParams.lastSearch : "*";
+    searchString = useLastSearch ? getLastSearch() : "*";
     if (isNull(searchString)) {
       searchString = "*";
     }

@@ -8,6 +8,25 @@ reEnableClosure = ->
   false
 
 
+getLastSearch = ->
+  # Are we on a taxon page?
+  if uri.o.attr("path")?.search(/species\-account/i) >=0
+    # Get the taxon
+    unless isNull window._activeTaxon
+      canonicalTaxon = "#{_activeTaxon.genus} #{_activeTaxon.species}"
+      unless isNull _activeTaxon.subspecies
+        canonicalTaxon += " #{_activeTaxon.subspecies}"
+      return canonicalTaxon
+    else
+      console.warn "Couldn't identify the active taxon"
+  # OTherwise ...
+  if searchParams?.lastSearch
+    return searchParams.lastSearch
+  else
+    return "*"
+  false
+
+
 downloadCSVList = (useLastSearch = false) ->
   ###
   # Download a CSV file list
@@ -20,7 +39,7 @@ downloadCSVList = (useLastSearch = false) ->
   _asm.progressTracking =
     estimate: new Array()
   try
-    searchString = if useLastSearch then searchParams.lastSearch else "*"
+    searchString = if useLastSearch then getLastSearch() else "*"
     if isNull searchString
       searchString = "*"
   catch
@@ -232,7 +251,7 @@ downloadHTMLList = (useLastSearch = false) ->
   _asm.progressTracking =
     estimate: new Array()
   try
-    searchString = if useLastSearch then searchParams.lastSearch else "*"
+    searchString = if useLastSearch then getLastSearch() else "*"
     if isNull searchString
       searchString = "*"
   catch

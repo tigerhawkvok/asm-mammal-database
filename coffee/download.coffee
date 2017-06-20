@@ -49,13 +49,14 @@ downloadCSVList = (useLastSearch = false) ->
       p$(button).disabled = true
   #filterArg = "eyJpc19hbGllbiI6MCwiYm9vbGVhbl90eXBlIjoib3IifQ"
   #args = "filter=#{filterArg}"
-  args = "q=#{searchString}"
+  args =
+    q: encodeURIComponent searchString
   d = new Date()
   adjMonth = d.getMonth() + 1
   month = if adjMonth.toString().length is 1 then "0#{adjMonth}" else adjMonth
   day = if d.getDate().toString().length is 1 then "0#{d.getDate().toString()}" else d.getDate()
   dateString = "#{d.getUTCFullYear()}-#{month}-#{day}"
-  $.get "#{searchParams.apiPath}", args, "json"
+  $.get "#{searchParams.apiPath}", buildQuery args, "json"
   .done (result) ->
     try
       unless result.status is true
@@ -288,8 +289,11 @@ downloadHTMLList = (useLastSearch = false) ->
                 <h1 class="text-center">ASM Species Checklist ver. #{dateString}</h1>
     """
     console.debug "CSS loaded, starting main ..."
-    args = "q=#{searchString}&order=linnean_order,linnean_family,genus,species,subspecies"
-    $.get "#{searchParams.apiPath}", args, "json"
+    args =
+      q: encodeURIComponent searchString
+      order: "linnean_order,linnean_family,genus,species,subspecies"
+    #args = "q=#{searchString}&order=linnean_order,linnean_family,genus,species,subspecies"
+    $.get "#{searchParams.apiPath}", buildQuery args, "json"
     .done (result) ->
       startLoad()
       toastStatusMessage "Please be patient while we create the file for you"

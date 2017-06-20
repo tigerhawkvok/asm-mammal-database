@@ -231,8 +231,10 @@ downloadHTMLList = (useLastSearch = false) ->
   try
     for button in $("#download-chooser .buttons paper-button")
       p$(button).disabled = true
+  console.debug "Getting CSS..."
   $.get "#{uri.urlString}css/download-inline-bootstrap.css"
   .done (importedCSS) ->
+    startLoad()
     d = new Date()
     adjMonth = d.getMonth() + 1
     month = if adjMonth.toString().length is 1 then "0#{adjMonth}" else adjMonth
@@ -257,6 +259,7 @@ downloadHTMLList = (useLastSearch = false) ->
               <article>
                 <h1 class="text-center">ASM Species Checklist ver. #{dateString}</h1>
     """
+    console.debug "CSS loaded, starting main ..."
     args = "q=#{searchString}&order=linnean_order,linnean_family,genus,species,subspecies"
     $.get "#{searchParams.apiPath}", args, "json"
     .done (result) ->
@@ -387,7 +390,7 @@ downloadHTMLList = (useLastSearch = false) ->
       worker.postMessage postMessageContent
       false
     .fail  ->
-      stopLoadError("There was a problem communicating with the server. Please try again later.")
+      stopLoadError "There was a problem communicating with the server. Please try again later."
   .fail ->
     stopLoadError "Unable to fetch styles for printout"
     false

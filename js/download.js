@@ -204,14 +204,17 @@ downloadHTMLList = function(useLastSearch) {
       p$(button).disabled = true;
     }
   } catch (undefined) {}
+  console.debug("Getting CSS...");
   $.get(uri.urlString + "css/download-inline-bootstrap.css").done(function(importedCSS) {
     var adjMonth, args, d, dateString, day, htmlBody, month;
+    startLoad();
     d = new Date();
     adjMonth = d.getMonth() + 1;
     month = adjMonth.toString().length === 1 ? "0" + adjMonth : adjMonth;
     day = d.getDate().toString().length === 1 ? "0" + (d.getDate().toString()) : d.getDate();
     dateString = (d.getUTCFullYear()) + "-" + month + "-" + day;
     htmlBody = "<!doctype html>\n<html lang=\"en\">\n  <head>\n    <title>ASM Species Checklist ver. " + dateString + "</title>\n    <meta http-equiv=\"X-UA-Compatible\" content=\"IE=edge\">\n    <meta charset=\"UTF-8\"/>\n    <meta name=\"theme-color\" content=\"#445e14\"/>\n    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1\" />\n    <link href='http://fonts.googleapis.com/css?family=Droid+Serif:400,700,700italic,400italic|Roboto+Slab:400,700' rel='stylesheet' type='text/css' />\n    <style type=\"text/css\" id=\"asm-checklist-inline-stylesheet\">\n      " + importedCSS + "\n    </style>\n  </head>\n  <body>\n    <div class=\"container-fluid\">\n      <article>\n        <h1 class=\"text-center\">ASM Species Checklist ver. " + dateString + "</h1>";
+    console.debug("CSS loaded, starting main ...");
     args = "q=" + searchString + "&order=linnean_order,linnean_family,genus,species,subspecies";
     return $.get("" + searchParams.apiPath, args, "json").done(function(result) {
       var postMessageContent, worker;

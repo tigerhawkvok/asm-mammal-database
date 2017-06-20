@@ -59,6 +59,15 @@ function buildHeader($pageTitle, $prerender, $prefetch)
     $pageTitle
     </title>";
     $html .= get_include_contents("modular/header.php");
+    global $speciesRow;
+    if (!empty($speciesRow["genus"]) && !empty($speciesRow["species"])) {
+        $html .= "<script type='text/javascript'>\n\twindow._activeTaxon = new Object();
+\t_activeTaxon.genus = '".$speciesRow["genus"]."';
+\t_activeTaxon.species = '".$speciesRow["species"]."';
+\t_activeTaxon.subspecies = '".$speciesRow["subspecies"]."';";
+        $html .= "\n</script>";
+    }
+    #$html .= "\n\n<script type='text/javascript' src='js/speciesAccount.min.js'></script>";
     $html .= "\n</head>";
     return $html;
 }

@@ -1,4 +1,30 @@
-var downloadCSVList, downloadHTMLList, showDownloadChooser;
+var downloadCSVList, downloadHTMLList, getLastSearch, reEnableClosure, showDownloadChooser;
+
+reEnableClosure = function() {
+  $("#download-chooser").find(".buttons paper-button").removeAttr("disabled");
+  return false;
+};
+
+getLastSearch = function() {
+  var canonicalTaxon, ref;
+  if (((ref = uri.o.attr("path")) != null ? ref.search(/species\-account/i) : void 0) >= 0) {
+    if (!isNull(window._activeTaxon)) {
+      canonicalTaxon = _activeTaxon.genus + " " + _activeTaxon.species;
+      if (!isNull(_activeTaxon.subspecies)) {
+        canonicalTaxon += " " + _activeTaxon.subspecies;
+      }
+      return canonicalTaxon;
+    } else {
+      console.warn("Couldn't identify the active taxon");
+    }
+  }
+  if (typeof searchParams !== "undefined" && searchParams !== null ? searchParams.lastSearch : void 0) {
+    return searchParams.lastSearch;
+  } else {
+    return "*";
+  }
+  return false;
+};
 
 downloadCSVList = function(useLastSearch) {
   var adjMonth, args, button, d, dateString, day, error, i, len, month, ref, searchString, startTime;
@@ -18,7 +44,7 @@ downloadCSVList = function(useLastSearch) {
     estimate: new Array()
   };
   try {
-    searchString = useLastSearch ? searchParams.lastSearch : "*";
+    searchString = useLastSearch ? getLastSearch() : "*";
     if (isNull(searchString)) {
       searchString = "*";
     }
@@ -32,13 +58,15 @@ downloadCSVList = function(useLastSearch) {
       p$(button).disabled = true;
     }
   } catch (undefined) {}
-  args = "q=" + searchString;
+  args = {
+    q: encodeURIComponent(searchString)
+  };
   d = new Date();
   adjMonth = d.getMonth() + 1;
   month = adjMonth.toString().length === 1 ? "0" + adjMonth : adjMonth;
   day = d.getDate().toString().length === 1 ? "0" + (d.getDate().toString()) : d.getDate();
   dateString = (d.getUTCFullYear()) + "-" + month + "-" + day;
-  $.get("" + searchParams.apiPath, args, "json").done(function(result) {
+  $.get("" + searchParams.apiPath, buildQuery(args, "json")).done(function(result) {
     var e, error1, postMessageContent, worker;
     try {
       if (result.status !== true) {
@@ -62,6 +90,7 @@ downloadCSVList = function(useLastSearch) {
           console.warn("Got an error!");
           message = !isNull(e.data.updateUser) ? e.data.updateUser : "Failed to create file";
           stopLoadError(message, void 0, 10000);
+          reEnableClosure();
           return false;
         }
         if (e.data.done !== true) {
@@ -146,7 +175,8 @@ downloadCSVList = function(useLastSearch) {
       return console.warn("Got", result, "from", searchParams.apiPath + "?" + args, result.status);
     }
   }).fail(function() {
-    return stopLoadError("There was a problem communicating with the server. Please try again later.");
+    stopLoadError("There was a problem communicating with the server. Please try again later.");
+    return reEnableClosure();
   });
   _asm.sqlDumpLocation = null;
   $.get(uri.urlString + "meta.php", "action=get_db_dump", "json").done(function(result) {
@@ -157,6 +187,7 @@ downloadCSVList = function(useLastSearch) {
     }
     return false;
   }).fail(function(result, status) {
+    reEnableClosure();
     return false;
   });
   return false;
@@ -190,7 +221,7 @@ downloadHTMLList = function(useLastSearch) {
     estimate: new Array()
   };
   try {
-    searchString = useLastSearch ? searchParams.lastSearch : "*";
+    searchString = useLastSearch ? getLastSearch() : "*";
     if (isNull(searchString)) {
       searchString = "*";
     }
@@ -204,16 +235,22 @@ downloadHTMLList = function(useLastSearch) {
       p$(button).disabled = true;
     }
   } catch (undefined) {}
+  console.debug("Getting CSS...");
   $.get(uri.urlString + "css/download-inline-bootstrap.css").done(function(importedCSS) {
     var adjMonth, args, d, dateString, day, htmlBody, month;
+    startLoad();
     d = new Date();
     adjMonth = d.getMonth() + 1;
     month = adjMonth.toString().length === 1 ? "0" + adjMonth : adjMonth;
     day = d.getDate().toString().length === 1 ? "0" + (d.getDate().toString()) : d.getDate();
     dateString = (d.getUTCFullYear()) + "-" + month + "-" + day;
     htmlBody = "<!doctype html>\n<html lang=\"en\">\n  <head>\n    <title>ASM Species Checklist ver. " + dateString + "</title>\n    <meta http-equiv=\"X-UA-Compatible\" content=\"IE=edge\">\n    <meta charset=\"UTF-8\"/>\n    <meta name=\"theme-color\" content=\"#445e14\"/>\n    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1\" />\n    <link href='http://fonts.googleapis.com/css?family=Droid+Serif:400,700,700italic,400italic|Roboto+Slab:400,700' rel='stylesheet' type='text/css' />\n    <style type=\"text/css\" id=\"asm-checklist-inline-stylesheet\">\n      " + importedCSS + "\n    </style>\n  </head>\n  <body>\n    <div class=\"container-fluid\">\n      <article>\n        <h1 class=\"text-center\">ASM Species Checklist ver. " + dateString + "</h1>";
-    args = "q=" + searchString + "&order=linnean_order,linnean_family,genus,species,subspecies";
-    return $.get("" + searchParams.apiPath, args, "json").done(function(result) {
+    console.debug("CSS loaded, starting main ...");
+    args = {
+      q: encodeURIComponent(searchString),
+      order: "linnean_order,linnean_family,genus,species,subspecies"
+    };
+    return $.get("" + searchParams.apiPath, buildQuery(args, "json")).done(function(result) {
       var postMessageContent, worker;
       startLoad();
       toastStatusMessage("Please be patient while we create the file for you");
@@ -234,6 +271,7 @@ downloadHTMLList = function(useLastSearch) {
           console.warn("Got an error!");
           message = !isNull(e.data.updateUser) ? e.data.updateUser : "Failed to create file";
           stopLoadError(message, void 0, 10000);
+          reEnableClosure();
           return false;
         }
         if (e.data.done !== true) {
@@ -321,10 +359,12 @@ downloadHTMLList = function(useLastSearch) {
       worker.postMessage(postMessageContent);
       return false;
     }).fail(function() {
-      return stopLoadError("There was a problem communicating with the server. Please try again later.");
+      stopLoadError("There was a problem communicating with the server. Please try again later.");
+      return reEnableClosure();
     });
   }).fail(function() {
     stopLoadError("Unable to fetch styles for printout");
+    reEnableClosure();
     return false;
   });
   return false;

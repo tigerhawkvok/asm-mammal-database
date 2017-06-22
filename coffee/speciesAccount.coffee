@@ -17,9 +17,6 @@ gMapsConfig =
   jsApiInitCallbackFn: null
   hasRunInitMap: false
 
-unless isNull window.gMapsLocalKey
-  gMapsConfig.jsApiKey = window.gMapsLocalKey
-
 
 worldPoliticalFusionTableId = "1uKyspg-HkChMIntZ0N376lMpRzduIjr85UYPpQ"
 
@@ -206,5 +203,8 @@ fetchIucnRange = (taxon = window._activeTaxon) ->
 
 
 $ ->
+  unless isNull window.gMapsLocalKey
+    console.log "Using local unrestricted key"
+    gMapsConfig.jsApiKey = window.gMapsLocalKey
   fetchIucnRange()
   false

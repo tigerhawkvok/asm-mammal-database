@@ -465,7 +465,7 @@ $taxonomyNotes = "<section id='taxonomy' class='col-xs-12'>
 </section>\n\n";
 
 # Any aside / note for this species.
-$entryNote = empty($speciesRow["notes"]) ? "" : "<section id='species-note' class='col-xs-12'><h3>Taxon Notes</h3><marked-element id='taxon-notes'><div class='markdown-html'></div><script type='text/markdown'>".$speciesRow["notes"]."</script></marked-element></section>\n\n"; #"<section id='species-note' class='col-xs-12'><marked-element><div class='markdown-html'></div><script type='text/markdown'>".$speciesRow["notes"]."</script></marked-element></section>\n\n";
+$entryNote = empty($speciesRow["notes"]) ? "<section id='species-note' class='col-xs-12'></section>" : "<section id='species-note' class='col-xs-12'><h3>Taxon Notes</h3><marked-element id='taxon-notes'><div class='markdown-html'></div><script type='text/markdown'>".$speciesRow["notes"]."</script></marked-element></section>\n\n"; #"<section id='species-note' class='col-xs-12'><marked-element><div class='markdown-html'></div><script type='text/markdown'>".$speciesRow["notes"]."</script></marked-element></section>\n\n";
 
 
 

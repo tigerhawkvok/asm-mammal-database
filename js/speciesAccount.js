@@ -21,10 +21,6 @@ gMapsConfig = {
   hasRunInitMap: false
 };
 
-if (!isNull(window.gMapsLocalKey)) {
-  gMapsConfig.jsApiKey = window.gMapsLocalKey;
-}
-
 worldPoliticalFusionTableId = "1uKyspg-HkChMIntZ0N376lMpRzduIjr85UYPpQ";
 
 baseQuery = {
@@ -83,8 +79,6 @@ appendCountryLayerToMap = function(queryObj, mapObj) {
   layers = new Array();
   console.debug("Got query obj", queryObj);
   fusionQuery = $.extend({}, _asm.baseQuery);
-  console.debug("working query", fusionQuery);
-  console.debug("basline", baseQuery);
   fusionQueries = new Array();
   if (typeof queryObj === "object") {
     build = new Array();
@@ -268,6 +262,10 @@ fetchIucnRange = function(taxon) {
 };
 
 $(function() {
+  if (!isNull(window.gMapsLocalKey)) {
+    console.log("Using local unrestricted key");
+    gMapsConfig.jsApiKey = window.gMapsLocalKey;
+  }
   fetchIucnRange();
   return false;
 });

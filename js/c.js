@@ -2352,7 +2352,8 @@ if (typeof window._asm !== "object") {
 _asm.affiliateQueryUrl = {
   iucnRedlist: "http://apiv3.iucnredlist.org/api/v3/species/",
   iucnRedlistCN: "http://apiv3.iucnredlist.org/api/v3/species/common_names/",
-  iNaturalist: "https://www.inaturalist.org/taxa/search"
+  iNaturalist: "https://www.inaturalist.org/taxa/search",
+  calPhotos: "http://calphotos.berkeley.edu/cgi/img_query"
 };
 
 fetchMajorMinorGroups = function(scientific, callback) {

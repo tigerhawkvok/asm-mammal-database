@@ -1292,9 +1292,9 @@ bindClicks = (selector = ".click") ->
           if isNull(url)
             url = $(this).attr("data-url")
           if $(this).attr("newTab")?.toBool() or $(this).attr("newtab")?.toBool() or $(this).attr("data-newtab")?.toBool()
-            openTab(url)
+            openTab.debounce 50, null, null, url
           else
-            goTo(url)
+            goTo 50, null, null, url
         return url
       else
         # Check for onclick function
@@ -1305,7 +1305,7 @@ bindClicks = (selector = ".click") ->
           $(this).click ->
             try
               # console.log("Executing bound function #{callable}()")
-              window[callable]()
+              window[callable].debounce(50)
             catch e
               console.error("'#{callable}()' is a bad function - #{e.message}")
     catch e
@@ -1507,6 +1507,7 @@ buildQuery = (obj) ->
     queryList.push """#{key}=#{value}"""
   queryList.join "&"
 
+buildArgs = buildQuery
 
 
 

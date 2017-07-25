@@ -82,12 +82,13 @@ if (!function_exists('elapsed')) {
     }
 }
 
-function utf8ize($d) {
+function utf8ize($d)
+{
     if (is_array($d)) {
         foreach ($d as $k => $v) {
             $d[$k] = utf8ize($v);
         }
-    } else if (is_string ($d)) {
+    } elseif (is_string($d)) {
         return utf8_encode($d);
     }
     return $d;
@@ -1022,6 +1023,7 @@ function doSearch($overrideSearch = null, $enforceGlobalSearch = null)
             );
             if ($show_debug === true) {
                 $response["exception"] = $result_vector["error"];
+                $response["raw"] = $result_vector;
             }
             return $response;
         } elseif (empty($result_vector)) {

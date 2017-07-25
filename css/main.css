@@ -7683,6 +7683,10 @@ label + paper-icon-button {
 .map-container .map {
   height: 30vh;
 }
+.map-container .mol-embed,
+.map-container iframe {
+  width: 100%;
+}
 h3 + marked-element {
   padding-left: 2rem;
 }

@@ -11,7 +11,7 @@
  *   -
  *
  */
-var appendCountryLayerToMap, baseQuery, fetchIucnRange, gMapsConfig, initMap, setMapHelper, worldPoliticalFusionTableId,
+var appendCountryLayerToMap, baseQuery, fetchIucnRange, fetchMOLRange, gMapsConfig, initMap, setMapHelper, worldPoliticalFusionTableId,
   indexOf = [].indexOf || function(item) { for (var i = 0, l = this.length; i < l; i++) { if (i in this && this[i] === item) return i; } return -1; };
 
 gMapsConfig = {
@@ -195,7 +195,7 @@ initMap = function(callback, nextToSelector) {
 };
 
 fetchIucnRange = function(taxon) {
-  var args;
+  var args, onFail;
   if (taxon == null) {
     taxon = window._activeTaxon;
   }
@@ -214,16 +214,26 @@ fetchIucnRange = function(taxon) {
   if (!isNull(taxon.subspecies)) {
     args.taxon += "%20" + taxon.subspecies;
   }
+  onFail = function() {
+    fetchMOLRange(taxon, void 0, true);
+    return false;
+  };
   $.get("api.php", buildQuery(args, "json")).done(function(result) {
     var countryList, countryObj, extantList, i, j, len, len1, populateQueryObj, ref, sourceList;
     console.log("Got", result);
     if (result.status !== true) {
       console.warn(uri.urlString + "api.php?" + (buildQuery(args)));
+      try {
+        onFail();
+      } catch (undefined) {}
       return false;
     }
     countryList = new Array();
     if (((ref = result.response) != null ? ref.count : void 0) <= 0) {
       console.warn("No results found!");
+      try {
+        onFail();
+      } catch (undefined) {}
       return false;
     } else {
       sourceList = Object.toArray(result.response.result);
@@ -256,9 +266,84 @@ fetchIucnRange = function(taxon) {
     }
     return false;
   }).fail(function(result, error) {
+    console.error("Couldn't load range map");
+    console.warn(result, error);
+    try {
+      onFail();
+    } catch (undefined) {}
     return false;
   });
   return false;
+};
+
+fetchMOLRange = function(taxon, kml, dontExecuteFallback, nextToSelector) {
+  var args, doIucnLoad, el, endpoint, genus, html, species;
+  if (taxon == null) {
+    taxon = window._activeTaxon;
+  }
+  if (dontExecuteFallback == null) {
+    dontExecuteFallback = false;
+  }
+  if (nextToSelector == null) {
+    nextToSelector = "#species-note";
+  }
+
+  /*
+   * Embed an iFrame for Map of Life.
+   */
+  if (typeof taxon !== "object") {
+    console.error("No taxon object specified");
+    return false;
+  }
+  el = taxon;
+  if (isNull(taxon.genus) || isNull(taxon.species)) {
+    try {
+      genus = $(taxon).attr("data-genus");
+      species = $(taxon).attr("data-species");
+      if (isNull(kml)) {
+        kml = $(taxon).attr("data-kml");
+      }
+      taxon = {
+        genus: genus,
+        species: species
+      };
+    } catch (undefined) {}
+  }
+  if (isNull(taxon.genus) || isNull(taxon.species)) {
+    toastStatusMessage("Unable to show range map");
+    return false;
+  }
+  if (isNull(kml)) {
+    try {
+      kml = $(el).attr("data-kml");
+    } catch (undefined) {}
+    if (isNull(kml)) {
+      console.warn("Unable to read KML attr and none passed");
+    }
+  }
+  endpoint = "https://mol.org/species/map/";
+  args = {
+    embed: "true"
+  };
+  window._iframeRangeFail = function() {
+    if (!dontExecuteFallback) {
+      fetchIucnRange(taxon);
+    } else {
+      console.debug("Not falling back -- `dontExecuteFallback` set");
+    }
+    return false;
+  };
+  html = "<div id=\"taxon-range-map-container\" class=\"col-xs-6 map-container mol-map-container\">\n  <iframe class=\"mol-embed mol-account map\" id=\"species-range-map\" src=\"" + endpoint + (taxon.genus.toTitleCase()) + "_" + taxon.species + "?" + (buildQuery(args)) + "\"  data-taxon-genus=\"" + taxon.genus + "\" data-taxon-species=\"" + taxon.species + "\" onerror=\"_iframeRangeFail()\"></iframe>\n</div>";
+  $("#taxon-range-map-container").remove();
+  $(nextToSelector).removeClass("col-xs-12").addClass("col-xs-6").after(html);
+  doIucnLoad = delay(7500, function() {
+    return _iframeRangeFail();
+  });
+  $("#species-range-map").on("load", function() {
+    clearTimeout(doIucnLoad);
+    return false;
+  });
+  return true;
 };
 
 $(function() {
@@ -266,7 +351,7 @@ $(function() {
     console.log("Using local unrestricted key");
     gMapsConfig.jsApiKey = window.gMapsLocalKey;
   }
-  fetchIucnRange();
+  fetchMOLRange();
   return false;
 });
 

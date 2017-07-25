@@ -166,15 +166,22 @@ fetchIucnRange = (taxon = window._activeTaxon) ->
     iucn_endpoint: "species/countries/name/"
   unless isNull taxon.subspecies
     args.taxon += "%20#{taxon.subspecies}"
+  onFail = ->
+    fetchMOLRange(taxon, undefined, true)
+    false
   $.get "api.php", buildQuery args, "json"
   .done (result) ->
     console.log "Got", result
     if result.status isnt true
       console.warn "#{uri.urlString}api.php?#{buildQuery args}"
+      try
+        onFail()
       return false
     countryList = new Array()
     if result.response?.count <= 0
       console.warn "No results found!"
+      try
+        onFail()
       return false
     else
       sourceList = Object.toArray result.response.result
@@ -197,8 +204,64 @@ fetchIucnRange = (taxon = window._activeTaxon) ->
         console.debug "Country layers topped", appendResults
     false
   .fail (result, error) ->
+    console.error "Couldn't load range map"
+    console.warn result, error
+    try
+      onFail()
     false
   false
+
+
+
+fetchMOLRange = (taxon = window._activeTaxon, kml, dontExecuteFallback = false, nextToSelector = "#species-note") ->
+  ###
+  # Embed an iFrame for Map of Life.
+  ###
+  unless typeof taxon is "object"
+    console.error "No taxon object specified"
+    return false
+  el = taxon
+  if isNull(taxon.genus) or isNull(taxon.species)
+    # Check if the object is actually an element
+    try
+      genus = $(taxon).attr "data-genus"
+      species = $(taxon).attr "data-species"
+      if isNull kml
+        kml = $(taxon).attr "data-kml"
+      taxon = {genus, species}
+  if isNull(taxon.genus) or isNull(taxon.species)
+    toastStatusMessage "Unable to show range map"
+    return false
+  if isNull kml
+    try
+      kml = $(el).attr "data-kml"
+    if isNull kml
+      console.warn "Unable to read KML attr and none passed"
+  endpoint = "https://mol.org/species/map/"
+  args =
+    embed: "true"
+  window._iframeRangeFail = ->
+    unless dontExecuteFallback
+      fetchIucnRange(taxon)
+    else
+      console.debug "Not falling back -- `dontExecuteFallback` set"
+    false
+  html = """
+  <div id="taxon-range-map-container" class="col-xs-6 map-container mol-map-container">
+    <iframe class="mol-embed mol-account map" id="species-range-map" src="#{endpoint}#{taxon.genus.toTitleCase()}_#{taxon.species}?#{buildQuery args}"  data-taxon-genus="#{taxon.genus}" data-taxon-species="#{taxon.species}" onerror="_iframeRangeFail()"></iframe>
+  </div>
+  """
+  $("#taxon-range-map-container").remove()
+  $(nextToSelector)
+  .removeClass "col-xs-12"
+  .addClass "col-xs-6"
+  .after html
+  doIucnLoad = delay 7500, -> _iframeRangeFail()
+  $("#species-range-map").on "load", ->
+    clearTimeout doIucnLoad
+    false
+  true
+
 
 
 
@@ -206,5 +269,5 @@ $ ->
   unless isNull window.gMapsLocalKey
     console.log "Using local unrestricted key"
     gMapsConfig.jsApiKey = window.gMapsLocalKey
-  fetchIucnRange()
+  fetchMOLRange()
   false

@@ -514,6 +514,7 @@ Function::getName = ->
     name = this.toString().substr( 0, this.toString().indexOf( "(" ) ).replace( "function ", "" )
   if isNull name
     name = md5 this.toString()
+    window.name = this
   name
 
 Function::debounce = (threshold = 300, execAsap = false, timeout = window.debounce_timer, args...) ->
@@ -561,7 +562,7 @@ Function::debounce = (threshold = 300, execAsap = false, timeout = window.deboun
 
 
 
-loadJS = (src, callback = new Object(), doCallbackOnError = true) ->
+loadJS = (src, callback = new Object(), doCallbackOnError = true, async = true) ->
   ###
   # Load a new javascript file
   #
@@ -585,10 +586,11 @@ loadJS = (src, callback = new Object(), doCallbackOnError = true) ->
   s = document.createElement("script")
   # Set all the attributes. We can be a bit redundant about this
   s.setAttribute("src",src)
-  s.setAttribute("async","async")
   s.setAttribute("type","text/javascript")
   s.src = src
-  s.async = true
+  unless async is false
+    s.setAttribute("async","async")
+    s.async = true
   # Onload function
   onLoadFunction = ->
     state = s.readyState
@@ -600,6 +602,7 @@ loadJS = (src, callback = new Object(), doCallbackOnError = true) ->
             callback()
           catch e
             console.error "Postload callback error for '#{src}' - #{e.message}"
+            console.warn e.stack
     catch e
       console.error "Onload error for '#{src}' - #{e.message}"
   # Error function
@@ -1289,9 +1292,9 @@ bindClicks = (selector = ".click") ->
           if isNull(url)
             url = $(this).attr("data-url")
           if $(this).attr("newTab")?.toBool() or $(this).attr("newtab")?.toBool() or $(this).attr("data-newtab")?.toBool()
-            openTab(url)
+            openTab.debounce 50, null, null, url
           else
-            goTo(url)
+            goTo 50, null, null, url
         return url
       else
         # Check for onclick function
@@ -1302,7 +1305,7 @@ bindClicks = (selector = ".click") ->
           $(this).click ->
             try
               # console.log("Executing bound function #{callable}()")
-              window[callable]()
+              window[callable].debounce(50)
             catch e
               console.error("'#{callable}()' is a bad function - #{e.message}")
     catch e
@@ -1504,6 +1507,7 @@ buildQuery = (obj) ->
     queryList.push """#{key}=#{value}"""
   queryList.join "&"
 
+buildArgs = buildQuery
 
 
 
@@ -1871,3 +1875,5 @@ $ ->
       $("figure p.picture-label").css "left", "calc(50% - (#{imageWidth}px/2)*.95)"
       lightboxImages()
       false
+  try
+    loadJS "bower_components/JavaScript-MD5/js/md5.min.js"

@@ -1,4 +1,4 @@
-var _metaStatus, activityIndicatorOff, activityIndicatorOn, allError, animateHoverShadows, animateLoad, bindClickTargets, bindClicks, bindDismissalRemoval, bindPaperMenuButton, browserBeware, bsAlert, buildQuery, byteCount, checkFileVersion, checkLaggedUpdate, checkLocalVersion, checkTaxonNear, clearSearch, dataUriToBlob, dateMonthToString, deEscape, decode64, deepJQuery, delay, delayPolymerBind, doCORSget, doFontExceptions, doLazily, doNothing, domainPlaceholder, downloadDataUriAsBlob, e, encode64, error1, eutheriaFilterHelper, fetchMajorMinorGroups, foo, formatScientificNames, formatSearchResults, getElementHtml, getFilters, getLocation, getMaxZ, getRandomEntry, goTo, insertCORSWorkaround, insertModalImage, interval, isArray, isBlank, isBool, isEmpty, isJson, isNull, isNumber, isNumeric, jsonTo64, lightboxImages, loadJS, loadSocialMediaSlideoutBar, mapNewWindows, mobileCollapsable, modalTaxon, objToArgs, openLink, openTab, overlayOff, overlayOn, p$, parseTaxonYear, performSearch, post64, prepURI, randomInt, ref, roundNumber, roundNumberSigfig, safariDialogHelper, safariSearchArgHelper, searchParams, setHistory, setupServiceWorker, showBadSearchErrorMessage, smartUpperCasing, sortResults, startLoad, stopLoad, stopLoadError, toFloat, toInt, toObject, toastStatusMessage, uri,
+var _metaStatus, activityIndicatorOff, activityIndicatorOn, allError, animateHoverShadows, animateLoad, bindClickTargets, bindClicks, bindDismissalRemoval, bindPaperMenuButton, browserBeware, bsAlert, buildArgs, buildQuery, byteCount, checkFileVersion, checkLaggedUpdate, checkLocalVersion, checkTaxonNear, clearSearch, dataUriToBlob, dateMonthToString, deEscape, decode64, deepJQuery, delay, delayPolymerBind, doCORSget, doFontExceptions, doLazily, doNothing, domainPlaceholder, downloadDataUriAsBlob, e, encode64, error1, eutheriaFilterHelper, fetchMajorMinorGroups, foo, formatScientificNames, formatSearchResults, getElementHtml, getFilters, getLocation, getMaxZ, getRandomEntry, goTo, insertCORSWorkaround, insertModalImage, interval, isArray, isBlank, isBool, isEmpty, isJson, isNull, isNumber, isNumeric, jsonTo64, lightboxImages, loadJS, loadSocialMediaSlideoutBar, mapNewWindows, mobileCollapsable, modalTaxon, objToArgs, openLink, openTab, overlayOff, overlayOn, p$, parseTaxonYear, performSearch, post64, prepURI, randomInt, ref, roundNumber, roundNumberSigfig, safariDialogHelper, safariSearchArgHelper, searchParams, setHistory, setupServiceWorker, showBadSearchErrorMessage, smartUpperCasing, sortResults, startLoad, stopLoad, stopLoadError, toFloat, toInt, toObject, toastStatusMessage, uri,
   slice = [].slice,
   indexOf = [].indexOf || function(item) { for (var i = 0, l = this.length; i < l; i++) { if (i in this && this[i] === item) return i; } return -1; };
 
@@ -704,6 +704,7 @@ Function.prototype.getName = function() {
   }
   if (isNull(name)) {
     name = md5(this.toString());
+    window.name = this;
   }
   return name;
 };
@@ -776,13 +777,16 @@ Function.prototype.debounce = function() {
   }
 };
 
-loadJS = function(src, callback, doCallbackOnError) {
+loadJS = function(src, callback, doCallbackOnError, async) {
   var e, error1, errorFunction, onLoadFunction, s;
   if (callback == null) {
     callback = new Object();
   }
   if (doCallbackOnError == null) {
     doCallbackOnError = true;
+  }
+  if (async == null) {
+    async = true;
   }
 
   /*
@@ -809,10 +813,12 @@ loadJS = function(src, callback, doCallbackOnError) {
   }
   s = document.createElement("script");
   s.setAttribute("src", src);
-  s.setAttribute("async", "async");
   s.setAttribute("type", "text/javascript");
   s.src = src;
-  s.async = true;
+  if (async !== false) {
+    s.setAttribute("async", "async");
+    s.async = true;
+  }
   onLoadFunction = function() {
     var error2, error3, state;
     state = s.readyState;
@@ -824,7 +830,8 @@ loadJS = function(src, callback, doCallbackOnError) {
             return callback();
           } catch (error2) {
             e = error2;
-            return console.error("Postload callback error for '" + src + "' - " + e.message);
+            console.error("Postload callback error for '" + src + "' - " + e.message);
+            return console.warn(e.stack);
           }
         }
       }
@@ -1635,9 +1642,9 @@ bindClicks = function(selector) {
             url = $(this).attr("data-url");
           }
           if (((ref1 = $(this).attr("newTab")) != null ? ref1.toBool() : void 0) || ((ref2 = $(this).attr("newtab")) != null ? ref2.toBool() : void 0) || ((ref3 = $(this).attr("data-newtab")) != null ? ref3.toBool() : void 0)) {
-            return openTab(url);
+            return openTab.debounce(50, null, null, url);
           } else {
-            return goTo(url);
+            return goTo(50, null, null, url);
           }
         });
         return url;
@@ -1648,7 +1655,7 @@ bindClicks = function(selector) {
           return $(this).click(function() {
             var error2;
             try {
-              return window[callable]();
+              return window[callable].debounce(50);
             } catch (error2) {
               e = error2;
               return console.error("'" + callable + "()' is a bad function - " + e.message);
@@ -1895,6 +1902,8 @@ buildQuery = function(obj) {
   }
   return queryList.join("&");
 };
+
+buildArgs = buildQuery;
 
 checkLocalVersion = function() {
   var len1, m, part, prefixUrl, urlBase, urlBaseRaw;
@@ -2297,7 +2306,7 @@ $(function() {
     }
   } catch (undefined) {}
   try {
-    return (offsetImageLabel = function(iter) {
+    (offsetImageLabel = function(iter) {
       var imageWidth;
       if (!$("figure picture").exists()) {
         console.log("No image on page");
@@ -2323,6 +2332,9 @@ $(function() {
       return false;
     })(0);
   } catch (undefined) {}
+  try {
+    return loadJS("bower_components/JavaScript-MD5/js/md5.min.js");
+  } catch (undefined) {}
 });
 
 searchParams = {
@@ -2340,7 +2352,8 @@ if (typeof window._asm !== "object") {
 _asm.affiliateQueryUrl = {
   iucnRedlist: "http://apiv3.iucnredlist.org/api/v3/species/",
   iucnRedlistCN: "http://apiv3.iucnredlist.org/api/v3/species/common_names/",
-  iNaturalist: "https://www.inaturalist.org/taxa/search"
+  iNaturalist: "https://www.inaturalist.org/taxa/search",
+  calPhotos: "http://calphotos.berkeley.edu/cgi/img_query"
 };
 
 fetchMajorMinorGroups = function(scientific, callback) {

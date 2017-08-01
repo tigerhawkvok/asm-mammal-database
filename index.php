@@ -161,11 +161,11 @@ if ($show_debug === true) {
             <p class="text-muted pull-left hidden-xs">Click to search in specific fields</p>
             <div class="collapse form-group clearfix clear" id="collapse-advanced">
               <!-- Clade: DWC cohort, magnaorder, and superorder -->
-              <paper-input label="Clade" id="major-type-filter" name="major-type-filter" class="cndb-filter col-md-4 col-xs-6" data-column="major_type"></paper-input>
+              <paper-input label="Superordinal Clade" id="major-type-filter" name="major-type-filter" class="cndb-filter col-md-4 col-xs-6" data-column="major_type"></paper-input>
               <!-- Subtype -->
-              <paper-input label="Linnean Order" id="major-subtype-filter" name="major-subtype-filter" class="cndb-filter col-md-4 col-xs-6" data-column="linnean_order"></paper-input>
+              <paper-input label="Order" id="major-subtype-filter" name="major-subtype-filter" class="cndb-filter col-md-4 col-xs-6" data-column="linnean_order"></paper-input>
               <!-- Family -->
-              <paper-input label="Linnean Family" id="minor-type-filter" name="minor-type-filter" class="cndb-filter col-md-4 col-xs-6" data-column="linnean_family"></paper-input>
+              <paper-input label="Family" id="minor-type-filter" name="minor-type-filter" class="cndb-filter col-md-4 col-xs-6" data-column="linnean_family"></paper-input>
               <!-- Genus authority -->
               <paper-input label="Genus Authority" id="genus-authority-filter" name="species-authority-filter" class="cndb-filter col-md-4 col-xs-6" data-column="genus_authority"></paper-input>
               <!-- Species authority -->

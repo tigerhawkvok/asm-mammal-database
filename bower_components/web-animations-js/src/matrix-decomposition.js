@@ -12,7 +12,6 @@
 //   See the License for the specific language governing permissions and
 // limitations under the License.
 
-'use strict';
 (function(scope, testing) {
   var decomposeMatrix = (function() {
     function determinant(m) {
@@ -121,7 +120,7 @@
       }
 
       if (determinant(perspectiveMatrix) === 0) {
-        return false;
+        return null;
       }
 
       var rhs = [];
@@ -436,5 +435,6 @@
 
   scope.dot = dot;
   scope.makeMatrixDecomposition = makeMatrixDecomposition;
+  scope.transformListToMatrix = convertToMatrix;
 
 })(webAnimations1, webAnimationsTesting);

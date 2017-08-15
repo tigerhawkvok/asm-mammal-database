@@ -30,6 +30,11 @@ unless typeof window._asm is "object"
 _asm.socialHandles =
   twitter: "mammalogists"
 
+_asm.socialConfig =
+  twitter:
+    sharePage: false
+    showTimeline: true
+
 # Breakpoint in px
 _asm.mobileBreakpoint = 767
 
@@ -1758,13 +1763,25 @@ loadSocialMediaSlideoutBar = (handles, selector = "#social-menu", appendTo = "ma
   unless $(selector).exists()
     contentHtml = ""
     for service, handle of handles
+      serviceHtml = ""
       switch service
         when "twitter"
-          # https://dev.twitter.com/web/embedded-timelines
-          # https://publish.twitter.com/#
-          serviceHtml = """
-          <a class="twitter-timeline" data-link-color="#1DA1F2" href="https://twitter.com/#{handle}">Tweets by @#{handle}</a> <script async src="//platform.twitter.com/widgets.js" charset="utf-8"></script>
-          """
+          if _asm.socialConfig.twitter.sharePage
+            serviceHtml += """
+            <p>Share this taxon!</p><br/>
+            <div class="text-center center-block">
+              <a class="twitter-share-button"
+                href="https://twitter.com/intent/tweet"
+                data-size="large">
+              Tweet</a>
+            </div>
+            """
+          if _asm.socialConfig.twitter.showTimeline
+            # https://dev.twitter.com/web/embedded-timelines
+            # https://publish.twitter.com/#
+            serviceHtml += """
+            <a class="twitter-timeline" data-link-color="#1DA1F2" href="https://twitter.com/#{handle}">Tweets by @#{handle}</a> <script async src="//platform.twitter.com/widgets.js" charset="utf-8"></script>
+            """
         else
           serviceHtml = ""
       contentHtml += "\n#{serviceHtml}\n"

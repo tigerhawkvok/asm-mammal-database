@@ -69,7 +69,25 @@ function buildHeader($pageTitle, $prerender, $prefetch)
     $html .= get_include_contents("modular/header.php", $passable);
     global $speciesRow;
     if (!empty($speciesRow["genus"]) && !empty($speciesRow["species"])) {
+        $html .= "<script>window.twttr = (function(d, s, id) {
+  var js, fjs = d.getElementsByTagName(s)[0],
+    t = window.twttr || {};
+  if (d.getElementById(id)) return t;
+  js = d.createElement(s);
+  js.id = id;
+  js.src = \"https://platform.twitter.com/widgets.js\";
+        fjs.parentNode.insertBefore(js, fjs);
+
+        t._e = [];
+        t.ready = function(f) {
+            t._e.push(f);
+        };
+
+        return t;
+    }(document, \"script\", \"twitter-wjs\"));</script>\n";
         $html .= "<script type='text/javascript'>\n\twindow._activeTaxon = new Object();
+\t_asm.socialConfig.twitter.sharePage = true;
+\t_asm.socialConfig.twitter.showTimeline = false;
 \t_activeTaxon.genus = '".$speciesRow["genus"]."';
 \t_activeTaxon.species = '".$speciesRow["species"]."';
 \t_activeTaxon.subspecies = '".$speciesRow["subspecies"]."';";

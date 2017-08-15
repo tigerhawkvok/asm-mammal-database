@@ -7677,6 +7677,9 @@ label + paper-icon-button {
 .clade {
   text-transform: title-case;
 }
+#taxonomy .scientific-taxonomy .clade {
+  text-transform: capitalize;
+}
 #taxonomy .common-taxonomy {
   color: #777777;
 }

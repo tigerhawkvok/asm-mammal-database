@@ -411,7 +411,12 @@ if (!function_exists('appendQuery')) {
 
 
 if(!function_exists("get_include_contents")) {
-    function get_include_contents($filename) {
+    function get_include_contents($filename, $passVars) {
+        if (is_array($passVars)) {
+            foreach ($passVars as $k => $v) {
+                $$k = $v;
+            }
+        }
         if (is_file($filename)) {
             ob_start();
             include $filename;

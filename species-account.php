@@ -52,13 +52,21 @@ foreach ($validIdKeys as $tentativeRef) {
 
 function buildHeader($pageTitle, $prerender, $prefetch)
 {
+    # Define social variables
+    global $pageImage;
+    $title = "$pageTitle Species Account";
+    $passable = array(
+        "title" => $title,
+        "pageImage" => $pageImage,
+    );
+    echo "<!-- header build '$pageImage' and '$pageTitle' => '$title' -->";
     $html = "<!doctype html>
 <html lang=\"en\">
   <head>
     <title>
     $pageTitle
     </title>";
-    $html .= get_include_contents("modular/header.php");
+    $html .= get_include_contents("modular/header.php", $passable);
     global $speciesRow;
     if (!empty($speciesRow["genus"]) && !empty($speciesRow["species"])) {
         $html .= "<script type='text/javascript'>\n\twindow._activeTaxon = new Object();
@@ -278,43 +286,6 @@ Please refine your search and try again.
 
 $speciesRow = $rows[0];
 
-$output = buildHeader(getCanonicalSpecies($speciesRow));
-
-if (empty($speciesRow["common_name"])) {
-    try {
-        $endpoint = "http://apiv3.iucnredlist.org/api/v3/species/common_names/";
-        $destUrl = $endpoint.urlencode(getCanonicalSpecies($speciesRow))."token=".$iucnToken;
-        $opts = array(
-        'http' => array(
-            'method' => 'GET',
-            #'request_fulluri' => true,
-            'ignore_errors' => true,
-            'timeout' => 3.5, # Seconds
-        ),
-        );
-        $context = stream_context_create($opts);
-        $response = file_get_contents($destUrl, false, $context);
-        $decoded = json_decode($response, true);
-        foreach ($decoded["result"] as $result) {
-            if ($result["primary"] === true || $result["language"] == "eng") {
-                $speciesRow["common_name"] = $result["taxonname"];
-                break;
-            }
-        }
-        if (empty($speciesRow["common_name"])) {
-            throw new Exception("NO_IUCN_RESULT_ERROR");
-        } else {
-            # Save this common name to the database
-            try {
-                $db->updateEntry(array("common_name" => $speciesRow["common_name"]), array("id" => $speciesRow["id"]));
-            } catch (Exception $e) {
-                $output .= "<!-- Warning: Unable to save common name to database -->";
-            }
-        }
-    } catch (Exception $e) {
-        $output .= "<!-- Warning: Unable to generate common name: ". $e->getMessage() . " -->";
-    }
-}
 
 # Citations
 
@@ -592,6 +563,7 @@ $caption
                         $captionDescription = substr($captionDescription, -1) == "." ? $captionDescription : $captionDescription . ".";
                     }
                     $caption = "<span class='caption-description'>".$captionDescription . "</span> ".$imageCredit;
+                    $imgPath = $photo["large_url"];
                     $imgHtml = "<img src='".$photo["small_url"]."'/>";
                     if (toBool($_REQUEST["extended_attribution"])) {
                         $remove = array(
@@ -649,6 +621,7 @@ $caption
                     $images .= "\n\n<!-- Calphotos via $dest : \n\n\n".print_r($imgArr, true)." -->\n\n";
                     $key = array_rand($imgArr);
                     $img = $imgArr[$key];
+                    $imgPath = $img;
                     $copyright = $copyrightArr[$key];
                     $license = $licenseArr[$key];
                     $enlarge_url = $enlarge_urlArr[$key];
@@ -714,6 +687,57 @@ $images .= "</section>";
 /***********************************************************************************
  * Wrap up the entry
  ***********************************************************************************/
+
+if (!empty($imgPath)) {
+    # Make sure it's formatted right for social
+    if (preg_match('%^(?!https?://)([a-z0-9\/_\.-?=&#;]*)%im', $imgPath)) {
+        # Successful match -- on MD.org
+        $pageImage = "https://mammaldiversity.org/".$imgPath;
+    } else {
+        # Match attempt failed -- offiste
+        $pageImage = $imgPath;
+    }
+} else {
+    $pageImage = "https://mammaldiversity.org/assets/favicon2048.png";
+}
+
+$output = buildHeader(getCanonicalSpecies($speciesRow));
+
+if (empty($speciesRow["common_name"])) {
+    try {
+        $endpoint = "http://apiv3.iucnredlist.org/api/v3/species/common_names/";
+        $destUrl = $endpoint.urlencode(getCanonicalSpecies($speciesRow))."token=".$iucnToken;
+        $opts = array(
+            'http' => array(
+                'method' => 'GET',
+                #'request_fulluri' => true,
+                'ignore_errors' => true,
+                'timeout' => 3.5, # Seconds
+            ),
+        );
+        $context = stream_context_create($opts);
+        $response = file_get_contents($destUrl, false, $context);
+        $decoded = json_decode($response, true);
+        foreach ($decoded["result"] as $result) {
+            if ($result["primary"] === true || $result["language"] == "eng") {
+                $speciesRow["common_name"] = $result["taxonname"];
+                break;
+            }
+        }
+        if (empty($speciesRow["common_name"])) {
+            throw new Exception("NO_IUCN_RESULT_ERROR");
+        } else {
+            # Save this common name to the database
+            try {
+                $db->updateEntry(array("common_name" => $speciesRow["common_name"]), array("id" => $speciesRow["id"]));
+            } catch (Exception $e) {
+                $output .= "<!-- Warning: Unable to save common name to database -->";
+            }
+        }
+    } catch (Exception $e) {
+        $output .= "<!-- Warning: Unable to generate common name: ". $e->getMessage() . " -->";
+    }
+}
 
 $speciesRow["entry"] = empty($speciesRow["entry"]) ? "No entry exists for this taxon." : $speciesRow["entry"];
 

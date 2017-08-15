@@ -2,14 +2,21 @@
   require_once dirname(__FILE__) . "/../core/core.php";
   $defaultImage = "species_photos/Tragelaphus_eurycerus.jpg";
   $pageImage = empty($pageImage) ? $defaultImage : $pageImage;
-  $image = new ImageFunctions($pageImage);
+  echo "<!-- Selecting page image '$pageImage' -->";
+  $workingImage = str_replace("https://mammaldiversity.org/", "", $pageImage);
+  $image = new ImageFunctions($workingImage);
   if (!$image->imageExists()) {
+      echo "<!-- Overriding set image because it doesn't exist -->";
       $pageImage = $defaultImage;
       $image->setImage($defaultImage);
   }
+  if (preg_match('%^(?!https?://)([a-z0-9\/_\.-?=&#;]*)%im', $pageImage)) {
+      # The page image doesn't have the URL prefix
+      $pageImage = "https://mammaldiversity.org/" . $pageImage;
+  }
   $width = $image->getWidth();
   $height = $image->getHeight();
-  ?>
+?>
 
 <!-- Meta descriptors -->
 
@@ -19,7 +26,7 @@
 <meta name="twitter:creator" content="@mammalogists">
 <meta name="twitter:title" content="<?php echo $title; ?>">
 <meta name="twitter:description" content="<?php echo $pageDescription; ?>">
-<meta property="twitter:image" content="https://mammaldiversity.org/<?php echo $pageImage; ?>" />
+<meta property="twitter:image" content="<?php echo $pageImage; ?>" />
 <meta property="twitter:image:width" content="<?php echo $width; ?>"/>
 <meta property="twitter:image:height" content="<?php echo $height; ?>"/>
 <!-- Facebook OG tags -->

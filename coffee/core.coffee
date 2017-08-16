@@ -1768,7 +1768,7 @@ loadSocialMediaSlideoutBar = (handles, selector = "#social-menu", appendTo = "ma
         when "twitter"
           if _asm.socialConfig.twitter.sharePage
             serviceHtml += """
-            <p>Share this taxon!</p><br/>
+            <h4 class="text-center">Share this taxon!</h4><br/>
             <div class="text-center center-block">
               <a class="twitter-share-button"
                 href="https://twitter.com/intent/tweet"

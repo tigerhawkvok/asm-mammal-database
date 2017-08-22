@@ -242,6 +242,8 @@ fetchMOLRange = (taxon = window._activeTaxon, kml, dontExecuteFallback = false, 
     embed: "true"
   window._iframeRangeFail = ->
     unless dontExecuteFallback
+      console.warn "We failed to load the MOL range map, doing a fall back to the IUCN/FusionTable map"
+      $("#taxon-range-map-container.mol-map-container").remove()
       fetchIucnRange(taxon)
     else
       console.debug "Not falling back -- `dontExecuteFallback` set"

@@ -327,6 +327,8 @@ fetchMOLRange = function(taxon, kml, dontExecuteFallback, nextToSelector) {
   };
   window._iframeRangeFail = function() {
     if (!dontExecuteFallback) {
+      console.warn("We failed to load the MOL range map, doing a fall back to the IUCN/FusionTable map");
+      $("#taxon-range-map-container.mol-map-container").remove();
       fetchIucnRange(taxon);
     } else {
       console.debug("Not falling back -- `dontExecuteFallback` set");

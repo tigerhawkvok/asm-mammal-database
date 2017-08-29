@@ -476,7 +476,7 @@ if (!function_exists('appendQuery')) {
 
 
 if (!function_exists("get_include_contents")) {
-    function get_include_contents($filename, $passVars)
+    function get_include_contents($filename, $passVars = null)
     {
         if (is_array($passVars)) {
             foreach ($passVars as $k => $v) {

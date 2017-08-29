@@ -1299,7 +1299,7 @@ bindClicks = (selector = ".click") ->
           if $(this).attr("newTab")?.toBool() or $(this).attr("newtab")?.toBool() or $(this).attr("data-newtab")?.toBool()
             openTab.debounce 50, null, null, url
           else
-            goTo 50, null, null, url
+            goTo.debounce 50, null, null, url
         return url
       else
         # Check for onclick function

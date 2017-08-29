@@ -11,7 +11,7 @@
  *   -
  *
  */
-var appendCountryLayerToMap, baseQuery, fetchIucnRange, fetchMOLRange, gMapsConfig, initMap, setMapHelper, worldPoliticalFusionTableId,
+var appendCountryLayerToMap, baseQuery, fetchIucnRange, fetchMOLRange, gMapsConfig, getSpeciesAccountLinkout, initMap, setMapHelper, worldPoliticalFusionTableId,
   indexOf = [].indexOf || function(item) { for (var i = 0, l = this.length; i < l; i++) { if (i in this && this[i] === item) return i; } return -1; };
 
 gMapsConfig = {
@@ -346,6 +346,46 @@ fetchMOLRange = function(taxon, kml, dontExecuteFallback, nextToSelector) {
     return false;
   });
   return true;
+};
+
+getSpeciesAccountLinkout = function(taxon, endpoint, domSelector) {
+  if (taxon == null) {
+    taxon = window._activeTaxon;
+  }
+  if (endpoint == null) {
+    endpoint = "api.php";
+  }
+  if (domSelector == null) {
+    domSelector = "table ol a";
+  }
+
+  /*
+   * Check open-access account lists to find if there are any accounts
+   * available to ping and link out to
+   *
+   * See
+   * https://github.com/tigerhawkvok/asm-mammal-database/issues/86
+   */
+  $.get(endpoint, "action=get-account").done(function(resultHtml) {
+    var anchor, anchorText, fullDom, i, len, ref, taxonName;
+    fullDom = $(resultHtml);
+    ref = fullDom.find(domSelector);
+    for (i = 0, len = ref.length; i < len; i++) {
+      anchor = ref[i];
+      anchorText = $(anchor).text();
+      taxonName = anchorText.replace(/^(.*?)\s+\(([\w ]+)\)\s*$/img, "$2").split(" ");
+      if (taxonName[0] === taxon.genus && taxonName[1] === taxon.species) {
+        console.log("Found a match: ", $(anchor).attr("href"));
+      } else {
+        console.warn("Found no matching taxon from open-access accounts");
+      }
+    }
+    return false;
+  }).fail(function(result, status) {
+    console.error("Unable to hit target '" + endpoint + "'");
+    return false;
+  });
+  return false;
 };
 
 $(function() {

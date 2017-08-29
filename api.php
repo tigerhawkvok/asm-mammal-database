@@ -305,6 +305,28 @@ switch (strtolower($_REQUEST["action"])) {
         returnAjax(doLiveQuery($_REQUEST));
         die();
         break;
+    case "getAccount":
+    case "getaccount":
+    case "get-account":
+    case "get_account":
+        $endpoint = "http://www.science.smith.edu/departments/Biology/VHAYSSEN/msi/msiaccounts.html";
+        $opts = array(
+            'http' => array(
+                'method' => 'GET',
+                'request_fulluri' => true,
+                'ignore_errors' => true,
+                'timeout' => 3.5, # Seconds
+            ),
+        );
+        $context = stream_context_create($opts);
+        $htmlPage = file_get_contents($endpoint, false, $context);
+        returnAjax(array(
+            "status" => empty($htmlPage),
+            "content" => $htmlPage,
+            "endpoint" => $endpoint,
+        ));
+        die();
+        break;
     case "iucn":
         $iucnBase = "http://apiv3.iucnredlist.org/api/v3/";
         $validIucnApis = array(

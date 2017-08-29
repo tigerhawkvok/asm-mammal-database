@@ -266,6 +266,30 @@ fetchMOLRange = (taxon = window._activeTaxon, kml, dontExecuteFallback = false, 
 
 
 
+getSpeciesAccountLinkout = (taxon =  window._activeTaxon, endpoint = "api.php", domSelector = "table ol a") ->
+  ###
+  # Check open-access account lists to find if there are any accounts
+  # available to ping and link out to
+  #
+  # See
+  # https://github.com/tigerhawkvok/asm-mammal-database/issues/86
+  ###
+  $.get endpoint, "action=get-account"
+  .done (resultHtml) ->
+    fullDom = $(resultHtml)
+    for anchor in fullDom.find domSelector
+      anchorText = $(anchor).text()
+      taxonName = anchorText.replace(/^(.*?)\s+\(([\w ]+)\)\s*$/img, "$2").split " "
+      if taxonName[0] is taxon.genus and taxonName[1] is taxon.species
+        console.log "Found a match: ", $(anchor).attr "href"
+      else
+        console.warn "Found no matching taxon from open-access accounts"
+    false
+  .fail (result, status) ->
+    console.error "Unable to hit target '#{endpoint}'"
+    false
+  false
+
 
 $ ->
   unless isNull window.gMapsLocalKey

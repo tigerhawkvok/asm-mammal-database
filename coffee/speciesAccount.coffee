@@ -266,7 +266,7 @@ fetchMOLRange = (taxon = window._activeTaxon, kml, dontExecuteFallback = false, 
 
 
 
-getSpeciesAccountLinkout = (taxon =  window._activeTaxon, endpoint = "api.php", domSelector = "table ol a") ->
+getSpeciesAccountLinkout = (taxon =  window._activeTaxon, endpoint = "api.php", domSelector = "ol a[href^='pdf']") ->
   ###
   # Check open-access account lists to find if there are any accounts
   # available to ping and link out to
@@ -275,15 +275,51 @@ getSpeciesAccountLinkout = (taxon =  window._activeTaxon, endpoint = "api.php", 
   # https://github.com/tigerhawkvok/asm-mammal-database/issues/86
   ###
   $.get endpoint, "action=get-account"
-  .done (resultHtml) ->
+  .done (result) ->
+    console.debug "Got response", result
+    if result.status isnt true
+      console.error "There was a problem fetching the endpoint content"
+      console.warn result
+      return false
+    resultHtml = decode64 result.body_content
+    relativeParts = result.endpoint.split "/"
+    listPage = relativeParts.pop()
+    relativeBase = relativeParts.join "/"
+    console.debug "Got result!"
     fullDom = $(resultHtml)
-    for anchor in fullDom.find domSelector
+    console.debug "Got full dom"
+    foundMatch = false
+    anchorList = fullDom.find domSelector
+    console.debug "Anchor list is #{anchorList.length} elements long"
+    _asm.availableTaxaAccounts = new Array()
+    for anchor in anchorList
       anchorText = $(anchor).text()
       taxonName = anchorText.replace(/^(.*?)\s+\(([\w ]+)\)\s*$/img, "$2").split " "
-      if taxonName[0] is taxon.genus and taxonName[1] is taxon.species
-        console.log "Found a match: ", $(anchor).attr "href"
-      else
-        console.warn "Found no matching taxon from open-access accounts"
+      taxonSample =
+        genus: taxonName[0].toLowerCase()
+        species: taxonName[1].toLowerCase()
+      _asm.availableTaxaAccounts.push taxonSample
+      if taxonName[0].toLowerCase() is taxon.genus.toLowerCase() and taxonName[1].toLowerCase() is taxon.species.toLowerCase()
+        pdfLocation = relativeBase + "/" + $(anchor).attr "href"        
+        console.log "Found a match: ", pdfLocation
+        foundMatch = true
+        html = """
+        <paper-icon-button
+          icon="icons:description"
+          data-href="#{pdfLocation}"
+          class="click"
+          data-newtab="true"
+          id="external-species-account"
+          title="View Species Account PDF (Open Access)"
+          data-toggle="tooltip"
+          >
+        </paper-icon-button>
+        """
+        $("#species-account h3").after html
+        bindClicks("#external-species-account")
+        break
+    if foundMatch isnt true
+      console.warn "Found no matching taxon from open-access accounts"
     false
   .fail (result, status) ->
     console.error "Unable to hit target '#{endpoint}'"
@@ -291,9 +327,12 @@ getSpeciesAccountLinkout = (taxon =  window._activeTaxon, endpoint = "api.php", 
   false
 
 
+_asm.getSpeciesAccountLinkout = getSpeciesAccountLinkout
+
 $ ->
   unless isNull window.gMapsLocalKey
     console.log "Using local unrestricted key"
     gMapsConfig.jsApiKey = window.gMapsLocalKey
   fetchMOLRange()
+  getSpeciesAccountLinkout()
   false

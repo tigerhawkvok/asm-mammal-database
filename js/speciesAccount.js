@@ -356,7 +356,7 @@ getSpeciesAccountLinkout = function(taxon, endpoint, domSelector) {
     endpoint = "api.php";
   }
   if (domSelector == null) {
-    domSelector = "table ol a";
+    domSelector = "ol a[href^='pdf']";
   }
 
   /*
@@ -366,19 +366,46 @@ getSpeciesAccountLinkout = function(taxon, endpoint, domSelector) {
    * See
    * https://github.com/tigerhawkvok/asm-mammal-database/issues/86
    */
-  $.get(endpoint, "action=get-account").done(function(resultHtml) {
-    var anchor, anchorText, fullDom, i, len, ref, taxonName;
+  $.get(endpoint, "action=get-account").done(function(result) {
+    var anchor, anchorList, anchorText, foundMatch, fullDom, html, i, len, listPage, pdfLocation, relativeBase, relativeParts, resultHtml, taxonName, taxonSample;
+    console.debug("Got response", result);
+    if (result.status !== true) {
+      console.error("There was a problem fetching the endpoint content");
+      console.warn(result);
+      return false;
+    }
+    resultHtml = decode64(result.body_content);
+    relativeParts = result.endpoint.split("/");
+    listPage = relativeParts.pop();
+    relativeBase = relativeParts.join("/");
+    console.debug("Got result!");
     fullDom = $(resultHtml);
-    ref = fullDom.find(domSelector);
-    for (i = 0, len = ref.length; i < len; i++) {
-      anchor = ref[i];
+    console.debug("Got full dom");
+    foundMatch = false;
+    anchorList = fullDom.find(domSelector);
+    console.debug("Anchor list is " + anchorList.length + " elements long");
+    _asm.availableTaxaAccounts = new Array();
+    for (i = 0, len = anchorList.length; i < len; i++) {
+      anchor = anchorList[i];
       anchorText = $(anchor).text();
       taxonName = anchorText.replace(/^(.*?)\s+\(([\w ]+)\)\s*$/img, "$2").split(" ");
-      if (taxonName[0] === taxon.genus && taxonName[1] === taxon.species) {
-        console.log("Found a match: ", $(anchor).attr("href"));
-      } else {
-        console.warn("Found no matching taxon from open-access accounts");
+      taxonSample = {
+        genus: taxonName[0].toLowerCase(),
+        species: taxonName[1].toLowerCase()
+      };
+      _asm.availableTaxaAccounts.push(taxonSample);
+      if (taxonName[0].toLowerCase() === taxon.genus.toLowerCase() && taxonName[1].toLowerCase() === taxon.species.toLowerCase()) {
+        pdfLocation = relativeBase + "/" + $(anchor).attr("href");
+        console.log("Found a match: ", pdfLocation);
+        foundMatch = true;
+        html = "<paper-icon-button\n  icon=\"icons:description\"\n  data-href=\"" + pdfLocation + "\"\n  class=\"click\"\n  data-newtab=\"true\"\n  id=\"external-species-account\"\n  title=\"View Species Account PDF (Open Access)\"\n  data-toggle=\"tooltip\"\n  >\n</paper-icon-button>";
+        $("#species-account h3").after(html);
+        bindClicks("#external-species-account");
+        break;
       }
+    }
+    if (foundMatch !== true) {
+      console.warn("Found no matching taxon from open-access accounts");
     }
     return false;
   }).fail(function(result, status) {
@@ -388,12 +415,15 @@ getSpeciesAccountLinkout = function(taxon, endpoint, domSelector) {
   return false;
 };
 
+_asm.getSpeciesAccountLinkout = getSpeciesAccountLinkout;
+
 $(function() {
   if (!isNull(window.gMapsLocalKey)) {
     console.log("Using local unrestricted key");
     gMapsConfig.jsApiKey = window.gMapsLocalKey;
   }
   fetchMOLRange();
+  getSpeciesAccountLinkout();
   return false;
 });
 

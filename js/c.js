@@ -41,6 +41,13 @@ _asm.socialHandles = {
   twitter: "mammalogists"
 };
 
+_asm.socialConfig = {
+  twitter: {
+    sharePage: false,
+    showTimeline: true
+  }
+};
+
 _asm.mobileBreakpoint = 767;
 
 isBool = function(str) {
@@ -1644,7 +1651,7 @@ bindClicks = function(selector) {
           if (((ref1 = $(this).attr("newTab")) != null ? ref1.toBool() : void 0) || ((ref2 = $(this).attr("newtab")) != null ? ref2.toBool() : void 0) || ((ref3 = $(this).attr("data-newtab")) != null ? ref3.toBool() : void 0)) {
             return openTab.debounce(50, null, null, url);
           } else {
-            return goTo(50, null, null, url);
+            return goTo.debounce(50, null, null, url);
           }
         });
         return url;
@@ -2204,9 +2211,15 @@ loadSocialMediaSlideoutBar = function(handles, selector, appendTo) {
     contentHtml = "";
     for (service in handles) {
       handle = handles[service];
+      serviceHtml = "";
       switch (service) {
         case "twitter":
-          serviceHtml = "<a class=\"twitter-timeline\" data-link-color=\"#1DA1F2\" href=\"https://twitter.com/" + handle + "\">Tweets by @" + handle + "</a> <script async src=\"//platform.twitter.com/widgets.js\" charset=\"utf-8\"></script>";
+          if (_asm.socialConfig.twitter.sharePage) {
+            serviceHtml += "<h4 class=\"text-center\">Share this taxon!</h4><br/>\n<div class=\"text-center center-block\">\n  <a class=\"twitter-share-button\"\n    href=\"https://twitter.com/intent/tweet\"\n    data-size=\"large\">\n  Tweet</a>\n</div>";
+          }
+          if (_asm.socialConfig.twitter.showTimeline) {
+            serviceHtml += "<a class=\"twitter-timeline\" data-link-color=\"#1DA1F2\" href=\"https://twitter.com/" + handle + "\">Tweets by @" + handle + "</a> <script async src=\"//platform.twitter.com/widgets.js\" charset=\"utf-8\"></script>";
+          }
           break;
         default:
           serviceHtml = "";

@@ -11,7 +11,7 @@
  *   -
  *
  */
-var appendCountryLayerToMap, baseQuery, fetchIucnRange, fetchMOLRange, gMapsConfig, initMap, setMapHelper, worldPoliticalFusionTableId,
+var appendCountryLayerToMap, baseQuery, fetchIucnRange, fetchMOLRange, gMapsConfig, getSpeciesAccountLinkout, initMap, setMapHelper, worldPoliticalFusionTableId,
   indexOf = [].indexOf || function(item) { for (var i = 0, l = this.length; i < l; i++) { if (i in this && this[i] === item) return i; } return -1; };
 
 gMapsConfig = {
@@ -327,6 +327,8 @@ fetchMOLRange = function(taxon, kml, dontExecuteFallback, nextToSelector) {
   };
   window._iframeRangeFail = function() {
     if (!dontExecuteFallback) {
+      console.warn("We failed to load the MOL range map, doing a fall back to the IUCN/FusionTable map");
+      $("#taxon-range-map-container.mol-map-container").remove();
       fetchIucnRange(taxon);
     } else {
       console.debug("Not falling back -- `dontExecuteFallback` set");
@@ -346,12 +348,82 @@ fetchMOLRange = function(taxon, kml, dontExecuteFallback, nextToSelector) {
   return true;
 };
 
+getSpeciesAccountLinkout = function(taxon, endpoint, domSelector) {
+  if (taxon == null) {
+    taxon = window._activeTaxon;
+  }
+  if (endpoint == null) {
+    endpoint = "api.php";
+  }
+  if (domSelector == null) {
+    domSelector = "ol a[href^='pdf']";
+  }
+
+  /*
+   * Check open-access account lists to find if there are any accounts
+   * available to ping and link out to
+   *
+   * See
+   * https://github.com/tigerhawkvok/asm-mammal-database/issues/86
+   */
+  $.get(endpoint, "action=get-account").done(function(result) {
+    var anchor, anchorList, anchorText, foundMatch, fullDom, html, i, len, listPage, pdfLocation, relativeBase, relativeParts, resultHtml, taxonName, taxonSample;
+    console.debug("Got response", result);
+    if (result.status !== true) {
+      console.error("There was a problem fetching the endpoint content");
+      console.warn(result);
+      return false;
+    }
+    resultHtml = decode64(result.body_content);
+    relativeParts = result.endpoint.split("/");
+    listPage = relativeParts.pop();
+    relativeBase = relativeParts.join("/");
+    console.debug("Got result!");
+    fullDom = $(resultHtml);
+    console.debug("Got full dom");
+    foundMatch = false;
+    anchorList = fullDom.find(domSelector);
+    console.debug("Anchor list is " + anchorList.length + " elements long");
+    _asm.availableTaxaAccounts = new Array();
+    for (i = 0, len = anchorList.length; i < len; i++) {
+      anchor = anchorList[i];
+      anchorText = $(anchor).text();
+      taxonName = anchorText.replace(/^(.*?)\s+\(([\w ]+)\)\s*$/img, "$2").split(" ");
+      taxonSample = {
+        genus: taxonName[0].toLowerCase(),
+        species: taxonName[1].toLowerCase()
+      };
+      _asm.availableTaxaAccounts.push(taxonSample);
+      if (taxonName[0].toLowerCase() === taxon.genus.toLowerCase() && taxonName[1].toLowerCase() === taxon.species.toLowerCase()) {
+        pdfLocation = relativeBase + "/" + $(anchor).attr("href");
+        console.log("Found a match: ", pdfLocation);
+        foundMatch = true;
+        html = "<paper-icon-button\n  icon=\"icons:description\"\n  data-href=\"" + pdfLocation + "\"\n  class=\"click\"\n  data-newtab=\"true\"\n  id=\"external-species-account\"\n  title=\"View Species Account PDF (Open Access)\"\n  data-toggle=\"tooltip\"\n  >\n</paper-icon-button>";
+        $("#species-account h3").after(html);
+        bindClicks("#external-species-account");
+        break;
+      }
+    }
+    if (foundMatch !== true) {
+      console.warn("Found no matching taxon from open-access accounts");
+    }
+    return false;
+  }).fail(function(result, status) {
+    console.error("Unable to hit target '" + endpoint + "'");
+    return false;
+  });
+  return false;
+};
+
+_asm.getSpeciesAccountLinkout = getSpeciesAccountLinkout;
+
 $(function() {
   if (!isNull(window.gMapsLocalKey)) {
     console.log("Using local unrestricted key");
     gMapsConfig.jsApiKey = window.gMapsLocalKey;
   }
   fetchMOLRange();
+  getSpeciesAccountLinkout();
   return false;
 });
 

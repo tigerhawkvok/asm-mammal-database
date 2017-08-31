@@ -7677,6 +7677,9 @@ label + paper-icon-button {
 .clade {
   text-transform: title-case;
 }
+#taxonomy .scientific-taxonomy .clade {
+  text-transform: capitalize;
+}
 #taxonomy .common-taxonomy {
   color: #777777;
 }
@@ -7687,7 +7690,21 @@ label + paper-icon-button {
 .map-container iframe {
   width: 100%;
 }
-h3 + marked-element {
+#species-account h3 {
+  display: inline-block;
+  float: left;
+}
+#species-account #external-species-account {
+  float: left;
+  clear: right;
+  margin-top: 1em;
+}
+#species-account marked-element {
+  clear: both;
+}
+h3 + marked-element,
+h3 + paper-icon-button + marked-element,
+h3 + paper-icon-button + .tooltip + marked-element {
   padding-left: 2rem;
 }
 figure {

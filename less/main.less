@@ -1002,7 +1002,9 @@ iron-label + paper-icon-button, label + paper-icon-button {
 
 #taxonomy {
     .scientific-taxonomy {
-
+        .clade {
+            text-transform: capitalize;
+        }
     }
     .common-taxonomy {
         .text-muted;
@@ -1018,7 +1020,24 @@ iron-label + paper-icon-button, label + paper-icon-button {
     }
 }
 
-h3 + marked-element {
+#species-account {
+    h3 {
+        display: inline-block;
+        float: left;
+    }
+    #external-species-account {
+        float: left;
+        clear: right;
+        margin-top: 1em;
+    }
+    marked-element {
+        clear: both;
+    }
+}
+
+h3 + marked-element,
+h3 + paper-icon-button + marked-element, 
+h3 + paper-icon-button + .tooltip + marked-element {
     padding-left: 2rem;
 }
 

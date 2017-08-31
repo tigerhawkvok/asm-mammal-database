@@ -179,9 +179,6 @@ Polymer({
           return [];
         },
 
-        /**
-         * @override
-         */
         memoryPathToStoragePath: function(path) {
           var storagePath = this.path;
 
@@ -199,9 +196,6 @@ Polymer({
           return storagePath;
         },
 
-        /**
-         * @override
-         */
         storagePathToMemoryPath: function(storagePath) {
           var path = 'data';
 
@@ -220,9 +214,6 @@ Polymer({
           return path;
         },
 
-        /**
-         * @override
-         */
         setStoredValue: function(storagePath, value) {
           if (storagePath === this.path || /\$key$/.test(storagePath)) {
             return Promise.resolve();
@@ -276,6 +267,17 @@ Polymer({
           return query;
         },
 
+        __pathChanged: function(path, oldPath) {
+          // we only need to reset the data if the path is null (will also trigged when this element initiates)
+          // When path changes and is not null, it triggers a ref change (via __computeRef(db,path)), which then triggers a __queryChanged setting data to zeroValue
+
+          if (path == null) {
+            this.syncToMemory(function() {
+              this.data = this.zeroValue;
+            });
+          }
+        },
+
         __queryChanged: function(query, oldQuery) {
           if (oldQuery) {
             oldQuery.off('child_added', this.__onFirebaseChildAdded, this);
@@ -289,6 +291,14 @@ Polymer({
           }
 
           if (query) {
+            if(this._onOnce){ // remove handlers before adding again. Otherwise we get data multiplying
+              query.off('child_added', this.__onFirebaseChildAdded, this);
+              query.off('child_removed', this.__onFirebaseChildRemoved, this);
+              query.off('child_changed', this.__onFirebaseChildChanged, this);
+              query.off('child_moved', this.__onFirebaseChildMoved, this);
+            }
+
+            this._onOnce = true;            
             query.on('child_added', this.__onFirebaseChildAdded, this.__onError, this);
             query.on('child_removed', this.__onFirebaseChildRemoved, this.__onError, this);
             query.on('child_changed', this.__onFirebaseChildChanged, this.__onError, this);

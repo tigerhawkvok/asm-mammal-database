@@ -78,12 +78,12 @@ if (!function_exists('elapsed')) {
 $driver = \GraphAware\Bolt\GraphDatabase::driver($graphEndpoint, $config); */
 $client = ClientBuilder::create()
 ->addConnection('default', $graphProtocol . "://" . $graphUser . ":" . $graphPassword . "@" . $graphUrl . ":" .$graphPorts[$graphProtocol])
+->setDefaultTimeout(60)
 ->build();
 
 
 function loadDatabase() {
     global $db, $client;
-    $client->setDefaultTimeout(60);
     # Create nodes for the high level taxa
     $looper = array(
         "simple_linnean_group" => "Cohort",
@@ -213,7 +213,7 @@ function loadDatabase() {
         if (empty($row[0])) {
             continue;
         }
-        $data[] = array($row[0], $row[1]);
+        $data[] = array($row[0], $row[1], $row[2]);
     }
     # Start the cypher query
     $cypher = "

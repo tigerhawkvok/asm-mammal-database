@@ -83,6 +83,7 @@ $client = ClientBuilder::create()
 
 function loadDatabase() {
     global $db, $client;
+    $client->setDefaultTimeout(60);
     # Create nodes for the high level taxa
     $looper = array(
         "simple_linnean_group" => "Cohort",
@@ -154,6 +155,11 @@ function loadDatabase() {
                         $errors[] = "No children found for child: ".$query;
                     }
                 }
+            } else {
+                # No children
+                $cypher = "
+                MATCH c WHERE NOT (c:Clade)<-[:CONTAINS_CLADE]-(:Clade)
+                ";
             }
         }
         # Link the top level back
@@ -165,6 +171,59 @@ function loadDatabase() {
             "data" => $data
         );
     }
+    # Tag out genus and species
+    $query = "SELECT DISTINCT `genus`, `linnean_family` FROM `".$db->getTable()."`";
+    $r = mysqli_query($l, $query);
+    if ($r === false) {
+        $errors[] = mysqli_error($l);
+        return array(
+            "status" => False,
+            "error" => "Unable to assign genera"
+        );
+    }
+    # Build the parameters
+    $data = array();
+    while($row = mysqli_fetch_row($r)) {
+        if (empty($row[0])) {
+            continue;
+        }
+        $data[] = array($row[0], $row[1]);
+    }
+    # Start the cypher query
+    $cypher = "
+    UNWIND {data} AS attr
+    CREATE (g:Genus {label: attr[0], rank: 'Genus'})
+    WITH g AS g, attr as attr
+    MATCH (c:Clade {label: attr[1]})
+    MERGE (g)<-[:CONTAINS_CLADE]-(c)<-[:DESCENDANT_OF]-(g)
+    ";
+    $client->run($cypher, array("data"=>$data));
+    $query = "SELECT DISTINCT `species`, `genus`, CONCAT(genus, ' ', species) FROM `".$db->getTable()."`";
+    $r = mysqli_query($l, $query);
+    if ($r === false) {
+        $errors[] = mysqli_error($l);
+        return array(
+            "status" => False,
+            "error" => "Unable to assign species"
+        );
+    }
+    # Build the parameters
+    $data = array();
+    while($row = mysqli_fetch_row($r)) {
+        if (empty($row[0])) {
+            continue;
+        }
+        $data[] = array($row[0], $row[1]);
+    }
+    # Start the cypher query
+    $cypher = "
+    UNWIND {data} AS attr
+    CREATE (g:Species {label: attr[0], rank: 'Species', binomial: attr[2] })
+    WITH g AS g, attr as attr
+    MATCH (c:Genus {label: attr[1]})
+    MERGE (g)<-[:CONTAINS_CLADE]-(c)<-[:DESCENDANT_OF]-(g)
+    ";
+    $client->run($cypher, array("data"=>$data));
     return array(
         "status" => True,
         "errors" => $errors

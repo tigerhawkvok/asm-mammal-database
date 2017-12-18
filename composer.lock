@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#composer-lock-the-lock-file",
         "This file is @generated automatically"
     ],
-    "hash": "b4b34c2db8e88ed1031a2badbba578a9",
+    "content-hash": "dfb56e134fcec8a2ef2ba4827206c26e",
     "packages": [
         {
             "name": "graphaware/neo4j-bolt",
@@ -47,7 +47,7 @@
                 }
             ],
             "description": "Neo4j Bolt Binary Protocol PHP Driver",
-            "time": "2016-04-21 11:57:11"
+            "time": "2016-04-21T11:57:11+00:00"
         },
         {
             "name": "graphaware/neo4j-common",
@@ -93,7 +93,7 @@
                 "neo4j",
                 "statement"
             ],
-            "time": "2016-05-06 15:11:19"
+            "time": "2016-05-06T15:11:19+00:00"
         },
         {
             "name": "graphaware/neo4j-php-client",
@@ -149,7 +149,7 @@
                 "http",
                 "neo4j"
             ],
-            "time": "2016-05-06 16:12:05"
+            "time": "2016-05-06T16:12:05+00:00"
         },
         {
             "name": "guzzlehttp/guzzle",
@@ -214,7 +214,7 @@
                 "rest",
                 "web service"
             ],
-            "time": "2017-06-22 18:50:49"
+            "time": "2017-06-22T18:50:49+00:00"
         },
         {
             "name": "guzzlehttp/promises",
@@ -265,7 +265,7 @@
             "keywords": [
                 "promise"
             ],
-            "time": "2016-12-20 10:07:11"
+            "time": "2016-12-20T10:07:11+00:00"
         },
         {
             "name": "guzzlehttp/psr7",
@@ -330,7 +330,7 @@
                 "uri",
                 "url"
             ],
-            "time": "2017-03-20 17:10:46"
+            "time": "2017-03-20T17:10:46+00:00"
         },
         {
             "name": "myclabs/php-enum",
@@ -374,7 +374,7 @@
             "keywords": [
                 "enum"
             ],
-            "time": "2017-06-28 16:24:08"
+            "time": "2017-06-28T16:24:08+00:00"
         },
         {
             "name": "psr/http-message",
@@ -424,20 +424,20 @@
                 "request",
                 "response"
             ],
-            "time": "2016-08-06 14:39:51"
+            "time": "2016-08-06T14:39:51+00:00"
         },
         {
             "name": "symfony/event-dispatcher",
-            "version": "v3.4.1",
+            "version": "v3.4.2",
             "source": {
                 "type": "git",
                 "url": "https://github.com/symfony/event-dispatcher.git",
-                "reference": "ca20b8f9ef149f40ff656d52965f240d85f7a8e4"
+                "reference": "b869cbf8a15ca6261689de2c28a7d7f2d0706835"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/symfony/event-dispatcher/zipball/ca20b8f9ef149f40ff656d52965f240d85f7a8e4",
-                "reference": "ca20b8f9ef149f40ff656d52965f240d85f7a8e4",
+                "url": "https://api.github.com/repos/symfony/event-dispatcher/zipball/b869cbf8a15ca6261689de2c28a7d7f2d0706835",
+                "reference": "b869cbf8a15ca6261689de2c28a7d7f2d0706835",
                 "shasum": ""
             },
             "require": {
@@ -487,7 +487,7 @@
             ],
             "description": "Symfony EventDispatcher Component",
             "homepage": "https://symfony.com",
-            "time": "2017-11-09 14:14:31"
+            "time": "2017-12-14T19:40:10+00:00"
         }
     ],
     "packages-dev": [],

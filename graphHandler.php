@@ -1,6 +1,5 @@
 <?php
 
-
 /***
  *
  *
@@ -10,6 +9,10 @@
  * @author Philip Kahn
  * @date 2017.11.22
  ***/
+
+ # Setup graph connection
+require_once __DIR__ . '/vendor/autoload.php';
+use GraphAware\Neo4j\Client\ClientBuilder;
 
 /*****************
 * Setup
@@ -66,20 +69,16 @@ if (!function_exists('elapsed')) {
 }
 
 
-# Setup graph connection
-require_once 'vendor/autoload.php';
 
-
-use GraphAware\Neo4j\Client\ClientBuilder;
-
-
-$config = \GraphAware\Bolt\Configuration::newInstance()
+/* $config = \GraphAware\Bolt\Configuration::newInstance()
 ->withCredentials($graphUser, $graphPassword)
 ->withTimeout(10)
 ->withTLSMode(\GraphAware\Bolt\Configuration::TLSMODE_REQUIRED);
 
-$driver = \GraphAware\Bolt\GraphDatabase::driver($graphEndpoint, $config);
-$client = $driver->session();
+$driver = \GraphAware\Bolt\GraphDatabase::driver($graphEndpoint, $config); */
+$client = ClientBuilder::create()
+->addConnection('default', $graphProtocol . "://" . $graphUser . ":" . $graphPassword . "@" . $graphUrl . ":" .$graphPorts[$graphProtocol])
+->build();
 
 
 function loadDatabase() {
@@ -97,48 +96,79 @@ function loadDatabase() {
     $i = 0;
     $dbKeys = array_keys($looper);
     reset($looper);
-    $client->run("MATCH n DETACH DELETE n");
-    $client->run("CREATE (:Mammals {label: 'mammalia'})");
-    while ($nodeLabel = current($looper)) {
-        # Create an array of parameters to pass to the graph database
-        $dbKey = $dbKeys[$i];
-        $query = "SELECT DISTINCT `$dbKey` FROM `".$db->getTable()."` ORDER BY id";
-        $r = mysqli_query($l, $query);
-        if ($r === false) {
-            $errors[] = mysqli_error($l);
-            continue;
-        }
-        # Build the parameters
-        $data = array();
-        while($row = mysqli_fetch_row($r)) {
-            $data[] = array("label"=>$row[0]);
-        }
-        # Start the cypher query
-        $cypher = "
-        UNWIND {data as attr}
-        CREATE (n:$nodeLabel {label: attr.label})
-        ";
-        $i++;
-        # If we have defineable children, let's specify them
-        $childNodeLabel = next($looper);
-        if ($childNodeLabel !== null) {
-            $childDBKey = $dbKeys[$i];
-            $query = "SELECT DISTINCT `$childDBKey` FROM `".$db->getTable()."` ORDER BY id";
-            $r2 = mysqli_query($l, $query);
-            if ($r2 !== false) {
-                $j = 0;
-                while ($childRow = mysqli_fetch_row($r2)) {
-                    $data[$j]["childLabel"] = $childRow[0];
-                    $j++;
+    try {
+        $client->run("MATCH (n) DETACH DELETE n");
+        $client->run("CREATE (:Mammals {label: 'mammalia'})");
+        while ($nodeLabel = current($looper)) {
+            # Create an array of parameters to pass to the graph database
+            $dbKey = $dbKeys[$i];
+            $query = "SELECT DISTINCT `$dbKey` FROM `".$db->getTable()."` ORDER BY id";
+            $r = mysqli_query($l, $query);
+            if ($r === false) {
+                $errors[] = mysqli_error($l);
+                continue;
+            }
+            # Build the parameters
+            $data = array();
+            while($row = mysqli_fetch_row($r)) {
+                if (empty($row[0])) {
+                    continue;
                 }
-                $cypher .= "-[:CONTAINS_CLADE]->(cn:$childNodeLabel {label: attr.childLabel)";
+                $data[] = array($row[0]);
+            }
+            # Start the cypher query
+            $cypher = "
+            UNWIND {data} AS attr
+            MERGE (:Clade {label: attr[0], rank: '$nodeLabel'})
+            ";
+            $client->run($cypher, array("data"=>$data));
+            $i++;
+            # If we have defineable children, let's specify them
+            $childNodeLabel = next($looper);
+            if ($childNodeLabel !== False) {
+                $childDBKey = $dbKeys[$i];
+                $origData = $data;
+                foreach ($origData as $dataSet) {
+                    $parentClade = $dataSet[0];
+                    $query = "SELECT DISTINCT `$childDBKey` FROM `".$db->getTable()."` WHERE lower(`$dbKey`)=lower('$parentClade') ORDER BY id";
+                    $r2 = mysqli_query($l, $query);
+                    if ($r2 !== false) {
+
+                        $data = array();
+                        $j = 0;
+                        while ($childRow = mysqli_fetch_row($r2)) {
+                            if (empty($childRow[0])) {
+                                continue;
+                            }
+                            $data[] = array(
+                                            $parentClade,
+                                            $childRow[0]
+                                            );
+                        }
+                        $cypher = "
+                        UNWIND {data} AS attr
+                        MATCH (c:Clade {label: attr[0]})
+                        MERGE (c)-[:CONTAINS_CLADE]->(:Clade {label: attr[1], rank: '$childNodeLabel', parent: '$parentClade'})-[:DESCENDANT_OF]->(c)";
+                        $client->run($cypher, array("data"=>$data));
+                    } else {
+                        $errors[] = "No children found for child: ".$query;
+                    }
+                }
             }
         }
-        $client->run($cypher, $data);
+        # Link the top level back
+        $client->run("MATCH (m:Mammals) WITH m AS m MATCH (c:Clade {rank:'Cohort'}) MERGE (m)-[:CONTAINS_CLADE]->(c)-[:DESCENDANT_OF]->(m)");
+    } catch (\GraphAware\Neo4j\Client\Exception\Neo4jException $e) {
+        return array(
+            "status" => False,
+            "error" => $e->getMessage(),
+            "data" => $data
+        );
     }
-    # Link the top level back
-    $client->run("MERGE (:Mammals)-[:CONTAINS_CLADE]->(:Cohort)<-[:DESCENDANT_OF]-(:Mammals)");
-    return true;
+    return array(
+        "status" => True,
+        "errors" => $errors
+    );
 }
 
 function syncTaxa()

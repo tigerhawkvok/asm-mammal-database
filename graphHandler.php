@@ -230,9 +230,35 @@ function loadDatabase() {
     );
 }
 
-function syncTaxa()
+function updateTaxonomy($changeDetails, $taxonomyLevel = "clade")
 {
-
+    /***
+     * Update a taxon changed on the main site.
+     *
+     * @param array $changeType -> Details the change type.
+     *   array(
+     *     "type" => [RENAME, MOVE]
+     *     "update" => For rename, a string of the new name. For move, string of the new parent (must be of same rank of previous parent)
+     *   )
+     * @param str $taxonomyLevel -> controlled vocabulary. "genus", "species", or null/"clade"
+     ***/
+    global $db, $client;
+    if(empty($taxonomyLevel)) {
+        $taxonomyLevel = "clade";
+    }
+    $taxonomyLevel = ucwords($taxonomyLevel);
+    $validLevels = array(
+        "Genus",
+        "Species",
+        "Clade"
+    );
+    if(!in_array($taxonomyLevel, $validLevels, True)) {
+        return array(
+            "status" => False,
+            "error" => "Invalid taxonomy level '".$taxonomyLevel."'"
+        );
+    }
+    # Operations
 }
 
 

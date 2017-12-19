@@ -42,6 +42,7 @@
     "grunt-php-cs-fixer": "^1.0.0",
     "grunt-phpcs": "^0.4.0",
     "js-nacl": "^1.2.2",
+    "neo4j-driver": "^1.5.1",
     "webpack": "^3.5.4"
   }
 }

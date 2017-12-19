@@ -261,6 +261,22 @@ function updateTaxonomy($changeDetails, $taxonomyLevel = "clade")
     # Operations
 }
 
+function getRelatedness($taxon1, $taxon2) {
+    /***
+     *
+     ***/
+    global $client, $db;
+
+    /**
+     *  Sample:
+     *
+     * match (start:Species {binomial: 'rhinoceros unicornis'}), (end:Species {binomial: 'bradypus tridactylus'})
+     * call apoc.algo.dijkstraWithDefaultWeight(start, end, 'CLADE_CONTAINS|DESCENDANT_OF', 'distance', 1) YIELD path, weight
+     * return path
+     *
+     */
+}
+
 
 returnAjax(loadDatabase());
 

@@ -1036,7 +1036,7 @@ iron-label + paper-icon-button, label + paper-icon-button {
 }
 
 h3 + marked-element,
-h3 + paper-icon-button + marked-element, 
+h3 + paper-icon-button + marked-element,
 h3 + paper-icon-button + .tooltip + marked-element {
     padding-left: 2rem;
 }
@@ -1100,4 +1100,19 @@ marked-element {
     font-weight: bold;
     cursor: pointer;
     border-bottom: 1px dotted #000;
+}
+
+
+// graphs
+.alchemy svg {
+    background: #fff;
+    .node text {
+        display: inline-block;
+        text-tranform: uppercase;
+    }
+    .edge {
+        .edge-line {
+            stroke: #aaa;
+        }
+    }
 }

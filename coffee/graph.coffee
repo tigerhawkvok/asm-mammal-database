@@ -22,6 +22,10 @@ plotRelationships = (taxon1 = "rhinoceros unicornis", taxon2 = "bradypus tridact
     .done (result) ->
         # Plot it
         window.alchemyResult = result
+        alchemyConf =
+            dataSource: result
+            directedEdges: true
+
         alchemy.begin({dataSource: result})
         false
     .error (result, status) ->

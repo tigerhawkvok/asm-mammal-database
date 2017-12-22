@@ -111,6 +111,7 @@ function resultToGraphJSON($resultObj) {
                     "id" => $node->identity(),
                     "type" => $node->labels()[0],
                     "label" => $node->value("label"),
+                    "caption" => $node->value("label"),
                     "values" => $node->values(),
                 );
                 if ($treeRank[$node->value("rank")] > $highestRank) {

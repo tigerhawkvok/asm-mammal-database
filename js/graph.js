@@ -35,7 +35,12 @@ plotRelationships = function(taxon1, taxon2) {
   passedArgs = buildArgs(args);
   console.debug("Visiting", "graphHandler.php?" + passedArgs);
   $.get("graphHandler.php", passedArgs, "json").done(function(result) {
+    var alchemyConf;
     window.alchemyResult = result;
+    alchemyConf = {
+      dataSource: result,
+      directedEdges: true
+    };
     alchemy.begin({
       dataSource: result
     });

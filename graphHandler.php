@@ -82,6 +82,67 @@ $client = ClientBuilder::create()
 ->build();
 
 
+
+function resultToGraphJSON($resultObj) {
+    header('Cache-Control: no-cache, must-revalidate');
+    header('Expires: Mon, 26 Jul 1997 05:00:00 GMT');
+    header('Content-type: application/json; charset=utf-8');
+    $graphJson = array(
+        "nodes" => array(),
+        "edges" => array()
+    );
+    $treeRank = array(
+        "Species" => 0,
+        "Genus" => 1,
+        "Family" => 2,
+        "Order" => 3,
+        "Superorder" => 4,
+        "Magnaorder" => 5,
+        "Cohort" => 6,
+    );
+    $highestRank = 0;
+    $rootIndex = 0;
+    foreach($resultObj->records() as $recordBase) {
+        foreach ($recordBase->values() as $record) {
+            $i = 0;
+            foreach ($record->nodes() as $node) {
+                $graphJson["nodes"][] = array(
+                    "root" => False,
+                    "id" => $node->identity(),
+                    "type" => $node->labels()[0],
+                    "label" => $node->value("label"),
+                    "values" => $node->values(),
+                );
+                if ($treeRank[$node->value("rank")] > $highestRank) {
+                    $highestRank = $treeRank[$node->value("rank")];
+                    $rootIndex = $i;
+                }
+                $i++;
+            }
+            foreach ($record->relationships() as $relationship) {
+                $graphJson["edges"][] = array(
+                    "source" => $relationship->startNodeIdentity(),
+                    "target" => $relationship->endNodeIdentity(),
+                    "caption" => $relationship->type(),
+                    "label" => $relationship->type(),
+                    "type" => $relationship->type(),
+                    "values" => $relationship->values(),
+                    "id" => $relationship->identity(),
+                );
+            }
+        }
+    }
+    $graphJson["nodes"][$rootIndex]["root"] = True;
+    $json = json_encode($graphJson, JSON_FORCE_OBJECT | JSON_PARTIAL_OUTPUT_ON_ERROR | JSON_UNESCAPED_UNICODE);
+    if ($json === false) {
+        $json = json_last_error();
+    }
+    $replace_array = array("&quot;","&#34;");
+    print str_replace($replace_array, "\\\"", $json);
+    exit();
+}
+
+
 function loadDatabase() {
     global $db, $client;
     # Create nodes for the high level taxa
@@ -266,7 +327,8 @@ function getRelatedness($taxon1, $taxon2) {
      *
      ***/
     global $client, $db;
-
+    $taxon1 = empty($taxon1) ? $_REQUEST["taxon1"] : $taxon1;
+    $taxon2 = empty($taxon2) ? $_REQUEST["taxon2"] : $taxon2;
     /**
      *  Sample:
      *
@@ -275,7 +337,19 @@ function getRelatedness($taxon1, $taxon2) {
      * return path
      *
      */
+    # Do a regex check on the taxa
+    # execute query
+    $cypher = "
+    MATCH (start:Species {binomial: '$taxon1'}), (end:Species {binomial: '$taxon2'})
+    CALL apoc.algo.dijkstraWithDefaultWeight(start, end, 'CLADE_CONTAINS|DESCENDANT_OF', 'distance', 1) YIELD path, weight
+    RETURN path
+    ";
+    $result = $client->run($cypher);
+    resultToGraphJSON($result);
+
 }
+
+getRelatedness();
 
 
 returnAjax(loadDatabase());

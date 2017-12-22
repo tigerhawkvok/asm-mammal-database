@@ -1405,6 +1405,7 @@
       if (data.edges == null) {
         data.edges = [];
       }
+      window.alchemyData = data;
       a.create.nodes(data.nodes);
       data.edges.forEach(function(e) {
         return a.create.edges(e);
@@ -2175,6 +2176,7 @@
       edge: {
         a: this.a,
         populate: function(edge) {
+            if (typeof edge == "undefined") { return {}; }
           var color, conf, defaultStyle, edgeType, opacity, style, svgStyles, toFunc, typedStyle, width;
           conf = this.a.conf;
           defaultStyle = _.omit(conf.edgeStyle.all, "selected", "highlighted", "hidden");
@@ -2186,6 +2188,7 @@
               return inp;
             };
           };
+          window.alchemyEdge = edge;
           edgeType = edge._edgeType;
           if (conf.edgeStyle[edgeType] === void 0) {
             edgeType = "all";

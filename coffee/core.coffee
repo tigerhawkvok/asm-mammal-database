@@ -107,14 +107,19 @@ toInt = (str, strict = false) ->
 
 
 
-String::noExponents = (explicitNum = true) ->
+String::removeExponents = (explicitNum = true) ->
   ###
   # Remove scientific notation from a number
   #
   # After
   # http://stackoverflow.com/a/18719988/1877527
   ###
-  data = @.split /[eE]/
+  try
+    data = @.split /[eE]/
+  catch e
+    if e instanceof TypeError
+        return this
+    throw e
   if data.length is 1
     return data[0]
   # Initialize
@@ -156,9 +161,9 @@ String::noExponents = (explicitNum = true) ->
 
 
 
-Number::noExponents = ->
+Number::removeExponents = ->
   strVal = String @
-  strVal.noExponents(true)
+  strVal.removeExponents(true)
 
 
 toObject = (array) ->
@@ -171,13 +176,18 @@ String::toAscii = ->
   ###
   # Remove MS Word bullshit
   ###
-  @replace(/[\u2018\u2019\u201A\u201B\u2032\u2035]/g, "'")
-    .replace(/[\u201C\u201D\u201E\u201F\u2033\u2036]/g, '"')
-    .replace(/[\u2013\u2014]/g, '-')
-    .replace(/[\u2026]/g, '...')
-    .replace(/\u02C6/g, "^")
-    .replace(/\u2039/g, "")
-    .replace(/[\u02DC|\u00A0]/g, " ")
+  try
+    @replace(/[\u2018\u2019\u201A\u201B\u2032\u2035]/g, "'")
+        .replace(/[\u201C\u201D\u201E\u201F\u2033\u2036]/g, '"')
+        .replace(/[\u2013\u2014]/g, '-')
+        .replace(/[\u2026]/g, '...')
+        .replace(/\u02C6/g, "^")
+        .replace(/\u2039/g, "")
+        .replace(/[\u02DC|\u00A0]/g, " ")
+  catch e
+    if (e instanceof TypeError)
+      return this
+    throw e
 
 
 String::toBool = -> @toString() is 'true'
@@ -188,7 +198,12 @@ Number::toBool = -> @toString() is "1"
 
 
 String::addSlashes = ->
-  `this.replace(/[\\"']/g, '\\$&').replace(/\u0000/g, '\\0')`
+  try
+    `this.replace(/[\\"']/g, '\\$&').replace(/\u0000/g, '\\0')`
+  catch e
+    if e instanceof TypeError
+      return this
+    throw e
 
 Array::max = -> Math.max.apply null, this
 
@@ -265,9 +280,19 @@ String::stripHtml = (stripChildren = false) ->
   str = this
   if stripChildren
     # Pull out the children
-    str = str.replace /<(\w+)(?:[^"'>]|"[^"]*"|'[^']*')*>(?:((?:.)*?))<\/?\1(?:[^"'>]|"[^"]*"|'[^']*')*>/mg, ""
+    try
+      str = str.replace /<(\w+)(?:[^"'>]|"[^"]*"|'[^']*')*>(?:((?:.)*?))<\/?\1(?:[^"'>]|"[^"]*"|'[^']*')*>/mg, ""
+    catch e
+      if e instanceof TypeError
+        return this
+      throw e
   # Script tags
-  str = str.replace /<script[^>]*>([\S\s]*?)<\/script>/gmi, ''
+  try
+    str = str.replace /<script[^>]*>([\S\s]*?)<\/script>/gmi, ''
+  catch e
+    if e instanceof TypeError
+      return this
+    throw e
   # HTML tags
   str = str.replace /<\/?\w(?:[^"'>]|"[^"]*"|'[^']*')*>/gmi, ''
   str
@@ -311,7 +336,10 @@ String::unescape = (strict = false) ->
 
 
 deEscape = (string) ->
-  string = string.replace(/\&amp;#/mg, '&#') # The rest
+  try
+    string = string.replace(/\&amp;#/mg, '&#') # The rest
+  catch e
+    if e instanceof TypeError then return string else throw e
   string = string.replace(/\&quot;/mg, '"')
   string = string.replace(/\&quote;/mg, '"')
   string = string.replace(/\&#95;/mg, '_')
@@ -323,7 +351,12 @@ deEscape = (string) ->
 
 
 String::escapeQuotes = ->
-  str = this.replace /"/mg, "&#34;"
+  try
+    str = this.replace /"/mg, "&#34;"
+  catch e
+    if e instanceof TypeError
+      return this
+    throw e
   str = str.replace /'/mg, "&#39;"
   str
 
@@ -635,9 +668,13 @@ loadJS = (src, callback = new Object(), doCallbackOnError = true, async = true) 
 
 String::toTitleCase = ->
   # From http://stackoverflow.com/a/6475125/1877527
-  str =
-    @replace /([^\W_]+[^\s-]*) */g, (txt) ->
+  try
+    str = @replace /([^\W_]+[^\s-]*) */g, (txt) ->
       txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase()
+  catch e
+    if e instanceof TypeError
+      return this
+    throw e
 
   # Certain minor words should be left lowercase unless
   # they are the first or last words in the string
@@ -1507,7 +1544,7 @@ doNothing = ->
 buildQuery = (obj) ->
   queryList = new Array()
   for k, v of obj
-    key = k.replace /[^A-Za-z\-_\[\]]/img, ""
+    key = k.replace /[^A-Za-z\-_\[\]0-9]/img, ""
     value = encodeURIComponent(v).replace /\%20/g, "+"
     queryList.push """#{key}=#{value}"""
   queryList.join "&"

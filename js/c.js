@@ -161,8 +161,8 @@ toInt = function(str, strict) {
   return parseInt(str);
 };
 
-String.prototype.noExponents = function(explicitNum) {
-  var data, leader, mag, multiplier, num, sign, str, z;
+String.prototype.removeExponents = function(explicitNum) {
+  var data, e, error1, leader, mag, multiplier, num, sign, str, z;
   if (explicitNum == null) {
     explicitNum = true;
   }
@@ -173,7 +173,15 @@ String.prototype.noExponents = function(explicitNum) {
    * After
    * http://stackoverflow.com/a/18719988/1877527
    */
-  data = this.split(/[eE]/);
+  try {
+    data = this.split(/[eE]/);
+  } catch (error1) {
+    e = error1;
+    if (e instanceof TypeError) {
+      return this;
+    }
+    throw e;
+  }
   if (data.length === 1) {
     return data[0];
   }
@@ -213,10 +221,10 @@ String.prototype.noExponents = function(explicitNum) {
   }
 };
 
-Number.prototype.noExponents = function() {
+Number.prototype.removeExponents = function() {
   var strVal;
   strVal = String(this);
-  return strVal.noExponents(true);
+  return strVal.removeExponents(true);
 };
 
 toObject = function(array) {
@@ -236,7 +244,16 @@ String.prototype.toAscii = function() {
   /*
    * Remove MS Word bullshit
    */
-  return this.replace(/[\u2018\u2019\u201A\u201B\u2032\u2035]/g, "'").replace(/[\u201C\u201D\u201E\u201F\u2033\u2036]/g, '"').replace(/[\u2013\u2014]/g, '-').replace(/[\u2026]/g, '...').replace(/\u02C6/g, "^").replace(/\u2039/g, "").replace(/[\u02DC|\u00A0]/g, " ");
+  var e, error1;
+  try {
+    return this.replace(/[\u2018\u2019\u201A\u201B\u2032\u2035]/g, "'").replace(/[\u201C\u201D\u201E\u201F\u2033\u2036]/g, '"').replace(/[\u2013\u2014]/g, '-').replace(/[\u2026]/g, '...').replace(/\u02C6/g, "^").replace(/\u2039/g, "").replace(/[\u02DC|\u00A0]/g, " ");
+  } catch (error1) {
+    e = error1;
+    if (e instanceof TypeError) {
+      return this;
+    }
+    throw e;
+  }
 };
 
 String.prototype.toBool = function() {
@@ -252,7 +269,16 @@ Number.prototype.toBool = function() {
 };
 
 String.prototype.addSlashes = function() {
-  return this.replace(/[\\"']/g, '\\$&').replace(/\u0000/g, '\\0');
+  var e, error1;
+  try {
+    return this.replace(/[\\"']/g, '\\$&').replace(/\u0000/g, '\\0');
+  } catch (error1) {
+    e = error1;
+    if (e instanceof TypeError) {
+      return this;
+    }
+    throw e;
+  }
 };
 
 Array.prototype.max = function() {
@@ -371,15 +397,31 @@ roundNumberSigfig = function(number, digits) {
 };
 
 String.prototype.stripHtml = function(stripChildren) {
-  var str;
+  var e, error1, error2, str;
   if (stripChildren == null) {
     stripChildren = false;
   }
   str = this;
   if (stripChildren) {
-    str = str.replace(/<(\w+)(?:[^"'>]|"[^"]*"|'[^']*')*>(?:((?:.)*?))<\/?\1(?:[^"'>]|"[^"]*"|'[^']*')*>/mg, "");
+    try {
+      str = str.replace(/<(\w+)(?:[^"'>]|"[^"]*"|'[^']*')*>(?:((?:.)*?))<\/?\1(?:[^"'>]|"[^"]*"|'[^']*')*>/mg, "");
+    } catch (error1) {
+      e = error1;
+      if (e instanceof TypeError) {
+        return this;
+      }
+      throw e;
+    }
   }
-  str = str.replace(/<script[^>]*>([\S\s]*?)<\/script>/gmi, '');
+  try {
+    str = str.replace(/<script[^>]*>([\S\s]*?)<\/script>/gmi, '');
+  } catch (error2) {
+    e = error2;
+    if (e instanceof TypeError) {
+      return this;
+    }
+    throw e;
+  }
   str = str.replace(/<\/?\w(?:[^"'>]|"[^"]*"|'[^']*')*>/gmi, '');
   return str;
 };
@@ -426,7 +468,17 @@ String.prototype.unescape = function(strict) {
 };
 
 deEscape = function(string) {
-  string = string.replace(/\&amp;#/mg, '&#');
+  var e, error1;
+  try {
+    string = string.replace(/\&amp;#/mg, '&#');
+  } catch (error1) {
+    e = error1;
+    if (e instanceof TypeError) {
+      return string;
+    } else {
+      throw e;
+    }
+  }
   string = string.replace(/\&quot;/mg, '"');
   string = string.replace(/\&quote;/mg, '"');
   string = string.replace(/\&#95;/mg, '_');
@@ -438,8 +490,16 @@ deEscape = function(string) {
 };
 
 String.prototype.escapeQuotes = function() {
-  var str;
-  str = this.replace(/"/mg, "&#34;");
+  var e, error1, str;
+  try {
+    str = this.replace(/"/mg, "&#34;");
+  } catch (error1) {
+    e = error1;
+    if (e instanceof TypeError) {
+      return this;
+    }
+    throw e;
+  }
   str = str.replace(/'/mg, "&#39;");
   return str;
 };
@@ -877,10 +937,18 @@ loadJS = function(src, callback, doCallbackOnError, async) {
 };
 
 String.prototype.toTitleCase = function() {
-  var len1, len2, lower, lowerRegEx, lowers, m, o, str, upper, upperRegEx, uppers;
-  str = this.replace(/([^\W_]+[^\s-]*) */g, function(txt) {
-    return txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase();
-  });
+  var e, error1, len1, len2, lower, lowerRegEx, lowers, m, o, str, upper, upperRegEx, uppers;
+  try {
+    str = this.replace(/([^\W_]+[^\s-]*) */g, function(txt) {
+      return txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase();
+    });
+  } catch (error1) {
+    e = error1;
+    if (e instanceof TypeError) {
+      return this;
+    }
+    throw e;
+  }
   lowers = ["A", "An", "The", "And", "But", "Or", "For", "Nor", "As", "At", "By", "For", "From", "In", "Into", "Near", "Of", "On", "Onto", "To", "With"];
   for (m = 0, len1 = lowers.length; m < len1; m++) {
     lower = lowers[m];
@@ -1903,7 +1971,7 @@ buildQuery = function(obj) {
   queryList = new Array();
   for (k in obj) {
     v = obj[k];
-    key = k.replace(/[^A-Za-z\-_\[\]]/img, "");
+    key = k.replace(/[^A-Za-z\-_\[\]0-9]/img, "");
     value = encodeURIComponent(v).replace(/\%20/g, "+");
     queryList.push(key + "=" + value);
   }

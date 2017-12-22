@@ -133,7 +133,7 @@ function resultToGraphJSON($resultObj) {
         }
     }
     $graphJson["nodes"][$rootIndex]["root"] = True;
-    $json = json_encode($graphJson, JSON_FORCE_OBJECT | JSON_PARTIAL_OUTPUT_ON_ERROR | JSON_UNESCAPED_UNICODE);
+    $json = json_encode($graphJson, JSON_PARTIAL_OUTPUT_ON_ERROR | JSON_UNESCAPED_UNICODE);
     if ($json === false) {
         $json = json_last_error();
     }

@@ -4,12 +4,19 @@
  */
 var plotRelationships;
 
-loadJS("bower_components/alchemyjs/dist/alchemy.min.js");
-
-$("head").append("<link rel='stylesheet' href='bower_components/alchemyjs/dist/alchemy.min.css'>");
+loadJS("bower_components/d3/d3.min.js", function() {
+  return loadJS("https://cdnjs.cloudflare.com/ajax/libs/lodash.js/4.17.4/lodash.min.js", function() {
+    return loadJS("https://use.fontawesome.com/2b49aeb802.js", function() {
+      return loadJS("bower_components/alchemyjs/dist/alchemy.js", function() {
+        $("head").append("<link rel='stylesheet' href='bower_components/alchemyjs/dist/alchemy.min.css'>");
+        return console.info("Alchemy ready");
+      });
+    });
+  });
+});
 
 plotRelationships = function(taxon1, taxon2) {
-  var args;
+  var args, passedArgs;
   if (taxon1 == null) {
     taxon1 = "rhinoceros unicornis";
   }
@@ -25,7 +32,10 @@ plotRelationships = function(taxon1, taxon2) {
     taxon1: taxon1,
     taxon2: taxon2
   };
-  $.get("graphHandler.php", buildArgs(args, "json")).done(function(result) {
+  passedArgs = buildArgs(args);
+  console.debug("Visiting", "graphHandler.php?" + passedArgs);
+  $.get("graphHandler.php", passedArgs, "json").done(function(result) {
+    window.alchemyResult = result;
     alchemy.begin({
       dataSource: result
     });

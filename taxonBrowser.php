@@ -32,8 +32,8 @@ $updatesSinceAssessmentYear = 2005;
 <html>
   <head>
     <?php
-      $title = "Taxonomy Information";
-      $pageDescription = "Information about recent taxonomy changes and mammal taxonomy assignment";
+      $title = "Taxonomy Browser";
+      $pageDescription = "Taxon navigator and relationship finder";
 ?>
     <title><?php echo $title;
 ?></title>
@@ -61,7 +61,7 @@ $updatesSinceAssessmentYear = 2005;
         Taxonomy Browser
       </h1>
       <div class="col-xs-12 clearfix">
-        <div id="alchemy" class="alchemy">
+        <div id="alchemy" class="alchemy" style="height: 75vh">
         </div>
       </div>
         <?php

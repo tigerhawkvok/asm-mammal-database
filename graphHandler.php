@@ -106,12 +106,13 @@ function resultToGraphJSON($resultObj) {
         foreach ($recordBase->values() as $record) {
             $i = 0;
             foreach ($record->nodes() as $node) {
+                $type = $node->labels()[0];
                 $graphJson["nodes"][] = array(
                     "root" => False,
                     "id" => $node->identity(),
-                    "type" => $node->labels()[0],
+                    "type" => $type,
                     "label" => $node->value("label"),
-                    "caption" => $node->value("label"),
+                    "caption" => $type != "Species" ? $node->value("label") : $node->value("binomial"),
                     "values" => $node->values(),
                 );
                 if ($treeRank[$node->value("rank")] > $highestRank) {

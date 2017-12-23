@@ -60,6 +60,20 @@ $updatesSinceAssessmentYear = 2005;
       <h1 id="title" class="col-xs-12">
         Taxonomy Browser
       </h1>
+      <section class="col-xs-12">
+        <div class="form form-inline">
+            <div class="form-group">
+                <input class="form-control" placeholder="First Species" id="firstTaxon"/>
+            </div>
+            <div class="form-group">
+                <input class="form-control" placeholder="Second Species" id="secondTaxon"/>
+            </div>
+            <div class="form-group">
+                <button class="btn btn-primary" id="do-relationship-search" disabled>Find Relationship</button>
+                <button class="btn btn-warning" id="reset-graph">Reset</button>
+            </div>
+        </div>
+      </div>
       <div class="col-xs-12 clearfix">
         <div id="alchemy" class="alchemy" style="height: 75vh">
         </div>

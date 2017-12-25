@@ -9,6 +9,7 @@ loadJS "bower_components/d3/d3.min.js", ->
                 $("head").append("<link rel='stylesheet' href='bower_components/alchemyjs/dist/alchemy.min.css'>")
                 console.info "Alchemy ready"
                 $("#do-relationship-search").removeAttr("disabled")
+# loadJS "bower_components/sigma.js-1.2.1/build/" ## npm run build via https://github.com/jacomyal/sigma.js#how-to-use-it
 plotRelationships = (taxon1 = "rhinoceros unicornis", taxon2 = "bradypus tridactylus") ->
     ###
     #
@@ -32,11 +33,40 @@ plotRelationships = (taxon1 = "rhinoceros unicornis", taxon2 = "bradypus tridact
         alchemy.begin(alchemyConf)
         delay 500, ->
             $("#alchemy .node.root circle").attr("r", 15)
-        # On click do lookup of children
+        # TODO On click do lookup of children
         false
     .error (result, status) ->
         false
     false
+
+
+nodeClickEvent = (node) ->
+    ###
+    #
+    ###
+    idString = $(node).attr("id")
+    id = idString.replace("node-", "")
+    # Do a cypher fetch of the clade name and rank via the php endpoint
+    args =
+        action: "id_details"
+        id: id
+    $.get "graphHandler.php", buildArgs args, "json"
+    .done (result) ->
+        if isNull result.label
+            return false
+        # If the rank is species, navigate there
+        if result.rank.lower() is "species"
+            # TODO Go there
+            true
+        # Otherwise, fetch child nodes and render them
+        else
+            # TODO Render it
+            true
+    .error (result, status) ->
+        false
+    false
+
+
 
 $ ->
     $("#do-relationship-search").click ->

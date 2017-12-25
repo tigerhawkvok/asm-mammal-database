@@ -83,6 +83,16 @@ $client = ClientBuilder::create()
 
 
 
+switch ($_REQUEST["action"]) {
+    case "id_details":
+        getTaxonDetailsFromID($_REQUEST["id"]);
+    default:
+        getRelatedness();
+}
+
+
+
+
 function resultToGraphJSON($resultObj) {
     header('Cache-Control: no-cache, must-revalidate');
     header('Expires: Mon, 26 Jul 1997 05:00:00 GMT');
@@ -324,6 +334,38 @@ function updateTaxonomy($changeDetails, $taxonomyLevel = "clade")
     # Operations
 }
 
+
+function getChildNodes($taxonLabel) {
+    /***
+     * From a given taxon label, find all the children and return
+     * a graphJSON
+     */
+
+}
+
+function getTaxonDetailsFromID($nodeID) {
+    /***
+     *
+     */
+    $cleanNodeID = intval($nodeID);
+    if (!is_numeric($cleanNodeID)) {
+        return False;
+    }
+    global $client;
+    $cypher = "MATCH (c) WHERE ID(c) = $cleanNodeID RETURN c.label, c.rank";
+    # Do the thing
+    $result = $client->run($cypher);
+    $recordBase = $result->records();
+    $resultDetails = $recordBase[0]->values();
+    # Return it
+    returnAjax(array(
+        "label" => $resultDetails[0],
+        "rank" => $resultDetails[1]
+    ));
+}
+
+
+
 function getRelatedness($taxon1, $taxon2) {
     /***
      *
@@ -351,10 +393,6 @@ function getRelatedness($taxon1, $taxon2) {
 
 }
 
-getRelatedness();
-
-
-returnAjax(loadDatabase());
 
 
 ?>

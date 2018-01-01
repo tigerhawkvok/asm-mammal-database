@@ -67,7 +67,7 @@ nodeClickEvent = (node) ->
                 genus: taxonParts[0]
                 species: taxonParts[1]
             dest = "species-account.php?#{buildArgs args}"
-            console.debug dest
+            goTo dest
             true
         # Otherwise, fetch child nodes and render them
         else

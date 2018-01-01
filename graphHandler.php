@@ -69,13 +69,6 @@ if (!function_exists('elapsed')) {
 }
 
 
-
-/* $config = \GraphAware\Bolt\Configuration::newInstance()
-->withCredentials($graphUser, $graphPassword)
-->withTimeout(10)
-->withTLSMode(\GraphAware\Bolt\Configuration::TLSMODE_REQUIRED);
-
-$driver = \GraphAware\Bolt\GraphDatabase::driver($graphEndpoint, $config); */
 $client = ClientBuilder::create()
 ->addConnection('default', $graphProtocol . "://" . $graphUser . ":" . $graphPassword . "@" . $graphUrl . ":" .$graphPorts[$graphProtocol])
 ->setDefaultTimeout(60)
@@ -307,8 +300,7 @@ function loadDatabase() {
     );
 }
 
-function updateTaxonomy($changeDetails, $taxonomyLevel = "clade")
-{
+function updateTaxonomy($changeDetails, $taxonomyLevel = "clade") {
     /***
      * Update a taxon changed on the main site.
      *
@@ -343,7 +335,8 @@ function getChildNodes($taxonLabel) {
     /***
      * From a given taxon label, find all the children and return
      * a graphJSON
-     */
+     ***/
+    global $db, $client;
 
 }
 

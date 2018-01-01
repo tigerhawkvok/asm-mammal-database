@@ -81,7 +81,7 @@ nodeClickEvent = function(node) {
         species: taxonParts[1]
       };
       dest = "species-account.php?" + (buildArgs(args));
-      console.debug(dest);
+      goTo(dest);
       return true;
     } else {
       return true;

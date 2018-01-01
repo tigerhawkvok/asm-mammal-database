@@ -33,6 +33,10 @@ plotRelationships = (taxon1 = "rhinoceros unicornis", taxon2 = "bradypus tridact
         delay 500, ->
             $("#alchemy .node.root circle").attr("r", 15)
         # TODO On click do lookup of children
+        $("g.node")
+        .unbind()
+        .click ->
+            nodeClickEvent(this)
         false
     .error (result, status) ->
         false
@@ -51,11 +55,19 @@ nodeClickEvent = (node) ->
         id: id
     $.get "graphHandler.php", buildArgs args, "json"
     .done (result) ->
+        console.debug result
         if isNull result.label
             return false
         # If the rank is species, navigate there
-        if result.rank.lower() is "species"
+        if result.rank.toLowerCase() is "species"
             # TODO Go there
+            taxon = $(node).find("text").text()
+            taxonParts = taxon.split(" ")
+            args =
+                genus: taxonParts[0]
+                species: taxonParts[1]
+            dest = "species-account.php?#{buildArgs args}"
+            console.debug dest
             true
         # Otherwise, fetch child nodes and render them
         else
@@ -74,11 +86,25 @@ checkInputTaxon = (selector  = "#firstTaxon", callback) ->
     if not $(selector).exists()
         console.error "Invalid selector"
         return false
-    $(selector).parent().removeClass("has-error")
+    invalidTaxonHelper = (text) ->
+        ###
+        # Do the error handling
+        ###
+        bsAlert text, "danger"
+        $(selector).parent()
+        .addClass("has-error")
+        .addClass("has-feedback")
+        $(selector).after("""<span class="glyphicon glyphicon-remove form-control-feedback" aria-hidden="true"></span>""")
+        false
+    # Remove any pre-existing labels
+    $(selector).parent()
+    .removeClass("has-error")
+    .removeClass("has-feedback")
+    $(selector).parent().find(".form-control-feedback").remove()
     taxonToCheck = $(selector).val()
     if isNull(taxonToCheck)
         console.error "Blank taxon error"
-        bsAlert "No taxon provided for taxon 1", "danger"
+        invalidTaxonHelper("Blank taxon provided. Please make sure all taxon fields are filled.")
         return false
     args =
         q: taxonToCheck
@@ -91,25 +117,37 @@ checkInputTaxon = (selector  = "#firstTaxon", callback) ->
             if typeof callback is "function"
                 callback()
             return true
-        bsAlert "Invalid taxon: '#{taxonToCheck}''", "danger"
-        $(selector).parent().addClass("has-error")
+        invalidTaxonHelper("Invalid taxon: '#{taxonToCheck}'")
         return false
     .fail (result, error) ->
         console.error "Unable to ping the server"
     false
 
 
+
+fireRelationshipSearch = ->
+    console.debug "Clicked searcher"
+    t1 = $("#firstTaxon").val()
+    t2 = $("#secondTaxon").val()
+    taxon1 = if isNull(t1) then undefined else t1.trim()
+    taxon2 = if isNull(t2) then undefined else t2.trim()
+    checkInputTaxon "#firstTaxon", ->
+        checkInputTaxon "#secondTaxon", ->
+            $("#bs-alert").remove()
+            console.debug "Passing", taxon1, taxon2
+            plotRelationships(taxon1, taxon2)
+    false
+
 $ ->
     $("#do-relationship-search").click ->
-        console.debug "Clicked searcher"
-        t1 = $("#firstTaxon").val()
-        t2 = $("#secondTaxon").val()
-        taxon1 = if isNull(t1) then undefined else t1
-        taxon2 = if isNull(t2) then undefined else t2
-        checkInputTaxon "#firstTaxon", ->
-            checkInputTaxon "#secondTaxon", ->
-                console.debug "Passing", taxon1, taxon2
-                plotRelationships(taxon1, taxon2)
+        fireRelationshipSearch()
+        false
+    $(".taxon-entry").keyup (e) ->
+        kc = if e.keyCode then e.keyCode else e.which
+        console.debug("Keycode", kc)
+        if kc is 13
+            fireRelationshipSearch()
+        false
     $("#reset-graph").click ->
         $("#alchemy").remove()
         $("#alchemy-container").html("""<div id="alchemy" class="alchemy" style="height: 75vh">

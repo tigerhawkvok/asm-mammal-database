@@ -63,10 +63,10 @@ $updatesSinceAssessmentYear = 2005;
       <section class="col-xs-12">
         <div class="form form-inline">
             <div class="form-group">
-                <input class="form-control" placeholder="First Species" id="firstTaxon"/>
+                <input class="form-control taxon-entry" placeholder="First Species" id="firstTaxon"/>
             </div>
             <div class="form-group">
-                <input class="form-control" placeholder="Second Species" id="secondTaxon"/>
+                <input class="form-control taxon-entry" placeholder="Second Species" id="secondTaxon"/>
             </div>
             <div class="form-group">
                 <button class="btn btn-primary" id="do-relationship-search" disabled>Find Relationship</button>

@@ -2,7 +2,7 @@
 /*
  * Graph handler
  */
-var checkInputTaxon, nodeClickEvent, plotRelationships;
+var checkInputTaxon, fireRelationshipSearch, nodeClickEvent, plotRelationships;
 
 loadJS("bower_components/d3/d3.min.js", function() {
   return loadJS("https://cdnjs.cloudflare.com/ajax/libs/lodash.js/4.17.4/lodash.min.js", function() {
@@ -45,6 +45,9 @@ plotRelationships = function(taxon1, taxon2) {
     delay(500, function() {
       return $("#alchemy .node.root circle").attr("r", 15);
     });
+    $("g.node").unbind().click(function() {
+      return nodeClickEvent(this);
+    });
     return false;
   }).error(function(result, status) {
     return false;
@@ -65,10 +68,20 @@ nodeClickEvent = function(node) {
     id: id
   };
   $.get("graphHandler.php", buildArgs(args, "json")).done(function(result) {
+    var dest, taxon, taxonParts;
+    console.debug(result);
     if (isNull(result.label)) {
       return false;
     }
-    if (result.rank.lower() === "species") {
+    if (result.rank.toLowerCase() === "species") {
+      taxon = $(node).find("text").text();
+      taxonParts = taxon.split(" ");
+      args = {
+        genus: taxonParts[0],
+        species: taxonParts[1]
+      };
+      dest = "species-account.php?" + (buildArgs(args));
+      console.debug(dest);
       return true;
     } else {
       return true;
@@ -80,7 +93,7 @@ nodeClickEvent = function(node) {
 };
 
 checkInputTaxon = function(selector, callback) {
-  var args, taxonToCheck;
+  var args, invalidTaxonHelper, taxonToCheck;
   if (selector == null) {
     selector = "#firstTaxon";
   }
@@ -93,11 +106,22 @@ checkInputTaxon = function(selector, callback) {
     console.error("Invalid selector");
     return false;
   }
-  $(selector).parent().removeClass("has-error");
+  invalidTaxonHelper = function(text) {
+
+    /*
+     * Do the error handling
+     */
+    bsAlert(text, "danger");
+    $(selector).parent().addClass("has-error").addClass("has-feedback");
+    $(selector).after("<span class=\"glyphicon glyphicon-remove form-control-feedback\" aria-hidden=\"true\"></span>");
+    return false;
+  };
+  $(selector).parent().removeClass("has-error").removeClass("has-feedback");
+  $(selector).parent().find(".form-control-feedback").remove();
   taxonToCheck = $(selector).val();
   if (isNull(taxonToCheck)) {
     console.error("Blank taxon error");
-    bsAlert("No taxon provided for taxon 1", "danger");
+    invalidTaxonHelper("Blank taxon provided. Please make sure all taxon fields are filled.");
     return false;
   }
   args = {
@@ -113,8 +137,7 @@ checkInputTaxon = function(selector, callback) {
       }
       return true;
     }
-    bsAlert("Invalid taxon: '" + taxonToCheck + "''", "danger");
-    $(selector).parent().addClass("has-error");
+    invalidTaxonHelper("Invalid taxon: '" + taxonToCheck + "'");
     return false;
   }).fail(function(result, error) {
     return console.error("Unable to ping the server");
@@ -122,20 +145,36 @@ checkInputTaxon = function(selector, callback) {
   return false;
 };
 
+fireRelationshipSearch = function() {
+  var t1, t2, taxon1, taxon2;
+  console.debug("Clicked searcher");
+  t1 = $("#firstTaxon").val();
+  t2 = $("#secondTaxon").val();
+  taxon1 = isNull(t1) ? void 0 : t1.trim();
+  taxon2 = isNull(t2) ? void 0 : t2.trim();
+  checkInputTaxon("#firstTaxon", function() {
+    return checkInputTaxon("#secondTaxon", function() {
+      $("#bs-alert").remove();
+      console.debug("Passing", taxon1, taxon2);
+      return plotRelationships(taxon1, taxon2);
+    });
+  });
+  return false;
+};
+
 $(function() {
   $("#do-relationship-search").click(function() {
-    var t1, t2, taxon1, taxon2;
-    console.debug("Clicked searcher");
-    t1 = $("#firstTaxon").val();
-    t2 = $("#secondTaxon").val();
-    taxon1 = isNull(t1) ? void 0 : t1;
-    taxon2 = isNull(t2) ? void 0 : t2;
-    return checkInputTaxon("#firstTaxon", function() {
-      return checkInputTaxon("#secondTaxon", function() {
-        console.debug("Passing", taxon1, taxon2);
-        return plotRelationships(taxon1, taxon2);
-      });
-    });
+    fireRelationshipSearch();
+    return false;
+  });
+  $(".taxon-entry").keyup(function(e) {
+    var kc;
+    kc = e.keyCode ? e.keyCode : e.which;
+    console.debug("Keycode", kc);
+    if (kc === 13) {
+      fireRelationshipSearch();
+    }
+    return false;
   });
   return $("#reset-graph").click(function() {
     $("#alchemy").remove();

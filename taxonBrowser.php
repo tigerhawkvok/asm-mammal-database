@@ -74,7 +74,7 @@ $updatesSinceAssessmentYear = 2005;
             </div>
         </div>
       </div>
-      <div class="col-xs-12 clearfix">
+      <div class="col-xs-12 clearfix" id="alchemy-container">
         <div id="alchemy" class="alchemy" style="height: 75vh">
         </div>
       </div>

@@ -86,6 +86,10 @@ $client = ClientBuilder::create()
 switch ($_REQUEST["action"]) {
     case "id_details":
         getTaxonDetailsFromID($_REQUEST["id"]);
+    case "load":
+        # Authenticate
+        # Check flag
+        returnAjax(loadDatabase());
     default:
         getRelatedness();
 }

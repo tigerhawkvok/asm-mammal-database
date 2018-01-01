@@ -4,11 +4,10 @@
 
 loadJS "bower_components/d3/d3.min.js", ->
     loadJS "https://cdnjs.cloudflare.com/ajax/libs/lodash.js/4.17.4/lodash.min.js", ->
-        loadJS "https://use.fontawesome.com/2b49aeb802.js", ->
-            loadJS "bower_components/alchemyjs/dist/alchemy.js", ->
-                $("head").append("<link rel='stylesheet' href='bower_components/alchemyjs/dist/alchemy.min.css'>")
-                console.info "Alchemy ready"
-                $("#do-relationship-search").removeAttr("disabled")
+        loadJS "bower_components/alchemyjs/dist/alchemy.js", ->
+            $("head").append("<link rel='stylesheet' href='bower_components/alchemyjs/dist/alchemy.min.css'>")
+            console.info "Alchemy ready"
+            $("#do-relationship-search").removeAttr("disabled")
 # loadJS "bower_components/sigma.js-1.2.1/build/" ## npm run build via https://github.com/jacomyal/sigma.js#how-to-use-it
 plotRelationships = (taxon1 = "rhinoceros unicornis", taxon2 = "bradypus tridactylus") ->
     ###
@@ -67,6 +66,38 @@ nodeClickEvent = (node) ->
     false
 
 
+checkInputTaxon = (selector  = "#firstTaxon", callback) ->
+    ###
+    #
+    ###
+    console.debug "About to check taxon..."
+    if not $(selector).exists()
+        console.error "Invalid selector"
+        return false
+    $(selector).parent().removeClass("has-error")
+    taxonToCheck = $(selector).val()
+    if isNull(taxonToCheck)
+        console.error "Blank taxon error"
+        bsAlert "No taxon provided for taxon 1", "danger"
+        return false
+    args =
+        q: taxonToCheck
+        strict: true
+    console.debug "About to ping api for taxon", taxonToCheck
+    $.get "api.php", buildArgs(args), "json"
+    .done (result) ->
+        console.debug "Got result"
+        if result.status is true and result.count > 0
+            if typeof callback is "function"
+                callback()
+            return true
+        bsAlert "Invalid taxon: '#{taxonToCheck}''", "danger"
+        $(selector).parent().addClass("has-error")
+        return false
+    .fail (result, error) ->
+        console.error "Unable to ping the server"
+    false
+
 
 $ ->
     $("#do-relationship-search").click ->
@@ -75,7 +106,13 @@ $ ->
         t2 = $("#secondTaxon").val()
         taxon1 = if isNull(t1) then undefined else t1
         taxon2 = if isNull(t2) then undefined else t2
-        console.debug "Passing", taxon1, taxon2
-        plotRelationships(taxon1, taxon2)
+        checkInputTaxon "#firstTaxon", ->
+            checkInputTaxon "#secondTaxon", ->
+                console.debug "Passing", taxon1, taxon2
+                plotRelationships(taxon1, taxon2)
     $("#reset-graph").click ->
-        $("#alchemy").empty()
+        $("#alchemy").remove()
+        $("#alchemy-container").html("""<div id="alchemy" class="alchemy" style="height: 75vh">
+        </div>""")
+        return false
+

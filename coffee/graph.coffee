@@ -6,6 +6,7 @@ plotRelationships = (taxon1 = "rhinoceros unicornis", taxon2 = "bradypus tridact
     ###
     #
     ###
+    sgraph.clear()
     args =
         action: "relatedness"
         taxon1: taxon1 ? "rhinoceros unicornis"
@@ -195,6 +196,26 @@ fireRelationshipSearch = ->
             plotRelationships(taxon1, taxon2)
     false
 
+
+
+resetGraph = ->
+    console.debug "Resetting sigma graph"
+    sgraph.graph.clear()
+    args =
+        action: "children"
+        taxon: "mammalia"
+    $.get "graphHandler.php", buildArgs(args), "json"
+    .done (result) ->
+        console.debug result
+        sgraph.graph.read result
+        sgraph.refresh()
+    .error (result, status) ->
+        console.error "Unable to get default graph"
+        false
+    false
+
+
+
 $ ->
     $("#do-relationship-search").click ->
         fireRelationshipSearch()
@@ -206,9 +227,7 @@ $ ->
             fireRelationshipSearch()
         false
     $("#reset-graph").click ->
-        $("#alchemy").remove()
-        $("#graph-container").html("""<div id="alchemy" class="alchemy" style="height: 75vh">
-        </div>""")
+        resetGraph()
         return false
     window.sgraph = new sigma("sigma")
     sigmaSettings =
@@ -222,5 +241,6 @@ $ ->
         nodeClickEvent(this, data.data.node)
     sgraph.startForceAtlas2()
     console.info "Sigma ready"
+    resetGraph()
     $("#do-relationship-search").removeAttr("disabled")
 

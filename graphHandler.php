@@ -139,9 +139,14 @@ function resultToGraphJSON($resultObj, $asNode = false) {
                         "size" => 1,
                         "color" => "#58e",
                     );
-                    if ($treeRank[$node->value("rank")] > $highestRank) {
-                        $highestRank = $treeRank[$node->value("rank")];
+                    try {
+                        if ($treeRank[$node->value("rank")] > $highestRank) {
+                            $highestRank = $treeRank[$node->value("rank")];
+                            $rootIndex = $i;
+                        }
+                    } catch (Exception $e) {
                         $rootIndex = $i;
+                        $highestRank = 999;
                     }
                     $i++;
                 }

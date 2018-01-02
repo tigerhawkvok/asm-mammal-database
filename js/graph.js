@@ -2,7 +2,7 @@
 /*
  * Graph handler
  */
-var checkInputTaxon, fireRelationshipSearch, nodeClickEvent, plotRelationships;
+var checkInputTaxon, fireRelationshipSearch, nodeClickEvent, plotRelationships, resetGraph;
 
 plotRelationships = function(taxon1, taxon2) {
   var args, passedArgs;
@@ -16,6 +16,7 @@ plotRelationships = function(taxon1, taxon2) {
   /*
    *
    */
+  sgraph.clear();
   args = {
     action: "relatedness",
     taxon1: taxon1 != null ? taxon1 : "rhinoceros unicornis",
@@ -237,6 +238,25 @@ fireRelationshipSearch = function() {
   return false;
 };
 
+resetGraph = function() {
+  var args;
+  console.debug("Resetting sigma graph");
+  sgraph.graph.clear();
+  args = {
+    action: "children",
+    taxon: "mammalia"
+  };
+  $.get("graphHandler.php", buildArgs(args), "json").done(function(result) {
+    console.debug(result);
+    sgraph.graph.read(result);
+    return sgraph.refresh();
+  }).error(function(result, status) {
+    console.error("Unable to get default graph");
+    return false;
+  });
+  return false;
+};
+
 $(function() {
   var sigmaSettings;
   $("#do-relationship-search").click(function() {
@@ -253,8 +273,7 @@ $(function() {
     return false;
   });
   $("#reset-graph").click(function() {
-    $("#alchemy").remove();
-    $("#graph-container").html("<div id=\"alchemy\" class=\"alchemy\" style=\"height: 75vh\">\n</div>");
+    resetGraph();
     return false;
   });
   window.sgraph = new sigma("sigma");
@@ -271,6 +290,7 @@ $(function() {
   });
   sgraph.startForceAtlas2();
   console.info("Sigma ready");
+  resetGraph();
   return $("#do-relationship-search").removeAttr("disabled");
 });
 

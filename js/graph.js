@@ -4,16 +4,6 @@
  */
 var checkInputTaxon, fireRelationshipSearch, nodeClickEvent, plotRelationships;
 
-loadJS("bower_components/d3/d3.min.js", function() {
-  return loadJS("https://cdnjs.cloudflare.com/ajax/libs/lodash.js/4.17.4/lodash.min.js", function() {
-    return loadJS("bower_components/alchemyjs/dist/alchemy.js", function() {
-      $("head").append("<link rel='stylesheet' href='bower_components/alchemyjs/dist/alchemy.min.css'>");
-      console.info("Alchemy ready");
-      return $("#do-relationship-search").removeAttr("disabled");
-    });
-  });
-});
-
 plotRelationships = function(taxon1, taxon2) {
   var args, passedArgs;
   if (taxon1 == null) {
@@ -34,7 +24,7 @@ plotRelationships = function(taxon1, taxon2) {
   passedArgs = buildArgs(args);
   console.debug("Visiting", "graphHandler.php?" + passedArgs);
   $.get("graphHandler.php", passedArgs, "json").done(function(result) {
-    var alchemyConf;
+    var alchemyConf, j, len, node, ref;
     console.debug(result);
     window.alchemyResult = result;
     alchemyConf = {
@@ -43,6 +33,19 @@ plotRelationships = function(taxon1, taxon2) {
       forceLayout: false
     };
     sgraph.graph.read(result);
+    ref = sgraph.graph.nodes();
+    for (j = 0, len = ref.length; j < len; j++) {
+      node = ref[j];
+      try {
+        if (node.caption !== node.label) {
+          node.label = node.caption;
+          console.debug("Replaced label");
+        } else {
+          continue;
+        }
+        sgraph.graph.addNode(node);
+      } catch (undefined) {}
+    }
     sgraph.refresh();
     delay(500, function() {
       return $("#alchemy .node.root circle").attr("r", 15);
@@ -266,7 +269,9 @@ $(function() {
     console.debug("Clicked", data);
     return nodeClickEvent(this, data.data.node);
   });
-  return sgraph.startForceAtlas2();
+  sgraph.startForceAtlas2();
+  console.info("Sigma ready");
+  return $("#do-relationship-search").removeAttr("disabled");
 });
 
 //# sourceMappingURL=maps/graph.js.map

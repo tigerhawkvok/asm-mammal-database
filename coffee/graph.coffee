@@ -2,12 +2,6 @@
 # Graph handler
 ###
 
-loadJS "bower_components/d3/d3.min.js", ->
-    loadJS "https://cdnjs.cloudflare.com/ajax/libs/lodash.js/4.17.4/lodash.min.js", ->
-        loadJS "bower_components/alchemyjs/dist/alchemy.js", ->
-            $("head").append("<link rel='stylesheet' href='bower_components/alchemyjs/dist/alchemy.min.css'>")
-            console.info "Alchemy ready"
-            $("#do-relationship-search").removeAttr("disabled")
 plotRelationships = (taxon1 = "rhinoceros unicornis", taxon2 = "bradypus tridactylus") ->
     ###
     #
@@ -30,8 +24,14 @@ plotRelationships = (taxon1 = "rhinoceros unicornis", taxon2 = "bradypus tridact
             # fixNodes: true
         #alchemy.begin(alchemyConf)
         sgraph.graph.read(result)
-        # for node in result.nodes
-        #     sgraph.graph.addNode node
+        for node in sgraph.graph.nodes()
+            try
+                if node.caption isnt node.label
+                    node.label = node.caption
+                    console.debug "Replaced label"
+                else
+                    continue
+                sgraph.graph.addNode node
         # for edge in result.directedEdges
         #     sgraph.graph.addEdge edge
         sgraph.refresh()
@@ -221,4 +221,6 @@ $ ->
         console.debug "Clicked", data
         nodeClickEvent(this, data.data.node)
     sgraph.startForceAtlas2()
+    console.info "Sigma ready"
+    $("#do-relationship-search").removeAttr("disabled")
 

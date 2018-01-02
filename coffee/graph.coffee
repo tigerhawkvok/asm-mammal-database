@@ -8,12 +8,10 @@ loadJS "bower_components/d3/d3.min.js", ->
             $("head").append("<link rel='stylesheet' href='bower_components/alchemyjs/dist/alchemy.min.css'>")
             console.info "Alchemy ready"
             $("#do-relationship-search").removeAttr("disabled")
-# loadJS "bower_components/sigma.js-1.2.1/build/" ## npm run build via https://github.com/jacomyal/sigma.js#how-to-use-it
 plotRelationships = (taxon1 = "rhinoceros unicornis", taxon2 = "bradypus tridactylus") ->
     ###
     #
     ###
-    #$("#alchemy").empty()
     args =
         action: "relatedness"
         taxon1: taxon1 ? "rhinoceros unicornis"
@@ -22,17 +20,24 @@ plotRelationships = (taxon1 = "rhinoceros unicornis", taxon2 = "bradypus tridact
     console.debug "Visiting", "graphHandler.php?#{passedArgs}"
     $.get "graphHandler.php", passedArgs, "json"
     .done (result) ->
-        # Plot it
+        # Plot
+        console.debug result
         window.alchemyResult = result
         alchemyConf =
             dataSource: result
             directedEdges: true
             forceLayout: false
             # fixNodes: true
-        alchemy.begin(alchemyConf)
+        #alchemy.begin(alchemyConf)
+        sgraph.graph.read(result)
+        # for node in result.nodes
+        #     sgraph.graph.addNode node
+        # for edge in result.directedEdges
+        #     sgraph.graph.addEdge edge
+        sgraph.refresh()
         delay 500, ->
             $("#alchemy .node.root circle").attr("r", 15)
-        # TODO On click do lookup of children
+        # On click do lookup of children
         $("g.node")
         .unbind()
         .click ->
@@ -43,10 +48,78 @@ plotRelationships = (taxon1 = "rhinoceros unicornis", taxon2 = "bradypus tridact
     false
 
 
-nodeClickEvent = (node) ->
+nodeClickEvent = (node, data = null) ->
     ###
     #
     ###
+    # Helper
+    handleResult = (result, baseOffsetX = 0, baseOffsetY = 0) ->
+        console.debug result
+        if isNull result.label
+            return false
+        taxon = $(node).find("text").text()
+        if isNull taxon
+            if not isNull result.binomial
+                taxon = result.binomial
+            else
+                taxon = result.label
+        # If the rank is species, navigate there
+        if result.rank.toLowerCase() is "species"
+            # Go there
+            taxonParts = taxon.split(" ")
+            args =
+                genus: taxonParts[0]
+                species: taxonParts[1]
+            dest = "species-account.php?#{buildArgs args}"
+            if not isNull args.species
+                goTo dest
+                return true
+        # Otherwise, fetch child nodes and render them
+        args =
+            action: "children"
+            taxon: taxon
+        console.debug "Finding children", "graphHandler.php?#{buildArgs(args)}"
+        $.get "graphHandler.php", buildArgs(args), "json"
+        .done (result) ->
+            console.debug "Got result", result
+            # append =
+            #     dataSource: result
+            # alchemy.begin append
+            # sgraph.graph.read(result)
+            i = 0
+            baseOffsetX += 1
+            for node in result.nodes
+                console.debug "Creating node", node
+                #alchemy.create.nodes node
+                try
+                    ++i
+                    node.x += baseOffsetX + 1.5*i
+                    node.y += baseOffsetY + 0.25*i
+                    console.debug "offsets", node.x, node.y
+                    try
+                        if node.caption isnt node.label
+                            node.label = node.caption
+                            console.debug "Replaced label"
+                    sgraph.graph.addNode node
+            for edge in result.edges
+                console.debug "Creating edge", edge
+                #alchemy.create.edges edge
+                try
+                    sgraph.graph.addEdge edge
+            sgraph.refresh()
+            $("g.node")
+            .unbind()
+            .click ->
+                nodeClickEvent(this)
+            false
+        .error (result, status) ->
+            false
+        false
+    if not isNull data
+        console.debug "Provided data", data
+        handleResult data.values, data.x, data.y
+        return false
+    # Fetch it from the ID
     idString = $(node).attr("id")
     id = idString.replace("node-", "")
     # Do a cypher fetch of the clade name and rank via the php endpoint
@@ -55,24 +128,8 @@ nodeClickEvent = (node) ->
         id: id
     $.get "graphHandler.php", buildArgs args, "json"
     .done (result) ->
-        console.debug result
-        if isNull result.label
-            return false
-        # If the rank is species, navigate there
-        if result.rank.toLowerCase() is "species"
-            # TODO Go there
-            taxon = $(node).find("text").text()
-            taxonParts = taxon.split(" ")
-            args =
-                genus: taxonParts[0]
-                species: taxonParts[1]
-            dest = "species-account.php?#{buildArgs args}"
-            goTo dest
-            true
-        # Otherwise, fetch child nodes and render them
-        else
-            # TODO Render it
-            true
+        handleResult(result)
+        true
     .error (result, status) ->
         false
     false
@@ -150,7 +207,18 @@ $ ->
         false
     $("#reset-graph").click ->
         $("#alchemy").remove()
-        $("#alchemy-container").html("""<div id="alchemy" class="alchemy" style="height: 75vh">
+        $("#graph-container").html("""<div id="alchemy" class="alchemy" style="height: 75vh">
         </div>""")
         return false
+    window.sgraph = new sigma("sigma")
+    sigmaSettings =
+        edgeColor: "default"
+        defaultEdgeColor: "#999"
+        minArrowSize: 2
+        skipErrors: true
+    sgraph.settings(sigmaSettings)
+    sgraph.bind "clickNode", (data) ->
+        console.debug "Clicked", data
+        nodeClickEvent(this, data.data.node)
+    sgraph.startForceAtlas2()
 

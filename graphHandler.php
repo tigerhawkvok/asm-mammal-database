@@ -79,9 +79,21 @@ $client = ClientBuilder::create()
 switch ($_REQUEST["action"]) {
     case "id_details":
         getTaxonDetailsFromID($_REQUEST["id"]);
+    case "children":
+        getChildNodes($_REQUEST["taxon"]);
     case "load":
         # Authenticate
+        require_once(dirname(__FILE__)."/admin/async_login_handler.php");
+        $login_status = getLoginState($_REQUEST);
+        if ($login_status !== true) {
+            returnAjax(array(
+                "status" => false,
+                "error" => "You need to be logged in with admin credentials to perform this action"
+            ));
+        }
+        returnAjax($login_status);
         # Check flag
+
         returnAjax(loadDatabase());
     default:
         getRelatedness();
@@ -90,7 +102,7 @@ switch ($_REQUEST["action"]) {
 
 
 
-function resultToGraphJSON($resultObj) {
+function resultToGraphJSON($resultObj, $asNode = false) {
     header('Cache-Control: no-cache, must-revalidate');
     header('Expires: Mon, 26 Jul 1997 05:00:00 GMT');
     header('Content-type: application/json; charset=utf-8');
@@ -112,7 +124,41 @@ function resultToGraphJSON($resultObj) {
     foreach($resultObj->records() as $recordBase) {
         foreach ($recordBase->values() as $record) {
             $i = 0;
-            foreach ($record->nodes() as $node) {
+            if (!$asNode) {
+                foreach ($record->nodes() as $node) {
+                    $type = $node->labels()[0];
+                    $graphJson["nodes"][] = array(
+                        "root" => False,
+                        "id" => $node->identity(),
+                        "type" => $type,
+                        "label" => $node->value("label"),
+                        "caption" => $type != "Species" ? $node->value("label") : $node->value("binomial"),
+                        "values" => $node->values(),
+                        "x" => $i,
+                        "y" => $i,
+                        "size" => 1,
+                        "color" => "#58e",
+                    );
+                    if ($treeRank[$node->value("rank")] > $highestRank) {
+                        $highestRank = $treeRank[$node->value("rank")];
+                        $rootIndex = $i;
+                    }
+                    $i++;
+                }
+                foreach ($record->relationships() as $relationship) {
+                    $graphJson["edges"][] = array(
+                        "source" => $relationship->startNodeIdentity(),
+                        "target" => $relationship->endNodeIdentity(),
+                        "caption" => $relationship->type(),
+                        "label" => $relationship->type(),
+                        "type" => $relationship->type(),
+                        "values" => $relationship->values(),
+                        "id" => $relationship->identity(),
+                        "color" => "#999",
+                    );
+                }
+            } else {
+                $node = $record;
                 $type = $node->labels()[0];
                 $graphJson["nodes"][] = array(
                     "root" => False,
@@ -127,17 +173,6 @@ function resultToGraphJSON($resultObj) {
                     $rootIndex = $i;
                 }
                 $i++;
-            }
-            foreach ($record->relationships() as $relationship) {
-                $graphJson["edges"][] = array(
-                    "source" => $relationship->startNodeIdentity(),
-                    "target" => $relationship->endNodeIdentity(),
-                    "caption" => $relationship->type(),
-                    "label" => $relationship->type(),
-                    "type" => $relationship->type(),
-                    "values" => $relationship->values(),
-                    "id" => $relationship->identity(),
-                );
             }
         }
     }
@@ -337,6 +372,9 @@ function getChildNodes($taxonLabel) {
      * a graphJSON
      ***/
     global $db, $client;
+    $cypher = "MATCH path = (t {label:'$taxonLabel'})-[:CONTAINS_CLADE]->(r) RETURN path";
+    $neo4jResults = $client->run($cypher);
+    resultToGraphJSON($neo4jResults);
 
 }
 

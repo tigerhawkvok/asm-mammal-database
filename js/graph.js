@@ -35,13 +35,15 @@ plotRelationships = function(taxon1, taxon2) {
   console.debug("Visiting", "graphHandler.php?" + passedArgs);
   $.get("graphHandler.php", passedArgs, "json").done(function(result) {
     var alchemyConf;
+    console.debug(result);
     window.alchemyResult = result;
     alchemyConf = {
       dataSource: result,
       directedEdges: true,
       forceLayout: false
     };
-    alchemy.begin(alchemyConf);
+    sgraph.graph.read(result);
+    sgraph.refresh();
     delay(500, function() {
       return $("#alchemy .node.root circle").attr("r", 15);
     });
@@ -55,12 +57,98 @@ plotRelationships = function(taxon1, taxon2) {
   return false;
 };
 
-nodeClickEvent = function(node) {
+nodeClickEvent = function(node, data) {
+  var args, handleResult, id, idString;
+  if (data == null) {
+    data = null;
+  }
 
   /*
    *
    */
-  var args, id, idString;
+  handleResult = function(result, baseOffsetX, baseOffsetY) {
+    var args, dest, taxon, taxonParts;
+    if (baseOffsetX == null) {
+      baseOffsetX = 0;
+    }
+    if (baseOffsetY == null) {
+      baseOffsetY = 0;
+    }
+    console.debug(result);
+    if (isNull(result.label)) {
+      return false;
+    }
+    taxon = $(node).find("text").text();
+    if (isNull(taxon)) {
+      if (!isNull(result.binomial)) {
+        taxon = result.binomial;
+      } else {
+        taxon = result.label;
+      }
+    }
+    if (result.rank.toLowerCase() === "species") {
+      taxonParts = taxon.split(" ");
+      args = {
+        genus: taxonParts[0],
+        species: taxonParts[1]
+      };
+      dest = "species-account.php?" + (buildArgs(args));
+      if (!isNull(args.species)) {
+        goTo(dest);
+        return true;
+      }
+    }
+    args = {
+      action: "children",
+      taxon: taxon
+    };
+    console.debug("Finding children", "graphHandler.php?" + (buildArgs(args)));
+    $.get("graphHandler.php", buildArgs(args), "json").done(function(result) {
+      var edge, i, j, k, len, len1, ref, ref1;
+      console.debug("Got result", result);
+      i = 0;
+      baseOffsetX += 1;
+      ref = result.nodes;
+      for (j = 0, len = ref.length; j < len; j++) {
+        node = ref[j];
+        console.debug("Creating node", node);
+        try {
+          ++i;
+          node.x += baseOffsetX + 1.5 * i;
+          node.y += baseOffsetY + 0.25 * i;
+          console.debug("offsets", node.x, node.y);
+          try {
+            if (node.caption !== node.label) {
+              node.label = node.caption;
+              console.debug("Replaced label");
+            }
+          } catch (undefined) {}
+          sgraph.graph.addNode(node);
+        } catch (undefined) {}
+      }
+      ref1 = result.edges;
+      for (k = 0, len1 = ref1.length; k < len1; k++) {
+        edge = ref1[k];
+        console.debug("Creating edge", edge);
+        try {
+          sgraph.graph.addEdge(edge);
+        } catch (undefined) {}
+      }
+      sgraph.refresh();
+      $("g.node").unbind().click(function() {
+        return nodeClickEvent(this);
+      });
+      return false;
+    }).error(function(result, status) {
+      return false;
+    });
+    return false;
+  };
+  if (!isNull(data)) {
+    console.debug("Provided data", data);
+    handleResult(data.values, data.x, data.y);
+    return false;
+  }
   idString = $(node).attr("id");
   id = idString.replace("node-", "");
   args = {
@@ -68,24 +156,8 @@ nodeClickEvent = function(node) {
     id: id
   };
   $.get("graphHandler.php", buildArgs(args, "json")).done(function(result) {
-    var dest, taxon, taxonParts;
-    console.debug(result);
-    if (isNull(result.label)) {
-      return false;
-    }
-    if (result.rank.toLowerCase() === "species") {
-      taxon = $(node).find("text").text();
-      taxonParts = taxon.split(" ");
-      args = {
-        genus: taxonParts[0],
-        species: taxonParts[1]
-      };
-      dest = "species-account.php?" + (buildArgs(args));
-      goTo(dest);
-      return true;
-    } else {
-      return true;
-    }
+    handleResult(result);
+    return true;
   }).error(function(result, status) {
     return false;
   });
@@ -163,6 +235,7 @@ fireRelationshipSearch = function() {
 };
 
 $(function() {
+  var sigmaSettings;
   $("#do-relationship-search").click(function() {
     fireRelationshipSearch();
     return false;
@@ -176,11 +249,24 @@ $(function() {
     }
     return false;
   });
-  return $("#reset-graph").click(function() {
+  $("#reset-graph").click(function() {
     $("#alchemy").remove();
-    $("#alchemy-container").html("<div id=\"alchemy\" class=\"alchemy\" style=\"height: 75vh\">\n</div>");
+    $("#graph-container").html("<div id=\"alchemy\" class=\"alchemy\" style=\"height: 75vh\">\n</div>");
     return false;
   });
+  window.sgraph = new sigma("sigma");
+  sigmaSettings = {
+    edgeColor: "default",
+    defaultEdgeColor: "#999",
+    minArrowSize: 2,
+    skipErrors: true
+  };
+  sgraph.settings(sigmaSettings);
+  sgraph.bind("clickNode", function(data) {
+    console.debug("Clicked", data);
+    return nodeClickEvent(this, data.data.node);
+  });
+  return sgraph.startForceAtlas2();
 });
 
 //# sourceMappingURL=maps/graph.js.map

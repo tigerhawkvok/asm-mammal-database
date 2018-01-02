@@ -40,6 +40,8 @@ $updatesSinceAssessmentYear = 2005;
     <?php include_once dirname(__FILE__)."/modular/header.php";
 ?>
     <script type="text/javascript" src="js/graph.js"></script>
+    <script type="text/javascript" src="bower_components/sigma.js-1.2.1/build/sigma.min.js"></script>
+    <script type="text/javascript" src="bower_components/sigma.js-1.2.1/build/plugins/sigma.layout.forceAtlas2.min.js"></script>
     <script type="text/javascript">
       (function(){var p=[],w=window,d=document,e=f=0;p.push('ua='+encodeURIComponent(navigator.userAgent));e|=w.ActiveXObject?1:0;e|=w.opera?2:0;e|=w.chrome?4:0;
       e|='getBoxObjectFor' in d || 'mozInnerScreenX' in w?8:0;e|=('WebKitCSSMatrix' in w||'WebKitPoint' in w||'webkitStorageInfo' in w||'webkitURL' in w)?16:0;
@@ -74,8 +76,12 @@ $updatesSinceAssessmentYear = 2005;
             </div>
         </div>
       </div>
-      <div class="col-xs-12 clearfix" id="alchemy-container">
-        <div id="alchemy" class="alchemy" style="height: 75vh">
+      <div class="col-xs-12 clearfix" id="graph-container">
+        <div id="alchemy" class="alchemy" style="height: 75vh; display: none;">
+        </div>
+        <div id="sigma-parent" style="position: relative; height: 75vh; width: 75vw;margin-left: auto; margin-right: auto; border: 1px solid black;">
+            <div id="sigma" class="sigma" style="height: 100%; position: absolute; width: 100%;">
+            </div>
         </div>
       </div>
         <?php

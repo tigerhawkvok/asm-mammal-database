@@ -51,8 +51,8 @@ renderTaxonData = ->
   if _asm?.chart?
     _asm.chart.destroy()
   tickCallback = (value, index, values) ->
-    if (index %% 4) is 0 and toFloat(value.noExponents()) >= 1
-      value.noExponents()
+    if (index %% 4) is 0 and toFloat(value.removeExponents()) >= 1
+      value.removeExponents()
     else ""
   try
     if p$("#log-scale").checked

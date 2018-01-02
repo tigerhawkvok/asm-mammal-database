@@ -73,3 +73,6 @@ install.php
 *.pack
 forum/flatboard/data/config/config.dat.php
 forum/vanilla/conf/config.php
+public_html_old
+CONFIG.php.bak
+

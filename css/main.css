@@ -7757,3 +7757,13 @@ marked-element .markdown-html .h6 {
   cursor: pointer;
   border-bottom: 1px dotted #000;
 }
+.alchemy svg {
+  background: #fff;
+}
+.alchemy svg .node text {
+  display: inline-block;
+  text-tranform: uppercase;
+}
+.alchemy svg .edge .edge-line {
+  stroke: #aaa;
+}

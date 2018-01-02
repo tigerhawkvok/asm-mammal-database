@@ -799,6 +799,7 @@ function getOrderedTaxonomy($get)
 
 $flag_fuzzy = toBool($_REQUEST['fuzzy']);
 $loose = toBool($_REQUEST['loose']);
+$strictSearchOnly = toBool($_REQUEST["strict"]);
 # Default limit is specified in CONFIG
 $limit = is_numeric($_REQUEST['limit']) && $_REQUEST['limit'] >= 1 ? intval($_REQUEST['limit']):$default_limit;
 
@@ -1026,7 +1027,7 @@ function handleParamSearch($filter_params, $loose = false, $boolean_type = "AND"
 ini_set('memory_limit', '512M');
 function doSearch($overrideSearch = null, $enforceGlobalSearch = null)
 {
-    global $search, $flag_fuzzy, $loose, $limit, $order_by, $params, $boolean_type, $filter_params, $db, $method;
+    global $search, $flag_fuzzy, $loose, $limit, $order_by, $params, $boolean_type, $filter_params, $db, $method, $strictSearchOnly;
     if (!empty($overrideSearch)) {
         $search = $overrideSearch;
     }
@@ -1329,7 +1330,7 @@ function doSearch($overrideSearch = null, $enforceGlobalSearch = null)
                         }
                     }
                 }
-                if ($fallback) {
+                if ($fallback && $strictSearchOnly !== true) {
                     if (!$flag_fuzzy) {
                         /*
                          * If we're doing a fuzzy search, we'll just fall
@@ -1488,6 +1489,9 @@ function doSearch($overrideSearch = null, $enforceGlobalSearch = null)
                 "loose"=>$loose,
                 "fuzzy"=>$flag_fuzzy,
                 "order_by"=>$order_by,
+                "strict" => $strictSearchOnly,
+                "strict2" => $_REQUEST["strict"],
+                "strict3" => toBool($_REQUEST["strict"]),
                 "filter"=>array(
                     "had_filter"=>isset($_REQUEST['filter']),
                     "filter_params"=>$filter_params,

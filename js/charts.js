@@ -62,8 +62,8 @@ renderTaxonData = function() {
     _asm.chart.destroy();
   }
   tickCallback = function(value, index, values) {
-    if ((modulo(index, 4)) === 0 && toFloat(value.noExponents()) >= 1) {
-      return value.noExponents();
+    if ((modulo(index, 4)) === 0 && toFloat(value.removeExponents()) >= 1) {
+      return value.removeExponents();
     } else {
       return "";
     }

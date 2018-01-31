@@ -91,10 +91,15 @@ switch ($_REQUEST["action"]) {
                 "error" => "You need to be logged in with admin credentials to perform this action"
             ));
         }
-        returnAjax($login_status);
         # Check flag
-
-        returnAjax(loadDatabase());
+        if (toBool($login_status["detail"]["admin_flag"])) {
+            returnAjax(loadDatabase());
+        } else {
+            returnAjax(array(
+                "status" => false,
+                "error" => "Unauthorized"
+            ));
+        }
     default:
         getRelatedness();
 }

@@ -1153,6 +1153,9 @@ createHtmlFile = function(result, htmlBody) {
             if (isNumber(row.authority_year)) {
               authorityYears[row.authority_year] = row.authority_year;
             } else if (isNull(row.authority_year)) {
+              if (isJson(row.species_authority)) {
+                row.species_authority = JSON.stringify(row.species_authority);
+              }
               row.species_authority = row.species_authority.replace(/(<\/|<|&lt;|&lt;\/).*?(>|&gt;)/img, "");
               if (commalessTest.test(row.species_authority)) {
                 row.species_authority = row.species_authority.replace(commalessTest, "$1$2, $3$4");

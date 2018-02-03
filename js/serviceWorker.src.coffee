@@ -1002,6 +1002,8 @@ createHtmlFile = (result, htmlBody) ->
             else if isNull row.authority_year
               # Check if this is an IUCN style species authority
               # Strip HTML
+              if isJson row.species_authority
+                row.species_authority = JSON.stringify(row.species_authority)
               row.species_authority = row.species_authority.replace /(<\/|<|&lt;|&lt;\/).*?(>|&gt;)/img, ""
               # Prevent a catastrophic backtrack
               if commalessTest.test row.species_authority

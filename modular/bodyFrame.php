@@ -31,6 +31,8 @@ $bodyOpen = "  <body fullbleed vertical layout class='container-fluid'>
           <paper-button class=\"click hidden-xs\" data-href=\"$protocol://$shortUrl/about\">About <iron-icon icon='icons:info-outline'></iron-icon></paper-button>
           <paper-icon-button icon='editor:insert-chart' class=\"click visible-xs\" data-href=\"$protocol://$shortUrl/summary\" data-toggle=\"tooltip\" title=\"Summary Statistics\" data-placement=\"bottom\"></paper-icon-button>
           <paper-button class=\"click hidden-xs\" data-href=\"$protocol://$shortUrl/summary\" >Statistics <iron-icon icon='editor:insert-chart'></iron-icon></paper-button>
+          <paper-icon-button icon='social:people' class=\"click visible-xs\" data-href=\"$protocol://forum.$shortUrl\" data-toggle=\"tooltip\" title=\"Forum\" data-placement=\"bottom\"></paper-icon-button>
+          <paper-button class=\"click hidden-xs\" data-href=\"$protocol://forum.$shortUrl\" >Forum <iron-icon icon='social:people'></iron-icon></paper-button>
           ".$lastIcon."
           </p>
           </header>

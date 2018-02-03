@@ -41,9 +41,13 @@ def generateInsertSqlQueries(rowList, tableName, makeLower=False, configFile = c
     if os.path.isfile(configFile):
         try:
             import re
-            fileStream = open(configFile)
-            configFileContents = fileStream.read()
-            fileStream.close()
+            with  open(configFile) as fileStream:
+                configFileContents = fileStream.read()
+                startPlace = configFileContents.find("$db_cols")
+                startSubstring = configFileContents[startPlace:]
+                endSubstring = startSubstring[:startSubstring.find(");") + 1]
+                if len(endSubstring) > 0:
+                    configFileContents = endSubstring
             phpDBConfig = re.sub(r"(?sim)^.*= ?array\((.*)\).*$", r"\1", configFileContents)
             phpDBConfigItems = re.sub(r"""(?im)^\s*("|')(\w+)\1\s*=>\s*("|')([\w()0-9]+)\3\s*,?$""", r'"\2":"\4"', phpDBConfig)
             dbConfigJsonRaw = re.sub('(?im)(\r|\n|\r\n)"', ",\"", phpDBConfigItems).strip()
@@ -61,7 +65,8 @@ def generateInsertSqlQueries(rowList, tableName, makeLower=False, configFile = c
             queryList.append("DROP TABLE IF EXISTS `"+tableName+"`;")
             queryList.append("".join(createDefs))
             
-        except:
+        except Exception as e:
+            print(str(e))
             print("WARNING: No PHP configuration file found. Not declaring table.")
             pass
     first=True
@@ -73,15 +78,17 @@ def generateInsertSqlQueries(rowList, tableName, makeLower=False, configFile = c
             set_statement = "SET "
             try:
                 for col,val in row.items():
+                    col = col.strip()
                     if makeLower: val = val.lower()
                     if dbConfig is not None:
                         try:
                             test = dbConfig[col]
                         except KeyError:
                             print("ERROR: Found a DB Config file, but the data had a key not represented there!")
-                            print("Key Found: "+str(col))
+                            print("Key Found: '"+str(col)+"'")
                             print("Config File Used: "+configFile)
                             print("DB Config Read: ", dbConfig)
+                            #raise
                             doExit()
                     val = cleanKVPairs(col,val)
                     s+="\n\t`"+col+"`="+str(val)+","

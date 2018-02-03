@@ -1,6 +1,6 @@
 import time, os, glob, sys, qinput, string, yn, re
 
-defaultFile = "../../MDD_taxonomy_fullList_cleanRelease_15June2017.csv"
+defaultFile = "../../MDD_taxonomy_v1_19Jan2018.csv"
 outputFile = "../../asm_predatabase_clean.csv"
 exitScriptPrompt = "Press Control-c to exit."
 

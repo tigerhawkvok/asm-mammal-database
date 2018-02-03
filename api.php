@@ -1490,8 +1490,6 @@ function doSearch($overrideSearch = null, $enforceGlobalSearch = null)
                 "fuzzy"=>$flag_fuzzy,
                 "order_by"=>$order_by,
                 "strict" => $strictSearchOnly,
-                "strict2" => $_REQUEST["strict"],
-                "strict3" => toBool($_REQUEST["strict"]),
                 "filter"=>array(
                     "had_filter"=>isset($_REQUEST['filter']),
                     "filter_params"=>$filter_params,

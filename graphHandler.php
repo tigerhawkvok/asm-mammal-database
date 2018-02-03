@@ -18,7 +18,7 @@ use GraphAware\Neo4j\Client\ClientBuilder;
 * Setup
  *****************/
 
-#$show_debug = true;
+$show_debug = true;
 
 if ($show_debug === true) {
     error_reporting(E_ALL);
@@ -70,7 +70,7 @@ if (!function_exists('elapsed')) {
 
 
 $client = ClientBuilder::create()
-->addConnection('default', $graphProtocol . "://" . $graphUser . ":" . $graphPassword . "@" . $graphUrl . ":" .$graphPorts[$graphProtocol])
+->addConnection('default', $graphProtocol . "://" . $graphUser . ":" . $graphPassword . "@" . $graphUrl . $graphEndpointSuffix .":" .$graphPorts[$graphProtocol])
 ->setDefaultTimeout(60)
 ->build();
 
@@ -83,21 +83,23 @@ switch ($_REQUEST["action"]) {
         getChildNodes($_REQUEST["taxon"]);
     case "load":
         # Authenticate
+        $print_login_state = false;
         require_once(dirname(__FILE__)."/admin/async_login_handler.php");
         $login_status = getLoginState($_REQUEST);
-        if ($login_status !== true) {
+        if ($login_status["status"] !== true) {
             returnAjax(array(
                 "status" => false,
                 "error" => "You need to be logged in with admin credentials to perform this action"
             ));
         }
         # Check flag
-        if (toBool($login_status["detail"]["admin_flag"])) {
+        if (toBool($login_status["detail"]["userdata"]["admin_flag"])) {
             returnAjax(loadDatabase());
         } else {
             returnAjax(array(
                 "status" => false,
-                "error" => "Unauthorized"
+                "error" => "Unauthorized",
+                "admin_status" => $login_status["detail"]["userdata"]["admin_flag"]
             ));
         }
     default:

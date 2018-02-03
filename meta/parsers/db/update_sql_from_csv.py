@@ -58,10 +58,10 @@ def generateUpdateSqlQueries(rowList, refCol, tableName, addCols=True, makeLower
                 where = ""
                 for col,val in row.items():
                     if first is True and addCols:
-                        #alter_query = "IF COL_LENGTH(`"+tableName+"`,`"+col+"`) IS NULL"
-                        #alter_query += "\n\tBEGIN"
-                        alter_query = "ALTER TABLE `"+tableName+"` ADD `"+col+"` VARCHAR(MAX);" # Just in case!
-                        # alter_query += "\n\tEND;"
+                        alter_query = "IF COL_LENGTH(`"+tableName+"`,`"+col+"`) IS NULL"
+                        alter_query += "\n\tBEGIN\n\t\t"
+                        alter_query += "ALTER TABLE `"+tableName+"` ADD `"+col+"` VARCHAR(MAX);" # Just in case!
+                        alter_query += "\n\tEND;"
                         queryList.append(alter_query)
                     if makeLower: val = val.lower()
                     val = cleanKVPairs(col,val)

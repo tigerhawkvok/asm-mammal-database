@@ -1153,6 +1153,9 @@ createHtmlFile = function(result, htmlBody) {
             if (isNumber(row.authority_year)) {
               authorityYears[row.authority_year] = row.authority_year;
             } else if (isNull(row.authority_year)) {
+              if (isJson(row.species_authority)) {
+                row.species_authority = JSON.stringify(row.species_authority);
+              }
               row.species_authority = row.species_authority.replace(/(<\/|<|&lt;|&lt;\/).*?(>|&gt;)/img, "");
               if (commalessTest.test(row.species_authority)) {
                 row.species_authority = row.species_authority.replace(commalessTest, "$1$2, $3$4");
@@ -1191,13 +1194,13 @@ createHtmlFile = function(result, htmlBody) {
         try {
           genusYear = Object.keys(authorityYears)[0];
           speciesYear = authorityYears[genusYear];
-          genusYear = genusYear.replace(/&#39;/g, "'");
-          speciesYear = speciesYear.replace(/&#39;/g, "'");
+          genusYear = genusYear.toString().replace(/&#39;/g, "'");
+          speciesYear = speciesYear.toString().replace(/&#39;/g, "'");
         } catch (error2) {
           for (c in authorityYears) {
             v = authorityYears[c];
-            genusYear = c.replace(/&#39;/g, "'");
-            speciesYear = v.replace(/&#39;/g, "'");
+            genusYear = c.toString().replace(/&#39;/g, "'");
+            speciesYear = v.toString().replace(/&#39;/g, "'");
           }
         }
         if (isNull(row.genus_authority)) {

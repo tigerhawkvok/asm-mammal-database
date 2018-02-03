@@ -1002,6 +1002,8 @@ createHtmlFile = (result, htmlBody) ->
             else if isNull row.authority_year
               # Check if this is an IUCN style species authority
               # Strip HTML
+              if isJson row.species_authority
+                row.species_authority = JSON.stringify(row.species_authority)
               row.species_authority = row.species_authority.replace /(<\/|<|&lt;|&lt;\/).*?(>|&gt;)/img, ""
               # Prevent a catastrophic backtrack
               if commalessTest.test row.species_authority
@@ -1036,12 +1038,12 @@ createHtmlFile = (result, htmlBody) ->
         try
           genusYear = Object.keys(authorityYears)[0]
           speciesYear = authorityYears[genusYear]
-          genusYear = genusYear.replace(/&#39;/g,"'")
-          speciesYear = speciesYear.replace(/&#39;/g,"'")
+          genusYear = genusYear.toString().replace(/&#39;/g,"'")
+          speciesYear = speciesYear.toString().replace(/&#39;/g,"'")
         catch
           for c,v of authorityYears
-            genusYear = c.replace(/&#39;/g,"'")
-            speciesYear = v.replace(/&#39;/g,"'")
+            genusYear = c.toString().replace(/&#39;/g,"'")
+            speciesYear = v.toString().replace(/&#39;/g,"'")
         if isNull row.genus_authority
           row.genus_authority = row.species_authority
         else if isNull row.species_authority

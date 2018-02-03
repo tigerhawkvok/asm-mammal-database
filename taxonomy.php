@@ -26,7 +26,7 @@ require_once(dirname(__FILE__)."/core/core.php");
 $db = new DBHelper($default_database, $default_sql_user, $default_sql_password, $default_sql_url, $default_table, $db_cols);
 
 
-$updatesSinceAssessmentYear = 2005;
+$updatesSinceAssessmentYear = 2004;
 
 ?>
 <html>

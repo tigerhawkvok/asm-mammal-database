@@ -48,6 +48,29 @@ if ($show_debug === true) {
         <span class="hidden-xs"><a href="<?php echo $qualDomain; ?>" class="newwindow"><img src="assets/logo.svg" alt="ASM logo" id="title-logo"/></a></span>
         ASM Mammal <span class="hidden-xs hidden-sm">Diversity</span> Database
       </h1>
+      <div class="hidden-xs col-sm-9 col-md-10" id="leading-blurbs">
+        <div class="bs-callout bs-callout-primary alert" id="callout-welcome">
+            <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                <span aria-hidden="true">&times;</span>
+            </button>
+            <p>Welcome! The <a href="https://mammaldiversity.org/about" class="alert-link">Mammal Diversity Database</a> is home base for tracking the latest taxonomic changes to species and higher groups of mammals.
+            Here we are curating new research and its taxonomic implications in real time &#8212; with the goal of promoting rigorous study
+            of mammal biodiversity worldwide.</p>
+        </div>
+        <div class="bs-callout bs-callout-info alert" id="callout-latest-summary">
+            <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                <span aria-hidden="true">&times;</span>
+            </button>
+            <h3><a href="https://mammaldiversity.org/summary">The Latest</a>:</h3>
+            <ul>
+                <li>6,495 total species (6,399 extant, 96 recently extinct—version 1.0 of 15 Aug 2017)</li>
+                <li>Download the full taxonomy <button class="btn btn-link click" data-fn="showDownloadChooser">here</button></li>
+                <li>How to cite? Details <a href="https://mammaldiversity.org/about" class="alert-link">here</a></li>
+                <li>Synthesis of changes since Mammal Species of World, vol. 3 are published <a class="newwindow alert-link" href="https://doi.org/10.1093/jmammal/gyx147
+">here</a>.</li>
+            </ul>
+        </div>
+      </div>
       <div class="featured-container hidden-xs col-sm-3 col-md-2" id="featured-mammal-container">
         <?php
           # Look up the taxon based on criteria

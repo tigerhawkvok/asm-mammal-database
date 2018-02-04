@@ -6954,6 +6954,16 @@ main #images-block div.no-image {
   -ms-flex-align: center;
       align-items: center;
 }
+#callout-latest-summary {
+  margin-bottom: 2em;
+}
+#callout-latest-summary h3 {
+  font-size: 16px;
+  margin-top: 0;
+}
+.featured-container {
+  margin-top: -8em;
+}
 .featured-container paper-card {
   margin-bottom: 1rem;
   margin-right: 2rem;

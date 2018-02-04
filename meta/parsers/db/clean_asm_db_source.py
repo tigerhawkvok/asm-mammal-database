@@ -16,7 +16,10 @@ keepCase = [
     "IfNew_nameCitation",
     "IfNew_nameAuthors",
     "IfNew_nameLink",
-    "IfTransfer_evidenceCitation"
+    "IfTransfer_evidenceCitation",
+    "authority_author",
+    "species_authority",
+    "canonical_sciname"
 ]
 
 

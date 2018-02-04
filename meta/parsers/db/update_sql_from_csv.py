@@ -51,12 +51,15 @@ def generateUpdateSqlQueries(rowList, refCol, tableName, addCols=True, makeLower
     try:
         for row in rowList:
             # Each row should be a dict of the form "column":"value"
-            query="INSERT INTO `"+tableName+"` SET "
+            query="INSERT INTO `"+tableName+"` "
             s=""
             set_statement = ""
+            colList = list()
+            valuesList = list()
             try:
                 where = ""
                 for col,val in row.items():
+                    colList.append(str(col))
                     if first is True and addCols:
                         alter_query = "IF COL_LENGTH(`"+tableName+"`,`"+col+"`) IS NULL"
                         alter_query += "\n\tBEGIN\n\t\t"
@@ -71,11 +74,12 @@ def generateUpdateSqlQueries(rowList, refCol, tableName, addCols=True, makeLower
                     else:
                         where = ",\n\t`"+col+"`="+str(val)+" "
                         #where = " WHERE `"+col+"`="+str(val)
+                    valuesList.append(str(val))
                 # Trim the last comma
                 s = s[:-1]
                 set_statement = s
                 s += where
-                s += " ON DUPLICATE KEY UPDATE "
+                s = " ON DUPLICATE KEY UPDATE "
                 # if not addCols:
                 #     # If we skipped adding cols, let's not crap out if
                 #     # a col is missing
@@ -85,6 +89,8 @@ def generateUpdateSqlQueries(rowList, refCol, tableName, addCols=True, makeLower
                 print("ERROR: Row is not a dictionary.")
                 print("Each row should be a dictionary of the form {column:value}.")
                 return False
+            query += "(" + ",".join(colList) + ") VALUES "
+            query += "(" + ",".join(valuesList) + ") "
             query += s
             query+=";"
             if query not in queryList and len(set_statement) > 0:

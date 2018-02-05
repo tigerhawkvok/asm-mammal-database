@@ -64,7 +64,7 @@ if ($show_debug === true) {
             <h3><a href="https://mammaldiversity.org/summary">The Latest</a>:</h3>
             <ul>
                 <li>6,495 total species (6,399 extant, 96 recently extinct—version 1.0 of 15 Aug 2017)</li>
-                <li>Download the full taxonomy <button class="btn btn-link click" data-fn="showDownloadChooser">here</button></li>
+                <li>Download the full taxonomy <button class="btn btn-link alert-link click" data-fn="showDownloadChooser" style="padding-left:0">here</button></li>
                 <li>How to cite? Details <a href="https://mammaldiversity.org/about" class="alert-link">here</a></li>
                 <li>Synthesis of changes since Mammal Species of World, vol. 3 are published <a class="newwindow alert-link" href="https://doi.org/10.1093/jmammal/gyx147
 ">here</a>.</li>

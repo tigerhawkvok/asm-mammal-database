@@ -68,7 +68,7 @@ $updatesSinceAssessmentYear = 2004;
         $yearsToCheck = array();
         # Because of the way we stored the authorities,
         # we want to enumerate all the years between then and now
-        $thisYear = date("Y");
+        $thisYear = date("Y") + 1;
         $examinedYear = $updatesSinceAssessmentYear;
         while ($examinedYear < $thisYear) {
             $examinedYear++;
@@ -84,11 +84,16 @@ $updatesSinceAssessmentYear = 2004;
             $results = $db->getQueryResults($searchCriteria, "*", "OR", true, true);
             $taxa = array_merge($taxa, $results);
         }
-
+        $sortable = array();
+        foreach ($taxa as $taxon) {
+            $sortable[$taxon["canonical_sciname"]] = $taxon;
+        }
+        ksort($sortable);
         $buffer = "";
         $migratedTaxa = array();
         $novelTaxa = array();
-        foreach ($taxa as $taxon) {
+        $newGenera = array();
+        foreach ($sortable as $taxon) {
             $years = json_decode($taxon["authority_year"], true);
             if (!is_array($years)) {
                 $gYear = preg_replace('/^.*?([0-9]{4}).*$/im', '$1', $taxon["genus_authority"]);
@@ -116,6 +121,10 @@ $updatesSinceAssessmentYear = 2004;
                 $authority = preg_replace('/^(.*?)[,;:]? *(?:[0-9]{4})? *$/im', '$1', $taxon["species_authority"]);
                 $authority = html_entity_decode($authority);
             }
+            $genus = $taxon["genus"];
+            if (!in_array($genus, $newGenera) && $gYear >= $updatesSinceAssessmentYear) {
+                $newGenera[] = $genus;
+            }
             $year = $sYear > $gYear ? $sYear : $gYear;
             if (!empty($taxon["species_authority_citation"])) {
                 if (stripos($taxon["species_authority_citation"], "isbn")) {
@@ -128,9 +137,7 @@ $updatesSinceAssessmentYear = 2004;
             }
             $buffer .= "\n<li><span class='sciname'><span class='genus'>".$taxon["genus"]."</span> <span class='species'>".$taxon["species"]."</span></span> in <span class='has-authority' data-toggle='tooltip' title='$authority'>$year</span> <paper-icon-button class='click' data-href='$protocol://$shortUrl/species-account/id=".$taxon["id"]."' icon='icons:visibility' title='See account for ".ucwords($taxon["genus"])." ".$taxon["species"]."' data-toggle='tooltip'></paper-icon-button> $citation</li>\n";
         }
-        echo "<h3>There have been ".sizeof($novelTaxa)." taxa changes since $updatesSinceAssessmentYear</h3> <ul>";
-        echo $buffer;
-        echo "</ul>";
+
         /***
          * To find migrations, find species with species authories
          * younger than the modified date, but genus authories newer
@@ -180,8 +187,22 @@ $updatesSinceAssessmentYear = 2004;
             }
             $migratedTaxa = array_merge($migratedTaxa, $list);
         }
+        $checkSplits = "SELECT COUNT(*) FROM `".$db->getTable()."` WHERE ifNew_category='splitFromExisting'";
+        $splitsRes = mysqli_query($db->getLink(), $checkSplits);
+        $splitResRow = mysqli_fetch_row($splitsRes);
+        $splitsNumber = $splitResRow[0];
+        echo "<h3>There have been 1251 total species additions since $updatesSinceAssessmentYear</h3>
+        <h4><a href='#novel-taxa-list' class='taxon-list-jump'>".sizeof($novelTaxa)."</a> new species names (de novo)</h4>
+        <h4>$splitsNumber existing names now with species status (splits)</h4>
+        <h3>There have been <a href='#migrated-taxa-list' class='taxon-list-jump'>".sizeof($migratedTaxa)." species with genus migrations</a> since $updatesSinceAssessmentYear</h3>
+        <h3>There have been ".sizeof($newGenera)." new genera recognized since $updatesSinceAssessmentYear</h3>
+        <hr/>
+        <h5>New Species Names:</h5>
+        <ul id='novel-taxa-list'>";
+        echo $buffer;
+        echo "</ul>";
         $buffer = "";
-        echo "<h3>There have been ".sizeof($migratedTaxa)." taxa with genus migrations since $updatesSinceAssessmentYear</h3> <ul>";
+        echo "<h5>Migrated spcies</h5><ul id='migrated-taxa-list'>";
         foreach ($migratedTaxa as $taxon) {
             # Do the thing, Ju-Li!
             $year = $taxon["graduated"]["changeYear"];

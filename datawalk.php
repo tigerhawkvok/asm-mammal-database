@@ -46,7 +46,7 @@ try {
     while ($row = mysqli_fetch_row($r)) {
         # Find oldest citation among unformatted (all) and formatted
         # genera
-        $query = "SELECT `id`, `authority_year`, `species_authority`, `parens_auth_species` FROM `".$db->getTable()."` WHERE (`genus_authority` IS NULL OR `authority_year` IS NULL OR `genus_authority`='' OR `authority_year`='') AND `species_authority` IS NOT NULL AND `genus`='".$row[0]."'";
+        $query = "SELECT `id`, `authority_year`, `species_authority`, `parens_auth_species` FROM `".$db->getTable()."` WHERE (`genus_authority` IS NULL OR `authority_year` IS NULL OR `genus_authority`='' OR `authority_year`='' OR `authority_year` NOT LIKE '{%') AND `species_authority` IS NOT NULL AND `genus`='".$row[0]."'";
         $ur = mysqli_query($db->getLink(), $query);
         $data = array();
         while ($genusRow = mysqli_fetch_assoc($ur)) {
@@ -166,6 +166,7 @@ try {
             "needed_updates" => $generaCount,
         ),
         "notices" => $notices,
+        "lastQuery" => $query,
         #"sample" => $q,
     );
     if (isset($_REQUEST["genus"])) {

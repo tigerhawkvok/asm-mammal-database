@@ -995,9 +995,6 @@ renderDataArray = function(data, firstIteration, renderChunk) {
     htmlRow = "\n\t<tr id='" + rowId + "' class='cndb-result-entry' data-taxon=\"" + taxonQuery + "\" data-genus=\"" + row.genus + "\" data-species=\"" + row.species + "\">";
     for (k in row) {
       col = row[k];
-      if (toInt(i) === 0 && firstIteration) {
-        console.debug("Sample row", row);
-      }
       if (k === "authority_year") {
         if (!isNull(col)) {
           try {
@@ -1033,7 +1030,6 @@ renderDataArray = function(data, firstIteration, renderChunk) {
             col = "G: " + genus + "<br/>S: " + species;
           } catch (undefined) {}
         } else {
-          console.debug("null col", col, k);
           d = col;
         }
       }

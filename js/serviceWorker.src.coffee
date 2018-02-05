@@ -850,8 +850,8 @@ renderDataArray = (data = dataArray, firstIteration = true, renderChunk = 100) -
     rowId = "msadb-row#{i}"
     htmlRow = """\n\t<tr id='#{rowId}' class='cndb-result-entry' data-taxon="#{taxonQuery}" data-genus="#{row.genus}" data-species="#{row.species}">"""
     for k, col of row
-      if toInt(i) is 0 and firstIteration
-        console.debug "Sample row", row
+      #if toInt(i) is 0 and firstIteration
+      #  console.debug "Sample row", row
       if k == "authority_year"
         unless isNull col
           try
@@ -883,7 +883,7 @@ renderDataArray = (data = dataArray, firstIteration = true, renderChunk = 100) -
               species = "(#{species})"
             col = "G: #{genus}<br/>S: #{species}"
         else
-          console.debug "null col", col, k
+          # console.debug "null col", col, k
           d = col
       if k is "image"
         # Set up the images

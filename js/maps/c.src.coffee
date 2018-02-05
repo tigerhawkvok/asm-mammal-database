@@ -1945,7 +1945,7 @@ _asm.affiliateQueryUrl =
   iucnRedlist: "http://apiv3.iucnredlist.org/api/v3/species/"
   iucnRedlistCN: "http://apiv3.iucnredlist.org/api/v3/species/common_names/"
   iNaturalist: "https://www.inaturalist.org/taxa/search"
-  calPhotos: "http://calphotos.berkeley.edu/cgi/img_query"  
+  calPhotos: "http://calphotos.berkeley.edu/cgi/img_query"
 
 
 
@@ -2344,6 +2344,29 @@ formatSearchResults = (result, container = searchParams.targetContainer, callbac
     "simple_linnean_group_alt"
     "linnean_tribe"
     "linnean_subfamily"
+    "juniorSynonym"
+    "extinct"
+    "MDDv1"
+    "newSppSinceMSW3"
+    "IfNew_category"
+    "IfNew_valid_SciName"
+    "IfNew_described_SciName"
+    "IfNew_GeoRegion"
+    "IfNew_evidenceCitation"
+    "IfNew_evidenceAuthors"
+    "IfTransfer_oldSciName"
+    "genusTransfersinceMSW3"
+    "geo_distribution"
+    "IfNew_evidenceAuthors"
+    "IfNew_evidenceCitation"
+    "IfNew_evidenceLink"
+    "IfNew_evidenceYear"
+    "IfNew_nameAuthors"
+    "IfNew_nameCitation"
+    "IfNew_nameLink"
+    "IfNew_nameYear"
+    "authority_fullcitation"
+    "authority_link"
     ]
   externalCounter = 0
   renderTimeout = delay 7500, ->

@@ -134,7 +134,7 @@ module.exports = (grunt) ->
             warnings: true
             properties: true
             sequences: true
-            cascade: true
+            #cascade: true
         files:
           "js/c.min.js":["js/c.js"]
           "js/speciesAccount.min.js":["js/speciesAccount.js"]

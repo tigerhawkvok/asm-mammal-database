@@ -211,6 +211,11 @@ SCIENTIFIC_SEARCH_NO_SPECIES
         );
         $loose = true;
         break;
+    case "species-id":
+        $lookup = array(
+            "internal_id" => $_REQUEST["species-id"],
+        );
+        break;
     case null:
         # The request was invalid
         $output = buildHeader("Species Not Found");
@@ -294,7 +299,7 @@ Sorry, the search you tried to execute returned ".sizeof($rows)." results and co
 </p>
 <p class='col-xs-12'>
 Please refine your search and try again.
-</p>";
+</p> <!-- ".print_r($lookup, true)."-->" ;
     $output .= getBody($content);
     echo $output;
     exit();
@@ -779,9 +784,9 @@ if (!empty($speciesRow["citation"])) {
     $credit .= "<marked-element id='taxon-citation-credit'><div class='markdown-html'></div><script type='text/markdown'>The data used to generate this page is via: ".$speciesRow["citation"]."</script></marked-element>";
 }
 
-$taxonCitation = $speciesRow["canonical_sciname"]." (ASM Species Account Database #".$speciesRow["internal_id"].") fetched ".date(DATE_ISO8601);
-$permalink = "https://mammaldiversity.org/species-account/id=".$speciesRow["id"];
-$entryCredits = "<section id='entry-credits' class='col-xs-12 small'><div>".$credit."</div><p class='cite-taxon'>Citation: <cite>".$taxonCitation."</cite></p><p>Permalink: <code>".$permalink."</code></section>\n\n";
+$permalink = "https://mammaldiversity.org/species-account/species-id=".$speciesRow["internal_id"];
+$taxonCitation = "[<span class='taxon'>".$speciesRow["canonical_sciname"]."</span> (ASM Mammal Diversity Database #".$speciesRow["internal_id"].") fetched ".date('Y-m-d').". Mammal Diversity Database. ".date('Y').". <span class='uri'>".$permalink."</span>]";
+$entryCredits = "<section id='entry-credits' class='col-xs-12 small'><div>".$credit."</div><p class='cite-taxon'>Citation: <cite class='citation-block'>".$taxonCitation."</cite></p><p>Permalink: <code>".$permalink."</code></section>\n\n";
 
 $content = $entryTitle . $images . $taxonomyNotes. $entryNote . $primaryEntry . $entryCredits;
 

@@ -7684,6 +7684,18 @@ label + paper-icon-button {
 #social-menu > paper-icon-button iron-icon {
   color: #1DA1F2;
 }
+.citation-block {
+  font-style: normal;
+}
+.citation-block .taxon {
+  font-style: italic;
+}
+.citation-block .uri {
+  font-family: 'Droid Sans Mono', 'Fira Code', 'Hacker Pro', 'Consolas', monospace;
+}
+blockquote .citation-block {
+  font-size: 14px;
+}
 .clade {
   text-transform: title-case;
 }

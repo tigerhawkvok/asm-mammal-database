@@ -170,6 +170,8 @@ executeQuery = ->
         return handleSqlError error
       # There were no OBVIOUS problems ...
       for statement in statements
+        if isNull statement
+          continue
         if statement.result is "ERROR"
           errorMessage = "Your query <code class='language-sql'>#{statement.provided}</code> "
           if statement.error.safety_check isnt true

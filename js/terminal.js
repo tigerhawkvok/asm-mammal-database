@@ -199,6 +199,9 @@ executeQuery = function() {
       }
       for (j = 0, len = statements.length; j < len; j++) {
         statement = statements[j];
+        if (isNull(statement)) {
+          continue;
+        }
         if (statement.result === "ERROR") {
           errorMessage = "Your query <code class='language-sql'>" + statement.provided + "</code> ";
           if (statement.error.safety_check !== true) {

@@ -30,10 +30,10 @@ if (isset($_SERVER['QUERY_STRING'])) {
 $start_script_timer = microtime_float();
 $_REQUEST = array_merge($_REQUEST, $_GET, $_POST);
 $db = new DBHelper($default_database, $default_sql_user, $default_sql_password, $default_sql_url, $default_table, $db_cols);
-
+$notices = [];
 try {
     # walk distinct genera
-    $query = "SELECT DISTINCT genus FROM `".$db->getTable()."` WHERE (`genus_authority` IS NULL OR `authority_year` IS NULL OR `genus_authority`='' OR `authority_year`='')";
+    $query = "SELECT DISTINCT genus FROM `".$db->getTable()."` WHERE (`genus_authority` IS NULL OR `authority_year` IS NULL OR `genus_authority`='' OR `authority_year`='' OR `authority_year` NOT LIKE '{%')";
     if (isset($_REQUEST["genus"])) {
         $query .= " AND `genus`='".$db->sanitize($_REQUEST["genus"])."'";
     }
@@ -67,6 +67,9 @@ try {
                 $authority = preg_replace('%(</|<|&lt;|&lt;/).*?(>|&gt;)%im', '', $genusRow["species_authority"]);
                 $authority = preg_replace($authorityMatcher, '${1}', $authority);
                 $authority = htmlspecialchars_decode($authority);
+            } else if (is_numeric($genusRow["authority_year"])) {
+                $gYear = $genusRow["authority_year"];
+                $sYear = $genusRow["authority_year"];
             }
             if (empty($gYear) || empty($sYear)) {
                 # Parse out the string
@@ -124,7 +127,18 @@ try {
         foreach ($data as $taxa) {
             foreach ($taxa as $uniqueAuthority) {
                 $authYear = json_encode(array($oldest => $uniqueAuthority["species_year"]));
-                if (($authYear == "[0]" || $oldest == 0 || $uniqueAuthority["species_year"] == 0) && !isset($_REQUEST["genus"])) {
+                /* if (($authYear == "[0]" || $oldest == 0 || $uniqueAuthority["species_year"] == 0) && !isset($_REQUEST["genus"])) {
+                    continue;
+                } */
+                if($authYear == "[0]") {
+                    $notice = array(
+                        "error" => "bad auth year",
+                        "genus" => $row[0],
+                        "oldest" => $oldest,
+                        "thisYear" => $uniqueAuthority["species_year"],
+                        "lookup" => $query,
+                    );
+                    $notices[] = $notice;
                     continue;
                 }
                 $q = "UPDATE ".$db->getTable()." SET `authority_year`='".$db->sanitize($authYear)."', `genus_authority`='".mysqli_real_escape_string($db->getLink(), $genusAuthority)."', `species_authority`='".mysqli_real_escape_string($db->getLink(), $uniqueAuthority["authority"])."', `parens_auth_species`=".strbool($uniqueAuthority["has_parens"]).", `parens_auth_genus`=".strbool($hasParens)." WHERE `genus`='$row[0]' AND `species_authority`='".mysqli_real_escape_string($db->getLink(), $uniqueAuthority["match_authority"])."'";
@@ -151,6 +165,7 @@ try {
             "modified" => $generaWalked,
             "needed_updates" => $generaCount,
         ),
+        "notices" => $notices,
         #"sample" => $q,
     );
     if (isset($_REQUEST["genus"])) {

@@ -19,7 +19,7 @@ def doExit():
     os._exit(0)
     sys.exit(0)
 
-def cleanKVPairs(col,val):
+def cleanKVPairs(col, val, asType = False):
     # Format the value for SQL
     try:
         val = val.strip()
@@ -27,18 +27,28 @@ def cleanKVPairs(col,val):
         pass
     if val.lower() == "true" or val.lower() == "false":
         # Keep bools as bools
+        if asType:
+            val = val.lower() == "true"
         return val
     try:
         # Is it a number?
         test = int(val)
+        if asType:
+            val = int(val)
         return val
     except ValueError:
-        # Give back the original if no matches
-        # But enclosed as an SQL string
-        if val == "" or val.lower() == "NA":
-            return "NULL"
-        val = val.replace("'","&#39;")
-        return "'"+val+"'"
+        try:
+            test = float(val)
+            if asType:
+                val = float(val)
+            return val
+        except ValueError:
+            # Give back the original if no matches
+            # But enclosed as an SQL string
+            if val == "" or val.lower() == "NA":
+                return "NULL"
+            val = val.replace("'","&#39;")
+            return "'"+val+"'"
 
 
 def generateUpdateSqlQueries(rowList, refCol, tableName, addCols=True, makeLower=False):
@@ -61,10 +71,24 @@ def generateUpdateSqlQueries(rowList, refCol, tableName, addCols=True, makeLower
                 for col,val in row.items():
                     colList.append(str(col))
                     if first is True and addCols:
-                        alter_query = "IF COL_LENGTH(`"+tableName+"`,`"+col+"`) IS NULL"
-                        alter_query += "\n\tBEGIN\n\t\t"
-                        alter_query += "ALTER TABLE `"+tableName+"` ADD `"+col+"` VARCHAR(MAX);" # Just in case!
-                        alter_query += "\n\tEND;"
+                        #alter_query = "IF (SELECT * FROM information_schema.COLUMNS WHERE TABLE_SCHEMA='"+tableName+"' AND COLUMN_NAME='"+col+"') IS NULL"
+                        #alter_query += "\n\tTHEN\n\t\t"
+                        try:
+                            testData = cleanKVPairs(col, rowList[1][col], True)
+                            print("Testing", testData)
+                            if isinstance(testData, bool):
+                                dataType = "TINYINT(1)"
+                            elif isinstance(testData, int):
+                                dataType = "INT"
+                            elif isinstance(testData, float):
+                                dataType = "FLOAT"
+                            else:
+                                dataType = "VARCHAR(1023)"
+                        except:
+                            print("Failed to check data type for", testData)
+                            dataType = "VARCHAR(1023)"
+                        alter_query = "-- This will fail if the column exists. No harm, no foul. \nALTER TABLE `"+tableName+"` ADD COLUMN `"+col+"` "+dataType+";" # Just in case!
+                        #alter_query += "\n\tEND IF;"
                         queryList.append(alter_query)
                     if makeLower: val = val.lower()
                     val = cleanKVPairs(col,val)
@@ -319,6 +343,10 @@ for row in rows:
                     di += 1
                 if fetchedEntry is False:
                     print("Couldn't get column '"+str(dropIndex)+"' from row")
+            if "species" not in columns:
+                needCreateSpecies = True
+            else:
+                needCreateSpecies = False
             try:
                 thisRow = {}
                 # Each row is a list object as per the CSV library.
@@ -333,6 +361,15 @@ for row in rows:
                     if column != "":
                         thisRow[column] = entry
                     i+=1
+                if len(thisRow.keys()) is 0:
+                    continue
+                if needCreateSpecies:
+                    try:
+                        species = thisRow["canonical_sciname"].split(" ").pop()
+                        thisRow["species"] = species
+                    except:
+                        print(thisRow)
+                        raise
                 entryList.append(thisRow)
             except IndexError:
                 # Not enough columns!

@@ -19,6 +19,7 @@ keepCase = [
     "IfTransfer_evidenceCitation",
     "authority_author",
     "species_authority",
+    "genus_authority",
     "canonical_sciname"
 ]
 

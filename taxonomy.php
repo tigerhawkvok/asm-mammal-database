@@ -187,11 +187,12 @@ $updatesSinceAssessmentYear = 2004;
             }
             $migratedTaxa = array_merge($migratedTaxa, $list);
         }
-        $checkSplits = "SELECT COUNT(*) FROM `".$db->getTable()."` WHERE ifNew_category='splitFromExisting'";
+        $checkSplits = "SELECT COUNT(*) FROM `".$db->getTable()."` WHERE LOWER(ifNew_category) LIKE 'split%'";
         $splitsRes = mysqli_query($db->getLink(), $checkSplits);
         $splitResRow = mysqli_fetch_row($splitsRes);
         $splitsNumber = $splitResRow[0];
-        echo "<h3>There have been 1251 total species additions since $updatesSinceAssessmentYear</h3>
+        $total = sizeof($novelTaxa) + $splitsNumber;
+        echo "<h3>There have been $total total species additions since $updatesSinceAssessmentYear</h3>
         <h4><a href='#novel-taxa-list' class='taxon-list-jump'>".sizeof($novelTaxa)."</a> new species names (de novo)</h4>
         <h4>$splitsNumber existing names now with species status (splits)</h4>
         <h3>There have been <a href='#migrated-taxa-list' class='taxon-list-jump'>".sizeof($migratedTaxa)." species with genus migrations</a> since $updatesSinceAssessmentYear</h3>

@@ -45,7 +45,7 @@ def cleanKVPairs(col, val, asType = False):
         except ValueError:
             # Give back the original if no matches
             # But enclosed as an SQL string
-            if val == "" or val.lower() == "NA":
+            if val == "" or val.lower() == "NA" or val.lower() == "null":
                 return "NULL"
             val = val.replace("'","&#39;")
             return "'"+val+"'"

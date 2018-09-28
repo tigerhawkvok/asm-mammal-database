@@ -3,3 +3,4 @@
 d90c5093
 EE285181D5A6561A345FC7ED7BC0725C875FE441
 nathan.upham@yale.edu
+/Users/nate/Desktop/MDD_web_instance/asm-mammal-database/keyrings/live/875FE441.asc
